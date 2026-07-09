@@ -1,145 +1,71 @@
-# MazyOS — Sistema operacional do negócio
+# Aura — contexto do projeto
 
-Sua empresa roda em cima desse arquivo. Aqui ficam as regras de operação
-do MazyOS — como o Claude lê o contexto, aprende com correções, mantém
-tudo atualizado e cria skills novas conforme a operação evolui.
+Contexto que vale pra qualquer trabalho neste repositório. O código do app está
+em [`aura/`](aura/) — detalhes técnicos e como rodar em [`aura/README.md`](aura/README.md).
 
-Esse arquivo é editável. Quando o `/instalar` rodar, ele complementa o
-final dessa página com as regras específicas do seu negócio.
+## Quem
 
----
+**Layra Lima** — solopreneur / criadora solo, marca pessoal. Desenvolve sites,
+aplicativos, sistemas e projetos digitais com foco em vendas e conversão. O
+**Aura** é o SaaS próprio dela.
 
-## Quem sou
+## Produto — Aura
 
-Sou a **Layra Lima**. Trabalho sozinha — a marca sou eu. Desenvolvo sites,
-aplicativos, sistemas e projetos digitais, sempre com foco em gerar vendas
-e conversão pro cliente. Atendo desde pequenos até grandes negócios, e
-também os usuários finais dos aplicativos que construo.
+SaaS de **transformação pessoal** (público feminino).
 
-**Perfil:** solopreneur / criadora solo.
+> A jornada entre a mulher que você é hoje e a mulher que decidiu se tornar.
 
-## O que produzo
+Reúne **metas**, **leituras** e a **jornada** (painel único) num só lugar.
 
-- Sites, aplicativos, sistemas e projetos digitais (entrega principal)
-- Conteúdo para redes sociais (atração e crescimento de audiência)
-- Um SaaS próprio em construção
+**Modelo de negócio:** checkout direto (paga pra entrar), acesso liberado por
+e-mail após a compra. Duas áreas internas: **usuária** (o app) e **admin** (Layra).
 
-## Foco atual
+**Planos:**
 
-Estou em fase de construção e lançamento: criar meu SaaS e ganhar usuários
-através de criação de conteúdo nas redes sociais. Ao sugerir prioridades,
-puxar sempre pra produção de conteúdo e tração — é o foco do momento.
+| Plano | Valor | Equivalente mensal |
+|---|---|---|
+| Fundadora (10 primeiras) | R$ 14,90/mês (travado pra sempre) | R$ 14,90 |
+| Mensal | R$ 29,90/mês | R$ 29,90 |
+| Trimestral | R$ 69,90/3 meses | R$ 23,30 |
+| Anual | R$ 179,90/ano | R$ 14,99 |
 
-## Tom de voz
+Escassez **real** das 10 vagas de fundadora — nunca usar contador falso.
 
-Informal, direto e energético, com pegada motivacional e inspiradora.
-Exemplos reais: *"Simbora!"* e *"A realização de nossos sonhos dependem
-exclusivamente de nós."* Primeira pessoa inclusiva ("nós"), aproximando o
-leitor e puxando pra ação. Sem travas fortes de estilo — flexível.
+## Tom de voz (qualquer texto em nome do Aura / da Layra)
 
----
+Informal, direto e energético, com pegada **motivacional e inspiradora**.
+Primeira pessoa inclusiva ("nós"), próximo, que puxa pra ação. Sem travas
+fortes de estilo — flexível. Exemplos reais da escrita da Layra:
 
-## Contexto do negócio
+- "Simbora!"
+- "A realização de nossos sonhos depende exclusivamente de nós."
 
-No início de toda conversa, ler os seguintes arquivos (quando existirem
-e estiverem preenchidos):
+## Stack e padrões
 
-1. `_memoria/empresa.md` — quem é o usuário, o que faz, como funciona o negócio
-2. `_memoria/preferencias.md` — tom de voz, estilo de escrita, o que evitar
-3. `_memoria/estrategia.md` — foco atual, prioridades, prazos
+- **Frontend:** React + TypeScript (strict) + Vite + Tailwind CSS v4 + Framer Motion.
+- **Backend/dados:** Supabase (Postgres + Auth + RLS).
+- **Arquitetura:** Clean Architecture — domínio / aplicação / infraestrutura /
+  apresentação, com a regra de dependência sempre pra dentro.
+- Comunicação em **português (BR)**; código, commits e termos técnicos em **inglês**.
+- UI premium e minimalista, mobile-first, acessível (AA). Segurança desde o início
+  (RLS por usuária, validação de input, segredos só em env).
 
-Usar essas informações como base pra qualquer resposta ou decisão. Ao
-sugerir prioridades, formatos ou abordagens, considerar o foco atual
-descrito em `estrategia.md`.
+## Estado atual
 
-Pra qualquer tarefa visual (carrossel, post, landing page), consultar
-`identidade/design-guide.md` como referência de estilo.
+Pronto: landing de conversão (dark, humanizada, planos), autenticação real
+(Supabase Auth) com modo demo de fallback, perfis com papel + status de
+assinatura e RLS, gating (`/app` exige assinatura ativa, `/admin` exige papel
+admin), área de admin (métricas, contas, liberar/bloquear), módulos de Metas e
+Leituras com persistência por usuária.
 
-Não é necessário listar o que foi lido nem confirmar a leitura. Apenas
-usar o contexto naturalmente.
+Roda em **modo demo** sem configurar nada; vira contas reais ao configurar o
+Supabase (ver `aura/README.md` e `aura/supabase/migrations/`).
 
----
+## Próximos passos
 
-## Fluxo de trabalho
-
-Antes de executar qualquer tarefa, verificar se existe skill relevante
-em `.claude/skills/`. Se encontrar, seguir as instruções da skill. Se
-não encontrar, executar a tarefa normalmente.
-
-Ao concluir uma tarefa que não tinha skill mas parece repetível (o
-usuário provavelmente vai pedir de novo no futuro), perguntar:
-
-> "Isso pode virar uma skill pra próxima vez. Quer que eu crie?"
-
-Não perguntar pra tarefas pontuais ou perguntas simples. Só quando o
-padrão de repetição for claro.
-
----
-
-## Aprender com correções
-
-Quando o usuário corrigir algo, melhorar uma resposta ou dar uma
-instrução que parece permanente (frases como "na verdade é assim", "não
-faça mais isso", "prefiro assim", "sempre que...", "evita...", "da
-próxima vez..."), perguntar:
-
-> "Quer que eu salve isso pra não precisar repetir?"
-
-Se sim, identificar onde faz mais sentido salvar:
-
-- **Sobre o negócio** (clientes, serviços, mercado) → `_memoria/empresa.md`
-- **Sobre preferências e estilo** (tom de voz, formato, o que evitar) → `_memoria/preferencias.md`
-- **Sobre prioridades e foco** (projetos, metas, prazos) → `_memoria/estrategia.md`
-- **Regra de comportamento nessa pasta** → próprio `CLAUDE.md`
-
-Salvar com uma linha nova clara, sem reformatar o arquivo inteiro.
-Confirmar mostrando a linha adicionada.
-
-Não perguntar se a correção for óbvia de contexto imediato (ex: "na
-verdade o arquivo se chama X"). Só perguntar quando a informação tiver
-valor duradouro.
-
----
-
-## Manter contexto atualizado
-
-Ao terminar uma tarefa que mudou algo relevante (cliente novo, skill
-nova, mudança de foco, processo novo, ferramenta instalada, estrutura
-alterada), perguntar:
-
-> "Isso mudou algo no teu contexto. Quer que eu atualize a memória?"
-
-Se sim, identificar o que atualizar:
-
-- **Cliente, serviço, ferramenta, equipe** → `_memoria/empresa.md`
-- **Mudança de prioridade ou foco** → `_memoria/estrategia.md`
-- **Tom ou estilo** → `_memoria/preferencias.md`
-- **Pasta, regra de organização, skill criada** → `CLAUDE.md`
-- **Visual (cores, fontes, logo)** → `identidade/design-guide.md`
-
-Mostrar o que vai mudar antes de salvar. Não reformatar o arquivo
-inteiro, só adicionar ou editar a linha relevante.
-
-**Quando NÃO perguntar:**
-- Tarefas pontuais sem impacto no contexto (escrever um email avulso, criar um post)
-- Perguntas simples ou conversas sem ação
-- Mudanças já salvas pelo bloco "Aprender com correções"
-
-**Dica:** rode `/atualizar` pra uma varredura completa quando houver dúvida.
-
----
-
-## Criação de skills
-
-Quando o usuário pedir skill nova:
-
-1. Verificar se existe template relevante em `templates/skills/`. Se
-   existir, usar como base e adaptar pro contexto
-2. Perguntar se é específica desse projeto ou útil em qualquer:
-   - Específica → `.claude/skills/nome-da-skill/SKILL.md` (local)
-   - Universal → `~/.claude/skills/nome-da-skill/SKILL.md` (global)
-3. Ler `_memoria/empresa.md` e `_memoria/preferencias.md` pra calibrar
-   o conteúdo da skill ao contexto do negócio
-4. Se a skill precisar de arquivos de apoio (templates, exemplos),
-   criar dentro da pasta da skill
-5. Seguir o fluxo da skill-creator nativa do Claude Code
+- Escolher a plataforma de checkout (Kiwify/Hotmart/Stripe) + webhook que ativa
+  a conta e dispara o e-mail de acesso (a config já existe em
+  `aura/src/presentation/components/landing/checkout.ts`).
+- Gerenciar conteúdo no admin (frases do dia, sugestões de livros).
+- Identidade visual definitiva (logo, cores, fonte) — hoje os tokens são
+  provisórios em `aura/src/index.css`.
