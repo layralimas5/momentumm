@@ -1,0 +1,82 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+
+/* Dark mode por classe (.dark), com fallback pro sistema aplicado no <html>. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+  Tokens da marca Aura — PROVISÓRIOS.
+  A identidade visual definitiva (logo, cores, fonte) ainda está sendo criada.
+  Quando fechar, ajustar aqui e em identidade/design-guide.md (fonte única de verdade).
+  Conceito: transformação pessoal — violeta/lavanda (aura) com toque de rosa, premium e acolhedor.
+*/
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Escala da marca (violeta) */
+  --color-brand-50: #f5f3ff;
+  --color-brand-100: #ede9fe;
+  --color-brand-200: #ddd6fe;
+  --color-brand-300: #c4b5fd;
+  --color-brand-400: #a78bfa;
+  --color-brand-500: #8b5cf6;
+  --color-brand-600: #7c3aed;
+  --color-brand-700: #6d28d9;
+  --color-brand-800: #5b21b6;
+  --color-brand-900: #4c1d95;
+  --color-brand-950: #2e1065;
+
+  /* Acento secundário (rosa) — usar com parcimônia */
+  --color-blush-400: #f472b6;
+  --color-blush-500: #ec4899;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-50;
+    font-family: var(--font-sans);
+  }
+
+  /* Foco visível consistente (a11y) */
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-white dark:ring-offset-zinc-950;
+  }
+}
+
+/* Pulso leve (escala + glow) — usado no hover dos cards da landing. */
+@keyframes aura-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 26px -4px rgba(139, 92, 246, 0.3);
+    border-color: rgba(167, 139, 250, 0.45);
+  }
+}
+
+/* Aplicado como hover:aura-pulse — só anima ao passar o mouse. */
+@utility aura-pulse {
+  animation: aura-pulse 1.3s ease-in-out infinite;
+}
+
+/* Respeitar quem prefere menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

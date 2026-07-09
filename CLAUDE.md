@@ -9,6 +9,36 @@ final dessa página com as regras específicas do seu negócio.
 
 ---
 
+## Quem sou
+
+Sou a **Layra Lima**. Trabalho sozinha — a marca sou eu. Desenvolvo sites,
+aplicativos, sistemas e projetos digitais, sempre com foco em gerar vendas
+e conversão pro cliente. Atendo desde pequenos até grandes negócios, e
+também os usuários finais dos aplicativos que construo.
+
+**Perfil:** solopreneur / criadora solo.
+
+## O que produzo
+
+- Sites, aplicativos, sistemas e projetos digitais (entrega principal)
+- Conteúdo para redes sociais (atração e crescimento de audiência)
+- Um SaaS próprio em construção
+
+## Foco atual
+
+Estou em fase de construção e lançamento: criar meu SaaS e ganhar usuários
+através de criação de conteúdo nas redes sociais. Ao sugerir prioridades,
+puxar sempre pra produção de conteúdo e tração — é o foco do momento.
+
+## Tom de voz
+
+Informal, direto e energético, com pegada motivacional e inspiradora.
+Exemplos reais: *"Simbora!"* e *"A realização de nossos sonhos dependem
+exclusivamente de nós."* Primeira pessoa inclusiva ("nós"), aproximando o
+leitor e puxando pra ação. Sem travas fortes de estilo — flexível.
+
+---
+
 ## Contexto do negócio
 
 No início de toda conversa, ler os seguintes arquivos (quando existirem
