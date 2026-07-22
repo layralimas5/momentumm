@@ -1,5 +1,5 @@
 import { NavLink, Link, useNavigate, type To } from 'react-router-dom'
-import { Compass, Target, BookOpen, LogOut, Shield } from 'lucide-react'
+import { Compass, ListChecks, Target, BookOpen, PenLine, LogOut, Shield } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { AuraMark } from '@/presentation/components/AuraMark'
@@ -15,8 +15,10 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { to: '/app', label: 'Jornada', icon: Compass },
+  { to: '/app/habitos', label: 'Hábitos', icon: ListChecks },
   { to: '/app/metas', label: 'Metas', icon: Target },
   { to: '/app/leituras', label: 'Leituras', icon: BookOpen },
+  { to: '/app/diario', label: 'Diário', icon: PenLine },
 ]
 
 /** Shell do app autenticado: sidebar (desktop) + barra inferior (mobile). */
@@ -53,8 +55,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
         )}
       </header>
 
-      <div className="mx-auto flex max-w-6xl gap-8 px-4 py-6 md:px-6">
-        {/* Sidebar — desktop */}
+      <div className="flex gap-8 px-4 py-6 md:gap-10 md:px-8 lg:px-12">
+        {/* Sidebar — desktop, ancorada no canto */}
         <aside className="sticky top-6 hidden h-fit w-56 shrink-0 md:block">
           <Link to="/" className="mb-6 inline-block px-2">
             <AuraMark />

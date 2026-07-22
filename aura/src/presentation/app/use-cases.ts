@@ -1,6 +1,9 @@
 import { container } from '@/infrastructure/container'
 import { createGoalUseCases } from '@/application/goals/goal-use-cases'
 import { createBookUseCases } from '@/application/books/book-use-cases'
+import { createHabitUseCases } from '@/application/habits/habit-use-cases'
+import { createDiaryUseCases } from '@/application/diary/diary-use-cases'
+import { createIdentityUseCases } from '@/application/identity/identity-use-cases'
 import { createProfileUseCases } from '@/application/profiles/profile-use-cases'
 
 /**
@@ -9,5 +12,8 @@ import { createProfileUseCases } from '@/application/profiles/profile-use-cases'
  */
 export const goalUseCases = createGoalUseCases(container.goals)
 export const bookUseCases = createBookUseCases(container.books)
+export const habitUseCases = createHabitUseCases(container.habits)
+export const diaryUseCases = createDiaryUseCases(container.diary)
+export const identityUseCases = createIdentityUseCases(container.identity)
 export const profileUseCases = createProfileUseCases(container.profiles)
 export const usingDemoData = container.usingDemoData

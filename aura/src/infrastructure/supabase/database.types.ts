@@ -72,6 +72,99 @@ export interface Database {
         }
         Relationships: []
       }
+      habits: {
+        Row: {
+          id: string
+          user_id: string
+          emoji: string
+          title: string
+          scheduled_time: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          emoji?: string
+          title: string
+          scheduled_time?: string | null
+          created_at?: string
+        }
+        Update: {
+          emoji?: string
+          title?: string
+          scheduled_time?: string | null
+        }
+        Relationships: []
+      }
+      habit_logs: {
+        Row: {
+          id: string
+          habit_id: string
+          user_id: string
+          done_on: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          habit_id: string
+          user_id: string
+          done_on: string
+          created_at?: string
+        }
+        Update: {
+          done_on?: string
+        }
+        Relationships: []
+      }
+      diary_entries: {
+        Row: {
+          id: string
+          user_id: string
+          content: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          content: string
+          created_at?: string
+        }
+        Update: {
+          content?: string
+        }
+        Relationships: []
+      }
+      identities: {
+        Row: {
+          user_id: string
+          becoming: string
+          morning: string
+          dressing: string
+          daily: string
+          never_again: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          becoming: string
+          morning: string
+          dressing: string
+          daily: string
+          never_again: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          becoming?: string
+          morning?: string
+          dressing?: string
+          daily?: string
+          never_again?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           id: string

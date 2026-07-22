@@ -27,6 +27,15 @@ const GoalsPage = lazy(() =>
 const BooksPage = lazy(() =>
   import('@/presentation/pages/BooksPage').then((m) => ({ default: m.BooksPage })),
 )
+const HabitsPage = lazy(() =>
+  import('@/presentation/pages/HabitsPage').then((m) => ({ default: m.HabitsPage })),
+)
+const DiaryPage = lazy(() =>
+  import('@/presentation/pages/DiaryPage').then((m) => ({ default: m.DiaryPage })),
+)
+const IdentityPage = lazy(() =>
+  import('@/presentation/pages/IdentityPage').then((m) => ({ default: m.IdentityPage })),
+)
 
 /** App autenticado: exige sessão + assinatura ativa, envolve no layout. */
 function ProtectedApp({ children }: { children: ReactNode }) {
@@ -59,8 +68,11 @@ function App() {
           <Route path="/assinatura" element={<SubscriptionPage />} />
           <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
           <Route path="/app" element={<ProtectedApp><DashboardPage /></ProtectedApp>} />
+          <Route path="/app/habitos" element={<ProtectedApp><HabitsPage /></ProtectedApp>} />
           <Route path="/app/metas" element={<ProtectedApp><GoalsPage /></ProtectedApp>} />
           <Route path="/app/leituras" element={<ProtectedApp><BooksPage /></ProtectedApp>} />
+          <Route path="/app/diario" element={<ProtectedApp><DiaryPage /></ProtectedApp>} />
+          <Route path="/app/identidade" element={<ProtectedApp><IdentityPage /></ProtectedApp>} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
