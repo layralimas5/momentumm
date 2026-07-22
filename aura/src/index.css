@@ -5,30 +5,35 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
-  Tokens da marca Aura — PROVISÓRIOS.
-  A identidade visual definitiva (logo, cores, fonte) ainda está sendo criada.
-  Quando fechar, ajustar aqui e em identidade/design-guide.md (fonte única de verdade).
-  Conceito: transformação pessoal — violeta/lavanda (aura) com toque de rosa, premium e acolhedor.
+  Tokens da marca Aura.
+  Identidade: preto + vinho (#49111C) + off-white (#F2F4F3) — sóbria, premium e feminina.
+  O produto roda em tema escuro fixo (fundo preto). A escala de vinho abaixo é derivada
+  do #49111C: tons mais claros (400–500) para o que é interativo/visível sobre o preto,
+  e os tons profundos (600–700) para superfícies e botões.
 */
 @theme {
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-  /* Escala da marca (violeta) */
-  --color-brand-50: #f5f3ff;
-  --color-brand-100: #ede9fe;
-  --color-brand-200: #ddd6fe;
-  --color-brand-300: #c4b5fd;
-  --color-brand-400: #a78bfa;
-  --color-brand-500: #8b5cf6;
-  --color-brand-600: #7c3aed;
-  --color-brand-700: #6d28d9;
-  --color-brand-800: #5b21b6;
-  --color-brand-900: #4c1d95;
-  --color-brand-950: #2e1065;
+  /* Escala da marca (vinho) — âncora em brand-700 = #49111C */
+  --color-brand-50: #fbeaee;
+  --color-brand-100: #f6d0d9;
+  --color-brand-200: #eba3b1;
+  --color-brand-300: #de7c8e;
+  --color-brand-400: #cb556e;
+  --color-brand-500: #a83a52;
+  --color-brand-600: #7c1f30;
+  --color-brand-700: #49111c;
+  --color-brand-800: #3b0e17;
+  --color-brand-900: #2a0910;
+  --color-brand-950: #180509;
 
-  /* Acento secundário (rosa) — usar com parcimônia */
-  --color-blush-400: #f472b6;
-  --color-blush-500: #ec4899;
+  /* Acento secundário (rosa/vinho) — usar com parcimônia, só em gradientes */
+  --color-blush-400: #d46a85;
+  --color-blush-500: #b84e6b;
+
+  /* Neutros da identidade: fundo preto e texto off-white exatos */
+  --color-zinc-950: #000000;
+  --color-zinc-50: #f2f4f3;
 }
 
 @layer base {
@@ -54,13 +59,13 @@
   0%,
   100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
+    box-shadow: 0 0 0 0 rgba(168, 58, 82, 0);
     border-color: rgba(255, 255, 255, 0.1);
   }
   50% {
     transform: scale(1.02);
-    box-shadow: 0 0 26px -4px rgba(139, 92, 246, 0.3);
-    border-color: rgba(167, 139, 250, 0.45);
+    box-shadow: 0 0 26px -4px rgba(168, 58, 82, 0.35);
+    border-color: rgba(203, 85, 110, 0.5);
   }
 }
 

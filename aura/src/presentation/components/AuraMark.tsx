@@ -8,10 +8,25 @@ interface AuraMarkProps {
 }
 
 /**
- * Marca provisória do Aura — um "orb" com gradiente que remete à aura/energia.
- * Placeholder até a identidade visual definitiva ser criada.
+ * Marca do Aura.
+ *
+ * Em fundos escuros (`light`) usa o wordmark definitivo (logo com brilho, que só
+ * lê bem sobre escuro). Nas telas do app — que alternam tema claro/escuro —
+ * mantém o mark provisório (orb + wordmark) até existir uma logo limpa em fundo
+ * claro. Troca `/logo-light.png` pela versão final quando ela chegar.
  */
 export function AuraMark({ className, withWordmark = true, light = false }: AuraMarkProps) {
+  if (light) {
+    return (
+      <img
+        src="/logo-light.png"
+        alt="Aura"
+        draggable={false}
+        className={cn('h-8 w-auto select-none', className)}
+      />
+    )
+  }
+
   return (
     <span className={cn('inline-flex items-center gap-2.5', className)}>
       <span
