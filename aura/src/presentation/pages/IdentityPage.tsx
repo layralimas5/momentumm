@@ -44,7 +44,8 @@ function IdentityWizard({
 }: {
   initial: IdentityAnswers
   firstTime: boolean
-  onSave: (answers: IdentityAnswers) => Promise<void>
+  /** Não lança: devolve `true` quando a gravação deu certo. */
+  onSave: (answers: IdentityAnswers) => Promise<boolean>
 }) {
   const reduce = useReducedMotion()
   const navigate = useNavigate()
@@ -71,13 +72,13 @@ function IdentityWizard({
     }
     setSubmitting(true)
     setError(null)
-    try {
-      await onSave(answers)
-      navigate('/app')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não consegui salvar sua identidade.')
+    const saved = await onSave(answers)
+    if (!saved) {
+      setError('Não consegui salvar sua identidade. Tente de novo.')
       setSubmitting(false)
+      return
     }
+    navigate('/app')
   }
 
   const enter = reduce ? {} : { opacity: 0, x: 24 }

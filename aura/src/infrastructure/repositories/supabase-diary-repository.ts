@@ -2,6 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { DiaryRepository } from '@/domain/repositories/diary-repository'
 import type { DiaryEntry, NewDiaryEntry } from '@/domain/entities/diary'
 import type { Database } from '@/infrastructure/supabase/database.types'
+import { diaryEntryRowSchema } from '@/infrastructure/supabase/schemas'
+import { fromPostgrestError, parseRow, parseRows } from '@/infrastructure/supabase/parse'
 
 type DiaryRow = Database['public']['Tables']['diary_entries']['Row']
 
@@ -28,8 +30,8 @@ export class SupabaseDiaryRepository implements DiaryRepository {
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
-    if (error) throw new Error(error.message)
-    return (data ?? []).map(toDomain)
+    if (error) throw fromPostgrestError(error)
+    return parseRows(diaryEntryRowSchema, data, 'diary_entries').map(toDomain)
   }
 
   async create(userId: string, data: NewDiaryEntry): Promise<DiaryEntry> {
@@ -38,12 +40,12 @@ export class SupabaseDiaryRepository implements DiaryRepository {
       .insert({ user_id: userId, content: data.content.trim() })
       .select('*')
       .single()
-    if (error) throw new Error(error.message)
-    return toDomain(row)
+    if (error) throw fromPostgrestError(error)
+    return toDomain(parseRow(diaryEntryRowSchema, row, 'diary_entries'))
   }
 
   async remove(id: string): Promise<void> {
     const { error } = await this.db.from('diary_entries').delete().eq('id', id)
-    if (error) throw new Error(error.message)
+    if (error) throw fromPostgrestError(error)
   }
 }

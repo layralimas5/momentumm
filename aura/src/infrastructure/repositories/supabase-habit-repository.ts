@@ -3,6 +3,8 @@ import type { HabitRepository } from '@/domain/repositories/habit-repository'
 import type { Habit, NewHabit } from '@/domain/entities/habit'
 import { HabitRules } from '@/domain/entities/habit'
 import type { Database } from '@/infrastructure/supabase/database.types'
+import { habitLogRefSchema, habitRowSchema } from '@/infrastructure/supabase/schemas'
+import { fromPostgrestError, parseRow, parseRows } from '@/infrastructure/supabase/parse'
 
 type HabitRow = Database['public']['Tables']['habits']['Row']
 
@@ -35,19 +37,20 @@ export class SupabaseHabitRepository implements HabitRepository {
         this.db.from('habits').select('*').eq('user_id', userId).order('created_at', { ascending: true }),
         this.db.from('habit_logs').select('habit_id, done_on').eq('user_id', userId),
       ])
-    if (habitsError) throw new Error(habitsError.message)
-    if (logsError) throw new Error(logsError.message)
+    if (habitsError) throw fromPostgrestError(habitsError)
+    if (logsError) throw fromPostgrestError(logsError)
+
+    const habits = parseRows(habitRowSchema, habitRows, 'habits')
+    const logs = parseRows(habitLogRefSchema, logRows, 'habit_logs')
 
     const byHabit = new Map<string, string[]>()
-    for (const log of logRows ?? []) {
+    for (const log of logs) {
       const list = byHabit.get(log.habit_id) ?? []
       list.push(log.done_on)
       byHabit.set(log.habit_id, list)
     }
 
-    return (habitRows ?? []).map((row) =>
-      toDomain(row, (byHabit.get(row.id) ?? []).sort()),
-    )
+    return habits.map((row) => toDomain(row, (byHabit.get(row.id) ?? []).sort()))
   }
 
   async create(userId: string, data: NewHabit): Promise<Habit> {
@@ -61,8 +64,8 @@ export class SupabaseHabitRepository implements HabitRepository {
       })
       .select('*')
       .single()
-    if (error) throw new Error(error.message)
-    return toDomain(row, [])
+    if (error) throw fromPostgrestError(error)
+    return toDomain(parseRow(habitRowSchema, row, 'habits'), [])
   }
 
   async setDone(userId: string, habitId: string, dayKey: string, done: boolean): Promise<void> {
@@ -73,7 +76,7 @@ export class SupabaseHabitRepository implements HabitRepository {
           { habit_id: habitId, user_id: userId, done_on: dayKey },
           { onConflict: 'habit_id,done_on' },
         )
-      if (error) throw new Error(error.message)
+      if (error) throw fromPostgrestError(error)
       return
     }
     const { error } = await this.db
@@ -81,11 +84,11 @@ export class SupabaseHabitRepository implements HabitRepository {
       .delete()
       .eq('habit_id', habitId)
       .eq('done_on', dayKey)
-    if (error) throw new Error(error.message)
+    if (error) throw fromPostgrestError(error)
   }
 
   async remove(id: string): Promise<void> {
     const { error } = await this.db.from('habits').delete().eq('id', id)
-    if (error) throw new Error(error.message)
+    if (error) throw fromPostgrestError(error)
   }
 }

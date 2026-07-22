@@ -30,16 +30,13 @@ export function HabitsPage() {
       return
     }
     setSubmitting(true)
-    try {
-      await create({ emoji, title, time: time || null })
-      setTitle('')
-      setTime('')
-      setEmoji('💧')
-    } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Não consegui salvar o hábito.')
-    } finally {
-      setSubmitting(false)
-    }
+    // `create` não lança: o erro chega pelo `error` do hook.
+    const created = await create({ emoji, title, time: time || null })
+    setSubmitting(false)
+    if (!created) return
+    setTitle('')
+    setTime('')
+    setEmoji('💧')
   }
 
   return (

@@ -2,6 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { ProfileRepository } from '@/domain/repositories/profile-repository'
 import type { Profile, SubscriptionStatus } from '@/domain/entities/profile'
 import type { Database } from '@/infrastructure/supabase/database.types'
+import { profileRowSchema } from '@/infrastructure/supabase/schemas'
+import { fromPostgrestError, parseRow, parseRows } from '@/infrastructure/supabase/parse'
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row']
 
@@ -30,8 +32,8 @@ export class SupabaseProfileRepository implements ProfileRepository {
       .select('*')
       .eq('id', userId)
       .maybeSingle()
-    if (error) throw new Error(error.message)
-    return data ? toDomain(data) : null
+    if (error) throw fromPostgrestError(error)
+    return data ? toDomain(parseRow(profileRowSchema, data, 'profiles')) : null
   }
 
   async listAll(): Promise<Profile[]> {
@@ -39,8 +41,8 @@ export class SupabaseProfileRepository implements ProfileRepository {
       .from('profiles')
       .select('*')
       .order('created_at', { ascending: false })
-    if (error) throw new Error(error.message)
-    return (data ?? []).map(toDomain)
+    if (error) throw fromPostgrestError(error)
+    return parseRows(profileRowSchema, data, 'profiles').map(toDomain)
   }
 
   async setStatus(id: string, status: SubscriptionStatus): Promise<Profile> {
@@ -50,7 +52,7 @@ export class SupabaseProfileRepository implements ProfileRepository {
       .eq('id', id)
       .select('*')
       .single()
-    if (error) throw new Error(error.message)
-    return toDomain(data)
+    if (error) throw fromPostgrestError(error)
+    return toDomain(parseRow(profileRowSchema, data, 'profiles'))
   }
 }

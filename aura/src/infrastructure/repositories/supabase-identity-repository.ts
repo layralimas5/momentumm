@@ -2,6 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { IdentityRepository } from '@/domain/repositories/identity-repository'
 import type { Identity, IdentityAnswers } from '@/domain/entities/identity'
 import type { Database } from '@/infrastructure/supabase/database.types'
+import { identityRowSchema } from '@/infrastructure/supabase/schemas'
+import { fromPostgrestError, parseRow } from '@/infrastructure/supabase/parse'
 
 type IdentityRow = Database['public']['Tables']['identities']['Row']
 
@@ -32,8 +34,8 @@ export class SupabaseIdentityRepository implements IdentityRepository {
       .select('*')
       .eq('user_id', userId)
       .maybeSingle()
-    if (error) throw new Error(error.message)
-    return data ? toDomain(data) : null
+    if (error) throw fromPostgrestError(error)
+    return data ? toDomain(parseRow(identityRowSchema, data, 'identities')) : null
   }
 
   async save(userId: string, answers: IdentityAnswers): Promise<Identity> {
@@ -53,7 +55,7 @@ export class SupabaseIdentityRepository implements IdentityRepository {
       )
       .select('*')
       .single()
-    if (error) throw new Error(error.message)
-    return toDomain(row)
+    if (error) throw fromPostgrestError(error)
+    return toDomain(parseRow(identityRowSchema, row, 'identities'))
   }
 }

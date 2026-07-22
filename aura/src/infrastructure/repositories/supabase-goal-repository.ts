@@ -2,6 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { GoalRepository } from '@/domain/repositories/goal-repository'
 import { GoalRules, type Goal, type NewGoal } from '@/domain/entities/goal'
 import type { Database } from '@/infrastructure/supabase/database.types'
+import { goalRowSchema } from '@/infrastructure/supabase/schemas'
+import { fromPostgrestError, parseRow, parseRows } from '@/infrastructure/supabase/parse'
 
 type GoalRow = Database['public']['Tables']['goals']['Row']
 
@@ -32,8 +34,8 @@ export class SupabaseGoalRepository implements GoalRepository {
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
-    if (error) throw new Error(error.message)
-    return (data ?? []).map(toDomain)
+    if (error) throw fromPostgrestError(error)
+    return parseRows(goalRowSchema, data, 'goals').map(toDomain)
   }
 
   async create(userId: string, data: NewGoal): Promise<Goal> {
@@ -47,8 +49,8 @@ export class SupabaseGoalRepository implements GoalRepository {
       })
       .select('*')
       .single()
-    if (error) throw new Error(error.message)
-    return toDomain(row)
+    if (error) throw fromPostgrestError(error)
+    return toDomain(parseRow(goalRowSchema, row, 'goals'))
   }
 
   async updateProgress(id: string, progress: number): Promise<Goal> {
@@ -59,8 +61,8 @@ export class SupabaseGoalRepository implements GoalRepository {
       .eq('id', id)
       .select('*')
       .single()
-    if (error) throw new Error(error.message)
-    return toDomain(row)
+    if (error) throw fromPostgrestError(error)
+    return toDomain(parseRow(goalRowSchema, row, 'goals'))
   }
 
   async complete(id: string): Promise<Goal> {
@@ -70,12 +72,12 @@ export class SupabaseGoalRepository implements GoalRepository {
       .eq('id', id)
       .select('*')
       .single()
-    if (error) throw new Error(error.message)
-    return toDomain(row)
+    if (error) throw fromPostgrestError(error)
+    return toDomain(parseRow(goalRowSchema, row, 'goals'))
   }
 
   async remove(id: string): Promise<void> {
     const { error } = await this.db.from('goals').delete().eq('id', id)
-    if (error) throw new Error(error.message)
+    if (error) throw fromPostgrestError(error)
   }
 }

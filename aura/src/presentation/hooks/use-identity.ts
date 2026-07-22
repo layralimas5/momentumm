@@ -2,12 +2,17 @@ import { useCallback, useEffect, useState } from 'react'
 import type { Identity, IdentityAnswers } from '@/domain/entities/identity'
 import { identityUseCases } from '@/presentation/app/use-cases'
 import { useAuth } from '@/presentation/auth/use-auth'
+import { useAsyncAction } from '@/presentation/hooks/use-async-action'
+import { toUserMessage } from '@/shared/errors'
 
 interface UseIdentityResult {
   identity: Identity | null
   loading: boolean
+  /** Falha do carregamento ou da última gravação — o que a tela deve mostrar. */
   error: string | null
-  save: (answers: IdentityAnswers) => Promise<void>
+  clearError: () => void
+  /** Nunca lança: devolve `true` em caso de sucesso. */
+  save: (answers: IdentityAnswers) => Promise<boolean>
 }
 
 /** Estado e ação da Identidade Futura para a UI. */
@@ -16,15 +21,16 @@ export function useIdentity(): UseIdentityResult {
   const userId = user?.id ?? 'demo'
   const [identity, setIdentity] = useState<Identity | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const { error: actionError, clearError, run } = useAsyncAction()
 
   const refresh = useCallback(async () => {
     setLoading(true)
-    setError(null)
+    setLoadError(null)
     try {
       setIdentity(await identityUseCases.get(userId))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar sua identidade.')
+      setLoadError(toUserMessage(err))
     } finally {
       setLoading(false)
     }
@@ -35,12 +41,12 @@ export function useIdentity(): UseIdentityResult {
   }, [refresh])
 
   const save = useCallback(
-    async (answers: IdentityAnswers) => {
-      const saved = await identityUseCases.save(userId, answers)
-      setIdentity(saved)
-    },
-    [userId],
+    (answers: IdentityAnswers) =>
+      run(async () => {
+        setIdentity(await identityUseCases.save(userId, answers))
+      }),
+    [userId, run],
   )
 
-  return { identity, loading, error, save }
+  return { identity, loading, error: loadError ?? actionError, clearError, save }
 }

@@ -2,6 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { BookRepository } from '@/domain/repositories/book-repository'
 import { BookRules, type Book, type NewBook, type ReadingStatus } from '@/domain/entities/book'
 import type { Database } from '@/infrastructure/supabase/database.types'
+import { bookRowSchema } from '@/infrastructure/supabase/schemas'
+import { fromPostgrestError, parseRow, parseRows } from '@/infrastructure/supabase/parse'
 
 type BookRow = Database['public']['Tables']['books']['Row']
 
@@ -32,8 +34,8 @@ export class SupabaseBookRepository implements BookRepository {
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
-    if (error) throw new Error(error.message)
-    return (data ?? []).map(toDomain)
+    if (error) throw fromPostgrestError(error)
+    return parseRows(bookRowSchema, data, 'books').map(toDomain)
   }
 
   async create(userId: string, data: NewBook): Promise<Book> {
@@ -49,8 +51,8 @@ export class SupabaseBookRepository implements BookRepository {
       })
       .select('*')
       .single()
-    if (error) throw new Error(error.message)
-    return toDomain(row)
+    if (error) throw fromPostgrestError(error)
+    return toDomain(parseRow(bookRowSchema, row, 'books'))
   }
 
   async updateStatus(id: string, status: ReadingStatus): Promise<Book> {
@@ -60,12 +62,12 @@ export class SupabaseBookRepository implements BookRepository {
       .eq('id', id)
       .select('*')
       .single()
-    if (error) throw new Error(error.message)
-    return toDomain(row)
+    if (error) throw fromPostgrestError(error)
+    return toDomain(parseRow(bookRowSchema, row, 'books'))
   }
 
   async remove(id: string): Promise<void> {
     const { error } = await this.db.from('books').delete().eq('id', id)
-    if (error) throw new Error(error.message)
+    if (error) throw fromPostgrestError(error)
   }
 }
