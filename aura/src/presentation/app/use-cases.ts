@@ -5,6 +5,7 @@ import { createHabitUseCases } from '@/application/habits/habit-use-cases'
 import { createDiaryUseCases } from '@/application/diary/diary-use-cases'
 import { createIdentityUseCases } from '@/application/identity/identity-use-cases'
 import { createProfileUseCases } from '@/application/profiles/profile-use-cases'
+import { createMissionUseCases } from '@/application/missions/mission-use-cases'
 
 /**
  * Instâncias prontas dos casos de uso, montadas a partir do container.
@@ -16,4 +17,5 @@ export const habitUseCases = createHabitUseCases(container.habits)
 export const diaryUseCases = createDiaryUseCases(container.diary)
 export const identityUseCases = createIdentityUseCases(container.identity)
 export const profileUseCases = createProfileUseCases(container.profiles)
+export const missionUseCases = createMissionUseCases(container.missions)
 export const usingDemoData = container.usingDemoData

@@ -165,6 +165,24 @@ export interface Database {
         }
         Relationships: []
       }
+      mission_completions: {
+        Row: {
+          id: string
+          user_id: string
+          done_on: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          done_on: string
+          created_at?: string
+        }
+        Update: {
+          done_on?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           id: string

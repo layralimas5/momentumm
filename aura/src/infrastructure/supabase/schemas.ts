@@ -50,6 +50,11 @@ export const habitLogRefSchema = z.object({
   done_on: z.string(),
 })
 
+/** Projeção usada na listagem de missões — só a data concluída importa. */
+export const missionCompletionRefSchema = z.object({
+  done_on: z.string(),
+})
+
 export const diaryEntryRowSchema = z.object({
   id: uuid,
   user_id: uuid,
@@ -103,5 +108,8 @@ export type SchemaSyncCheck = [
   AssertExact<Exact<z.infer<typeof profileRowSchema>, Row<'profiles'>>>,
   AssertExact<
     Exact<z.infer<typeof habitLogRefSchema>, Pick<Row<'habit_logs'>, 'habit_id' | 'done_on'>>
+  >,
+  AssertExact<
+    Exact<z.infer<typeof missionCompletionRefSchema>, Pick<Row<'mission_completions'>, 'done_on'>>
   >,
 ]

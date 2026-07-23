@@ -4,6 +4,8 @@
  * Camada de domínio: pura, sem dependência de framework, banco ou UI.
  */
 
+import { dayKey, shiftDay, streakEndingToday } from './day'
+
 export interface Habit {
   readonly id: string
   readonly userId: string
@@ -37,18 +39,12 @@ export const HabitRules = {
 
   /** Chave de dia local (YYYY-MM-DD) — a base do conceito de "hoje". */
   dayKey(date: Date = new Date()): string {
-    const y = date.getFullYear()
-    const m = String(date.getMonth() + 1).padStart(2, '0')
-    const d = String(date.getDate()).padStart(2, '0')
-    return `${y}-${m}-${d}`
+    return dayKey(date)
   },
 
   /** Desloca uma chave de dia por `delta` dias (aceita negativo). */
   shift(day: string, delta: number): string {
-    const [y, m, d] = day.split('-').map(Number)
-    const dt = new Date(y ?? 1970, (m ?? 1) - 1, d ?? 1)
-    dt.setDate(dt.getDate() + delta)
-    return this.dayKey(dt)
+    return shiftDay(day, delta)
   },
 
   isDoneOn(habit: Pick<Habit, 'completedDates'>, dayKey: string): boolean {
@@ -67,18 +63,7 @@ export const HabitRules = {
    * se hoje ainda não foi feito, conta a sequência que termina ontem.
    */
   streak(habit: Pick<Habit, 'completedDates'>, today: string): number {
-    const done = new Set(habit.completedDates)
-    let cursor = today
-    if (!done.has(cursor)) {
-      cursor = this.shift(today, -1)
-      if (!done.has(cursor)) return 0
-    }
-    let count = 0
-    while (done.has(cursor)) {
-      count += 1
-      cursor = this.shift(cursor, -1)
-    }
-    return count
+    return streakEndingToday(habit.completedDates, today)
   },
 
   /** Aderência (0–100) na janela de `windowDays` dias, a partir da criação. */

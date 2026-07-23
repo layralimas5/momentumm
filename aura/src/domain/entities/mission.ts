@@ -1,8 +1,11 @@
 /**
- * Missão diária — um desafio curto e acionável, escolhido de forma
- * determinística por dia (todo mundo vê a mesma missão no mesmo dia).
- * Conteúdo do produto, sem estado: a conclusão é responsabilidade da UI.
+ * Missão diária — um desafio curto e acionável, escolhido de forma determinística
+ * por dia (todo mundo vê a mesma missão no mesmo dia). O conteúdo é sem estado; a
+ * conclusão é persistida por dia (uma data marcada) e alimenta XP e sequência.
+ * Camada de domínio: pura, sem dependência de framework, banco ou UI.
  */
+
+import { dayKey, type DayKey, streakEndingToday } from './day'
 
 const MISSIONS = [
   'Beba 2L de água ao longo do dia.',
@@ -23,3 +26,15 @@ function dayOfYear(date: Date): number {
 export function dailyMission(date: Date = new Date()): string {
   return MISSIONS[dayOfYear(date) % MISSIONS.length] ?? MISSIONS[0]
 }
+
+export const MissionRules = {
+  /** A missão do dia informado já foi concluída? */
+  isDoneOn(completedDates: readonly DayKey[], day: DayKey): boolean {
+    return completedDates.includes(day)
+  },
+
+  /** Sequência de missões concluídas em dias consecutivos terminando hoje. */
+  streak(completedDates: readonly DayKey[], today: DayKey = dayKey()): number {
+    return streakEndingToday(completedDates, today)
+  },
+} as const

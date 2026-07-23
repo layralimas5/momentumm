@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import {
@@ -11,22 +10,27 @@ import {
   PenLine,
   Sparkles,
   Check,
+  Trophy,
   type LucideIcon,
 } from 'lucide-react'
 import { GoalRules } from '@/domain/entities/goal'
 import { READING_STATUS_LABEL } from '@/domain/entities/book'
 import { HabitRules, type Habit } from '@/domain/entities/habit'
-import { dailyMission } from '@/domain/entities/mission'
 import { identityReminder } from '@/domain/entities/identity'
 import { useGoals } from '@/presentation/hooks/use-goals'
 import { useBooks } from '@/presentation/hooks/use-books'
 import { useHabits } from '@/presentation/hooks/use-habits'
 import { useIdentity } from '@/presentation/hooks/use-identity'
+import { useDiary } from '@/presentation/hooks/use-diary'
+import { useMissions } from '@/presentation/hooks/use-missions'
+import { useJourney } from '@/presentation/hooks/use-journey'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { Card } from '@/presentation/components/ui/Card'
 import { Badge } from '@/presentation/components/ui/Badge'
 import { ProgressBar } from '@/presentation/components/ui/ProgressBar'
 import { Button } from '@/presentation/components/ui/Button'
+import { JourneyCard } from '@/presentation/components/journey/JourneyCard'
+import { AchievementsStrip } from '@/presentation/components/journey/AchievementsStrip'
 import { cn } from '@/shared/lib/cn'
 
 const PHRASES = [
@@ -67,7 +71,20 @@ export function DashboardPage() {
   const { books, loading: loadingBooks } = useBooks()
   const { habits, loading: loadingHabits, doneToday, progress, toggle } = useHabits()
   const { identity, loading: loadingIdentity } = useIdentity()
-  const [missionDone, setMissionDone] = useState(false)
+  const { entries: diary } = useDiary()
+  const {
+    mission,
+    doneToday: missionDone,
+    completedDates: missionDates,
+    toggleToday: toggleMission,
+  } = useMissions()
+  const { journey, achievements, unlockedCount } = useJourney({
+    goals,
+    books,
+    habits,
+    diary,
+    missionDates,
+  })
 
   // Primeira vez: sem identidade definida, a jornada começa pelo onboarding.
   if (!loadingIdentity && !identity) {
@@ -82,7 +99,6 @@ export function DashboardPage() {
   const name = firstNameFromEmail(user?.email)
   const formattedDate = capitalize(dateFormatter.format(now))
   const phrase = PHRASES[now.getDate() % PHRASES.length] ?? PHRASES[0]
-  const mission = dailyMission(now)
 
   const routineLine =
     habits.length === 0
@@ -112,6 +128,15 @@ export function DashboardPage() {
         </h1>
         <p className="mt-1 text-pretty text-zinc-600 dark:text-zinc-400">{routineLine}</p>
       </motion.header>
+
+      {/* Jornada — nível, XP e sequência: o fio que costura todos os módulos */}
+      <motion.section {...rise(0.02)} aria-label="Sua jornada">
+        <JourneyCard
+          journey={journey}
+          unlockedCount={unlockedCount}
+          totalAchievements={achievements.length}
+        />
+      </motion.section>
 
       {/* Lembrete de identidade futura — a alma do Aura */}
       {identity && (
@@ -220,7 +245,7 @@ export function DashboardPage() {
             </div>
             <Button
               variant={missionDone ? 'secondary' : 'primary'}
-              onClick={() => setMissionDone((v) => !v)}
+              onClick={() => void toggleMission()}
               aria-pressed={missionDone}
               className="shrink-0"
             >
@@ -234,6 +259,20 @@ export function DashboardPage() {
             </Button>
           </div>
         </Card>
+      </motion.section>
+
+      {/* Conquistas — marcos que provam o quanto ela já andou */}
+      <motion.section {...rise(0.21)} aria-label="Conquistas">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            <Trophy className="h-5 w-5 text-brand-400" aria-hidden />
+            Conquistas
+          </h2>
+          <span className="text-sm text-zinc-500 dark:text-zinc-400">
+            {unlockedCount} de {achievements.length}
+          </span>
+        </div>
+        <AchievementsStrip achievements={achievements} />
       </motion.section>
 
       {/* 6. Escrever no diário */}
