@@ -1,71 +1,61 @@
-# Aura — contexto do projeto
+# Momentumm — contexto do projeto
 
-Contexto que vale pra qualquer trabalho neste repositório. O código do app está
-em [`aura/`](aura/) — detalhes técnicos e como rodar em [`aura/README.md`](aura/README.md).
+Repositório zerado em 13/08/2026 para a reestruturação completa. O código do Aura
+foi removido; o histórico continua no git (tag `aura-final` e branch
+`feat/journey-modules`, ambas no GitHub).
 
 ## Quem
 
-**Layra Lima** — solopreneur / criadora solo, marca pessoal. Desenvolve sites,
-aplicativos, sistemas e projetos digitais com foco em vendas e conversão. O
-**Aura** é o SaaS próprio dela.
+**Layra Lima** (Lay) — solopreneur, criadora solo. O **Momentumm** é o SaaS próprio dela.
 
-## Produto — Aura
+## Produto — Momentumm
 
-SaaS de **transformação pessoal** (público feminino).
+Rede social de evolução pessoal. O modelo é o Strava: em vez de corrida e pedal, a
+pessoa registra e compartilha o que faz pra crescer.
 
-> A jornada entre a mulher que você é hoje e a mulher que decidiu se tornar.
+**Multi eixo desde o começo:** leitura, estudo, treino, meditação, escrita, hábitos,
+metas. Leitura é um eixo, não o produto inteiro.
 
-Reúne **metas**, **leituras** e a **jornada** (painel único) num só lugar.
+Conceito completo, modelo de dados, fases e plano de aquisição em
+`../saas-ideias/momentumm.md`. Ler antes de qualquer decisão de escopo.
 
-**Modelo de negócio:** checkout direto (paga pra entrar), acesso liberado por
-e-mail após a compra. Duas áreas internas: **usuária** (o app) e **admin** (Layra).
+## A decisão de arquitetura que manda em tudo
 
-**Planos:**
+O Aura era feito de **módulos separados** (metas de um lado, leituras do outro).
+O Momentumm tem **uma unidade só: a atividade**.
 
-| Plano | Valor | Equivalente mensal |
-|---|---|---|
-| Fundadora (10 primeiras) | R$ 14,90/mês (travado pra sempre) | R$ 14,90 |
-| Mensal | R$ 29,90/mês | R$ 29,90 |
-| Trimestral | R$ 69,90/3 meses | R$ 23,30 |
-| Anual | R$ 179,90/ano | R$ 14,99 |
+`activities`: user_id, type_id, valor, unidade, duração, nota, ocorreu_em, visibilidade, origem
 
-Escassez **real** das 10 vagas de fundadora — nunca usar contador falso.
+Todo eixo novo é uma linha em `activity_types`, não um módulo novo. Feed, streak,
+ranking, desafio e recap funcionam pra qualquer eixo sem código novo. Se algum
+recurso exigir tabela por eixo, é sinal de que o desenho saiu do trilho.
 
-## Tom de voz (qualquer texto em nome do Aura / da Layra)
+## Regra de ouro
 
-Informal, direto e energético, com pegada **motivacional e inspiradora**.
-Primeira pessoa inclusiva ("nós"), próximo, que puxa pra ação. Sem travas
-fortes de estilo — flexível. Exemplos reais da escrita da Layra:
-
-- "Simbora!"
-- "A realização de nossos sonhos depende exclusivamente de nós."
+**O produto precisa entregar valor com uma pessoa só usando.** Registro, streak,
+metas, estatísticas e estante têm que ser bons sozinhos. Camada social entra depois
+que existir base. Feed vazio afasta usuário.
 
 ## Stack e padrões
 
-- **Frontend:** React + TypeScript (strict) + Vite + Tailwind CSS v4 + Framer Motion.
-- **Backend/dados:** Supabase (Postgres + Auth + RLS).
-- **Arquitetura:** Clean Architecture — domínio / aplicação / infraestrutura /
-  apresentação, com a regra de dependência sempre pra dentro.
-- Comunicação em **português (BR)**; código, commits e termos técnicos em **inglês**.
-- UI premium e minimalista, mobile-first, acessível (AA). Segurança desde o início
-  (RLS por usuária, validação de input, segredos só em env).
+- **Frontend:** React + TypeScript (strict) + Vite + Tailwind CSS v4 + Framer Motion
+- **Backend/dados:** Supabase (Postgres + Auth + RLS)
+- **Arquitetura:** Clean Architecture (domínio / aplicação / infraestrutura /
+  apresentação), regra de dependência sempre pra dentro
+- **RLS desde o primeiro commit.** Visibilidade de atividade é regra de RLS, não
+  filtro no front
+- Comunicação em português (BR); código, commits e termos técnicos em inglês
+- UI premium e minimalista, mobile-first, acessível (AA)
+- Branch por feature, Conventional Commits, nunca commitar `.env`
+
+## Pendências a decidir antes de escrever código
+
+1. Nome definitivo do repositório remoto (hoje ainda é `layralimas5/aura`)
+2. Público: manter o recorte feminino do Aura ou abrir geral
+3. Eixos da fase 1 (sugestão: leitura, estudo, treino, meditação)
+4. Identidade visual (a do Aura era preto, vinho e off-white; decidir se fica)
 
 ## Estado atual
 
-Pronto: landing de conversão (dark, humanizada, planos), autenticação real
-(Supabase Auth) com modo demo de fallback, perfis com papel + status de
-assinatura e RLS, gating (`/app` exige assinatura ativa, `/admin` exige papel
-admin), área de admin (métricas, contas, liberar/bloquear), módulos de Metas e
-Leituras com persistência por usuária.
-
-Roda em **modo demo** sem configurar nada; vira contas reais ao configurar o
-Supabase (ver `aura/README.md` e `aura/supabase/migrations/`).
-
-## Próximos passos
-
-- Escolher a plataforma de checkout (Kiwify/Hotmart/Stripe) + webhook que ativa
-  a conta e dispara o e-mail de acesso (a config já existe em
-  `aura/src/presentation/components/landing/checkout.ts`).
-- Gerenciar conteúdo no admin (frases do dia, sugestões de livros).
-- Identidade visual definitiva (logo, cores, fonte) — hoje os tokens são
-  provisórios em `aura/src/index.css`.
+Repositório limpo, só documentação. O scaffold novo começa quando a Lay disser
+**"vamos desenvolver o momentumm"**.

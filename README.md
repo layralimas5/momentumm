@@ -1,18 +1,33 @@
-# Aura
+# Momentumm
 
-> A jornada entre a mulher que você é hoje e a mulher que decidiu se tornar.
+Rede social de evolução pessoal. O que o Strava é pra corrida, o Momentumm é pra
+quem quer crescer: leitura, estudo, treino, meditação, escrita, hábitos e metas
+registrados, acompanhados e compartilhados no mesmo lugar.
 
-SaaS de transformação pessoal — metas, leituras e evolução num só lugar.
+## Status
 
-O aplicativo está em **[`aura/`](aura/)**. Para rodar, arquitetura e configuração
-do Supabase, veja **[`aura/README.md`](aura/README.md)**.
+Repositório zerado em 13/08/2026 para reestruturação. O app ainda não foi
+reconstruído.
+
+## De onde veio
+
+Este repositório era o **Aura** (SaaS de transformação pessoal com metas, leituras
+e jornada). O produto foi reposicionado e a estrutura será refeita em torno de uma
+unidade única de atividade, o que permite ser multi eixo de verdade.
+
+O código do Aura continua acessível no histórico:
 
 ```bash
-cd aura
-npm install
-npm run dev
+git checkout aura-final          # estado final do Aura
+git checkout feat/journey-modules
 ```
 
-Contexto de produto, negócio e tom de voz: [`CLAUDE.md`](CLAUDE.md).
+## Documentação
 
-Feito por Layra Lima.
+- `CLAUDE.md` — contexto, arquitetura e padrões do projeto
+- `../saas-ideias/momentumm.md` — conceito, modelo de dados, fases e aquisição
+
+## Stack
+
+React + TypeScript (strict) + Vite + Tailwind CSS v4 + Framer Motion no front.
+Supabase (Postgres, Auth, RLS) nos dados. Clean Architecture.
