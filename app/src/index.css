@@ -1,0 +1,87 @@
+@import 'tailwindcss';
+
+/*
+  Identidade base do Momentumm.
+  Dark first: o app é usado de manhã cedo e à noite, e o registro precisa ser
+  confortável no escuro. Violeta é a marca; laranja é EXCLUSIVO de streak, pra
+  fogo significar sempre a mesma coisa. Cada eixo tem cor própria e constante.
+*/
+@theme {
+  --color-canvas: #0a0a0b;
+  --color-surface: #131316;
+  --color-surface-hi: #1b1b20;
+  --color-line: #26262c;
+  --color-line-hi: #34343d;
+
+  --color-ink: #f4f4f5;
+  --color-ink-muted: #a1a1aa;
+  --color-ink-faint: #71717a;
+
+  --color-brand: #6d5cff;
+  --color-brand-hi: #8878ff;
+  --color-brand-dim: #2a2450;
+
+  --color-flame: #ff6b35;
+  --color-flame-dim: #3a1f14;
+
+  --color-positive: #3ecf8e;
+  --color-danger: #f05252;
+
+  --color-axis-leitura: #f2b544;
+  --color-axis-estudo: #4a9eff;
+  --color-axis-treino: #ff5c8a;
+  --color-axis-meditacao: #3ecf8e;
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+
+  --radius-card: 1rem;
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Foco sempre visível: requisito de acessibilidade, não enfeite. */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-hi);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background-color: var(--color-brand-dim);
+    color: var(--color-ink);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}

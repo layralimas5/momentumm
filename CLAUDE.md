@@ -48,14 +48,36 @@ que existir base. Feed vazio afasta usuário.
 - UI premium e minimalista, mobile-first, acessível (AA)
 - Branch por feature, Conventional Commits, nunca commitar `.env`
 
-## Pendências a decidir antes de escrever código
+## Decisões tomadas em 13/08/2026
 
-1. Nome definitivo do repositório remoto (hoje ainda é `layralimas5/aura`)
-2. Público: manter o recorte feminino do Aura ou abrir geral
-3. Eixos da fase 1 (sugestão: leitura, estudo, treino, meditação)
-4. Identidade visual (a do Aura era preto, vinho e off-white; decidir se fica)
+1. **Público geral.** O recorte feminino do Aura foi aberto: rede social precisa dos dois lados.
+2. **Eixos da fase 1:** leitura, estudo, treino, meditação.
+3. **Identidade nova.** Dark first: preto profundo, off-white, violeta de marca
+   (`--color-brand`) e laranja reservado **exclusivamente** pra streak. Cada eixo tem
+   cor fixa. Tokens em `app/src/index.css`.
+4. **Repositório remoto** segue `layralimas5/aura` até a Lay renomear no GitHub.
 
 ## Estado atual
 
-Repositório limpo, só documentação. O scaffold novo começa quando a Lay disser
-**"vamos desenvolver o momentumm"**.
+Fase 1 em pé, em `app/`. Roda em **modo demo** sem configurar nada (dados em
+`localStorage`) e vira contas reais ao preencher `.env.local` com o Supabase.
+
+Pronto: domínio completo com 29 testes, migration com RLS, repositórios demo e
+Supabase, auth com rota protegida, registro rápido, streak dos últimos 7 dias,
+histórico com filtro por eixo, metas com progresso e perfil editável.
+
+Pendente da fase 1: timer dentro do app e importações (Kindle, Health, Fit).
+Fase 2 (feed, follows, kudos, recap) ainda não começou.
+
+**Otimização conhecida:** o cliente do Supabase entra no bundle mesmo em modo demo.
+Quando incomodar, trocar por import dinâmico dentro do `container`.
+
+## Como rodar
+
+```bash
+cd app
+npm install
+npm run dev     # modo demo, sem configurar nada
+npm test        # 29 testes de domínio
+npm run build
+```
