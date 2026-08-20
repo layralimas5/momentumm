@@ -62,12 +62,19 @@ que existir base. Feed vazio afasta usuário.
 Fase 1 em pé, em `app/`. Roda em **modo demo** sem configurar nada (dados em
 `localStorage`) e vira contas reais ao preencher `.env.local` com o Supabase.
 
-Pronto: domínio completo com 29 testes, migration com RLS, repositórios demo e
-Supabase, auth com rota protegida, registro rápido, streak dos últimos 7 dias,
-histórico com filtro por eixo, metas com progresso e perfil editável.
+Pronto: domínio completo com 42 testes, migration com RLS, repositórios demo e
+Supabase, auth com rota protegida, registro rápido, cronômetro de sessão, streak
+dos últimos 7 dias, histórico com filtro por eixo, metas com progresso e perfil
+editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
 
-Pendente da fase 1: timer dentro do app e importações (Kindle, Health, Fit).
-Fase 2 (feed, follows, kudos, recap) ainda não começou.
+O cronômetro guarda a sessão no `localStorage` (`momentumm.timer.v1`), sobrevive a
+recarregar a página e calcula o tempo por timestamp, nunca por contador de tique.
+Eixo medido em páginas pede o valor no fim; os medidos em minutos registram
+direto. A atividade nasce com `source: 'timer'`.
+
+Pendente da fase 1: importações (Kindle, Health, Fit) — a tabela de fases as
+coloca na fase 4, então não bloqueiam o resto. Fase 2 (feed, follows, kudos,
+recap) ainda não começou.
 
 **Otimização conhecida:** o cliente do Supabase entra no bundle mesmo em modo demo.
 Quando incomodar, trocar por import dinâmico dentro do `container`.

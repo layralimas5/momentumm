@@ -5,6 +5,7 @@ import type { DayKey } from '@/domain/entities/day'
 import { ActivityRow } from '@/presentation/components/activity/ActivityRow'
 import { QuickLog } from '@/presentation/components/activity/QuickLog'
 import { StreakCard } from '@/presentation/components/activity/StreakCard'
+import { TimerCard } from '@/presentation/components/activity/TimerCard'
 import { GoalProgressCard } from '@/presentation/components/goal/GoalProgressCard'
 import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { useAuth } from '@/presentation/auth/use-auth'
@@ -40,6 +41,8 @@ export function TodayPage() {
       {error ? <ErrorNote message={error} /> : null}
 
       <QuickLog onLog={log} />
+
+      <TimerCard onLog={log} />
 
       {loading ? (
         <LoadingBlock label="Carregando tuas atividades" />
