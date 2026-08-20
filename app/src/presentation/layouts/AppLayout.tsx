@@ -22,7 +22,7 @@ export function AppLayout() {
 
       <header className="sticky top-0 z-30 border-b border-line bg-canvas/85 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-4">
-          <Wordmark className="text-base" />
+          <Wordmark className="w-36 sm:w-40" />
           {container.demo ? (
             <span className="rounded-full border border-line px-2.5 py-1 text-xs text-ink-faint">
               modo demo

@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { lazy, Suspense, useEffect } from 'react'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AuthProvider } from '@/presentation/auth/AuthProvider'
 import { ProtectedRoute } from '@/presentation/auth/ProtectedRoute'
 import { AppLayout } from '@/presentation/layouts/AppLayout'
@@ -8,6 +8,9 @@ import { LandingPage } from '@/presentation/pages/LandingPage'
 // As telas internas só carregam depois do login: mantém o primeiro load leve.
 const AuthPage = lazy(() =>
   import('@/presentation/pages/AuthPage').then((m) => ({ default: m.AuthPage })),
+)
+const ToolsPage = lazy(() =>
+  import('@/presentation/pages/ToolsPage').then((m) => ({ default: m.ToolsPage })),
 )
 const TodayPage = lazy(() =>
   import('@/presentation/pages/TodayPage').then((m) => ({ default: m.TodayPage })),
@@ -26,10 +29,12 @@ export function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <ScrollToHash />
         <Suspense fallback={<RouteFallback />}>
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/entrar" element={<AuthPage />} />
+            <Route path="/ferramentas" element={<ToolsPage />} />
 
             <Route
               path="/app"
@@ -51,6 +56,33 @@ export function App() {
       </AuthProvider>
     </BrowserRouter>
   )
+}
+
+/**
+ * O React Router não rola até a âncora sozinho. Isso importa quando o link vem
+ * de outra rota (ex: /ferramentas → /#pro), porque a seção só existe depois que
+ * a página nova monta. Os passos (#passo-...) são tratados pelo próprio bloco.
+ */
+function ScrollToHash() {
+  const { pathname, hash } = useLocation()
+
+  useEffect(() => {
+    if (!hash || hash.startsWith('#passo-')) return
+
+    const target = document.querySelector(hash)
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+
+    // Rota recém-trocada: espera o próximo quadro pra seção existir no DOM.
+    const frame = requestAnimationFrame(() => {
+      document.querySelector(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [pathname, hash])
+
+  return null
 }
 
 function RouteFallback() {

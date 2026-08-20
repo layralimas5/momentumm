@@ -85,3 +85,122 @@
 @utility tabular {
   font-variant-numeric: tabular-nums;
 }
+
+/*
+  Faixa de eixos em loop contínuo pra esquerda. A lista é renderizada duas vezes
+  e o trilho anda exatamente 50%: quando a primeira cópia sai, a segunda já está
+  no lugar dela, então não existe emenda visível nem frase terminando.
+*/
+@keyframes marquee-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Ondas concêntricas do bloco "Por que escolher": nascem no ponto e se abrem. */
+@keyframes ripple {
+  0% {
+    transform: translate(-50%, -50%) scale(0.4);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.25);
+    opacity: 0;
+  }
+}
+
+/* O ponto central orbitando devagar, sem sair do lugar. */
+@keyframes orbit {
+  from {
+    transform: rotate(0deg) translateX(9px);
+  }
+  to {
+    transform: rotate(360deg) translateX(9px);
+  }
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Card que pulsa enquanto o mouse (ou o foco) estiver nele. */
+@keyframes pulse-card {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgb(0 0 0 / 0);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 32px -10px var(--color-brand);
+  }
+}
+
+@layer components {
+  .ripple-ring {
+    animation: ripple 7s ease-out infinite;
+  }
+
+  .orbit-dot {
+    animation: orbit 11s linear infinite;
+  }
+
+  .glow-pulse {
+    animation: glow-pulse 3s ease-in-out infinite;
+  }
+
+  .pulse-on-hover {
+    transition:
+      transform 0.2s var(--ease-out-soft),
+      border-color 0.2s var(--ease-out-soft);
+  }
+
+  .pulse-on-hover:hover,
+  .pulse-on-hover:focus-within {
+    animation: pulse-card 1.8s ease-in-out infinite;
+    border-color: var(--color-brand);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ripple-ring,
+    .orbit-dot,
+    .glow-pulse,
+    .pulse-on-hover:hover,
+    .pulse-on-hover:focus-within {
+      animation: none !important;
+    }
+  }
+
+  .marquee-track {
+    animation: marquee-left var(--marquee-duration, 42s) linear infinite;
+    will-change: transform;
+  }
+
+  .marquee:hover .marquee-track,
+  .marquee:focus-within .marquee-track {
+    animation-play-state: paused;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .marquee-track {
+      animation: none !important;
+      transform: none;
+    }
+
+    .marquee {
+      overflow-x: auto;
+    }
+  }
+}

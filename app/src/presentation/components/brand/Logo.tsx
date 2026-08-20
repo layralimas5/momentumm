@@ -1,33 +1,47 @@
 import { cn } from '@/shared/lib/cn'
 
 /**
- * A marca é o "M" de momento virando movimento: a linha sobe, desce e sobe de
- * novo, com o ponto laranja marcando o dia em que a sequência continua.
+ * A marca oficial é o wordmark em arquivo (public/logo.png), tratado pra ter
+ * fundo transparente. Nada de redesenhar a logo em código: o arquivo é a fonte
+ * da verdade, então trocar a arte é trocar o PNG.
  */
-export function LogoMark({ className }: { className?: string }) {
+
+interface LogoProps {
+  readonly className?: string
+  /** Quando o nome já aparece no texto ao lado, o alt vira vazio. */
+  readonly decorative?: boolean
+}
+
+export function Wordmark({ className, decorative = false }: LogoProps) {
   return (
-    <svg
-      viewBox="0 0 32 32"
-      aria-hidden="true"
-      className={cn('size-7', className)}
-      fill="none"
-    >
-      <path
-        d="M6 23V11.6c0-.8.9-1.1 1.4-.5l4.4 5.3c.5.6 1.4.6 1.9 0l4.4-5.3c.5-.6 1.4-.3 1.4.5V23"
-        stroke="currentColor"
-        strokeWidth="2.6"
-        strokeLinecap="round"
-      />
-      <circle cx="25.5" cy="11.5" r="2.5" className="fill-flame" />
-    </svg>
+    <img
+      src="/logo.png"
+      alt={decorative ? '' : 'Momentumm'}
+      width={1000}
+      height={53}
+      decoding="async"
+      /*
+        O wordmark é muito largo (proporção ~19:1): controlar pela ALTURA
+        estoura a largura e come o menu inteiro. Por isso o tamanho é definido
+        pela largura, com a altura calculada sozinha.
+      */
+      className={cn('h-auto w-40 select-none sm:w-48', className)}
+      {...(decorative ? { 'aria-hidden': true } : {})}
+    />
   )
 }
 
-export function Wordmark({ className }: { className?: string }) {
+/** Só o "MM" roxo, pra espaços quadrados e apertados. */
+export function LogoMark({ className, decorative = true }: LogoProps) {
   return (
-    <span className={cn('inline-flex items-center gap-2 font-semibold tracking-tight', className)}>
-      <LogoMark className="text-brand" />
-      Momentumm
-    </span>
+    <img
+      src="/simbolo.png"
+      alt={decorative ? '' : 'Momentumm'}
+      width={512}
+      height={512}
+      decoding="async"
+      className={cn('size-7 select-none', className)}
+      {...(decorative ? { 'aria-hidden': true } : {})}
+    />
   )
 }
