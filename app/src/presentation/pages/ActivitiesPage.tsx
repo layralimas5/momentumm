@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
-import { groupByDay, totalMinutes, totalValueOfType } from '@/domain/entities/activity'
+import { groupByDay, totalMinutes, totalValueOfType, type Activity } from '@/domain/entities/activity'
 import { ACTIVITY_TYPE_LIST, type ActivityTypeSlug } from '@/domain/entities/activity-type'
 import { formatDayLabel, type DayKey } from '@/domain/entities/day'
 import { ActivityRow } from '@/presentation/components/activity/ActivityRow'
+import { Stat, StatGrid } from '@/presentation/components/ui/Stat'
 import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { useActivities } from '@/presentation/hooks/use-activities'
 import { cn } from '@/shared/lib/cn'
@@ -24,9 +25,9 @@ export function ActivitiesPage() {
   }, [filtered])
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5 lg:gap-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Atividades</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-ink lg:text-3xl">Atividades</h1>
         <p className="mt-1 text-sm text-ink-muted">Tudo que você já registrou, do mais recente.</p>
       </header>
 
@@ -54,13 +55,20 @@ export function ActivitiesPage() {
         />
       ) : (
         <>
-          <Summary activities={filtered} />
-          <div className="flex flex-col gap-4">
+          <Summary activities={filtered} days={days.length} />
+          {/* Cada dia é um bloco fechado, então duas colunas no desktop não quebram a leitura. */}
+          <div className="grid gap-4 xl:grid-cols-2 xl:items-start xl:gap-5">
             {days.map(([day, items]) => (
               <section key={day} aria-label={formatDayLabel(day as DayKey, today)}>
-                <h2 className="text-sm font-medium text-ink-muted">
-                  {formatDayLabel(day as DayKey, today)}
-                </h2>
+                <div className="flex items-baseline justify-between gap-3">
+                  <h2 className="text-sm font-medium text-ink-muted">
+                    {formatDayLabel(day as DayKey, today)}
+                  </h2>
+                  <span className="tabular text-xs text-ink-faint">
+                    {totalMinutes(items)} min · {items.length}{' '}
+                    {items.length === 1 ? 'registro' : 'registros'}
+                  </span>
+                </div>
                 <ul className="mt-2 rounded-card border border-line bg-surface px-4">
                   {items.map((activity) => (
                     <ActivityRow key={activity.id} activity={activity} onRemove={remove} />
@@ -75,26 +83,19 @@ export function ActivitiesPage() {
   )
 }
 
-function Summary({ activities }: { activities: Parameters<typeof totalMinutes>[0] }) {
+function Summary({ activities, days }: { activities: readonly Activity[]; days: number }) {
   const minutes = totalMinutes(activities)
   const hours = Math.floor(minutes / 60)
   const pages = totalValueOfType(activities, 'leitura')
 
   return (
-    <dl className="grid grid-cols-3 gap-2">
+    <StatGrid>
       <Stat label="Registros" value={String(activities.length)} />
       <Stat label="Tempo" value={hours > 0 ? `${hours}h` : `${minutes}min`} />
       <Stat label="Páginas" value={String(pages)} />
-    </dl>
-  )
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-card border border-line bg-surface px-4 py-3">
-      <dt className="text-xs text-ink-faint">{label}</dt>
-      <dd className="tabular mt-0.5 text-xl font-semibold text-ink">{value}</dd>
-    </div>
+      {/* Só renderizado quando existe pelo menos um dia, então a média é segura. */}
+      <Stat label="Dias ativos" value={String(days)} hint={`${Math.round(minutes / days)} min por dia`} />
+    </StatGrid>
   )
 }
 

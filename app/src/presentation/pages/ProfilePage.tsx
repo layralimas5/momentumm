@@ -39,7 +39,7 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5 lg:gap-6">
       <header className="flex items-center gap-4">
         <span
           aria-hidden="true"
@@ -48,102 +48,117 @@ export function ProfilePage() {
           {initialsOf(profile.name)}
         </span>
         <div className="min-w-0">
-          <h1 className="truncate text-2xl font-semibold tracking-tight text-ink">{profile.name}</h1>
+          <h1 className="truncate text-2xl font-semibold tracking-tight text-ink lg:text-3xl">{profile.name}</h1>
           <p className="truncate text-sm text-ink-muted">@{profile.handle}</p>
         </div>
       </header>
 
-      <form
-        className="flex flex-col gap-4 rounded-card border border-line bg-surface p-5"
-        onSubmit={(event) => {
-          event.preventDefault()
-          void save.run()
-        }}
-      >
-        {save.error ? <ErrorNote message={save.error} /> : null}
-
-        <Field label="Nome">
-          {(id) => (
-            <TextInput
-              id={id}
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              autoComplete="name"
-              maxLength={60}
-            />
-          )}
-        </Field>
-
-        <Field label="@" hint="É o teu endereço público no Momentumm.">
-          {(id, describedBy) => (
-            <TextInput
-              id={id}
-              aria-describedby={describedBy}
-              value={handle}
-              onChange={(event) => setHandle(normalizeHandle(event.target.value))}
-              autoComplete="username"
-            />
-          )}
-        </Field>
-
-        <Field label="Bio" hint={`${bio.length}/${MAX_BIO_LENGTH}`}>
-          {(id, describedBy) => (
-            <TextInput
-              id={id}
-              aria-describedby={describedBy}
-              value={bio}
-              onChange={(event) => setBio(event.target.value)}
-              maxLength={MAX_BIO_LENGTH}
-              placeholder="Em uma linha, o que você está construindo."
-            />
-          )}
-        </Field>
-
-        <Field
-          label="Visibilidade padrão"
-          hint="Vale para os próximos registros. Cada atividade pode ser diferente."
+      {/* Dados à esquerda, sessão à direita: no desktop o formulário sozinho deixaria metade da tela vazia. */}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-6">
+        <form
+          className="flex flex-col gap-4 rounded-card border border-line bg-surface p-5"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void save.run()
+          }}
         >
-          {(id, describedBy) => (
-            <Select
-              id={id}
-              aria-describedby={describedBy}
-              value={visibility}
-              onChange={(event) => setVisibility(event.target.value as ActivityVisibility)}
-            >
-              {ACTIVITY_VISIBILITIES.map((item) => (
-                <option key={item} value={item}>
-                  {VISIBILITY_LABELS[item]}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
+          {save.error ? <ErrorNote message={save.error} /> : null}
 
-        <div className="flex items-center gap-3">
-          <Button type="submit" loading={save.running}>
-            Salvar
+          <Field label="Nome">
+            {(id) => (
+              <TextInput
+                id={id}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                autoComplete="name"
+                maxLength={60}
+              />
+            )}
+          </Field>
+
+          <Field label="@" hint="É o teu endereço público no Momentumm.">
+            {(id, describedBy) => (
+              <TextInput
+                id={id}
+                aria-describedby={describedBy}
+                value={handle}
+                onChange={(event) => setHandle(normalizeHandle(event.target.value))}
+                autoComplete="username"
+              />
+            )}
+          </Field>
+
+          <Field label="Bio" hint={`${bio.length}/${MAX_BIO_LENGTH}`}>
+            {(id, describedBy) => (
+              <TextInput
+                id={id}
+                aria-describedby={describedBy}
+                value={bio}
+                onChange={(event) => setBio(event.target.value)}
+                maxLength={MAX_BIO_LENGTH}
+                placeholder="Em uma linha, o que você está construindo."
+              />
+            )}
+          </Field>
+
+          <Field
+            label="Visibilidade padrão"
+            hint="Vale para os próximos registros. Cada atividade pode ser diferente."
+          >
+            {(id, describedBy) => (
+              <Select
+                id={id}
+                aria-describedby={describedBy}
+                value={visibility}
+                onChange={(event) => setVisibility(event.target.value as ActivityVisibility)}
+              >
+                {ACTIVITY_VISIBILITIES.map((item) => (
+                  <option key={item} value={item}>
+                    {VISIBILITY_LABELS[item]}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+
+          <div className="flex items-center gap-3">
+            <Button type="submit" loading={save.running}>
+              Salvar
+            </Button>
+            <span aria-live="polite" className="text-sm text-positive">
+              {saved ? 'Salvo.' : ''}
+            </span>
+          </div>
+        </form>
+
+        <aside className="flex flex-col gap-4 rounded-card border border-line bg-surface p-5 lg:sticky lg:top-8">
+          <div>
+            <p className="text-sm font-medium text-ink">Sessão</p>
+            <p className="mt-1 truncate text-sm text-ink-muted">{user?.email}</p>
+          </div>
+
+          <dl className="flex flex-col gap-2 border-t border-line pt-4 text-sm">
+            <div className="flex items-center justify-between gap-3">
+              <dt className="text-ink-faint">Visibilidade padrão</dt>
+              <dd className="text-ink">{VISIBILITY_LABELS[profile.defaultVisibility]}</dd>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <dt className="text-ink-faint">Endereço</dt>
+              <dd className="truncate text-ink">@{profile.handle}</dd>
+            </div>
+          </dl>
+
+          <Button variant="danger" onClick={() => void signOut()} className="w-full">
+            Sair
           </Button>
-          <span aria-live="polite" className="text-sm text-positive">
-            {saved ? 'Salvo.' : ''}
-          </span>
-        </div>
-      </form>
 
-      <div className="flex items-center justify-between rounded-card border border-line bg-surface p-5">
-        <div>
-          <p className="text-sm text-ink">Sessão</p>
-          <p className="text-sm text-ink-muted">{user?.email}</p>
-        </div>
-        <Button variant="danger" onClick={() => void signOut()}>
-          Sair
-        </Button>
+          {container.demo ? (
+            <p className="text-xs text-ink-faint">
+              Modo demo: os dados ficam só nesse navegador. Configure o Supabase pra ativar contas reais.
+            </p>
+          ) : null}
+        </aside>
       </div>
-
-      {container.demo ? (
-        <p className="text-xs text-ink-faint">
-          Modo demo: os dados ficam só nesse navegador. Configure o Supabase pra ativar contas reais.
-        </p>
-      ) : null}
     </div>
   )
 }

@@ -26,9 +26,9 @@ export function GoalsPage() {
   const targetIsValid = Number(target) > 0
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5 lg:gap-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Metas</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-ink lg:text-3xl">Metas</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Uma meta ativa por eixo e período. Menos metas, mais chance de bater.
         </p>
@@ -36,83 +36,105 @@ export function GoalsPage() {
 
       {goals.error ? <ErrorNote message={goals.error} /> : null}
 
-      <form
-        className="rounded-card border border-line bg-surface p-5"
-        onSubmit={(event) => {
-          event.preventDefault()
-          if (targetIsValid) void create.run()
-        }}
-      >
-        <h2 className="text-sm font-medium tracking-wide text-ink-muted uppercase">Nova meta</h2>
+      {/* No desktop o formulário vira coluna fixa e a lista ocupa o resto da largura. */}
+      <div className="grid gap-5 lg:grid-cols-[22rem_minmax(0,1fr)] lg:items-start lg:gap-6">
+        <form
+          className="rounded-card border border-line bg-surface p-5 lg:sticky lg:top-8"
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (targetIsValid) void create.run()
+          }}
+        >
+          <h2 className="text-sm font-medium tracking-wide text-ink-muted uppercase">Nova meta</h2>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          <Field label="Eixo">
-            {(id) => (
-              <Select
-                id={id}
-                value={type}
-                onChange={(event) => setType(event.target.value as ActivityTypeSlug)}
-              >
-                {ACTIVITY_TYPE_LIST.map((item) => (
-                  <option key={item.slug} value={item.slug}>
-                    {item.label}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            <Field label="Eixo">
+              {(id) => (
+                <Select
+                  id={id}
+                  value={type}
+                  onChange={(event) => setType(event.target.value as ActivityTypeSlug)}
+                >
+                  {ACTIVITY_TYPE_LIST.map((item) => (
+                    <option key={item.slug} value={item.slug}>
+                      {item.label}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Field>
 
-          <Field label={`Quanto (${unit})`} error={create.error}>
-            {(id, describedBy) => (
-              <TextInput
-                id={id}
-                aria-describedby={describedBy}
-                type="number"
-                inputMode="numeric"
-                min={1}
-                value={target}
-                onChange={(event) => setTarget(event.target.value)}
-                placeholder="20"
-              />
-            )}
-          </Field>
+            <Field label={`Quanto (${unit})`} error={create.error}>
+              {(id, describedBy) => (
+                <TextInput
+                  id={id}
+                  aria-describedby={describedBy}
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  value={target}
+                  onChange={(event) => setTarget(event.target.value)}
+                  placeholder="20"
+                />
+              )}
+            </Field>
 
-          <Field label="Período">
-            {(id) => (
-              <Select
-                id={id}
-                value={period}
-                onChange={(event) => setPeriod(event.target.value as GoalPeriod)}
-              >
-                {GOAL_PERIODS.map((item) => (
-                  <option key={item} value={item}>
-                    {GOAL_PERIOD_LABELS[item]}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
-        </div>
+            <Field label="Período">
+              {(id) => (
+                <Select
+                  id={id}
+                  value={period}
+                  onChange={(event) => setPeriod(event.target.value as GoalPeriod)}
+                >
+                  {GOAL_PERIODS.map((item) => (
+                    <option key={item} value={item}>
+                      {GOAL_PERIOD_LABELS[item]}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Field>
+          </div>
 
-        <Button type="submit" className="mt-4 w-full sm:w-auto" disabled={!targetIsValid} loading={create.running}>
-          Criar meta
-        </Button>
-      </form>
+          <Button type="submit" className="mt-4 w-full sm:w-auto" disabled={!targetIsValid} loading={create.running}>
+            Criar meta
+          </Button>
+        </form>
 
-      {goals.loading || loadingActivities ? (
-        <LoadingBlock label="Carregando tuas metas" />
-      ) : goals.progress.length === 0 ? (
-        <EmptyState
-          title="Nenhuma meta ativa"
-          description="Começa com uma meta que você conseguiria bater até num dia ruim. Consistência primeiro, volume depois."
-        />
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {goals.progress.map((progress) => (
-            <GoalProgressCard key={progress.goal.id} progress={progress} onArchive={goals.archive} />
-          ))}
-        </ul>
-      )}
+        <section aria-labelledby="ativas-titulo" className="flex flex-col gap-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2
+              id="ativas-titulo"
+              className="text-sm font-medium tracking-wide text-ink-muted uppercase"
+            >
+              Metas ativas
+            </h2>
+            <span className="tabular text-xs text-ink-faint">
+              {goals.progress.filter((item) => item.achieved).length} de {goals.progress.length}{' '}
+              batidas
+            </span>
+          </div>
+
+          {goals.loading || loadingActivities ? (
+            <LoadingBlock label="Carregando tuas metas" />
+          ) : goals.progress.length === 0 ? (
+            <EmptyState
+              title="Nenhuma meta ativa"
+              description="Começa com uma meta que você conseguiria bater até num dia ruim. Consistência primeiro, volume depois."
+            />
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {goals.progress.map((progress) => (
+                <GoalProgressCard
+                  key={progress.goal.id}
+                  progress={progress}
+                  onArchive={goals.archive}
+                />
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
     </div>
   )
 }
