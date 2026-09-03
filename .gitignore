@@ -17,6 +17,16 @@ Thumbs.db
 # Dependências
 node_modules/
 
+# Build e cache (gerados; nunca versionados)
+dist/
+.vite/
+*.tsbuildinfo
+
+# Ambiente: a chave do Supabase nunca entra no repo
+.env
+.env.local
+.env.*.local
+
 # Arquivos temporários
 *.log
 *.tmp

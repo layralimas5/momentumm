@@ -55,7 +55,8 @@ que existir base. Feed vazio afasta usuário.
 3. **Identidade nova.** Dark first: preto profundo, off-white, violeta de marca
    (`--color-brand`) e laranja reservado **exclusivamente** pra streak. Cada eixo tem
    cor fixa. Tokens em `app/src/index.css`.
-4. **Repositório remoto** segue `layralimas5/aura` até a Lay renomear no GitHub.
+4. **Repositório remoto:** `layralimas5/momentumm`. O `layralimas5/aura` continua
+   existindo como histórico e responde pelo remote `aura` neste clone.
 
 ## Estado atual
 
