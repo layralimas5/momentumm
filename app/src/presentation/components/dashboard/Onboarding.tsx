@@ -16,8 +16,9 @@ interface OnboardingProps {
   readonly firstName: string | null
   readonly today: DayKey
   readonly onFinish: (setup: {
-    goal: GoalDraft
-    habit: HabitDraft
+    /** Null quando a pessoa pulou a etapa. A prioridade nunca é null. */
+    goal: GoalDraft | null
+    habit: HabitDraft | null
     task: TaskDraft
   }) => Promise<void>
 }
@@ -74,26 +75,32 @@ export function Onboarding({ firstName, today, onFinish }: OnboardingProps) {
   const [target, setTarget] = useState('')
   const [habitName, setHabitName] = useState('')
   const [taskTitle, setTaskTitle] = useState('')
+  // Meta e hábito são puláveis; a prioridade de hoje não. O onboarding só
+  // cumpre a função dele se a pessoa sair daqui com uma próxima ação definida.
+  const [skipped, setSkipped] = useState<{ goal: boolean; habit: boolean }>({
+    goal: false,
+    habit: false,
+  })
 
   const suggestion = SUGGESTIONS[axis]
   const type = activityType(axis)
 
   const finish = useAsyncAction(async () => {
+    const goalTarget = Number(target) || suggestion.target
+
     await onFinish({
-      goal: {
-        type: axis,
-        target: Number(target) || suggestion.target,
-        period: 'dia',
-      },
-      habit: {
-        name: habitName.trim() || suggestion.habit,
-        icon: ICON_BY_AXIS[axis],
-        axis,
-        dayPart: 'qualquer',
-        weekdays: [],
-        target: Number(target) || suggestion.target,
-        minimalTarget: Math.max(1, Math.round((Number(target) || suggestion.target) / 3)),
-      },
+      goal: skipped.goal ? null : { type: axis, target: goalTarget, period: 'dia' },
+      habit: skipped.habit
+        ? null
+        : {
+            name: habitName.trim() || suggestion.habit,
+            icon: ICON_BY_AXIS[axis],
+            axis,
+            dayPart: 'qualquer',
+            weekdays: [],
+            target: goalTarget,
+            minimalTarget: Math.max(1, Math.round(goalTarget / 3)),
+          },
       task: {
         title: taskTitle.trim() || suggestion.task,
         goalId: null,
@@ -183,7 +190,7 @@ export function Onboarding({ firstName, today, onFinish }: OnboardingProps) {
           {step === 1 ? (
             <Step
               title="Qual meta você quer bater por dia?"
-              hint={`Em ${type.unitLabel.many}. Escolhe um número que você bateria até num dia ruim.`}
+              hint={`Em ${type.unitLabel.many}. Escolhe um número que você bateria até num dia ruim. Dá pra pular e definir depois.`}
             >
               <div className="mt-4 flex flex-col gap-3">
                 <ChoiceGroup
@@ -212,7 +219,7 @@ export function Onboarding({ firstName, today, onFinish }: OnboardingProps) {
           {step === 2 ? (
             <Step
               title="Qual hábito simples sustenta essa meta?"
-              hint="Simples de verdade. Hábito grande demais não sobrevive à primeira semana ruim."
+              hint="Simples de verdade: hábito grande demais não sobrevive à primeira semana ruim. Dá pra pular e criar depois."
             >
               <TextInput
                 className="mt-4"
@@ -242,9 +249,10 @@ export function Onboarding({ firstName, today, onFinish }: OnboardingProps) {
             </Step>
           ) : null}
 
-          <div className="mt-6 flex items-center justify-between gap-3">
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
             <Button
               variant="ghost"
+              className="min-h-12"
               onClick={() => setStep((current) => Math.max(0, current - 1))}
               disabled={step === 0}
             >
@@ -252,17 +260,48 @@ export function Onboarding({ firstName, today, onFinish }: OnboardingProps) {
               Voltar
             </Button>
 
-            {step < STEPS.length - 1 ? (
-              <Button onClick={() => setStep((current) => current + 1)} disabled={!canAdvance}>
-                Continuar
-                <Icon name="seta" className="size-4" />
-              </Button>
-            ) : (
-              <Button onClick={() => void finish.run()} loading={finish.running}>
-                <Icon name="check" className="size-4" />
-                Montar meu dashboard
-              </Button>
-            )}
+            <div className="flex flex-1 items-center justify-end gap-2">
+              {step === 1 || step === 2 ? (
+                <Button
+                  variant="ghost"
+                  className="min-h-12"
+                  onClick={() => {
+                    setSkipped((current) =>
+                      step === 1 ? { ...current, goal: true } : { ...current, habit: true },
+                    )
+                    setStep((current) => current + 1)
+                  }}
+                >
+                  Pular
+                </Button>
+              ) : null}
+
+              {step < STEPS.length - 1 ? (
+                <Button
+                  size="lg"
+                  className="min-h-12"
+                  onClick={() => {
+                    setSkipped((current) =>
+                      step === 1
+                        ? { ...current, goal: false }
+                        : step === 2
+                          ? { ...current, habit: false }
+                          : current,
+                    )
+                    setStep((current) => current + 1)
+                  }}
+                  disabled={!canAdvance}
+                >
+                  Continuar
+                  <Icon name="seta" className="size-4" />
+                </Button>
+              ) : (
+                <Button size="lg" className="min-h-12" onClick={() => void finish.run()} loading={finish.running}>
+                  <Icon name="check" className="size-4" />
+                  Montar meu dia
+                </Button>
+              )}
+            </div>
           </div>
 
           <div aria-live="polite" className="min-h-5">

@@ -1,18 +1,21 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet } from 'react-router-dom'
 import { initialsOf } from '@/domain/entities/profile'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { LogoMark, Wordmark } from '@/presentation/components/brand/Logo'
+import { MobileTabBar } from '@/presentation/components/mobile/MobileTabBar'
+import { MobileTopBar } from '@/presentation/components/mobile/MobileTopBar'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { FocusProvider } from '@/presentation/focus/FocusProvider'
 import { FocusSession } from '@/presentation/focus/FocusSession'
 import { ComposerProvider } from '@/presentation/planner/ComposerProvider'
 import { PlannerProvider } from '@/presentation/planner/PlannerProvider'
+import { useIsDesktop } from '@/presentation/hooks/use-media-query'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 import { AppHeader } from './AppHeader'
-import { APP_NAV, MOBILE_NAV, type AppNavItem } from './nav-items'
+import { APP_NAV, type AppNavItem } from './nav-items'
 
 const COLLAPSED_KEY = 'momentumm.sidebar.collapsed'
 
@@ -39,12 +42,7 @@ export function AppLayout() {
 
 function LayoutShell() {
   const [collapsed, setCollapsed] = useState(readCollapsed)
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const location = useLocation()
-
-  useEffect(() => {
-    setDrawerOpen(false)
-  }, [location.pathname])
+  const isDesktop = useIsDesktop()
 
   useEffect(() => {
     try {
@@ -65,22 +63,8 @@ function LayoutShell() {
 
       <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} />
 
-      {drawerOpen ? (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <button
-            type="button"
-            aria-label="Fechar navegação"
-            onClick={() => setDrawerOpen(false)}
-            className="absolute inset-0 bg-canvas/80 backdrop-blur-sm"
-          />
-          <div className="absolute inset-y-0 left-0 w-72 border-r border-line bg-surface">
-            <SidebarContent collapsed={false} />
-          </div>
-        </div>
-      ) : null}
-
       <div className="flex min-w-0 flex-1 flex-col">
-        <AppHeader onOpenMenu={() => setDrawerOpen(true)} />
+        {isDesktop ? <AppHeader /> : <MobileTopBar />}
         <OfflineBanner />
 
         {/*
@@ -88,15 +72,16 @@ function LayoutShell() {
           a grade de colunas e o teto de largura de cada bloco de texto — faixa
           central estreita em tela grande só produz margem morta dos dois lados.
         */}
+        {/* pb-tabbar reserva a altura exata da barra inferior mais a área segura. */}
         <main
           id="conteudo"
-          className="w-full flex-1 px-4 pb-28 pt-5 sm:px-6 sm:pb-10 lg:px-8 lg:pt-7 2xl:px-10"
+          className="w-full flex-1 px-4 pt-4 pb-tabbar sm:px-6 lg:px-8 lg:pt-7 lg:pb-10 2xl:px-10"
         >
           <Outlet />
         </main>
       </div>
 
-      <MobileNav />
+      {isDesktop ? null : <MobileTabBar />}
     </div>
   )
 }
@@ -210,35 +195,6 @@ function SidebarLink({ item, collapsed }: { item: AppNavItem; collapsed: boolean
       <Icon name={item.icon} />
       {collapsed ? <span className="sr-only">{item.label}</span> : item.label}
     </NavLink>
-  )
-}
-
-function MobileNav() {
-  return (
-    <nav
-      aria-label="Navegação principal"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-canvas/95 backdrop-blur lg:hidden"
-    >
-      <ul className="flex items-center justify-around px-2 py-2">
-        {MOBILE_NAV.map((item) => (
-          <li key={item.to}>
-            <NavLink
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                cn(
-                  'flex min-w-16 flex-col items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-medium transition-colors',
-                  isActive ? 'text-ink' : 'text-ink-faint hover:text-ink',
-                )
-              }
-            >
-              <Icon name={item.icon} />
-              {item.label}
-            </NavLink>
-          </li>
-        ))}
-      </ul>
-    </nav>
   )
 }
 

@@ -22,6 +22,8 @@ import { useComposer } from '@/presentation/planner/ComposerProvider'
 import { useDashboard, type GoalInMotion } from '@/presentation/planner/use-dashboard'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { DayCompleteBanner } from '@/presentation/components/dashboard/DayCompleteBanner'
+import { MobileDashboard } from '@/presentation/components/mobile/MobileDashboard'
+import { useIsDesktop } from '@/presentation/hooks/use-media-query'
 
 /**
  * "Hoje" — o dashboard.
@@ -38,6 +40,7 @@ export function DashboardPage() {
   const focus = useFocus()
   const composer = useComposer()
   const navigate = useNavigate()
+  const isDesktop = useIsDesktop()
 
   const startFocus = useCallback(
     (task: Task) => {
@@ -138,7 +141,7 @@ export function DashboardPage() {
     [startFocus],
   )
 
-  if (planner.loading) return <DashboardSkeleton />
+  if (planner.loading) return <DashboardSkeleton mobile={!isDesktop} />
 
   if (planner.isNewUser) {
     return (
@@ -146,11 +149,33 @@ export function DashboardPage() {
         firstName={profile?.name.split(' ')[0] ?? null}
         today={planner.today}
         onFinish={async (setup) => {
-          await planner.createGoal(setup.goal)
-          await planner.createHabit(setup.habit)
+          if (setup.goal) await planner.createGoal(setup.goal)
+          if (setup.habit) await planner.createHabit(setup.habit)
           await planner.createTask(setup.task)
         }}
       />
+    )
+  }
+
+  /*
+    Duas árvores, não uma encolhida: o celular reordena o dia inteiro em torno
+    de "registrar, decidir, começar" e manda a análise pra depois. Os dados, as
+    regras e as ações são exatamente os mesmos.
+  */
+  if (!isDesktop) {
+    return (
+      <div className="flex flex-col gap-6">
+        {planner.error ? <ErrorNote message={planner.error} /> : null}
+        <MobileDashboard
+          view={view}
+          onStartFocus={startFocus}
+          onCompleteTask={completeTask}
+          onPostponeTask={postponeTask}
+          onShrinkTask={shrinkTask}
+          onApplyInsight={applyInsight}
+          onContinueGoal={continueGoal}
+        />
+      </div>
     )
   }
 

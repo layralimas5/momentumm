@@ -127,7 +127,7 @@ export function FocusCard({ task, capacity, minutesToday, limits }: FocusCardPro
           focus.start({ axis, label, plannedMin: duration, taskId: task?.id ?? null })
           focus.setImmersive(true)
         }}
-        className="mt-2 w-full rounded-lg px-3 py-2 text-sm text-ink-faint transition-colors hover:bg-surface-hi hover:text-ink"
+        className="mt-2 min-h-11 w-full rounded-lg px-3 text-sm text-ink-faint transition-colors hover:bg-surface-hi hover:text-ink"
       >
         Iniciar em modo sem distrações
       </button>

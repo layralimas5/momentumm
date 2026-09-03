@@ -101,7 +101,28 @@ mesmo cronômetro. Rotas: `/app`, `/app/jornada`, `/app/habitos`, `/app/metas`,
 e `/app/perfil` redirecionam).
 
 Conta nova cai no onboarding de quatro passos (área, meta, hábito, prioridade)
-em vez de ver dez cards vazios.
+em vez de ver dez cards vazios. Meta e hábito são puláveis; a prioridade não —
+ninguém sai do onboarding sem uma próxima ação definida.
+
+### Celular
+
+O dashboard do celular é uma **árvore de componentes própria**
+(`presentation/components/mobile/`), escolhida em tempo de execução por
+`useIsDesktop()`. Não é o desktop encolhido: a ordem muda pra registrar,
+decidir e começar, e a análise vem depois.
+
+- Barra inferior com cinco lugares (Hoje, Jornada, +, Foco, Perfil). Hábitos,
+  Metas e Insights não cabem lá e ficam nos atalhos do Perfil
+- Check-in resolve em **um toque**. A energia só é perguntada nos estados
+  baixos, onde a resposta muda o plano (`defaultsForMood`)
+- Camada modal do celular é o `BottomSheet`, não o `Dialog`
+- Gesto sempre tem alternativa visível: deslizar pra adiar existe, mas a mesma
+  ação está no menu "⋯" da linha
+- `pb-tabbar`, `pb-safe` e `pt-safe` cuidam do notch e do risco de gestos;
+  o `index.html` usa `viewport-fit=cover`
+- Botão flutuante aparece só quando o card que oferece a mesma ação saiu da
+  tela (IntersectionObserver), nunca competindo com a barra de baixo
+- Limite de plano vira `ProSheet` contextual, jamais pop-up ao abrir o app
 
 O cronômetro guarda a sessão no `localStorage` (`momentumm.timer.v1`), sobrevive a
 recarregar a página e calcula o tempo por timestamp, nunca por contador de tique.

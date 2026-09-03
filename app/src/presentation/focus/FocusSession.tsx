@@ -30,8 +30,8 @@ export function FocusSession() {
       title={`Foco em ${session.label ?? type.label}`}
       onClose={() => focus.setImmersive(false)}
     >
-      <div className="flex min-h-dvh flex-col">
-        <div className="flex items-center justify-between px-6 py-5">
+      <div className="flex min-h-dvh flex-col pt-safe">
+        <div className="flex items-center justify-between px-4 py-4 sm:px-6 sm:py-5">
           <span className="inline-flex items-center gap-2 text-sm text-ink-faint">
             <span
               aria-hidden="true"
@@ -43,14 +43,14 @@ export function FocusSession() {
           <button
             type="button"
             onClick={() => focus.setImmersive(false)}
-            className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-faint transition-colors hover:bg-surface hover:text-ink"
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-ink-faint transition-colors hover:bg-surface hover:text-ink"
           >
             <Icon name="fechar" className="size-4" />
             Sair do modo sem distrações
           </button>
         </div>
 
-        <div className="flex flex-1 flex-col items-center justify-center px-6 pb-16 text-center">
+        <div className="flex flex-1 flex-col items-center justify-center px-5 pb-16 text-center sm:px-6">
           <p className="max-w-xl text-balance text-xl font-medium text-ink-muted sm:text-2xl">
             {session.label ?? type.label}
           </p>

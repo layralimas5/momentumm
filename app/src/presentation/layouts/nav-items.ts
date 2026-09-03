@@ -64,8 +64,3 @@ export const APP_NAV: readonly AppNavItem[] = [
     description: 'Perfil, visibilidade e plano',
   },
 ]
-
-/** Atalhos da barra inferior no celular: só o que se usa em movimento. */
-export const MOBILE_NAV: readonly AppNavItem[] = APP_NAV.filter((item) =>
-  ['/app', '/app/habitos', '/app/metas', '/app/foco'].includes(item.to),
-)

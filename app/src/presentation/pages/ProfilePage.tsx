@@ -9,7 +9,14 @@ import { Button } from '@/presentation/components/ui/Button'
 import { Field, Select, TextInput } from '@/presentation/components/ui/Field'
 import { ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
+import { Icon } from '@/presentation/components/ui/Icon'
+import { APP_NAV } from '@/presentation/layouts/nav-items'
 import { cn } from '@/shared/lib/cn'
+
+/** As telas que não cabem na barra inferior do celular. */
+const MOBILE_SHORTCUTS = APP_NAV.filter((item) =>
+  ['/app/habitos', '/app/metas', '/app/insights'].includes(item.to),
+)
 
 export function ProfilePage() {
   const { user, profile, loading, signOut, refreshProfile } = useAuth()
@@ -69,6 +76,39 @@ export function ProfilePage() {
           <p className="truncate text-sm text-ink-muted">@{profile.handle}</p>
         </div>
       </header>
+
+      {/*
+        A barra do celular tem cinco lugares e Hábitos, Metas e Insights não
+        cabem lá. Sem estes atalhos, uma conta sem hábito nenhum não teria como
+        chegar na tela de hábitos — o "Ver todos" do dashboard só existe quando
+        já existe hábito.
+      */}
+      <nav aria-label="Outras telas" className="lg:hidden">
+        <ul className="surface-card divide-y divide-line overflow-hidden">
+          {MOBILE_SHORTCUTS.map((item) => (
+            <li key={item.to}>
+              <Link
+                to={item.to}
+                className="flex min-h-14 items-center gap-3.5 px-4 py-3 transition-colors active:bg-surface-hi"
+              >
+                <span
+                  aria-hidden="true"
+                  className="grid size-10 shrink-0 place-items-center rounded-xl border border-line bg-surface-hi text-ink-muted"
+                >
+                  <Icon name={item.icon} className="size-5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-medium text-ink">{item.label}</span>
+                  <span className="mt-0.5 block truncate text-sm text-ink-faint">
+                    {item.description}
+                  </span>
+                </span>
+                <Icon name="seta" className="size-4 shrink-0 text-ink-faint" />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
 
       {/* Dados à esquerda, sessão à direita: no desktop o formulário sozinho deixaria metade da tela vazia. */}
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-6 2xl:grid-cols-[minmax(0,1fr)_24rem] 2xl:gap-8">

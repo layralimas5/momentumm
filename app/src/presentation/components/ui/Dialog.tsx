@@ -1,5 +1,6 @@
-import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { useId, useRef, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { useFocusTrap } from '@/presentation/hooks/use-focus-trap'
 import { cn } from '@/shared/lib/cn'
 import { Icon } from './Icon'
 
@@ -29,58 +30,10 @@ export function Dialog({
   fullscreen = false,
 }: DialogProps) {
   const panelRef = useRef<HTMLDivElement>(null)
-  const openerRef = useRef<HTMLElement | null>(null)
   const titleId = useId()
   const descriptionId = useId()
 
-  useEffect(() => {
-    if (!open) return
-
-    openerRef.current = document.activeElement as HTMLElement | null
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-
-    // Espera o painel montar pra levar o foco pra dentro dele.
-    const frame = requestAnimationFrame(() => {
-      focusableIn(panelRef.current)[0]?.focus()
-    })
-
-    return () => {
-      cancelAnimationFrame(frame)
-      document.body.style.overflow = previousOverflow
-      openerRef.current?.focus()
-    }
-  }, [open])
-
-  useEffect(() => {
-    if (!open) return
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.stopPropagation()
-        onClose()
-        return
-      }
-
-      if (event.key !== 'Tab') return
-
-      const items = focusableIn(panelRef.current)
-      const first = items[0]
-      const last = items[items.length - 1]
-      if (!first || !last) return
-
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault()
-        last.focus()
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault()
-        first.focus()
-      }
-    }
-
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [open, onClose])
+  useFocusTrap(open, panelRef, onClose)
 
   return (
     <AnimatePresence>
@@ -153,15 +106,5 @@ export function Dialog({
         </motion.div>
       ) : null}
     </AnimatePresence>
-  )
-}
-
-const FOCUSABLE =
-  'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
-
-function focusableIn(root: HTMLElement | null): HTMLElement[] {
-  if (!root) return []
-  return [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
-    (element) => element.offsetParent !== null || element === document.activeElement,
   )
 }

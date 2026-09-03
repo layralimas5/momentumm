@@ -11,6 +11,18 @@ import { formatDayLabel, type DayKey } from './day'
 
 export const MAX_WIN_LENGTH = 140
 
+/**
+ * Sugestões prontas de vitória.
+ *
+ * Existem porque digitar no celular é a maior fricção do registro, e porque
+ * elas ensinam o que conta como vitória aqui: aparecer, manter, fazer o mínimo.
+ */
+export const WIN_SUGGESTIONS = [
+  'Comecei mesmo sem vontade',
+  'Mantive o hábito',
+  'Fiz a versão mínima',
+] as const
+
 export interface Win {
   readonly id: string
   readonly userId: string

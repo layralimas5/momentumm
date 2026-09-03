@@ -168,3 +168,29 @@ export function averageEnergy(checkIns: readonly CheckIn[]): number | null {
   const total = checkIns.reduce((sum, item) => sum + item.energy, 0)
   return Number((total / checkIns.length).toFixed(1))
 }
+
+export interface MoodDefaults {
+  readonly energy: EnergyLevel
+  readonly focus: FocusCapacity
+  /**
+   * Se vale perguntar a energia depois de escolher o estado.
+   *
+   * No celular o check-in precisa caber em um toque. Perguntar energia num dia
+   * bom não muda nada do que o app vai sugerir; num dia ruim muda tudo, porque
+   * é o que separa "versão mínima" de "plano cheio". Então só perguntamos onde
+   * a resposta tem consequência.
+   */
+  readonly asksEnergy: boolean
+}
+
+const MOOD_DEFAULTS: Readonly<Record<MoodState, MoodDefaults>> = {
+  'sem-energia': { energy: 1, focus: 'disperso', asksEnergy: true },
+  automatico: { energy: 2, focus: 'oscilando', asksEnergy: true },
+  estavel: { energy: 3, focus: 'oscilando', asksEnergy: false },
+  motivado: { energy: 4, focus: 'afiado', asksEnergy: false },
+  'em-alta': { energy: 5, focus: 'afiado', asksEnergy: false },
+}
+
+export function defaultsForMood(mood: MoodState): MoodDefaults {
+  return MOOD_DEFAULTS[mood]
+}

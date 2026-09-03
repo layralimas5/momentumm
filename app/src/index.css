@@ -99,6 +99,29 @@
 }
 
 /*
+  Áreas seguras do aparelho. O notch em cima e o indicador de gestos embaixo
+  não são margem opcional: sem isso a barra de navegação fica por baixo do
+  risco do iPhone e o primeiro item do header some atrás da câmera.
+*/
+@utility pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+@utility pt-safe {
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+}
+
+/** Espaço que o conteúdo precisa deixar livre pra barra inferior não cobrir nada. */
+@utility pb-tabbar {
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+}
+
+/** Distância de um elemento flutuante até a barra inferior. */
+@utility bottom-above-tabbar {
+  bottom: calc(5rem + env(safe-area-inset-bottom));
+}
+
+/*
   Faixa de eixos em loop contínuo pra esquerda. A lista é renderizada duas vezes
   e o trilho anda exatamente 50%: quando a primeira cópia sai, a segunda já está
   no lugar dela, então não existe emenda visível nem frase terminando.

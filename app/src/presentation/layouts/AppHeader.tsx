@@ -17,7 +17,7 @@ import { CommandPalette } from './CommandPalette'
  * buscar, ver o que precisa de atenção e adicionar. Nada de métrica aqui —
  * número no topo compete com a prioridade principal e sempre perde.
  */
-export function AppHeader({ onOpenMenu }: { onOpenMenu?: () => void }) {
+export function AppHeader() {
   const { profile } = useAuth()
   const [paletteOpen, setPaletteOpen] = useState(false)
 
@@ -39,17 +39,6 @@ export function AppHeader({ onOpenMenu }: { onOpenMenu?: () => void }) {
     <>
       <header className="sticky top-0 z-30 border-b border-line bg-canvas/85 backdrop-blur-md">
         <div className="flex w-full items-center gap-4 px-4 py-3.5 sm:px-6 lg:px-8 2xl:px-10">
-          {onOpenMenu ? (
-            <button
-              type="button"
-              onClick={onOpenMenu}
-              className="grid size-10 shrink-0 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface hover:text-ink lg:hidden"
-            >
-              <Icon name="habitos" />
-              <span className="sr-only">Abrir navegação</span>
-            </button>
-          ) : null}
-
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-lg font-semibold tracking-tight text-ink">
               {greeting(now)}
