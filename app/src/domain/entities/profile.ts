@@ -1,5 +1,6 @@
 import { DomainError } from '@/shared/errors'
 import type { ActivityVisibility } from './activity'
+import type { PlanTier } from './plan'
 
 export interface Profile {
   readonly id: string
@@ -9,6 +10,8 @@ export interface Profile {
   readonly bio: string | null
   readonly avatarUrl: string | null
   readonly defaultVisibility: ActivityVisibility
+  /** Plano da conta. Decide limites, nunca acesso às telas. */
+  readonly plan: PlanTier
   readonly createdAt: Date
 }
 

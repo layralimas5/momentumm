@@ -29,7 +29,21 @@ export function calculateStreak(
   today: DayKey,
   type?: ActivityTypeSlug,
 ): Streak {
-  const days = uniqueDaysDesc(activities, type)
+  return calculateStreakFromDays(uniqueDaysDesc(activities, type), today)
+}
+
+/**
+ * A sequência a partir de um conjunto de dias, venham eles de onde vierem.
+ *
+ * Existe porque cumprir um hábito também é mover o dia: contar só atividade
+ * zeraria a sequência de quem manteve os hábitos sem registrar tempo. Dia com
+ * movimento é dia com movimento.
+ */
+export function calculateStreakFromDays(
+  allDays: Iterable<DayKey>,
+  today: DayKey,
+): Streak {
+  const days = [...new Set(allDays)].sort((a, b) => (a < b ? 1 : a > b ? -1 : 0))
   if (days.length === 0) return EMPTY_STREAK
 
   const lastDay = days[0] as DayKey

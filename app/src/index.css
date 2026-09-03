@@ -8,18 +8,25 @@
 */
 @theme {
   --color-canvas: #0a0a0b;
+  /* Grafite em tres degraus. A profundidade do card vem da diferenca entre
+     eles, nunca de sombra pesada: sombra em fundo preto vira mancha. */
   --color-surface: #131316;
   --color-surface-hi: #1b1b20;
+  --color-surface-top: #212128;
   --color-line: #26262c;
   --color-line-hi: #34343d;
 
   --color-ink: #f4f4f5;
   --color-ink-muted: #a1a1aa;
-  --color-ink-faint: #71717a;
+  /* 5.5:1 sobre --color-surface: texto de apoio precisa passar em AA,
+     não só "parecer discreto". */
+  --color-ink-faint: #8b8b96;
 
   --color-brand: #6d5cff;
   --color-brand-hi: #8878ff;
   --color-brand-dim: #2a2450;
+  --color-brand-deep: #4b3fd6;
+  --color-brand-ink: #cfc7ff;
 
   --color-flame: #ff6b35;
   --color-flame-dim: #3a1f14;
@@ -39,6 +46,11 @@
   --radius-card: 1rem;
 
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Elevacao do dashboard. O card comum nao tem sombra; so o que precisa
+     saltar (prioridade principal, sessao de foco) recebe brilho. */
+  --shadow-raised: 0 1px 0 0 rgb(255 255 255 / 0.03) inset;
+  --shadow-glow: 0 0 0 1px rgb(109 92 255 / 0.25), 0 18px 60px -28px rgb(109 92 255 / 0.65);
 }
 
 @layer base {
@@ -201,6 +213,144 @@
 
     .marquee {
       overflow-x: auto;
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Dashboard: superfícies, brilho e movimento.
+
+   A regra visual do app é "profundidade por camada, não por sombra". Em fundo
+   preto, sombra vira mancha cinza; então o que separa um card do fundo é a
+   diferença de grafite mais uma borda de 1px. O violeta entra só onde há
+   decisão a tomar — prioridade principal, foco em andamento, insight.
+--------------------------------------------------------------------------- */
+
+@layer components {
+  /* Cartão padrão do app. */
+  .surface-card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-raised);
+  }
+
+  /* Um degrau acima: usado quando dois cards se encostam. */
+  .surface-card-hi {
+    background-color: var(--color-surface-hi);
+    border: 1px solid var(--color-line-hi);
+    border-radius: var(--radius-card);
+  }
+
+  /*
+    Superfície de destaque. O gradiente é discreto de propósito: ele marca
+    hierarquia, não decora. Só a prioridade principal e a sessão de foco usam.
+  */
+  .surface-brand {
+    background-image:
+      radial-gradient(120% 140% at 0% 0%, rgb(109 92 255 / 0.22) 0%, transparent 55%),
+      linear-gradient(160deg, var(--color-surface-hi) 0%, var(--color-surface) 100%);
+    border: 1px solid rgb(109 92 255 / 0.35);
+    border-radius: var(--radius-card);
+  }
+
+  .surface-brand-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  /* Linha de luz no topo do card em destaque. */
+  .edge-light {
+    position: relative;
+  }
+
+  .edge-light::before {
+    content: '';
+    position: absolute;
+    inset-inline: 12%;
+    top: -1px;
+    height: 1px;
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      var(--color-brand-hi),
+      transparent
+    );
+    opacity: 0.8;
+    pointer-events: none;
+  }
+
+  /* Texto em gradiente violeta, reservado para o número do momentum. */
+  .text-gradient-brand {
+    background-image: linear-gradient(
+      120deg,
+      var(--color-ink) 0%,
+      var(--color-brand-ink) 45%,
+      var(--color-brand-hi) 100%
+    );
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Marcação da página ativa na sidebar. */
+  .nav-active-bar {
+    position: relative;
+  }
+
+  .nav-active-bar::before {
+    content: '';
+    position: absolute;
+    left: -0.5rem;
+    top: 50%;
+    height: 1.25rem;
+    width: 2px;
+    translate: 0 -50%;
+    border-radius: 999px;
+    background-color: var(--color-brand-hi);
+  }
+}
+
+/* Conclusão de hábito e de ação: um pulso curto, sem confete. */
+@keyframes check-pop {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.4;
+  }
+  60% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Anel do cronômetro respirando enquanto a sessão corre. */
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(1.04);
+  }
+}
+
+@layer components {
+  .check-pop {
+    animation: check-pop 0.32s var(--ease-out-soft);
+  }
+
+  .breathe {
+    animation: breathe 4s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .check-pop,
+    .breathe {
+      animation: none !important;
     }
   }
 }

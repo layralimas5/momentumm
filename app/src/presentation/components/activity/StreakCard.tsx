@@ -60,7 +60,7 @@ export function StreakCard({ streak, today, activeDays }: StreakCardProps) {
                   isToday && !done && 'border-brand',
                 )}
               />
-              <span className="text-[11px] text-ink-faint">
+              <span className="text-xs text-ink-faint">
                 {WEEKDAY_INITIALS[(index + weekdayOffset(today)) % 7]}
               </span>
               <span className="sr-only">

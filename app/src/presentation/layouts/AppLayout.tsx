@@ -1,32 +1,59 @@
-import { NavLink, Outlet } from 'react-router-dom'
-import { container } from '@/infrastructure/container'
+import { useEffect, useState } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { initialsOf } from '@/domain/entities/profile'
+import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { LogoMark, Wordmark } from '@/presentation/components/brand/Logo'
+import { Icon } from '@/presentation/components/ui/Icon'
+import { FocusProvider } from '@/presentation/focus/FocusProvider'
+import { FocusSession } from '@/presentation/focus/FocusSession'
+import { ComposerProvider } from '@/presentation/planner/ComposerProvider'
+import { PlannerProvider } from '@/presentation/planner/PlannerProvider'
+import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
+import { AppHeader } from './AppHeader'
+import { APP_NAV, MOBILE_NAV, type AppNavItem } from './nav-items'
 
-interface NavItem {
-  readonly to: string
-  readonly label: string
-  readonly end: boolean
-  /** Path de um ícone 24x24 com stroke, desenhado inline pra não pesar bundle. */
-  readonly icon: string
-}
-
-const NAV: readonly NavItem[] = [
-  { to: '/app', label: 'Hoje', end: true, icon: 'M4 13h5v7H4zM10 8h5v12h-5zM16 4h4v16h-4z' },
-  { to: '/app/atividades', label: 'Atividades', end: false, icon: 'M4 6h16M4 12h16M4 18h10' },
-  { to: '/app/metas', label: 'Metas', end: false, icon: 'M12 21a9 9 0 1 0-9-9M12 3v9l6 3' },
-  { to: '/app/perfil', label: 'Perfil', end: false, icon: 'M5 20a7 7 0 0 1 14 0M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8' },
-]
+const COLLAPSED_KEY = 'momentumm.sidebar.collapsed'
 
 /**
- * Três formatos da mesma navegação: barra inferior no celular, barra horizontal
- * no tablet e coluna lateral fixa no desktop. Só a partir de `lg` a tela vira
- * dashboard de verdade — abaixo disso a coluna única continua sendo o melhor uso
- * do espaço.
+ * Casca do app: sidebar fixa à esquerda, header em cima, conteúdo em grade e
+ * largura máxima controlada.
+ *
+ * A partir de `lg` a tela vira dashboard de verdade. Abaixo disso a coluna
+ * única continua sendo o melhor uso do espaço, com a navegação na barra
+ * inferior — o mesmo conteúdo, outra embalagem.
  */
 export function AppLayout() {
+  return (
+    <PlannerProvider>
+      <ComposerProvider>
+        <FocusProvider>
+          <LayoutShell />
+          <FocusSession />
+        </FocusProvider>
+      </ComposerProvider>
+    </PlannerProvider>
+  )
+}
+
+function LayoutShell() {
+  const [collapsed, setCollapsed] = useState(readCollapsed)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const location = useLocation()
+
+  useEffect(() => {
+    setDrawerOpen(false)
+  }, [location.pathname])
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(COLLAPSED_KEY, String(collapsed))
+    } catch {
+      // Preferência de layout não vale quebrar a tela por causa de storage.
+    }
+  }, [collapsed])
+
   return (
     <div className="min-h-dvh bg-canvas lg:flex">
       <a
@@ -36,17 +63,34 @@ export function AppLayout() {
         Pular para o conteúdo
       </a>
 
-      <Sidebar />
+      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} />
+
+      {drawerOpen ? (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <button
+            type="button"
+            aria-label="Fechar navegação"
+            onClick={() => setDrawerOpen(false)}
+            className="absolute inset-0 bg-canvas/80 backdrop-blur-sm"
+          />
+          <div className="absolute inset-y-0 left-0 w-72 border-r border-line bg-surface">
+            <SidebarContent collapsed={false} />
+          </div>
+        </div>
+      ) : null}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <MobileHeader />
-        <TabletNav />
+        <AppHeader onOpenMenu={() => setDrawerOpen(true)} />
+        <OfflineBanner />
 
         <main
           id="conteudo"
-          className="mx-auto w-full max-w-6xl flex-1 px-4 pb-28 pt-6 sm:px-6 sm:pb-10 lg:px-8 lg:pt-10"
+          className="w-full flex-1 px-4 pb-28 pt-5 sm:px-6 sm:pb-10 lg:px-8 lg:pt-7"
         >
-          <Outlet />
+          {/* Teto de largura: em monitor grande, linha infinita cansa de ler. */}
+          <div className="mx-auto w-full max-w-[112rem]">
+            <Outlet />
+          </div>
         </main>
       </div>
 
@@ -55,76 +99,115 @@ export function AppLayout() {
   )
 }
 
-function Sidebar() {
-  const { profile, user } = useAuth()
+function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+  return (
+    <aside
+      className={cn(
+        'sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-line bg-surface/40 lg:flex',
+        'transition-[width] duration-200 ease-out',
+        collapsed ? 'w-[4.75rem]' : 'w-64 2xl:w-[17rem]',
+      )}
+    >
+      <SidebarContent collapsed={collapsed} onToggle={onToggle} />
+    </aside>
+  )
+}
+
+function SidebarContent({
+  collapsed,
+  onToggle,
+}: {
+  collapsed: boolean
+  onToggle?: () => void
+}) {
+  const { profile, user, signOut } = useAuth()
 
   return (
-    <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-line bg-surface/40 px-4 py-6 lg:flex">
-      <Wordmark className="w-40 px-2" />
+    <div className="flex h-full flex-col px-3 py-5">
+      <div className={cn('flex items-center px-1', collapsed ? 'justify-center' : 'justify-between')}>
+        {collapsed ? <LogoMark className="size-7" /> : <Wordmark className="w-36" />}
+        {onToggle ? (
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-label={collapsed ? 'Expandir navegação' : 'Recolher navegação'}
+            className={cn(
+              'grid size-8 place-items-center rounded-lg text-ink-faint transition-colors hover:bg-surface-hi hover:text-ink',
+              collapsed && 'absolute left-1/2 top-16 -translate-x-1/2',
+            )}
+          >
+            <Icon name={collapsed ? 'expandir' : 'recolher'} className="size-4" />
+          </button>
+        ) : null}
+      </div>
 
-      <nav aria-label="Navegação principal" className="mt-8 flex-1">
+      <nav aria-label="Navegação principal" className={cn('flex-1', collapsed ? 'mt-14' : 'mt-8')}>
         <ul className="flex flex-col gap-1">
-          {NAV.map((item) => (
+          {APP_NAV.map((item) => (
             <li key={item.to}>
-              <NavLink to={item.to} end={item.end} className={sidebarLinkClass}>
-                <NavIcon path={item.icon} />
-                {item.label}
-              </NavLink>
+              <SidebarLink item={item} collapsed={collapsed} />
             </li>
           ))}
         </ul>
       </nav>
 
       {profile ? (
-        <div className="flex items-center gap-3 rounded-card border border-line bg-surface px-3 py-3">
-          <span
-            aria-hidden="true"
-            className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-dim text-sm font-semibold text-brand-hi"
-          >
-            {initialsOf(profile.name)}
-          </span>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-ink">{profile.name}</p>
-            <p className="truncate text-xs text-ink-faint">{user?.email ?? `@${profile.handle}`}</p>
+        <div className={cn('mt-4 border-t border-line pt-4', collapsed && 'flex justify-center')}>
+          <div className={cn('flex items-center gap-3', collapsed && 'flex-col gap-2')}>
+            <span
+              aria-hidden="true"
+              className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-dim text-sm font-semibold text-brand-hi"
+            >
+              {initialsOf(profile.name)}
+            </span>
+            {collapsed ? null : (
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-ink">{profile.name}</p>
+                <p className="truncate text-xs text-ink-faint">
+                  {user?.email ?? `@${profile.handle}`}
+                </p>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              className="grid size-8 shrink-0 place-items-center rounded-lg text-ink-faint transition-colors hover:bg-surface-hi hover:text-ink"
+            >
+              <Icon name="saida" className="size-4" />
+              <span className="sr-only">Sair da conta</span>
+            </button>
           </div>
         </div>
       ) : null}
 
-      {container.demo ? <DemoBadge className="mt-3 self-start" /> : null}
-    </aside>
-  )
-}
-
-function MobileHeader() {
-  return (
-    <header className="sticky top-0 z-30 border-b border-line bg-canvas/85 backdrop-blur lg:hidden">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <span className="flex items-center gap-2">
-          <LogoMark className="size-6 sm:hidden" />
-          <Wordmark className="hidden w-40 sm:block" />
+      {container.demo && !collapsed ? (
+        <span className="mt-3 self-start rounded-full border border-line px-2.5 py-1 text-xs text-ink-faint">
+          modo demo
         </span>
-        {container.demo ? <DemoBadge /> : null}
-      </div>
-    </header>
+      ) : null}
+    </div>
   )
 }
 
-function TabletNav() {
+function SidebarLink({ item, collapsed }: { item: AppNavItem; collapsed: boolean }) {
   return (
-    <nav
-      aria-label="Navegação principal"
-      className="sticky top-16 z-20 hidden border-b border-line bg-canvas/95 backdrop-blur sm:block lg:hidden"
+    <NavLink
+      to={item.to}
+      end={item.end}
+      title={collapsed ? item.label : undefined}
+      className={({ isActive }) =>
+        cn(
+          'relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+          collapsed && 'justify-center px-0',
+          isActive
+            ? 'nav-active-bar bg-surface-hi text-ink'
+            : 'text-ink-muted hover:bg-surface hover:text-ink',
+        )
+      }
     >
-      <ul className="mx-auto flex max-w-6xl items-center gap-1 px-6 py-2">
-        {NAV.map((item) => (
-          <li key={item.to}>
-            <NavLink to={item.to} end={item.end} className={inlineLinkClass}>
-              {item.label}
-            </NavLink>
-          </li>
-        ))}
-      </ul>
-    </nav>
+      <Icon name={item.icon} />
+      {collapsed ? <span className="sr-only">{item.label}</span> : item.label}
+    </NavLink>
   )
 }
 
@@ -132,13 +215,22 @@ function MobileNav() {
   return (
     <nav
       aria-label="Navegação principal"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-canvas/95 backdrop-blur sm:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-canvas/95 backdrop-blur lg:hidden"
     >
       <ul className="flex items-center justify-around px-2 py-2">
-        {NAV.map((item) => (
+        {MOBILE_NAV.map((item) => (
           <li key={item.to}>
-            <NavLink to={item.to} end={item.end} className={mobileLinkClass}>
-              <NavIcon path={item.icon} />
+            <NavLink
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) =>
+                cn(
+                  'flex min-w-16 flex-col items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-medium transition-colors',
+                  isActive ? 'text-ink' : 'text-ink-faint hover:text-ink',
+                )
+              }
+            >
+              <Icon name={item.icon} />
               {item.label}
             </NavLink>
           </li>
@@ -148,55 +240,25 @@ function MobileNav() {
   )
 }
 
-function NavIcon({ path }: { path: string }) {
+/** Sem rede o app continua legível: o aviso explica por que nada salva. */
+function OfflineBanner() {
+  const { online } = usePlanner()
+  if (online) return null
+
   return (
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.75}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="size-5 shrink-0"
+    <p
+      role="status"
+      className="border-b border-flame/30 bg-flame-dim/50 px-4 py-2 text-center text-sm text-ink sm:px-6"
     >
-      <path d={path} />
-    </svg>
+      Você está sem conexão. Dá pra continuar lendo o dia, mas o que você marcar agora não salva.
+    </p>
   )
 }
 
-function DemoBadge({ className }: { className?: string }) {
-  return (
-    <span
-      className={cn(
-        'rounded-full border border-line px-2.5 py-1 text-xs text-ink-faint',
-        className,
-      )}
-    >
-      modo demo
-    </span>
-  )
-}
-
-type LinkState = { readonly isActive: boolean }
-
-function sidebarLinkClass({ isActive }: LinkState): string {
-  return cn(
-    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-    isActive ? 'bg-surface-hi text-ink' : 'text-ink-muted hover:bg-surface hover:text-ink',
-  )
-}
-
-function inlineLinkClass({ isActive }: LinkState): string {
-  return cn(
-    'block rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-    isActive ? 'bg-surface text-ink' : 'text-ink-muted hover:text-ink',
-  )
-}
-
-function mobileLinkClass({ isActive }: LinkState): string {
-  return cn(
-    'flex min-w-16 flex-col items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-medium transition-colors',
-    isActive ? 'text-ink' : 'text-ink-faint hover:text-ink',
-  )
+function readCollapsed(): boolean {
+  try {
+    return window.localStorage.getItem(COLLAPSED_KEY) === 'true'
+  } catch {
+    return false
+  }
 }

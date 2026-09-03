@@ -1,11 +1,20 @@
 import type { AuthService, AuthUser } from '@/domain/auth/auth-service'
 import type { Activity, NewActivityInput } from '@/domain/entities/activity'
+import type { CheckIn, NewCheckInInput } from '@/domain/entities/checkin'
+import type { DayKey } from '@/domain/entities/day'
+import type { Habit, HabitLog, HabitStatus, NewHabitInput } from '@/domain/entities/habit'
+import type { NewTaskInput, Task } from '@/domain/entities/task'
+import type { NewWinInput, Win } from '@/domain/entities/win'
 import type { Goal, NewGoalInput } from '@/domain/entities/goal'
 import type { Profile } from '@/domain/entities/profile'
 import { assertValidBio, assertValidHandle, assertValidName } from '@/domain/entities/profile'
 import type { ActivityRepository } from '@/domain/repositories/activity-repository'
 import type { GoalRepository } from '@/domain/repositories/goal-repository'
+import type { CheckInRepository } from '@/domain/repositories/checkin-repository'
+import type { HabitRepository } from '@/domain/repositories/habit-repository'
 import type { ProfileRepository, ProfileUpdate } from '@/domain/repositories/profile-repository'
+import type { TaskRepository, TaskUpdate } from '@/domain/repositories/task-repository'
+import type { WinRepository } from '@/domain/repositories/win-repository'
 import { DEMO_USER, demoStore } from './demo-store'
 
 const SESSION_KEY = 'momentumm.demo.session'
@@ -112,6 +121,72 @@ export class DemoProfileRepository implements ProfileRepository {
       ...(changes.defaultVisibility !== undefined
         ? { defaultVisibility: changes.defaultVisibility }
         : {}),
+      ...(changes.plan !== undefined ? { plan: changes.plan } : {}),
     })
+  }
+}
+
+export class DemoHabitRepository implements HabitRepository {
+  async listByUser(): Promise<Habit[]> {
+    return demoStore.habits()
+  }
+
+  async create(input: NewHabitInput): Promise<Habit> {
+    return demoStore.addHabit(input)
+  }
+
+  async archive(id: string): Promise<void> {
+    demoStore.archiveHabit(id)
+  }
+
+  async listLogs(): Promise<HabitLog[]> {
+    return demoStore.habitLogs()
+  }
+
+  async setStatus(
+    _userId: string,
+    habitId: string,
+    day: DayKey,
+    status: HabitStatus,
+  ): Promise<HabitLog> {
+    return demoStore.setHabitStatus(habitId, day, status)
+  }
+}
+
+export class DemoTaskRepository implements TaskRepository {
+  async listByUser(): Promise<Task[]> {
+    return demoStore.tasks()
+  }
+
+  async create(input: NewTaskInput): Promise<Task> {
+    return demoStore.addTask(input)
+  }
+
+  async update(id: string, _userId: string, changes: TaskUpdate): Promise<Task> {
+    return demoStore.updateTask(id, changes)
+  }
+
+  async remove(id: string): Promise<void> {
+    demoStore.removeTask(id)
+  }
+}
+
+export class DemoCheckInRepository implements CheckInRepository {
+  async listByUser(): Promise<CheckIn[]> {
+    return demoStore.checkIns()
+  }
+
+  async save(input: NewCheckInInput): Promise<CheckIn> {
+    return demoStore.saveCheckIn(input)
+  }
+}
+
+export class DemoWinRepository implements WinRepository {
+  async listByUser(): Promise<Win[]> {
+    return demoStore.wins()
+  }
+
+  async save(input: NewWinInput): Promise<Win> {
+    return demoStore.saveWin(input)
   }
 }

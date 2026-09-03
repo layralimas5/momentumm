@@ -5,13 +5,18 @@ import { GoalProgressCard } from '@/presentation/components/goal/GoalProgressCar
 import { Button } from '@/presentation/components/ui/Button'
 import { Field, Select, TextInput } from '@/presentation/components/ui/Field'
 import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
-import { useActivities } from '@/presentation/hooks/use-activities'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
-import { useGoals } from '@/presentation/hooks/use-goals'
+import { usePlanner } from '@/presentation/planner/use-planner'
 
 export function GoalsPage() {
-  const { activities, today, loading: loadingActivities } = useActivities()
-  const goals = useGoals(activities, today)
+  const planner = usePlanner()
+  const goals = {
+    progress: planner.goalProgress,
+    error: planner.error,
+    loading: planner.loading,
+    create: planner.createGoal,
+    archive: planner.archiveGoal,
+  }
 
   const [type, setType] = useState<ActivityTypeSlug>('leitura')
   const [period, setPeriod] = useState<GoalPeriod>('dia')
@@ -28,7 +33,7 @@ export function GoalsPage() {
   return (
     <div className="flex flex-col gap-5 lg:gap-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-ink lg:text-3xl">Metas</h1>
+        <h2 className="text-2xl font-semibold tracking-tight text-ink lg:text-[1.75rem]">Metas</h2>
         <p className="mt-1 text-sm text-ink-muted">
           Uma meta ativa por eixo e período. Menos metas, mais chance de bater.
         </p>
@@ -37,7 +42,7 @@ export function GoalsPage() {
       {goals.error ? <ErrorNote message={goals.error} /> : null}
 
       {/* No desktop o formulário vira coluna fixa e a lista ocupa o resto da largura. */}
-      <div className="grid gap-5 lg:grid-cols-[22rem_minmax(0,1fr)] lg:items-start lg:gap-6">
+      <div className="grid gap-5 lg:grid-cols-[22rem_minmax(0,1fr)] lg:items-start lg:gap-6 2xl:grid-cols-[26rem_minmax(0,1fr)] 2xl:gap-8">
         <form
           className="rounded-card border border-line bg-surface p-5 lg:sticky lg:top-8"
           onSubmit={(event) => {
@@ -115,7 +120,7 @@ export function GoalsPage() {
             </span>
           </div>
 
-          {goals.loading || loadingActivities ? (
+          {goals.loading ? (
             <LoadingBlock label="Carregando tuas metas" />
           ) : goals.progress.length === 0 ? (
             <EmptyState
@@ -123,7 +128,7 @@ export function GoalsPage() {
               description="Começa com uma meta que você conseguiria bater até num dia ruim. Consistência primeiro, volume depois."
             />
           ) : (
-            <ul className="flex flex-col gap-2">
+            <ul className="grid gap-2 2xl:grid-cols-2">
               {goals.progress.map((progress) => (
                 <GoalProgressCard
                   key={progress.goal.id}

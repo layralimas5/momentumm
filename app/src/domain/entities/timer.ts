@@ -17,6 +17,18 @@ export interface TimerSession {
   readonly accumulatedMs: number
   /** Instante em que voltou a correr. `null` quando está pausado. */
   readonly runningSince: Date | null
+  /** A ação que está sendo executada. É o que a sessão de foco mostra na tela. */
+  readonly label: string | null
+  /** Ação de onde a sessão saiu, pra concluir as duas de uma vez. */
+  readonly taskId: string | null
+  /** Duração escolhida no seletor. Vira alvo visual, nunca corte automático. */
+  readonly plannedMin: number | null
+}
+
+export interface StartTimerOptions {
+  readonly label?: string | null
+  readonly taskId?: string | null
+  readonly plannedMin?: number | null
 }
 
 const MS_PER_MINUTE = 60_000
@@ -24,8 +36,26 @@ const MS_PER_MINUTE = 60_000
 /** Abaixo de um minuto não vira registro: arredondaria pra zero e o domínio recusa. */
 export const MIN_TIMER_MS = MS_PER_MINUTE
 
-export function startTimer(type: ActivityTypeSlug, now: Date = new Date()): TimerSession {
-  return { type, startedAt: now, accumulatedMs: 0, runningSince: now }
+export function startTimer(
+  type: ActivityTypeSlug,
+  now: Date = new Date(),
+  options: StartTimerOptions = {},
+): TimerSession {
+  return {
+    type,
+    startedAt: now,
+    accumulatedMs: 0,
+    runningSince: now,
+    label: options.label?.trim() || null,
+    taskId: options.taskId ?? null,
+    plannedMin: options.plannedMin ?? null,
+  }
+}
+
+/** Quanto da duração planejada já foi cumprido, de 0 a 1. */
+export function plannedProgress(session: TimerSession, now: Date = new Date()): number {
+  if (!session.plannedMin) return 0
+  return Math.min(1, elapsedMs(session, now) / (session.plannedMin * MS_PER_MINUTE))
 }
 
 export function isRunning(session: TimerSession): boolean {
@@ -92,7 +122,7 @@ export function finishTimer(
     type: session.type,
     value,
     durationMin,
-    note: input.note ?? null,
+    note: input.note ?? session.label,
     occurredAt: now,
     source: 'timer',
   }

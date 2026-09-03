@@ -62,10 +62,46 @@ que existir base. Feed vazio afasta usuário.
 Fase 1 em pé, em `app/`. Roda em **modo demo** sem configurar nada (dados em
 `localStorage`) e vira contas reais ao preencher `.env.local` com o Supabase.
 
-Pronto: domínio completo com 42 testes, migration com RLS, repositórios demo e
+Pronto: domínio completo com 99 testes, duas migrations com RLS, repositórios demo e
 Supabase, auth com rota protegida, registro rápido, cronômetro de sessão, streak
 dos últimos 7 dias, histórico com filtro por eixo, metas com progresso e perfil
 editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
+
+### Dashboard (camada de planejamento)
+
+A tela `Hoje` responde quatro perguntas, nessa ordem: como estou hoje, o que
+importa agora, qual é a próxima ação, estou avançando de verdade. As seções não
+são independentes — o check-in define a capacidade do dia, a capacidade calibra a
+recomendação, hábitos e ações alimentam o momentum, o momentum vira progresso
+semanal e o conjunto gera o insight, que devolve um ajuste aplicável.
+
+Entidades novas (`app/src/domain/entities/`):
+
+- `checkin` — estado, energia (1-5) e foco do dia. Deriva a **capacidade**
+  (`minima` / `moderada` / `plena`), que é o que faz o app sugerir a versão
+  mínima em vez de empurrar o plano cheio num dia ruim
+- `habit` + `HabitLog` — repetição com frequência, versão mínima e sequência
+  própria. `pulado` e `adiado` são estados legítimos: perder um dia não é punido
+- `task` — a ação que liga meta a movimento. Uma única **prioridade principal**
+  por dia, com versão mínima pra dia ruim
+- `momentum` — pontuação de 0 a 100 com classificação, comparação com os 7 dias
+  anteriores, explicação e recomendação. Constância pesa mais que volume
+- `week` — série de sete dias mais a conclusão escrita
+- `insight` — regras determinísticas sobre os dados reais. Sem padrão detectado
+  não há insight: nada de frase motivacional genérica
+- `win` — uma vitória por dia
+- `plan` — limites de `free` e `pro`. O PRO amplia profundidade, **nunca**
+  libera o básico: o dashboard não é bloqueado por banner
+
+Estado único em `presentation/planner/PlannerProvider` (carrega tudo de uma vez,
+escritas otimistas). A sessão de foco vive em `presentation/focus/FocusProvider`
+e é uma só no app inteiro: a prioridade e o card de foco são duas portas pro
+mesmo cronômetro. Rotas: `/app`, `/app/jornada`, `/app/habitos`, `/app/metas`,
+`/app/foco`, `/app/insights`, `/app/configuracoes` (as antigas `/app/atividades`
+e `/app/perfil` redirecionam).
+
+Conta nova cai no onboarding de quatro passos (área, meta, hábito, prioridade)
+em vez de ver dez cards vazios.
 
 O cronômetro guarda a sessão no `localStorage` (`momentumm.timer.v1`), sobrevive a
 recarregar a página e calcula o tempo por timestamp, nunca por contador de tique.
@@ -85,6 +121,6 @@ Quando incomodar, trocar por import dinâmico dentro do `container`.
 cd app
 npm install
 npm run dev     # modo demo, sem configurar nada
-npm test        # 29 testes de domínio
+npm test        # 99 testes de domínio
 npm run build
 ```

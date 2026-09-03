@@ -120,3 +120,39 @@ export function describeGoal(goal: Goal): string {
   const type = activityType(goal.type)
   return `${formatUnit(type, goal.target)} ${GOAL_PERIOD_LABELS[goal.period]}`
 }
+
+/**
+ * Ritmo da meta. A regra é deliberada: NÃO se mede progresso só pelo tempo que
+ * passou. Compara-se o que já foi feito com o que o período já consumiu — é a
+ * única leitura que responde "estou no páreo?" sem mentir pra nenhum dos lados.
+ */
+export const GOAL_PACES = ['atrasada', 'estavel', 'adiantada'] as const
+export type GoalPace = (typeof GOAL_PACES)[number]
+
+export const GOAL_PACE_LABELS: Readonly<Record<GoalPace, string>> = {
+  atrasada: 'Atrasada',
+  estavel: 'Estável',
+  adiantada: 'Adiantada',
+}
+
+/** Margem em que estar um pouco atrás ainda é considerado no ritmo. */
+const PACE_TOLERANCE = 0.15
+
+export function paceOf(progress: GoalProgress, today: DayKey): GoalPace {
+  if (progress.achieved) return 'adiantada'
+
+  const totalDays = daysBetween(progress.periodStart, progress.periodEnd) + 1
+  const elapsedDays = Math.min(totalDays, daysBetween(progress.periodStart, today) + 1)
+  const expected = elapsedDays / totalDays
+
+  if (progress.ratio >= expected) return 'adiantada'
+  if (progress.ratio >= expected - PACE_TOLERANCE) return 'estavel'
+  return 'atrasada'
+}
+
+/** Prazo em palavras. Meta diária não tem prazo útil: o prazo é hoje. */
+export function deadlineLabel(progress: GoalProgress): string {
+  if (progress.goal.period === 'dia') return 'Fecha hoje'
+  if (progress.daysLeft === 0) return 'Último dia'
+  return progress.daysLeft === 1 ? 'Falta 1 dia' : `Faltam ${progress.daysLeft} dias`
+}

@@ -13,6 +13,11 @@ const sessionSchema = z.object({
   startedAt: z.string().datetime(),
   accumulatedMs: z.number().finite().min(0),
   runningSince: z.string().datetime().nullable(),
+  // Sessão gravada antes do foco existir não tem esses campos: default null
+  // mantém a sessão em andamento em vez de descartá-la numa atualização.
+  label: z.string().nullable().default(null),
+  taskId: z.string().nullable().default(null),
+  plannedMin: z.number().finite().positive().nullable().default(null),
 })
 
 export function loadTimerSession(): TimerSession | null {
@@ -30,6 +35,9 @@ export function loadTimerSession(): TimerSession | null {
     startedAt: new Date(parsed.data.startedAt),
     accumulatedMs: parsed.data.accumulatedMs,
     runningSince: parsed.data.runningSince ? new Date(parsed.data.runningSince) : null,
+    label: parsed.data.label,
+    taskId: parsed.data.taskId,
+    plannedMin: parsed.data.plannedMin,
   }
 }
 
@@ -42,6 +50,9 @@ export function saveTimerSession(session: TimerSession): void {
         startedAt: session.startedAt.toISOString(),
         accumulatedMs: session.accumulatedMs,
         runningSince: session.runningSince?.toISOString() ?? null,
+        label: session.label,
+        taskId: session.taskId,
+        plannedMin: session.plannedMin,
       }),
     )
   } catch {

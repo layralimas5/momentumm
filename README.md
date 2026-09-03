@@ -42,8 +42,14 @@ Visibilidade de atividade é regra de RLS no banco, não filtro no front.
 
 ## Status
 
-Fase 1 funcionando: registro rápido, sequência, metas com progresso, histórico e
-perfil. Fase 2 (feed, follows, kudos, recap mensal) ainda não começou.
+Fase 1 funcionando: check-in do dia, prioridade principal, hábitos, ações,
+sessão de foco, momentum, progresso semanal, insights, metas com progresso,
+histórico e perfil. Fase 2 (feed, follows, kudos, recap mensal) ainda não
+começou.
+
+O dashboard trata o dia como variável: o check-in define a capacidade e, num dia
+de energia baixa, o app sugere a versão mínima do plano em vez de incentivar o
+abandono.
 
 Conceito, modelo de dados e plano de aquisição em `../saas-ideias/momentumm.md`.
 

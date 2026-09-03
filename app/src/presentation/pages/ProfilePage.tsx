@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ACTIVITY_VISIBILITIES, VISIBILITY_LABELS, type ActivityVisibility } from '@/domain/entities/activity'
+import { formatLimit, isPro, limitsOf, PLAN_LABELS, type PlanTier } from '@/domain/entities/plan'
 import { initialsOf, normalizeHandle, MAX_BIO_LENGTH } from '@/domain/entities/profile'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
@@ -7,6 +9,7 @@ import { Button } from '@/presentation/components/ui/Button'
 import { Field, Select, TextInput } from '@/presentation/components/ui/Field'
 import { ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
+import { cn } from '@/shared/lib/cn'
 
 export function ProfilePage() {
   const { user, profile, loading, signOut, refreshProfile } = useAuth()
@@ -32,11 +35,23 @@ export function ProfilePage() {
     window.setTimeout(() => setSaved(false), 2000)
   })
 
+  /**
+   * Trocar de plano só existe no modo demo: em produção quem manda no plano é a
+   * assinatura, e o repositório do Supabase ignora esse campo de propósito.
+   */
+  const switchPlan = useAsyncAction(async (plan: PlanTier) => {
+    if (!user) return
+    await container.profiles.update(user.id, { plan })
+    await refreshProfile()
+  })
+
   if (loading) return <LoadingBlock label="Carregando teu perfil" />
 
   if (!profile) {
     return <ErrorNote message="Não consegui carregar teu perfil. Recarrega a página." />
   }
+
+  const limits = limitsOf(profile.plan)
 
   return (
     <div className="flex flex-col gap-5 lg:gap-6">
@@ -48,13 +63,15 @@ export function ProfilePage() {
           {initialsOf(profile.name)}
         </span>
         <div className="min-w-0">
-          <h1 className="truncate text-2xl font-semibold tracking-tight text-ink lg:text-3xl">{profile.name}</h1>
+          <h2 className="truncate text-2xl font-semibold tracking-tight text-ink lg:text-[1.75rem]">
+            {profile.name}
+          </h2>
           <p className="truncate text-sm text-ink-muted">@{profile.handle}</p>
         </div>
       </header>
 
       {/* Dados à esquerda, sessão à direita: no desktop o formulário sozinho deixaria metade da tela vazia. */}
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-6">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-6 2xl:grid-cols-[minmax(0,1fr)_24rem] 2xl:gap-8">
         <form
           className="flex flex-col gap-4 rounded-card border border-line bg-surface p-5"
           onSubmit={(event) => {
@@ -147,6 +164,50 @@ export function ProfilePage() {
               <dd className="truncate text-ink">@{profile.handle}</dd>
             </div>
           </dl>
+
+          <div className="border-t border-line pt-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-medium text-ink">Plano</p>
+              <span
+                className={cn(
+                  'rounded-full border px-2.5 py-1 text-xs font-medium',
+                  isPro(profile.plan)
+                    ? 'border-brand/40 bg-brand-dim/50 text-brand-ink'
+                    : 'border-line text-ink-muted',
+                )}
+              >
+                {PLAN_LABELS[profile.plan]}
+              </span>
+            </div>
+
+            <ul className="mt-3 flex flex-col gap-1.5 text-xs text-ink-faint">
+              <li>Metas ativas: {formatLimit(limits.activeGoals)}</li>
+              <li>Hábitos ativos: {formatLimit(limits.activeHabits)}</li>
+              <li>Sessões de foco: {limits.focusDurations.join(', ')} min</li>
+              <li>Insights por vez: {formatLimit(limits.insightsPerDay)}</li>
+            </ul>
+
+            {isPro(profile.plan) ? null : (
+              <Link
+                to="/#pro"
+                className="mt-3 inline-flex text-sm font-medium text-brand-hi underline-offset-2 hover:underline"
+              >
+                Ver o que muda no PRO
+              </Link>
+            )}
+
+            {container.demo ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="mt-3 w-full"
+                loading={switchPlan.running}
+                onClick={() => void switchPlan.run(isPro(profile.plan) ? 'free' : 'pro')}
+              >
+                {isPro(profile.plan) ? 'Voltar pro gratuito' : 'Simular o PRO'}
+              </Button>
+            ) : null}
+          </div>
 
           <Button variant="danger" onClick={() => void signOut()} className="w-full">
             Sair

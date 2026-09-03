@@ -1,19 +1,31 @@
 import type { AuthService } from '@/domain/auth/auth-service'
 import type { ActivityRepository } from '@/domain/repositories/activity-repository'
+import type { CheckInRepository } from '@/domain/repositories/checkin-repository'
 import type { GoalRepository } from '@/domain/repositories/goal-repository'
+import type { HabitRepository } from '@/domain/repositories/habit-repository'
 import type { ProfileRepository } from '@/domain/repositories/profile-repository'
+import type { TaskRepository } from '@/domain/repositories/task-repository'
+import type { WinRepository } from '@/domain/repositories/win-repository'
 import { isDemoMode } from './config/env'
 import {
   DemoActivityRepository,
   DemoAuthService,
+  DemoCheckInRepository,
   DemoGoalRepository,
+  DemoHabitRepository,
   DemoProfileRepository,
+  DemoTaskRepository,
+  DemoWinRepository,
 } from './demo/demo-repositories'
 import {
   SupabaseActivityRepository,
   SupabaseAuthService,
+  SupabaseCheckInRepository,
   SupabaseGoalRepository,
+  SupabaseHabitRepository,
   SupabaseProfileRepository,
+  SupabaseTaskRepository,
+  SupabaseWinRepository,
 } from './supabase/supabase-repositories'
 
 export interface Container {
@@ -21,6 +33,10 @@ export interface Container {
   readonly activities: ActivityRepository
   readonly goals: GoalRepository
   readonly profiles: ProfileRepository
+  readonly habits: HabitRepository
+  readonly tasks: TaskRepository
+  readonly checkIns: CheckInRepository
+  readonly wins: WinRepository
   readonly demo: boolean
 }
 
@@ -31,6 +47,10 @@ export const container: Container = isDemoMode
       activities: new DemoActivityRepository(),
       goals: new DemoGoalRepository(),
       profiles: new DemoProfileRepository(),
+      habits: new DemoHabitRepository(),
+      tasks: new DemoTaskRepository(),
+      checkIns: new DemoCheckInRepository(),
+      wins: new DemoWinRepository(),
       demo: true,
     }
   : {
@@ -38,5 +58,9 @@ export const container: Container = isDemoMode
       activities: new SupabaseActivityRepository(),
       goals: new SupabaseGoalRepository(),
       profiles: new SupabaseProfileRepository(),
+      habits: new SupabaseHabitRepository(),
+      tasks: new SupabaseTaskRepository(),
+      checkIns: new SupabaseCheckInRepository(),
+      wins: new SupabaseWinRepository(),
       demo: false,
     }

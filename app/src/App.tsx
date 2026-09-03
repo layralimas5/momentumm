@@ -12,8 +12,17 @@ const AuthPage = lazy(() =>
 const ToolsPage = lazy(() =>
   import('@/presentation/pages/ToolsPage').then((m) => ({ default: m.ToolsPage })),
 )
-const TodayPage = lazy(() =>
-  import('@/presentation/pages/TodayPage').then((m) => ({ default: m.TodayPage })),
+const DashboardPage = lazy(() =>
+  import('@/presentation/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
+)
+const HabitsPage = lazy(() =>
+  import('@/presentation/pages/HabitsPage').then((m) => ({ default: m.HabitsPage })),
+)
+const FocusPage = lazy(() =>
+  import('@/presentation/pages/FocusPage').then((m) => ({ default: m.FocusPage })),
+)
+const InsightsPage = lazy(() =>
+  import('@/presentation/pages/InsightsPage').then((m) => ({ default: m.InsightsPage })),
 )
 const ActivitiesPage = lazy(() =>
   import('@/presentation/pages/ActivitiesPage').then((m) => ({ default: m.ActivitiesPage })),
@@ -44,10 +53,17 @@ export function App() {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<TodayPage />} />
-              <Route path="atividades" element={<ActivitiesPage />} />
+              <Route index element={<DashboardPage />} />
+              <Route path="jornada" element={<ActivitiesPage />} />
+              <Route path="habitos" element={<HabitsPage />} />
               <Route path="metas" element={<GoalsPage />} />
-              <Route path="perfil" element={<ProfilePage />} />
+              <Route path="foco" element={<FocusPage />} />
+              <Route path="insights" element={<InsightsPage />} />
+              <Route path="configuracoes" element={<ProfilePage />} />
+
+              {/* Rotas antigas continuam válidas: link salvo não pode virar 404. */}
+              <Route path="atividades" element={<Navigate to="/app/jornada" replace />} />
+              <Route path="perfil" element={<Navigate to="/app/configuracoes" replace />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />
