@@ -71,7 +71,7 @@ function CheckInSummary({
   return (
     <Panel
       aria-labelledby="checkin-titulo"
-      className="flex h-full flex-wrap items-start gap-x-5 gap-y-3"
+      className="flex flex-wrap items-start gap-x-5 gap-y-3"
     >
       <div className="min-w-0 flex-1">
         <h2 id="checkin-titulo" className="text-sm font-semibold tracking-wide text-ink-muted uppercase">
@@ -122,7 +122,7 @@ function CheckInForm({
   const echo = moodOption(mood).echo
 
   return (
-    <Panel tone="brand" aria-labelledby="checkin-titulo" className="h-full">
+    <Panel tone="brand" aria-labelledby="checkin-titulo">
       <PanelHeader
         id="checkin-titulo"
         title="Como você está chegando hoje?"

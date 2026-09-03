@@ -17,8 +17,8 @@ import { APP_NAV, MOBILE_NAV, type AppNavItem } from './nav-items'
 const COLLAPSED_KEY = 'momentumm.sidebar.collapsed'
 
 /**
- * Casca do app: sidebar fixa à esquerda, header em cima, conteúdo em grade e
- * largura máxima controlada.
+ * Casca do app: sidebar fixa à esquerda, header em cima e conteúdo em grade
+ * ocupando a largura do monitor.
  *
  * A partir de `lg` a tela vira dashboard de verdade. Abaixo disso a coluna
  * única continua sendo o melhor uso do espaço, com a navegação na barra
@@ -83,14 +83,16 @@ function LayoutShell() {
         <AppHeader onOpenMenu={() => setDrawerOpen(true)} />
         <OfflineBanner />
 
+        {/*
+          O conteúdo ocupa a largura inteira do monitor. Quem cuida da leitura é
+          a grade de colunas e o teto de largura de cada bloco de texto — faixa
+          central estreita em tela grande só produz margem morta dos dois lados.
+        */}
         <main
           id="conteudo"
-          className="w-full flex-1 px-4 pb-28 pt-5 sm:px-6 sm:pb-10 lg:px-8 lg:pt-7"
+          className="w-full flex-1 px-4 pb-28 pt-5 sm:px-6 sm:pb-10 lg:px-8 lg:pt-7 2xl:px-10"
         >
-          {/* Teto de largura: em monitor grande, linha infinita cansa de ler. */}
-          <div className="mx-auto w-full max-w-[112rem]">
-            <Outlet />
-          </div>
+          <Outlet />
         </main>
       </div>
 

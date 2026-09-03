@@ -30,7 +30,7 @@ export function MomentumCard({ momentum, recommendation, streak }: MomentumCardP
         : 'brand'
 
   return (
-    <Panel aria-labelledby="momentum-titulo" className="flex h-full flex-col">
+    <Panel aria-labelledby="momentum-titulo" className="flex flex-col">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h2
@@ -70,7 +70,7 @@ export function MomentumCard({ momentum, recommendation, streak }: MomentumCardP
 
       <p className="mt-4 text-sm text-ink-muted">{momentum.explanation}</p>
 
-      <p className="mt-4 flex gap-2.5 rounded-xl border border-brand/25 bg-brand-dim/25 px-3.5 py-3 text-sm text-ink xl:mt-auto">
+      <p className="mt-4 flex gap-2.5 rounded-xl border border-brand/25 bg-brand-dim/25 px-3.5 py-3 text-sm text-ink">
         <Icon name="raio" className="mt-0.5 size-4 shrink-0 text-brand-hi" />
         <span>{recommendation}</span>
       </p>

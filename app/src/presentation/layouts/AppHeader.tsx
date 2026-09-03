@@ -38,7 +38,7 @@ export function AppHeader({ onOpenMenu }: { onOpenMenu?: () => void }) {
   return (
     <>
       <header className="sticky top-0 z-30 border-b border-line bg-canvas/85 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-[112rem] items-center gap-4 px-4 py-3.5 sm:px-6 lg:px-8">
+        <div className="flex w-full items-center gap-4 px-4 py-3.5 sm:px-6 lg:px-8 2xl:px-10">
           {onOpenMenu ? (
             <button
               type="button"

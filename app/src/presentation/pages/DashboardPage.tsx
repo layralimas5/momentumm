@@ -165,7 +165,7 @@ export function DashboardPage() {
         Linha de contexto: como estou hoje. O check-in vem primeiro porque é ele
         que calibra tudo que aparece abaixo.
       */}
-      <div className="grid gap-5 xl:grid-cols-2">
+      <div className="grid gap-5 xl:grid-cols-2 xl:items-start">
         <CheckInCard
           checkIn={view.checkIn}
           capacity={view.capacity}

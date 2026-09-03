@@ -89,98 +89,157 @@ export function PriorityCard({
       aria-labelledby="prioridade-titulo"
       className="p-6 lg:p-7"
     >
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <Eyebrow />
-          <h2
-            id="prioridade-titulo"
-            className="mt-2 text-sm font-semibold tracking-wide text-ink-muted uppercase"
-          >
-            O movimento que muda seu dia
-          </h2>
+      {/*
+        Em tela larga a versão mínima sai pra coluna da direita: ela é a segunda
+        informação mais importante do card e, sem ela ali, o herói viraria um
+        bloco de mil pixels com texto só no canto esquerdo.
+      */}
+      <div className="2xl:grid 2xl:grid-cols-[minmax(0,1fr)_24rem] 2xl:items-start 2xl:gap-10">
+        <div>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <Eyebrow />
+              <h2
+                id="prioridade-titulo"
+                className="mt-2 text-sm font-semibold tracking-wide text-ink-muted uppercase"
+              >
+                O movimento que muda seu dia
+              </h2>
 
-          {/* Teto de largura: título de uma linha só, atravessando a tela, cansa de ler. */}
-          <p className="mt-3 max-w-4xl text-2xl font-semibold tracking-tight text-balance text-ink lg:text-3xl">
-            {task.title}
-          </p>
+              {/* Teto de largura: título atravessando a tela inteira cansa de ler. */}
+              <p className="mt-3 max-w-3xl text-2xl font-semibold tracking-tight text-balance text-ink lg:text-3xl">
+                {task.title}
+              </p>
 
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            {axis ? <Tag color={axis.colorToken}>{axis.label}</Tag> : null}
-            {/* Meta do mesmo eixo repetiria a etiqueta ao lado. */}
-            {goal && goal.type !== task.axis ? (
-              <Tag tone="brand">Meta: {activityType(goal.type).label}</Tag>
-            ) : goal ? (
-              <Tag tone="brand">Ligada a uma meta</Tag>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {axis ? <Tag color={axis.colorToken}>{axis.label}</Tag> : null}
+                {/* Meta do mesmo eixo repetiria a etiqueta ao lado. */}
+                {goal && goal.type !== task.axis ? (
+                  <Tag tone="brand">Meta: {activityType(goal.type).label}</Tag>
+                ) : goal ? (
+                  <Tag tone="brand">Ligada a uma meta</Tag>
+                ) : null}
+                <Tag>
+                  <Icon name="relogio" className="size-3.5" />
+                  {task.estimatedMin} min
+                </Tag>
+                <Tag tone={task.effort === 'pesado' ? 'warn' : 'neutral'}>
+                  {TASK_EFFORT_LABELS[task.effort]}
+                </Tag>
+              </div>
+            </div>
+
+            <EffortDial effort={task.effort} />
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-center gap-2.5">
+            <Button
+              size="lg"
+              onClick={() => onStartFocus(task)}
+              className={cn(highlightMinimal && 'order-2')}
+            >
+              <Icon name="play" className="size-4" />
+              Começar agora
+            </Button>
+
+            {task.minimalVersion ? (
+              <Button
+                size="lg"
+                variant={highlightMinimal ? 'primary' : 'secondary'}
+                onClick={() => void shrink.run(task)}
+                loading={shrink.running}
+                className={cn(highlightMinimal && 'order-1')}
+              >
+                <Icon name="minimo" className="size-4" />
+                Fazer versão mínima
+              </Button>
             ) : null}
-            <Tag>
-              <Icon name="relogio" className="size-3.5" />
-              {task.estimatedMin} min
-            </Tag>
-            <Tag tone={task.effort === 'pesado' ? 'warn' : 'neutral'}>
-              {TASK_EFFORT_LABELS[task.effort]}
-            </Tag>
+
+            <Button
+              size="lg"
+              variant="secondary"
+              onClick={() => void complete.run(task)}
+              loading={complete.running}
+              className="order-3"
+            >
+              <Icon name="check" className="size-4" />
+              Concluir
+            </Button>
+
+            <Button size="lg" variant="ghost" onClick={onReorganize} className="order-4">
+              Reorganizar
+            </Button>
+          </div>
+
+          <div aria-live="polite" className="min-h-6">
+            {complete.error || shrink.error ? (
+              <p className="mt-2 text-sm text-danger">{complete.error ?? shrink.error}</p>
+            ) : null}
           </div>
         </div>
 
-        <EffortDial effort={task.effort} />
-      </div>
-
-      {highlightMinimal ? (
-        <p className="mt-5 flex gap-2.5 rounded-xl border border-brand/30 bg-canvas/40 px-3.5 py-3 text-sm text-ink-muted">
-          <Icon name="minimo" className="mt-0.5 size-4 shrink-0 text-brand-hi" />
-          <span>
-            Hoje sua energia está baixa. A versão mínima disso é{' '}
-            <strong className="font-medium text-ink">“{task.minimalVersion}”</strong> — ela mantém a
-            sequência sem cobrar o dia inteiro.
-          </span>
-        </p>
-      ) : null}
-
-      <div className="mt-6 flex flex-wrap items-center gap-2.5">
-        <Button
-          size="lg"
-          onClick={() => onStartFocus(task)}
-          className={cn(highlightMinimal && 'order-2')}
-        >
-          <Icon name="play" className="size-4" />
-          Começar agora
-        </Button>
-
-        {task.minimalVersion ? (
-          <Button
-            size="lg"
-            variant={highlightMinimal ? 'primary' : 'secondary'}
-            onClick={() => void shrink.run(task)}
-            loading={shrink.running}
-            className={cn(highlightMinimal && 'order-1')}
-          >
-            <Icon name="minimo" className="size-4" />
-            Fazer versão mínima
-          </Button>
-        ) : null}
-
-        <Button
-          size="lg"
-          variant="secondary"
-          onClick={() => void complete.run(task)}
-          loading={complete.running}
-          className="order-3"
-        >
-          <Icon name="check" className="size-4" />
-          Concluir
-        </Button>
-
-        <Button size="lg" variant="ghost" onClick={onReorganize} className="order-4">
-          Reorganizar
-        </Button>
-      </div>
-
-      <div aria-live="polite" className="min-h-6">
-        {complete.error || shrink.error ? (
-          <p className="mt-2 text-sm text-danger">{complete.error ?? shrink.error}</p>
-        ) : null}
+        <MinimalNote
+          minimalVersion={task.minimalVersion}
+          highlighted={highlightMinimal}
+          onDefine={onReorganize}
+        />
       </div>
     </Panel>
+  )
+}
+
+/**
+ * A saída pro dia ruim, sempre visível. Quando a energia está baixa ela ganha
+ * destaque; no resto do tempo fica como lembrete de que existe um plano B — é
+ * o que separa "não consegui hoje" de "abandonei".
+ */
+function MinimalNote({
+  minimalVersion,
+  highlighted,
+  onDefine,
+}: {
+  minimalVersion: string | null
+  highlighted: boolean
+  onDefine: () => void
+}) {
+  if (!minimalVersion) {
+    return (
+      <div className="mt-5 rounded-xl border border-dashed border-line px-4 py-3.5 2xl:mt-0">
+        <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">Versão mínima</p>
+        <p className="mt-1.5 text-sm text-ink-muted">
+          Essa ação ainda não tem um plano B. Definir um agora evita o abandono num dia ruim.
+        </p>
+        <button
+          type="button"
+          onClick={onDefine}
+          className="mt-2 text-sm font-medium text-brand-hi underline-offset-2 hover:underline"
+        >
+          Definir versão mínima
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className={cn(
+        'mt-5 rounded-xl border px-4 py-3.5 2xl:mt-0',
+        highlighted ? 'border-brand/40 bg-canvas/50' : 'border-line bg-canvas/30',
+      )}
+    >
+      <p className="flex items-center gap-2 text-xs font-medium tracking-wide uppercase">
+        <Icon name="minimo" className="size-3.5 text-brand-hi" />
+        <span className={highlighted ? 'text-brand-ink' : 'text-ink-faint'}>
+          {highlighted ? 'Hoje o plano é este' : 'Se o dia apertar'}
+        </span>
+      </p>
+      <p className="mt-1.5 text-sm font-medium text-ink">{minimalVersion}</p>
+      <p className="mt-1.5 text-sm text-ink-muted">
+        {highlighted
+          ? 'Sua energia está baixa. Isso mantém a sequência sem cobrar o dia inteiro.'
+          : 'Mesmo num dia ruim, isso já conta como movimento.'}
+      </p>
+    </div>
   )
 }
 
