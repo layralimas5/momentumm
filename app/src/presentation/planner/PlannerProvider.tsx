@@ -11,10 +11,18 @@ import {
   type HabitStatus,
   type NewHabitInput,
 } from '@/domain/entities/habit'
+import {
+  isActiveObjective,
+  progressOfObjective,
+  type NewObjectiveInput,
+  type Objective,
+} from '@/domain/entities/objective'
 import { limitsOf } from '@/domain/entities/plan'
+import type { PlanDraft } from '@/domain/entities/plan-builder'
 import { calculateStreakFromDays } from '@/domain/entities/streak'
 import type { NewTaskInput, Task } from '@/domain/entities/task'
 import type { NewWinInput, Win } from '@/domain/entities/win'
+import type { ObjectiveUpdate } from '@/domain/repositories/objective-repository'
 import type { TaskUpdate } from '@/domain/repositories/task-repository'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
@@ -23,6 +31,7 @@ import { PlannerContext, type PlannerState } from './planner-context'
 
 interface Snapshot {
   readonly activities: Activity[]
+  readonly objectives: Objective[]
   readonly goals: Goal[]
   readonly habits: Habit[]
   readonly habitLogs: HabitLog[]
@@ -33,6 +42,7 @@ interface Snapshot {
 
 const EMPTY: Snapshot = {
   activities: [],
+  objectives: [],
   goals: [],
   habits: [],
   habitLogs: [],
@@ -86,8 +96,10 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
 
     setLoading(true)
     try {
-      const [activities, goals, habits, habitLogs, tasks, checkIns, wins] = await Promise.all([
+      const [activities, objectives, goals, habits, habitLogs, tasks, checkIns, wins] =
+        await Promise.all([
         container.activities.listByUser(user.id),
+        container.objectives.listByUser(user.id),
         container.goals.listByUser(user.id),
         container.habits.listByUser(user.id),
         container.habits.listLogs(user.id),
@@ -99,6 +111,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       if (!mounted.current) return
       setData({
         activities: sortByRecent(activities),
+        objectives: objectives.filter(isActiveObjective),
         goals: goals.filter(isActive),
         habits,
         habitLogs,
@@ -169,12 +182,54 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     [user, mutate],
   )
 
-  const createGoal = useCallback(
-    async (input: Omit<NewGoalInput, 'userId'>) => {
+  const createObjective = useCallback(
+    async (input: Omit<NewObjectiveInput, 'userId'>): Promise<Objective | null> => {
+      if (!user) return null
+      const objective = await container.objectives.create({ userId: user.id, ...input })
+      setData((current) => ({ ...current, objectives: [...current.objectives, objective] }))
+      setError(null)
+      return objective
+    },
+    [user],
+  )
+
+  const updateObjective = useCallback(
+    async (id: string, changes: ObjectiveUpdate) => {
       if (!user) return
+      await mutate(
+        (current) => ({
+          ...current,
+          objectives: current.objectives.map((objective) =>
+            objective.id === id ? { ...objective, ...changes } : objective,
+          ),
+        }),
+        () => container.objectives.update(id, user.id, changes),
+      )
+    },
+    [user, mutate],
+  )
+
+  const archiveObjective = useCallback(
+    async (id: string) => {
+      if (!user) return
+      await mutate(
+        (current) => ({
+          ...current,
+          objectives: current.objectives.filter((objective) => objective.id !== id),
+        }),
+        () => container.objectives.archive(id, user.id),
+      )
+    },
+    [user, mutate],
+  )
+
+  const createGoal = useCallback(
+    async (input: Omit<NewGoalInput, 'userId'>): Promise<Goal | null> => {
+      if (!user) return null
       const goal = await container.goals.create({ userId: user.id, ...input })
       setData((current) => ({ ...current, goals: [...current.goals, goal] }))
       setError(null)
+      return goal
     },
     [user],
   )
@@ -198,11 +253,12 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   )
 
   const createHabit = useCallback(
-    async (input: Omit<NewHabitInput, 'userId'>) => {
-      if (!user) return
+    async (input: Omit<NewHabitInput, 'userId'>): Promise<Habit | null> => {
+      if (!user) return null
       const habit = await container.habits.create({ userId: user.id, ...input })
       setData((current) => ({ ...current, habits: [...current.habits, habit] }))
       setError(null)
+      return habit
     },
     [user],
   )
@@ -256,8 +312,8 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   )
 
   const createTask = useCallback(
-    async (input: Omit<NewTaskInput, 'userId'>) => {
-      if (!user) return
+    async (input: Omit<NewTaskInput, 'userId'>): Promise<Task | null> => {
+      if (!user) return null
       const task = await container.tasks.create({ userId: user.id, ...input })
       setData((current) => ({
         ...current,
@@ -271,6 +327,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         ],
       }))
       setError(null)
+      return task
     },
     [user],
   )
@@ -342,6 +399,32 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     [user],
   )
 
+  /**
+   * O plano gerado no onboarding virando dado de verdade.
+   *
+   * A ordem importa: o objetivo primeiro (é ele que pode ser recusado por já
+   * existir um ativo no eixo), depois o ritmo semanal, depois os hábitos e por
+   * último as ações — que nascem já apontando pra meta criada, senão o card de
+   * "próxima ação" da meta nasceria vazio.
+   */
+  const applyPlan = useCallback(
+    async (plan: PlanDraft) => {
+      if (!user) return
+
+      await createObjective(plan.objective)
+      const goal = await createGoal(plan.goal).catch(() => null)
+
+      for (const habit of plan.habits) {
+        await createHabit(habit)
+      }
+
+      for (const task of plan.tasks) {
+        await createTask({ ...task, goalId: goal?.id ?? null })
+      }
+    },
+    [user, createObjective, createGoal, createHabit, createTask],
+  )
+
   const todayActivities = useMemo(
     () => data.activities.filter((activity) => activity.day === today),
     [data.activities, today],
@@ -364,10 +447,17 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     [data.goals, data.activities, today],
   )
 
+  const objectiveProgress = useMemo(
+    () =>
+      data.objectives.map((objective) => progressOfObjective(objective, data.activities, today)),
+    [data.objectives, data.activities, today],
+  )
+
   const limits = useMemo(() => limitsOf(profile?.plan ?? 'free'), [profile])
 
   const isNewUser =
     !loading &&
+    data.objectives.length === 0 &&
     data.habits.length === 0 &&
     data.goals.length === 0 &&
     data.tasks.length === 0 &&
@@ -378,6 +468,8 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       today,
       activities: data.activities,
       todayActivities,
+      objectives: data.objectives,
+      objectiveProgress,
       goals: data.goals,
       goalProgress,
       habits: data.habits,
@@ -393,6 +485,10 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       isNewUser,
       logActivity,
       removeActivity,
+      createObjective,
+      updateObjective,
+      archiveObjective,
+      applyPlan,
       createGoal,
       archiveGoal,
       createHabit,
@@ -410,6 +506,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       data,
       todayActivities,
       goalProgress,
+      objectiveProgress,
       streak,
       limits,
       loading,
@@ -418,6 +515,10 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       isNewUser,
       logActivity,
       removeActivity,
+      createObjective,
+      updateObjective,
+      archiveObjective,
+      applyPlan,
       createGoal,
       archiveGoal,
       createHabit,

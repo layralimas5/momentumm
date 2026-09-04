@@ -19,6 +19,7 @@ import { TASK_EFFORTS, TASK_STATUSES, type Task } from '@/domain/entities/task'
 import type { Win } from '@/domain/entities/win'
 import { parseDayKey } from '@/domain/entities/day'
 import { GOAL_PERIODS, type Goal } from '@/domain/entities/goal'
+import type { Objective } from '@/domain/entities/objective'
 import { PLAN_TIERS } from '@/domain/entities/plan'
 import type { Profile } from '@/domain/entities/profile'
 import { ParseError } from '@/shared/errors'
@@ -49,6 +50,20 @@ const goalRowSchema = z.object({
   target: z.number().int(),
   period: z.enum(GOAL_PERIODS),
   created_at: z.string(),
+  archived_at: z.string().nullable(),
+})
+
+const objectiveRowSchema = z.object({
+  id: z.string(),
+  user_id: z.string(),
+  title: z.string(),
+  axis_slug: z.enum(ACTIVITY_TYPE_SLUGS),
+  motive: z.string().nullable(),
+  target: z.number().int(),
+  started_on: z.string(),
+  deadline: z.string(),
+  created_at: z.string(),
+  completed_at: z.string().nullable(),
   archived_at: z.string().nullable(),
 })
 
@@ -98,6 +113,23 @@ export function toGoal(row: unknown): Goal {
     target: parsed.target,
     period: parsed.period,
     createdAt: new Date(parsed.created_at),
+    archivedAt: parsed.archived_at ? new Date(parsed.archived_at) : null,
+  }
+}
+
+export function toObjective(row: unknown): Objective {
+  const parsed = parseOrThrow(objectiveRowSchema, row, 'objetivo')
+  return {
+    id: parsed.id,
+    userId: parsed.user_id,
+    title: parsed.title,
+    axis: parsed.axis_slug,
+    motive: parsed.motive,
+    target: parsed.target,
+    startedOn: parseDayKey(parsed.started_on.slice(0, 10)),
+    deadline: parseDayKey(parsed.deadline.slice(0, 10)),
+    createdAt: new Date(parsed.created_at),
+    completedAt: parsed.completed_at ? new Date(parsed.completed_at) : null,
     archivedAt: parsed.archived_at ? new Date(parsed.archived_at) : null,
   }
 }

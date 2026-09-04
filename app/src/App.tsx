@@ -21,6 +21,9 @@ const HabitsPage = lazy(() =>
 const FocusPage = lazy(() =>
   import('@/presentation/pages/FocusPage').then((m) => ({ default: m.FocusPage })),
 )
+const ReviewPage = lazy(() =>
+  import('@/presentation/pages/ReviewPage').then((m) => ({ default: m.ReviewPage })),
+)
 const InsightsPage = lazy(() =>
   import('@/presentation/pages/InsightsPage').then((m) => ({ default: m.InsightsPage })),
 )
@@ -58,6 +61,7 @@ export function App() {
               <Route path="habitos" element={<HabitsPage />} />
               <Route path="metas" element={<GoalsPage />} />
               <Route path="foco" element={<FocusPage />} />
+              <Route path="review" element={<ReviewPage />} />
               <Route path="insights" element={<InsightsPage />} />
               <Route path="configuracoes" element={<ProfilePage />} />
 

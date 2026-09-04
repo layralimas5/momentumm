@@ -63,7 +63,7 @@ que existir base. Feed vazio afasta usuário.
 Fase 1 em pé, em `app/`. Roda em **modo demo** sem configurar nada (dados em
 `localStorage`) e vira contas reais ao preencher `.env.local` com o Supabase.
 
-Pronto: domínio completo com 99 testes, duas migrations com RLS, repositórios demo e
+Pronto: domínio completo com 144 testes, três migrations com RLS, repositórios demo e
 Supabase, auth com rota protegida, registro rápido, cronômetro de sessão, streak
 dos últimos 7 dias, histórico com filtro por eixo, metas com progresso e perfil
 editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
@@ -98,12 +98,45 @@ Estado único em `presentation/planner/PlannerProvider` (carrega tudo de uma vez
 escritas otimistas). A sessão de foco vive em `presentation/focus/FocusProvider`
 e é uma só no app inteiro: a prioridade e o card de foco são duas portas pro
 mesmo cronômetro. Rotas: `/app`, `/app/jornada`, `/app/habitos`, `/app/metas`,
-`/app/foco`, `/app/insights`, `/app/configuracoes` (as antigas `/app/atividades`
+`/app/foco`, `/app/review`, `/app/insights`, `/app/configuracoes` (as antigas `/app/atividades`
 e `/app/perfil` redirecionam).
 
-Conta nova cai no onboarding de quatro passos (área, meta, hábito, prioridade)
-em vez de ver dez cards vazios. Meta e hábito são puláveis; a prioridade não —
-ninguém sai do onboarding sem uma próxima ação definida.
+### A jornada principal
+
+O produto é um ciclo de três telas, nessa ordem:
+
+**1. Onboarding.** Quatro passos: área, objetivo, prazo, plano. Conta nova não vê
+cards vazios — escolhe o que quer mudar, escreve o objetivo, define prazo e alvo,
+e recebe um plano que já vem pronto pra virar hábito e ação. O último passo é o
+primeiro dia começando, não um resumo.
+
+**2. Dashboard (`Hoje`).** Saudação, momentum, progresso dos objetivos,
+prioridade do dia, hábitos, ações e check-in. O objetivo vem alto de propósito:
+sem destino na frente, a pessoa cumpre a lista e não chega em lugar nenhum.
+
+**3. Review (`/app/review`).** Semanal: como foi, % de execução, onde perdeu
+ritmo, onde evoluiu, e uma recomendação pra semana seguinte. Tela separada —
+relatório dentro do dia transforma execução em contabilidade.
+
+Entidades da jornada:
+
+- `objective` — o que a pessoa quer mudar, **com prazo**. Difere de `goal` por
+  natureza: a meta é um ritmo que se repete, o objetivo termina. Um ativo por
+  eixo (índice único no banco). O progresso soma as `activities` do eixo dentro
+  da janela, sem tabela de vínculo: a atividade continua sendo a unidade única
+- `plan-builder` — o gerador de plano. Aritmética pura sobre alvo, prazo e dias
+  por semana; o mesmo pedido gera sempre o mesmo plano. **Avisa quando não
+  cabe** e sugere o prazo que caberia, em vez de entregar cronograma de papel
+- `review` — a leitura da semana. Regras determinísticas: sem padrão detectado,
+  o bloco não escreve nada. Não cobra dias anteriores à criação do hábito
+
+O rascunho do objetivo e o plano vivem em `presentation/planner/use-objective-draft`,
+compartilhados entre o onboarding (em passos) e o `ObjectiveDialog` (numa tela
+só). O `PlannerProvider.applyPlan` grava o plano inteiro numa operação: objetivo,
+ritmo semanal, hábitos e ações já apontando pra meta criada.
+
+No modo demo, Configurações tem **Recomeçar do zero** — é o caminho pra rever o
+onboarding sem abrir o devtools.
 
 ### Celular
 
@@ -143,6 +176,6 @@ Quando incomodar, trocar por import dinâmico dentro do `container`.
 cd app
 npm install
 npm run dev     # modo demo, sem configurar nada
-npm test        # 99 testes de domínio
+npm test        # 144 testes de domínio
 npm run build
 ```

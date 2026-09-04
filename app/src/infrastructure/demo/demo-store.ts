@@ -13,10 +13,16 @@ import {
   type NewHabitInput,
 } from '@/domain/entities/habit'
 import { createGoal, type Goal, type NewGoalInput } from '@/domain/entities/goal'
+import {
+  createObjective,
+  type NewObjectiveInput,
+  type Objective,
+} from '@/domain/entities/objective'
 import type { PlanTier } from '@/domain/entities/plan'
 import type { Profile } from '@/domain/entities/profile'
 import { createTask, type NewTaskInput, type Task } from '@/domain/entities/task'
 import { createWin, type NewWinInput, type Win } from '@/domain/entities/win'
+import type { ObjectiveUpdate } from '@/domain/repositories/objective-repository'
 import type { TaskUpdate } from '@/domain/repositories/task-repository'
 import { DomainError } from '@/shared/errors'
 
@@ -25,7 +31,7 @@ import { DomainError } from '@/shared/errors'
  * `localStorage`. A versão do storage sobe junto com o formato — dado antigo
  * é descartado em silêncio em vez de quebrar a tela.
  */
-const STORAGE_KEY = 'momentumm.demo.v2'
+const STORAGE_KEY = 'momentumm.demo.v3'
 
 export const DEMO_USER = {
   id: 'demo-user',
@@ -35,6 +41,7 @@ export const DEMO_USER = {
 interface DemoState {
   profile: Profile
   activities: Activity[]
+  objectives: Objective[]
   goals: Goal[]
   habits: Habit[]
   habitLogs: HabitLog[]
@@ -87,6 +94,22 @@ function seed(): DemoState {
       `demo-activity-${index}`,
     ),
   )
+
+  const objectives = [
+    createObjective(
+      {
+        userId: DEMO_USER.id,
+        title: 'Ler 6 livros até o fim do trimestre',
+        axis: 'leitura',
+        motive: 'Quero voltar a terminar o que começo.',
+        target: 1800,
+        startedOn: addDays(today, -30),
+        deadline: addDays(today, 60),
+      },
+      'demo-objective-1',
+      dateAt(addDays(today, -30), 8),
+    ),
+  ]
 
   const goals = [
     createGoal({ userId: DEMO_USER.id, type: 'leitura', target: 20, period: 'dia' }, 'demo-goal-1'),
@@ -231,12 +254,19 @@ function seed(): DemoState {
     ),
   ]
 
-  return { profile, activities, goals, habits, habitLogs, tasks, checkIns, wins }
+  return { profile, activities, objectives, goals, habits, habitLogs, tasks, checkIns, wins }
 }
 
 interface StoredState {
   profile: Omit<Profile, 'createdAt'> & { createdAt: string; plan?: PlanTier }
   activities: Array<Omit<Activity, 'occurredAt'> & { occurredAt: string }>
+  objectives: Array<
+    Omit<Objective, 'createdAt' | 'completedAt' | 'archivedAt'> & {
+      createdAt: string
+      completedAt: string | null
+      archivedAt: string | null
+    }
+  >
   goals: Array<Omit<Goal, 'createdAt' | 'archivedAt'> & { createdAt: string; archivedAt: string | null }>
   habits: Array<Omit<Habit, 'createdAt' | 'archivedAt'> & { createdAt: string; archivedAt: string | null }>
   habitLogs: Array<Omit<HabitLog, 'createdAt'> & { createdAt: string }>
@@ -257,6 +287,12 @@ function revive(raw: string): DemoState {
     activities: parsed.activities.map((item) => ({
       ...item,
       occurredAt: new Date(item.occurredAt),
+    })),
+    objectives: (parsed.objectives ?? []).map((item) => ({
+      ...item,
+      createdAt: new Date(item.createdAt),
+      completedAt: item.completedAt ? new Date(item.completedAt) : null,
+      archivedAt: item.archivedAt ? new Date(item.archivedAt) : null,
     })),
     goals: parsed.goals.map((item) => ({
       ...item,
@@ -335,6 +371,43 @@ export const demoStore = {
   removeActivity(id: string): void {
     const current = load()
     current.activities = current.activities.filter((activity) => activity.id !== id)
+    persist()
+  },
+
+  objectives(): Objective[] {
+    return [...load().objectives]
+  },
+
+  addObjective(input: NewObjectiveInput): Objective {
+    const current = load()
+    const duplicate = current.objectives.some(
+      (objective) => objective.archivedAt === null && objective.axis === input.axis,
+    )
+    if (duplicate) {
+      throw new DomainError(
+        'Você já tem um objetivo ativo nessa área. Fecha ou arquiva ele antes de abrir outro.',
+      )
+    }
+
+    const objective = createObjective(input, newId())
+    current.objectives = [...current.objectives, objective]
+    persist()
+    return objective
+  },
+
+  updateObjective(id: string, changes: ObjectiveUpdate): void {
+    const current = load()
+    current.objectives = current.objectives.map((objective) =>
+      objective.id === id ? { ...objective, ...changes } : objective,
+    )
+    persist()
+  },
+
+  archiveObjective(id: string): void {
+    const current = load()
+    current.objectives = current.objectives.map((objective) =>
+      objective.id === id ? { ...objective, archivedAt: new Date() } : objective,
+    )
     persist()
   },
 
@@ -509,6 +582,7 @@ export const demoStore = {
     state = {
       profile: { ...profile, name: profile.name },
       activities: [],
+      objectives: [],
       goals: [],
       habits: [],
       habitLogs: [],

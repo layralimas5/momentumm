@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { ACTIVITY_VISIBILITIES, VISIBILITY_LABELS, type ActivityVisibility } from '@/domain/entities/activity'
 import { formatLimit, isPro, limitsOf, PLAN_LABELS, type PlanTier } from '@/domain/entities/plan'
 import { initialsOf, normalizeHandle, MAX_BIO_LENGTH } from '@/domain/entities/profile'
 import { container } from '@/infrastructure/container'
+import { demoStore } from '@/infrastructure/demo/demo-store'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { Button } from '@/presentation/components/ui/Button'
 import { Field, Select, TextInput } from '@/presentation/components/ui/Field'
@@ -11,15 +12,18 @@ import { ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { APP_NAV } from '@/presentation/layouts/nav-items'
+import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 
 /** As telas que não cabem na barra inferior do celular. */
 const MOBILE_SHORTCUTS = APP_NAV.filter((item) =>
-  ['/app/habitos', '/app/metas', '/app/insights'].includes(item.to),
+  ['/app/habitos', '/app/metas', '/app/review', '/app/insights'].includes(item.to),
 )
 
 export function ProfilePage() {
   const { user, profile, loading, signOut, refreshProfile } = useAuth()
+  const planner = usePlanner()
+  const navigate = useNavigate()
 
   const [name, setName] = useState(profile?.name ?? '')
   const [handle, setHandle] = useState(profile?.handle ?? '')
@@ -46,6 +50,17 @@ export function ProfilePage() {
    * Trocar de plano só existe no modo demo: em produção quem manda no plano é a
    * assinatura, e o repositório do Supabase ignora esse campo de propósito.
    */
+  /**
+   * Zerar o modo demo. Sem isso não há como voltar pro onboarding depois da
+   * primeira sessão, e o primeiro acesso é justamente a parte mais difícil de
+   * conferir com os olhos.
+   */
+  const restart = useAsyncAction(async () => {
+    demoStore.clear()
+    await planner.reload()
+    navigate('/app')
+  })
+
   const switchPlan = useAsyncAction(async (plan: PlanTier) => {
     if (!user) return
     await container.profiles.update(user.id, { plan })
@@ -254,9 +269,23 @@ export function ProfilePage() {
           </Button>
 
           {container.demo ? (
-            <p className="text-xs text-ink-faint">
-              Modo demo: os dados ficam só nesse navegador. Configure o Supabase pra ativar contas reais.
-            </p>
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                loading={restart.running}
+                onClick={() => void restart.run()}
+              >
+                Recomeçar do zero
+              </Button>
+              <p className="text-xs text-ink-faint">
+                Modo demo: os dados ficam só nesse navegador e recomeçar apaga tudo, inclusive o
+                objetivo. É o caminho pra rever o onboarding.
+              </p>
+              <div aria-live="polite">
+                {restart.error ? <p className="text-xs text-danger">{restart.error}</p> : null}
+              </div>
+            </div>
           ) : null}
         </aside>
       </div>

@@ -6,10 +6,15 @@ import type { Habit, HabitLog, HabitStatus, NewHabitInput } from '@/domain/entit
 import type { NewTaskInput, Task } from '@/domain/entities/task'
 import type { NewWinInput, Win } from '@/domain/entities/win'
 import type { Goal, NewGoalInput } from '@/domain/entities/goal'
+import type { NewObjectiveInput, Objective } from '@/domain/entities/objective'
 import type { Profile } from '@/domain/entities/profile'
 import { assertValidBio, assertValidHandle, assertValidName } from '@/domain/entities/profile'
 import type { ActivityRepository } from '@/domain/repositories/activity-repository'
 import type { GoalRepository } from '@/domain/repositories/goal-repository'
+import type {
+  ObjectiveRepository,
+  ObjectiveUpdate,
+} from '@/domain/repositories/objective-repository'
 import type { CheckInRepository } from '@/domain/repositories/checkin-repository'
 import type { HabitRepository } from '@/domain/repositories/habit-repository'
 import type { ProfileRepository, ProfileUpdate } from '@/domain/repositories/profile-repository'
@@ -101,6 +106,24 @@ export class DemoGoalRepository implements GoalRepository {
 
   async archive(id: string): Promise<void> {
     demoStore.archiveGoal(id)
+  }
+}
+
+export class DemoObjectiveRepository implements ObjectiveRepository {
+  async listByUser(): Promise<Objective[]> {
+    return demoStore.objectives()
+  }
+
+  async create(input: NewObjectiveInput): Promise<Objective> {
+    return demoStore.addObjective(input)
+  }
+
+  async update(id: string, _userId: string, changes: ObjectiveUpdate): Promise<void> {
+    demoStore.updateObjective(id, changes)
+  }
+
+  async archive(id: string): Promise<void> {
+    demoStore.archiveObjective(id)
   }
 }
 

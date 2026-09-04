@@ -1,124 +1,52 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
-import { ACTIVITY_TYPE_LIST, activityType, type ActivityTypeSlug } from '@/domain/entities/activity-type'
+import { ACTIVITY_TYPE_LIST, activityType, formatUnit } from '@/domain/entities/activity-type'
 import type { DayKey } from '@/domain/entities/day'
-import type { HabitIcon } from '@/domain/entities/habit'
+import {
+  DEADLINE_PRESETS,
+  MAX_OBJECTIVE_MOTIVE,
+  MAX_OBJECTIVE_TITLE,
+} from '@/domain/entities/objective'
+import type { PlanDraft } from '@/domain/entities/plan-builder'
 import { Button } from '@/presentation/components/ui/Button'
 import { ChoiceGroup } from '@/presentation/components/ui/Choice'
+import { Field, TextInput } from '@/presentation/components/ui/Field'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { Panel } from '@/presentation/components/ui/Surface'
-import { TextInput } from '@/presentation/components/ui/Field'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
+import { FREQUENCY_OPTIONS, useObjectiveDraft } from '@/presentation/planner/use-objective-draft'
 import { cn } from '@/shared/lib/cn'
-import type { GoalDraft, HabitDraft, TaskDraft } from './Composer'
+import { PlanPreview } from './PlanPreview'
 
 interface OnboardingProps {
   readonly firstName: string | null
   readonly today: DayKey
-  readonly onFinish: (setup: {
-    /** Null quando a pessoa pulou a etapa. A prioridade nunca é null. */
-    goal: GoalDraft | null
-    habit: HabitDraft | null
-    task: TaskDraft
-  }) => Promise<void>
+  readonly onFinish: (plan: PlanDraft) => Promise<void>
 }
 
-/** Ícone sugerido por área, pra a pessoa não precisar escolher no primeiro dia. */
-const ICON_BY_AXIS: Readonly<Record<ActivityTypeSlug, HabitIcon>> = {
-  leitura: 'livro',
-  estudo: 'cerebro',
-  treino: 'halter',
-  meditacao: 'lotus',
-}
-
-const SUGGESTIONS: Readonly<
-  Record<ActivityTypeSlug, { habit: string; task: string; minimal: string; target: number }>
-> = {
-  leitura: {
-    habit: 'Ler antes de dormir',
-    task: 'Ler o primeiro capítulo',
-    minimal: 'Ler 3 páginas',
-    target: 20,
-  },
-  estudo: {
-    habit: 'Estudar 30 minutos',
-    task: 'Revisar a primeira aula',
-    minimal: 'Reler as anotações',
-    target: 30,
-  },
-  treino: {
-    habit: 'Treinar',
-    task: 'Fazer o primeiro treino da semana',
-    minimal: 'Fazer 10 minutos de movimento',
-    target: 45,
-  },
-  meditacao: {
-    habit: 'Respirar 10 minutos',
-    task: 'Fazer a primeira sessão guiada',
-    minimal: 'Respirar por 3 minutos',
-    target: 10,
-  },
-}
-
-const STEPS = ['Área', 'Meta', 'Hábito', 'Hoje'] as const
+const STEPS = ['Área', 'Objetivo', 'Prazo', 'Plano'] as const
 
 /**
- * Primeiro acesso.
+ * Primeiro acesso — a jornada inteira em uma tela.
  *
- * Conta nova não vê dez cards vazios: vê quatro perguntas que produzem um
- * dashboard com conteúdo de verdade no fim. Uma área, uma meta, um hábito,
- * uma prioridade.
+ * Conta nova não vê dez cards vazios: escolhe uma área, escreve o objetivo,
+ * define o prazo e recebe um plano pronto pra virar hábito e ação. O último
+ * passo não é um resumo, é o primeiro dia começando.
+ *
+ * O plano não é decorativo. Recalcula a cada mudança de prazo, alvo ou
+ * frequência, e avisa quando a conta não fecha — cronograma que só funciona no
+ * papel é a forma mais rápida de perder alguém na primeira semana.
  */
 export function Onboarding({ firstName, today, onFinish }: OnboardingProps) {
   const [step, setStep] = useState(0)
-  const [axis, setAxis] = useState<ActivityTypeSlug>('leitura')
-  const [target, setTarget] = useState('')
-  const [habitName, setHabitName] = useState('')
-  const [taskTitle, setTaskTitle] = useState('')
-  // Meta e hábito são puláveis; a prioridade de hoje não. O onboarding só
-  // cumpre a função dele se a pessoa sair daqui com uma próxima ação definida.
-  const [skipped, setSkipped] = useState<{ goal: boolean; habit: boolean }>({
-    goal: false,
-    habit: false,
-  })
-
-  const suggestion = SUGGESTIONS[axis]
-  const type = activityType(axis)
+  const draft = useObjectiveDraft(today)
+  const type = activityType(draft.axis)
 
   const finish = useAsyncAction(async () => {
-    const goalTarget = Number(target) || suggestion.target
-
-    await onFinish({
-      goal: skipped.goal ? null : { type: axis, target: goalTarget, period: 'dia' },
-      habit: skipped.habit
-        ? null
-        : {
-            name: habitName.trim() || suggestion.habit,
-            icon: ICON_BY_AXIS[axis],
-            axis,
-            dayPart: 'qualquer',
-            weekdays: [],
-            target: goalTarget,
-            minimalTarget: Math.max(1, Math.round(goalTarget / 3)),
-          },
-      task: {
-        title: taskTitle.trim() || suggestion.task,
-        goalId: null,
-        axis,
-        estimatedMin: 25,
-        effort: 'medio',
-        minimalVersion: suggestion.minimal,
-        day: today,
-        isMainPriority: true,
-      },
-    })
+    await onFinish(draft.plan)
   })
 
-  const canAdvance =
-    step === 0 ||
-    (step === 1 && (target === '' || Number(target) > 0)) ||
-    step === 2 ||
-    step === 3
+  const canAdvance = step !== 2 || draft.finalTarget > 0
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 py-6">
@@ -128,8 +56,8 @@ export function Onboarding({ firstName, today, onFinish }: OnboardingProps) {
           intenção.
         </h2>
         <p className="mt-2 text-pretty text-ink-muted">
-          Quatro perguntas rápidas. No fim você já sai daqui com um plano de hoje, não com uma tela
-          vazia.
+          Quatro perguntas. No fim você sai daqui com um plano feito de hábito e ação, e com o
+          primeiro dia já começado.
         </p>
       </header>
 
@@ -158,7 +86,7 @@ export function Onboarding({ firstName, today, onFinish }: OnboardingProps) {
         <Panel tone="brand">
           {step === 0 ? (
             <Step
-              title="O que você quer melhorar primeiro?"
+              title="O que você quer mudar primeiro?"
               hint="Uma área só. As outras entram quando essa virar rotina."
             >
               <div className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -166,11 +94,11 @@ export function Onboarding({ firstName, today, onFinish }: OnboardingProps) {
                   <button
                     key={item.slug}
                     type="button"
-                    aria-pressed={item.slug === axis}
-                    onClick={() => setAxis(item.slug)}
+                    aria-pressed={item.slug === draft.axis}
+                    onClick={() => draft.setAxis(item.slug)}
                     className={cn(
                       'flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors',
-                      item.slug === axis
+                      item.slug === draft.axis
                         ? 'border-brand bg-brand-dim/50'
                         : 'border-line bg-surface/60 hover:border-line-hi',
                     )}
@@ -189,63 +117,106 @@ export function Onboarding({ firstName, today, onFinish }: OnboardingProps) {
 
           {step === 1 ? (
             <Step
-              title="Qual meta você quer bater por dia?"
-              hint={`Em ${type.unitLabel.many}. Escolhe um número que você bateria até num dia ruim. Dá pra pular e definir depois.`}
+              title="Qual é o objetivo?"
+              hint="Escreve como você contaria pra alguém. O número entra no passo seguinte."
             >
-              <div className="mt-4 flex flex-col gap-3">
-                <ChoiceGroup
-                  label="Meta sugerida"
-                  size="sm"
-                  value={Number(target) || suggestion.target}
-                  onChange={(value) => setTarget(String(value))}
-                  options={type.quickValues.map((value) => ({
-                    value,
-                    label: `${value} ${type.unit === 'paginas' ? 'pág' : 'min'}`,
-                  }))}
-                />
-                <TextInput
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  value={target}
-                  onChange={(event) => setTarget(event.target.value)}
-                  placeholder={`Outro valor em ${type.unitLabel.many}`}
-                  aria-label={`Meta diária em ${type.unitLabel.many}`}
-                />
+              <div className="mt-4 flex flex-col gap-4">
+                <Field label="Objetivo">
+                  {(id) => (
+                    <TextInput
+                      id={id}
+                      maxLength={MAX_OBJECTIVE_TITLE}
+                      value={draft.title}
+                      onChange={(event) => draft.setTitle(event.target.value)}
+                      placeholder={draft.suggestedTitle}
+                    />
+                  )}
+                </Field>
+
+                <Field
+                  label="Por que isso importa"
+                  hint="Opcional. É o que o app te devolve num dia em que você não quer levantar."
+                >
+                  {(id, describedBy) => (
+                    <TextInput
+                      id={id}
+                      aria-describedby={describedBy}
+                      maxLength={MAX_OBJECTIVE_MOTIVE}
+                      value={draft.motive}
+                      onChange={(event) => draft.setMotive(event.target.value)}
+                      placeholder="Quero voltar a terminar o que começo."
+                    />
+                  )}
+                </Field>
               </div>
             </Step>
           ) : null}
 
           {step === 2 ? (
             <Step
-              title="Qual hábito simples sustenta essa meta?"
-              hint="Simples de verdade: hábito grande demais não sobrevive à primeira semana ruim. Dá pra pular e criar depois."
+              title="Até quando, e quanto?"
+              hint="Prazo transforma intenção em plano. O alvo já vem sugerido pelo ritmo saudável da área."
             >
-              <TextInput
-                className="mt-4"
-                value={habitName}
-                onChange={(event) => setHabitName(event.target.value)}
-                placeholder={suggestion.habit}
-                aria-label="Nome do hábito"
-              />
+              <div className="mt-4 flex flex-col gap-5">
+                <div>
+                  <p className="mb-2 text-sm font-medium text-ink">Prazo</p>
+                  <ChoiceGroup
+                    label="Prazo do objetivo"
+                    value={draft.days}
+                    onChange={draft.setDays}
+                    options={DEADLINE_PRESETS.map((preset) => ({
+                      value: preset.days,
+                      label: preset.label,
+                    }))}
+                  />
+                </div>
+
+                <Field
+                  label={`Alvo total em ${type.unitLabel.many}`}
+                  hint={`Sugestão pra esse prazo: ${formatUnit(type, draft.suggested)}.`}
+                >
+                  {(id, describedBy) => (
+                    <TextInput
+                      id={id}
+                      aria-describedby={describedBy}
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      value={draft.target}
+                      onChange={(event) => draft.setTarget(event.target.value)}
+                      placeholder={String(draft.suggested)}
+                    />
+                  )}
+                </Field>
+
+                <div>
+                  <p className="mb-2 text-sm font-medium text-ink">Dias por semana</p>
+                  <ChoiceGroup
+                    label="Dias por semana"
+                    size="sm"
+                    value={draft.daysPerWeek}
+                    onChange={draft.setDaysPerWeek}
+                    options={FREQUENCY_OPTIONS.map((value) => ({
+                      value,
+                      label: value === 7 ? 'Todo dia' : `${value}x`,
+                    }))}
+                  />
+                  <p className="mt-2 text-xs text-ink-faint">
+                    Escolhe o número que sobrevive a uma semana ruim, não o da semana perfeita.
+                  </p>
+                </div>
+              </div>
             </Step>
           ) : null}
 
           {step === 3 ? (
             <Step
-              title="E qual é a prioridade de hoje?"
-              hint="A ação que, se sair, já faz o dia valer."
+              title="Esse é o teu plano"
+              hint="Feito com a tua conta, não com frase pronta. Dá pra mudar tudo depois, sem perder nada."
             >
-              <TextInput
-                className="mt-4"
-                value={taskTitle}
-                onChange={(event) => setTaskTitle(event.target.value)}
-                placeholder={suggestion.task}
-                aria-label="Prioridade de hoje"
-              />
-              <p className="mt-3 text-sm text-ink-faint">
-                A versão mínima dela já vem pronta: “{suggestion.minimal}”.
-              </p>
+              <div className="mt-4">
+                <PlanPreview plan={draft.plan} today={today} onUseSuggestedDeadline={draft.setDays} />
+              </div>
             </Step>
           ) : null}
 
@@ -261,44 +232,25 @@ export function Onboarding({ firstName, today, onFinish }: OnboardingProps) {
             </Button>
 
             <div className="flex flex-1 items-center justify-end gap-2">
-              {step === 1 || step === 2 ? (
-                <Button
-                  variant="ghost"
-                  className="min-h-12"
-                  onClick={() => {
-                    setSkipped((current) =>
-                      step === 1 ? { ...current, goal: true } : { ...current, habit: true },
-                    )
-                    setStep((current) => current + 1)
-                  }}
-                >
-                  Pular
-                </Button>
-              ) : null}
-
               {step < STEPS.length - 1 ? (
                 <Button
                   size="lg"
                   className="min-h-12"
-                  onClick={() => {
-                    setSkipped((current) =>
-                      step === 1
-                        ? { ...current, goal: false }
-                        : step === 2
-                          ? { ...current, habit: false }
-                          : current,
-                    )
-                    setStep((current) => current + 1)
-                  }}
+                  onClick={() => setStep((current) => current + 1)}
                   disabled={!canAdvance}
                 >
                   Continuar
                   <Icon name="seta" className="size-4" />
                 </Button>
               ) : (
-                <Button size="lg" className="min-h-12" onClick={() => void finish.run()} loading={finish.running}>
-                  <Icon name="check" className="size-4" />
-                  Montar meu dia
+                <Button
+                  size="lg"
+                  className="min-h-12"
+                  onClick={() => void finish.run()}
+                  loading={finish.running}
+                >
+                  <Icon name="play" className="size-4" />
+                  Começar o primeiro dia
                 </Button>
               )}
             </div>
@@ -318,9 +270,9 @@ function Step({
   hint,
   children,
 }: {
-  title: string
-  hint: string
-  children: React.ReactNode
+  readonly title: string
+  readonly hint: string
+  readonly children: ReactNode
 }) {
   return (
     <div>

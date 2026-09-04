@@ -3,6 +3,7 @@ import type { ActivityRepository } from '@/domain/repositories/activity-reposito
 import type { CheckInRepository } from '@/domain/repositories/checkin-repository'
 import type { GoalRepository } from '@/domain/repositories/goal-repository'
 import type { HabitRepository } from '@/domain/repositories/habit-repository'
+import type { ObjectiveRepository } from '@/domain/repositories/objective-repository'
 import type { ProfileRepository } from '@/domain/repositories/profile-repository'
 import type { TaskRepository } from '@/domain/repositories/task-repository'
 import type { WinRepository } from '@/domain/repositories/win-repository'
@@ -13,6 +14,7 @@ import {
   DemoCheckInRepository,
   DemoGoalRepository,
   DemoHabitRepository,
+  DemoObjectiveRepository,
   DemoProfileRepository,
   DemoTaskRepository,
   DemoWinRepository,
@@ -23,6 +25,7 @@ import {
   SupabaseCheckInRepository,
   SupabaseGoalRepository,
   SupabaseHabitRepository,
+  SupabaseObjectiveRepository,
   SupabaseProfileRepository,
   SupabaseTaskRepository,
   SupabaseWinRepository,
@@ -32,6 +35,7 @@ export interface Container {
   readonly auth: AuthService
   readonly activities: ActivityRepository
   readonly goals: GoalRepository
+  readonly objectives: ObjectiveRepository
   readonly profiles: ProfileRepository
   readonly habits: HabitRepository
   readonly tasks: TaskRepository
@@ -46,6 +50,7 @@ export const container: Container = isDemoMode
       auth: new DemoAuthService(),
       activities: new DemoActivityRepository(),
       goals: new DemoGoalRepository(),
+      objectives: new DemoObjectiveRepository(),
       profiles: new DemoProfileRepository(),
       habits: new DemoHabitRepository(),
       tasks: new DemoTaskRepository(),
@@ -57,6 +62,7 @@ export const container: Container = isDemoMode
       auth: new SupabaseAuthService(),
       activities: new SupabaseActivityRepository(),
       goals: new SupabaseGoalRepository(),
+      objectives: new SupabaseObjectiveRepository(),
       profiles: new SupabaseProfileRepository(),
       habits: new SupabaseHabitRepository(),
       tasks: new SupabaseTaskRepository(),

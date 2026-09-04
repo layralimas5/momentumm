@@ -15,6 +15,7 @@ import { MobileGoals } from './MobileGoals'
 import { MobileHabits } from './MobileHabits'
 import { MobileInsight } from './MobileInsight'
 import { MobileMomentum } from './MobileMomentum'
+import { MobileObjectives } from './MobileObjectives'
 import { MobilePriority } from './MobilePriority'
 import { MobileWins } from './MobileWins'
 import { ProSheet } from './ProSheet'
@@ -135,6 +136,12 @@ export function MobileDashboard({
           onNeedPro={setProFeature}
         />
       </div>
+
+      <MobileObjectives
+        objectives={planner.objectiveProgress}
+        onCreate={() => composer.open('objetivo')}
+        onOpenReview={() => navigate('/app/review')}
+      />
 
       <MobileGoals
         goals={view.goalsInMotion}

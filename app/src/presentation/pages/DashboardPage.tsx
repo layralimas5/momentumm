@@ -11,6 +11,7 @@ import { GoalsInMotionCard } from '@/presentation/components/dashboard/GoalsInMo
 import { HabitsCard } from '@/presentation/components/dashboard/HabitsCard'
 import { InsightCard } from '@/presentation/components/dashboard/InsightCard'
 import { MomentumCard } from '@/presentation/components/dashboard/MomentumCard'
+import { ObjectivesCard } from '@/presentation/components/dashboard/ObjectivesCard'
 import { NextActionsCard } from '@/presentation/components/dashboard/NextActionsCard'
 import { Onboarding } from '@/presentation/components/dashboard/Onboarding'
 import { PriorityCard } from '@/presentation/components/dashboard/PriorityCard'
@@ -148,11 +149,7 @@ export function DashboardPage() {
       <Onboarding
         firstName={profile?.name.split(' ')[0] ?? null}
         today={planner.today}
-        onFinish={async (setup) => {
-          if (setup.goal) await planner.createGoal(setup.goal)
-          if (setup.habit) await planner.createHabit(setup.habit)
-          await planner.createTask(setup.task)
-        }}
+        onFinish={planner.applyPlan}
       />
     )
   }
@@ -202,6 +199,17 @@ export function DashboardPage() {
           streak={planner.streak}
         />
       </div>
+
+      {/*
+        O destino antes da rotina. Vem logo depois do momentum porque é ele que
+        dá sentido a tudo que aparece abaixo: sem objetivo na frente, a pessoa
+        cumpre a lista do dia e nunca chega em lugar nenhum.
+      */}
+      <ObjectivesCard
+        objectives={planner.objectiveProgress}
+        onCreate={() => composer.open('objetivo')}
+        onOpenReview={() => navigate('/app/review')}
+      />
 
       {view.dayComplete ? <DayCompleteBanner win={view.todayWin} /> : null}
 

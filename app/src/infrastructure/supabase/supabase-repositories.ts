@@ -13,10 +13,19 @@ import {
 import { createTask, type NewTaskInput, type Task } from '@/domain/entities/task'
 import { createWin, type NewWinInput, type Win } from '@/domain/entities/win'
 import { createGoal, type Goal, type NewGoalInput } from '@/domain/entities/goal'
+import {
+  createObjective,
+  type NewObjectiveInput,
+  type Objective,
+} from '@/domain/entities/objective'
 import type { Profile } from '@/domain/entities/profile'
 import { assertValidBio, assertValidHandle, assertValidName } from '@/domain/entities/profile'
 import type { ActivityRepository } from '@/domain/repositories/activity-repository'
 import type { GoalRepository } from '@/domain/repositories/goal-repository'
+import type {
+  ObjectiveRepository,
+  ObjectiveUpdate,
+} from '@/domain/repositories/objective-repository'
 import type { CheckInRepository } from '@/domain/repositories/checkin-repository'
 import type { HabitRepository } from '@/domain/repositories/habit-repository'
 import type { ProfileRepository, ProfileUpdate } from '@/domain/repositories/profile-repository'
@@ -29,6 +38,7 @@ import {
   toCheckIn,
   toGoal,
   toHabit,
+  toObjective,
   toHabitLog,
   toProfile,
   toTask,
@@ -175,6 +185,76 @@ export class SupabaseGoalRepository implements GoalRepository {
       .eq('user_id', userId)
 
     if (error) fail(error, 'arquivar a meta')
+  }
+}
+
+export class SupabaseObjectiveRepository implements ObjectiveRepository {
+  async listByUser(userId: string): Promise<Objective[]> {
+    const { data, error } = await supabase()
+      .from('objectives')
+      .select('*')
+      .eq('user_id', userId)
+      .is('archived_at', null)
+      .order('deadline', { ascending: true })
+
+    if (error) fail(error, 'carregar os objetivos')
+    return (data ?? []).map(toObjective)
+  }
+
+  async create(input: NewObjectiveInput): Promise<Objective> {
+    const draft = createObjective(input, crypto.randomUUID())
+
+    const { data, error } = await supabase()
+      .from('objectives')
+      .insert({
+        user_id: draft.userId,
+        title: draft.title,
+        axis_slug: draft.axis,
+        motive: draft.motive,
+        target: draft.target,
+        started_on: draft.startedOn,
+        deadline: draft.deadline,
+      })
+      .select('*')
+      .single()
+
+    if (error) {
+      if (error.code === UNIQUE_VIOLATION) {
+        throw new DomainError(
+          'Você já tem um objetivo ativo nessa área. Fecha ou arquiva ele antes de abrir outro.',
+        )
+      }
+      fail(error, 'criar o objetivo')
+    }
+    return toObjective(data)
+  }
+
+  async update(id: string, userId: string, changes: ObjectiveUpdate): Promise<void> {
+    const { error } = await supabase()
+      .from('objectives')
+      .update({
+        ...(changes.title !== undefined ? { title: changes.title } : {}),
+        ...(changes.target !== undefined ? { target: changes.target } : {}),
+        ...(changes.deadline !== undefined ? { deadline: changes.deadline } : {}),
+        ...(changes.motive !== undefined ? { motive: changes.motive } : {}),
+        ...(changes.completedAt !== undefined
+          ? { completed_at: changes.completedAt?.toISOString() ?? null }
+          : {}),
+      })
+      .eq('id', id)
+      .eq('user_id', userId)
+
+    if (error) fail(error, 'atualizar o objetivo')
+  }
+
+  async archive(id: string, userId: string): Promise<void> {
+    const { error } = await supabase()
+      .from('objectives')
+      .update({ archived_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('user_id', userId)
+
+    if (error) fail(error, 'arquivar o objetivo')
   }
 }
 

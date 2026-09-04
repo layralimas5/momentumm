@@ -50,6 +50,13 @@ export const APP_NAV: readonly AppNavItem[] = [
     description: 'Sessões de foco e minutos concentrados',
   },
   {
+    to: '/app/review',
+    label: 'Review',
+    end: false,
+    icon: 'calendario',
+    description: 'Como foi a semana e o que muda na próxima',
+  },
+  {
     to: '/app/insights',
     label: 'Insights',
     end: false,

@@ -7,6 +7,7 @@ import {
   type HabitDraft,
   type TaskDraft,
 } from '@/presentation/components/dashboard/Composer'
+import { ObjectiveDialog } from '@/presentation/components/dashboard/ObjectiveDialog'
 import { usePlanner } from './use-planner'
 
 interface OpenOptions {
@@ -14,8 +15,15 @@ interface OpenOptions {
   readonly presetGoalId?: string | null
 }
 
+/**
+ * O objetivo não entra no `Composer` porque não é um formulário: é uma
+ * entrevista curta que termina num plano gerado. Forçá-lo no mesmo diálogo das
+ * ações transformaria os dois numa coisa morna.
+ */
+export type ComposerTarget = ComposerKind | 'objetivo'
+
 interface ComposerControls {
-  open(kind: ComposerKind, options?: OpenOptions): void
+  open(kind: ComposerTarget, options?: OpenOptions): void
   close(): void
 }
 
@@ -30,12 +38,17 @@ export function ComposerProvider({ children }: { children: ReactNode }) {
   const planner = usePlanner()
   const [kind, setKind] = useState<ComposerKind>('acao')
   const [open, setOpen] = useState(false)
+  const [objectiveOpen, setObjectiveOpen] = useState(false)
   const [editing, setEditing] = useState<Task | null>(null)
   const [presetGoalId, setPresetGoalId] = useState<string | null>(null)
 
   const controls = useMemo<ComposerControls>(
     () => ({
       open(nextKind, options) {
+        if (nextKind === 'objetivo') {
+          setObjectiveOpen(true)
+          return
+        }
         setKind(nextKind)
         setEditing(options?.editing ?? null)
         setPresetGoalId(options?.presetGoalId ?? null)
@@ -43,6 +56,7 @@ export function ComposerProvider({ children }: { children: ReactNode }) {
       },
       close() {
         setOpen(false)
+        setObjectiveOpen(false)
       },
     }),
     [],
@@ -87,6 +101,12 @@ export function ComposerProvider({ children }: { children: ReactNode }) {
         onSubmitTask={submitTask}
         onSubmitHabit={submitHabit}
         onSubmitGoal={submitGoal}
+      />
+      <ObjectiveDialog
+        open={objectiveOpen}
+        today={planner.today}
+        onClose={() => setObjectiveOpen(false)}
+        onSubmit={planner.applyPlan}
       />
     </ComposerContext.Provider>
   )

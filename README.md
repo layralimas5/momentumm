@@ -42,10 +42,20 @@ Visibilidade de atividade é regra de RLS no banco, não filtro no front.
 
 ## Status
 
-Fase 1 funcionando: check-in do dia, prioridade principal, hábitos, ações,
-sessão de foco, momentum, progresso semanal, insights, metas com progresso,
-histórico e perfil. Fase 2 (feed, follows, kudos, recap mensal) ainda não
-começou.
+Fase 1 funcionando. A jornada principal é um ciclo de três telas:
+
+1. **Onboarding** — área, objetivo, prazo e um plano gerado que já vira hábito
+   e ação, com o primeiro dia começando ali mesmo.
+2. **Hoje** — momentum, progresso dos objetivos, prioridade do dia, hábitos,
+   ações e check-in.
+3. **Review** — a semana em números: quanto do planejado saiu, onde o ritmo
+   caiu, onde evoluiu e o que mudar na semana seguinte.
+
+Além disso: sessão de foco, insights, metas com progresso, histórico e perfil.
+Fase 2 (feed, follows, kudos, recap mensal) ainda não começou.
+
+O plano nunca finge que cabe: quando o prazo exige mais do que se sustenta por
+semanas, ele avisa e sugere a data que funcionaria.
 
 O dashboard trata o dia como variável: o check-in define a capacidade e, num dia
 de energia baixa, o app sugere a versão mínima do plano em vez de incentivar o

@@ -10,15 +10,16 @@ import { usePlanner } from '@/presentation/planner/use-planner'
 /**
  * O que o botão central adiciona.
  *
- * Ação, hábito e meta reaproveitam o mesmo formulário do desktop. A vitória do
- * dia é uma linha só — abrir um formulário inteiro pra ela seria fricção sem
- * motivo, então ela é resolvida aqui mesmo.
+ * Ação, hábito e meta reaproveitam o mesmo formulário do desktop, e o objetivo
+ * abre a mesma entrevista curta do onboarding. A vitória do dia é uma linha só —
+ * abrir um formulário inteiro pra ela seria fricção sem motivo, então ela é
+ * resolvida aqui mesmo.
  */
 export function AddSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const composer = useComposer()
   const [winOpen, setWinOpen] = useState(false)
 
-  const pick = (kind: 'acao' | 'habito' | 'meta') => {
+  const pick = (kind: 'acao' | 'habito' | 'meta' | 'objetivo') => {
     onClose()
     composer.open(kind)
   }
@@ -50,6 +51,12 @@ export function AddSheet({ open, onClose }: { open: boolean; onClose: () => void
             label="Meta"
             hint="Um número e um período"
             onClick={() => pick('meta')}
+          />
+          <SheetAction
+            icon={<Icon name="trofeu" className="size-5" />}
+            label="Objetivo"
+            hint="Com prazo, e o plano sai pronto"
+            onClick={() => pick('objetivo')}
           />
           <SheetAction
             icon={<Icon name="trofeu" className="size-5" />}
