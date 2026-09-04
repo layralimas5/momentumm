@@ -226,6 +226,22 @@ describe('buildCombinedPlan', () => {
     expect(combined.verdict).toContain('o dia não estica')
   })
 
+  it('não acusa estouro que é só arredondamento', () => {
+    // Duas sessões de ~23 min num dia de 45: cada plano cabe, e o conjunto
+    // também. O 1 minuto de diferença é a conta quebrada, não carga real.
+    const combined = buildCombinedPlan({
+      seeds: [seed({ target: 630 }), seed({ axis: 'treino', title: 'Treinar', target: 800 })],
+      today: TODAY,
+      daysPerWeek: 5,
+      minutesPerDay: 45,
+    })
+
+    for (const plan of combined.plans) {
+      expect(plan.feasibility).not.toBe('irreal')
+    }
+    expect(combined.fits).toBe(true)
+  })
+
   it('nunca passa do teto de objetivos de uma vez', () => {
     const combined = buildCombinedPlan({
       seeds: [

@@ -35,7 +35,8 @@ app/src/
 
 **A decisão que manda em tudo:** existe uma unidade só, a atividade. Leitura,
 estudo, treino e meditação são a mesma entidade com `type` diferente. Eixo novo é
-uma entrada em `activity_types`, nunca um módulo novo. Streak, meta, histórico e (na
+uma entrada em `activity_types`, nunca um módulo novo — e é por isso que a área
+que você escreve no onboarding funciona igual às de fábrica em toda parte. Streak, meta, histórico e (na
 fase 2) feed e ranking funcionam pra qualquer eixo sem código adicional.
 
 Visibilidade de atividade é regra de RLS no banco, não filtro no front.
@@ -44,9 +45,9 @@ Visibilidade de atividade é regra de RLS no banco, não filtro no front.
 
 Fase 1 funcionando. A jornada principal é um ciclo de três telas:
 
-1. **Onboarding** — áreas (uma ou várias), quanto tempo por dia, objetivos com
-   prazo, e um plano gerado que já vira hábito e ação, com o primeiro dia
-   começando ali mesmo.
+1. **Onboarding** — áreas (uma ou várias, e dá pra escrever a sua), quanto
+   tempo por dia, objetivos com prazo, e um plano gerado que já vira hábito e
+   ação, com o primeiro dia começando ali mesmo.
 2. **Hoje** — momentum, progresso dos objetivos, prioridade do dia, hábitos,
    ações e check-in.
 3. **Review** — a semana em números: quanto do planejado saiu, onde o ritmo

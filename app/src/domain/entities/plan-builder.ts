@@ -76,16 +76,32 @@ export interface PlanInput {
   readonly motive?: string | null
 }
 
-/** Sessão que ainda é confortável, e o teto do que uma pessoa sustenta por meses. */
-const SESSION_LIMITS: Readonly<Record<ActivityTypeSlug, { comfortable: number; ceiling: number }>> =
-  {
-    leitura: { comfortable: 25, ceiling: 60 },
-    estudo: { comfortable: 45, ceiling: 120 },
-    treino: { comfortable: 45, ceiling: 90 },
-    meditacao: { comfortable: 15, ceiling: 40 },
-  }
+interface SessionLimits {
+  readonly comfortable: number
+  readonly ceiling: number
+}
 
-const ICON_BY_AXIS: Readonly<Record<ActivityTypeSlug, HabitIcon>> = {
+/** Sessão que ainda é confortável, e o teto do que uma pessoa sustenta por meses. */
+const SESSION_LIMITS: Readonly<Record<string, SessionLimits>> = {
+  leitura: { comfortable: 25, ceiling: 60 },
+  estudo: { comfortable: 45, ceiling: 120 },
+  treino: { comfortable: 45, ceiling: 90 },
+  meditacao: { comfortable: 15, ceiling: 40 },
+}
+
+/**
+ * Área criada pela pessoa não tem limite estudado, então recebe um genérico
+ * conservador: 30 minutos confortáveis, 90 de teto. Errar pra menos é seguro —
+ * o plano fica exigente e ela ajusta; errar pra mais entrega um cronograma que
+ * ninguém cumpre.
+ */
+const DEFAULT_SESSION_LIMITS: SessionLimits = { comfortable: 30, ceiling: 90 }
+
+function limitsOfAxis(axis: ActivityTypeSlug): SessionLimits {
+  return SESSION_LIMITS[axis] ?? DEFAULT_SESSION_LIMITS
+}
+
+const ICON_BY_AXIS: Readonly<Record<string, HabitIcon>> = {
   leitura: 'livro',
   estudo: 'cerebro',
   treino: 'halter',
@@ -101,7 +117,7 @@ interface AxisTemplate {
   readonly checkpoint: string
 }
 
-const TEMPLATES: Readonly<Record<ActivityTypeSlug, AxisTemplate>> = {
+const TEMPLATES: Readonly<Record<string, AxisTemplate>> = {
   leitura: {
     habit: 'Ler todo dia',
     firstStep: 'Abrir o livro e ler a primeira sessão',
@@ -134,6 +150,26 @@ const TEMPLATES: Readonly<Record<ActivityTypeSlug, AxisTemplate>> = {
     preparationMinimal: 'Escolher o horário da prática',
     checkpoint: 'Rever como a prática está encaixando na rotina',
   },
+}
+
+/**
+ * Roteiro de qualquer área criada pela pessoa. Usa o nome dela nas frases, pra
+ * o plano não parecer um formulário genérico preenchido com o que sobrou.
+ */
+function templateFor(axis: ActivityTypeSlug): AxisTemplate {
+  const known = TEMPLATES[axis]
+  if (known) return known
+
+  const label = activityType(axis).label.toLowerCase()
+
+  return {
+    habit: `Dedicar tempo a ${label}`,
+    firstStep: `Fazer a primeira sessão de ${label}`,
+    firstStepMinimal: 'Fazer 5 minutos, só pra começar',
+    preparation: `Separar o que você precisa pra ${label}`,
+    preparationMinimal: 'Anotar o primeiro passo',
+    checkpoint: `Rever como ${label} está encaixando na rotina`,
+  }
 }
 
 /** Distribuição dos dias na semana. Espalhar evita três dias colados e quatro vazios. */
@@ -173,8 +209,8 @@ function capacityPerSession(axis: ActivityTypeSlug, minutesPerDay: number): numb
 
 export function buildPlan(input: PlanInput): PlanDraft {
   const type = activityType(input.axis)
-  const template = TEMPLATES[input.axis]
-  const limits = SESSION_LIMITS[input.axis]
+  const template = templateFor(input.axis)
+  const limits = limitsOfAxis(input.axis)
 
   const daysPerWeek = clamp(Math.round(input.daysPerWeek), MIN_DAYS_PER_WEEK, MAX_DAYS_PER_WEEK)
   const totalDays = Math.max(1, daysBetween(input.today, input.deadline) + 1)
@@ -207,7 +243,7 @@ export function buildPlan(input: PlanInput): PlanDraft {
 
   const habit: PlannedHabit = {
     name: template.habit,
-    icon: ICON_BY_AXIS[input.axis],
+    icon: ICON_BY_AXIS[input.axis] ?? 'caneta',
     axis: input.axis,
     dayPart: 'qualquer',
     weekdays: WEEKDAYS_BY_FREQUENCY[daysPerWeek] ?? [],
@@ -349,7 +385,7 @@ export function suggestedTarget(
   daysPerWeek: number,
 ): number {
   const perSession = Math.min(
-    SESSION_LIMITS[axis].comfortable,
+    limitsOfAxis(axis).comfortable,
     capacityPerSession(axis, minutesPerDay),
   )
   const frequency = clamp(Math.round(daysPerWeek), MIN_DAYS_PER_WEEK, MAX_DAYS_PER_WEEK)
@@ -419,7 +455,16 @@ export function buildCombinedPlan(input: CombinedPlanInput): CombinedPlan {
 
   const requiredMinutesPerDay = plans.reduce((total, plan) => total + plan.minutesPerSession, 0)
   const minutesPerDay = Math.round(input.minutesPerDay)
-  const fits = requiredMinutesPerDay <= minutesPerDay
+
+  /*
+    Tolerância do arredondamento, não folga de verdade.
+
+    Cada plano arredonda a sessão pra cima, então N planos podem somar até N
+    minutos a mais que o orçamento por pura conta quebrada. Sem essa margem, a
+    tela diria "cada plano cabe" e "o conjunto não cabe" ao mesmo tempo — e
+    quem lê isso perde a confiança nos dois números.
+  */
+  const fits = requiredMinutesPerDay <= minutesPerDay + plans.length
 
   return {
     plans,

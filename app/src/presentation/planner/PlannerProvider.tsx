@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Activity, NewActivityInput } from '@/domain/entities/activity'
+import {
+  activityTypeList,
+  registerCustomActivityTypes,
+  type ActivityType,
+} from '@/domain/entities/activity-type'
 import { sortByRecent } from '@/domain/entities/activity'
 import type { CheckIn, NewCheckInInput } from '@/domain/entities/checkin'
 import { dayKeyOf, type DayKey } from '@/domain/entities/day'
@@ -30,6 +35,7 @@ import { toUserMessage } from '@/shared/errors'
 import { PlannerContext, type PlannerState } from './planner-context'
 
 interface Snapshot {
+  readonly customAxes: ActivityType[]
   readonly activities: Activity[]
   readonly objectives: Objective[]
   readonly goals: Goal[]
@@ -41,6 +47,7 @@ interface Snapshot {
 }
 
 const EMPTY: Snapshot = {
+  customAxes: [],
   activities: [],
   objectives: [],
   goals: [],
@@ -96,8 +103,9 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
 
     setLoading(true)
     try {
-      const [activities, objectives, goals, habits, habitLogs, tasks, checkIns, wins] =
+      const [customAxes, activities, objectives, goals, habits, habitLogs, tasks, checkIns, wins] =
         await Promise.all([
+        container.activityTypes.listCustom(user.id),
         container.activities.listByUser(user.id),
         container.objectives.listByUser(user.id),
         container.goals.listByUser(user.id),
@@ -109,7 +117,13 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       ])
 
       if (!mounted.current) return
+
+      // Antes do setData: qualquer tela que renderizar já precisa saber
+      // traduzir o slug de uma área criada em nome e cor.
+      registerCustomActivityTypes(customAxes)
+
       setData({
+        customAxes,
         activities: sortByRecent(activities),
         objectives: objectives.filter(isActiveObjective),
         goals: goals.filter(isActive),
@@ -180,6 +194,25 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       )
     },
     [user, mutate],
+  )
+
+  const createAxis = useCallback(
+    async (label: string): Promise<ActivityType | null> => {
+      if (!user) return null
+
+      const axis = await container.activityTypes.createCustom({
+        userId: user.id,
+        label,
+        order: data.customAxes.length,
+      })
+
+      const next = [...data.customAxes, axis]
+      registerCustomActivityTypes(next)
+      setData((current) => ({ ...current, customAxes: next }))
+      setError(null)
+      return axis
+    },
+    [user, data.customAxes],
   )
 
   const createObjective = useCallback(
@@ -457,6 +490,10 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     [data.goals, data.activities, today],
   )
 
+  // Recalculado quando as áreas mudam: o registro global já foi atualizado, e
+  // é essa dependência que faz a tela redesenhar com a área nova.
+  const axes = useMemo(() => activityTypeList(), [data.customAxes])
+
   const objectiveProgress = useMemo(
     () =>
       data.objectives.map((objective) => progressOfObjective(objective, data.activities, today)),
@@ -478,6 +515,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       today,
       activities: data.activities,
       todayActivities,
+      axes,
       objectives: data.objectives,
       objectiveProgress,
       goals: data.goals,
@@ -495,6 +533,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       isNewUser,
       logActivity,
       removeActivity,
+      createAxis,
       createObjective,
       updateObjective,
       archiveObjective,
@@ -515,6 +554,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       today,
       data,
       todayActivities,
+      axes,
       goalProgress,
       objectiveProgress,
       streak,
@@ -525,6 +565,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       isNewUser,
       logActivity,
       removeActivity,
+      createAxis,
       createObjective,
       updateObjective,
       archiveObjective,

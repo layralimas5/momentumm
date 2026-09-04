@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { ACTIVITY_TYPE_SLUGS } from '@/domain/entities/activity-type'
 import type { TimerSession } from '@/domain/entities/timer'
 
 const STORAGE_KEY = 'momentumm.timer.v1'
@@ -9,7 +8,7 @@ const STORAGE_KEY = 'momentumm.timer.v1'
  * um F5 ou a uma aba fechada sem custar uma escrita de rede por segundo.
  */
 const sessionSchema = z.object({
-  type: z.enum(ACTIVITY_TYPE_SLUGS),
+  type: z.string(),
   startedAt: z.string().datetime(),
   accumulatedMs: z.number().finite().min(0),
   runningSince: z.string().datetime().nullable(),

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ACTIVITY_TYPE_LIST, activityType, type ActivityTypeSlug } from '@/domain/entities/activity-type'
+import { BUILTIN_ACTIVITY_TYPE_LIST, activityType, type ActivityTypeSlug } from '@/domain/entities/activity-type'
 import { dayKeyOf, daysBetween, parseDayKey } from '@/domain/entities/day'
 import { SiteFooter } from '@/presentation/components/landing/SiteFooter'
 import { SiteHeader } from '@/presentation/components/landing/SiteHeader'
@@ -238,7 +238,7 @@ function TimeGoalTool() {
             value={axis}
             onChange={(event) => setAxis(event.target.value as ActivityTypeSlug)}
           >
-            {ACTIVITY_TYPE_LIST.filter((item) => item.unit === 'minutos').map((item) => (
+            {BUILTIN_ACTIVITY_TYPE_LIST.filter((item) => item.unit === 'minutos').map((item) => (
               <option key={item.slug} value={item.slug}>
                 {item.label}
               </option>

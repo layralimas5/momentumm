@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ACTIVITY_TYPE_LIST, activityType, type ActivityTypeSlug } from '@/domain/entities/activity-type'
+import { activityType, type ActivityTypeSlug } from '@/domain/entities/activity-type'
 import { GOAL_PERIODS, GOAL_PERIOD_LABELS, type GoalPeriod } from '@/domain/entities/goal'
 import { GoalProgressCard } from '@/presentation/components/goal/GoalProgressCard'
 import { Button } from '@/presentation/components/ui/Button'
@@ -60,7 +60,7 @@ export function GoalsPage() {
                   value={type}
                   onChange={(event) => setType(event.target.value as ActivityTypeSlug)}
                 >
-                  {ACTIVITY_TYPE_LIST.map((item) => (
+                  {planner.axes.map((item) => (
                     <option key={item.slug} value={item.slug}>
                       {item.label}
                     </option>

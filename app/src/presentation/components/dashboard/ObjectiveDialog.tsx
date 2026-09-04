@@ -7,6 +7,7 @@ import { Icon } from '@/presentation/components/ui/Icon'
 import { EmptyState } from '@/presentation/components/ui/States'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 import { useJourneyDraft } from '@/presentation/planner/use-journey-draft'
+import { usePlanner } from '@/presentation/planner/use-planner'
 import { AxisPicker } from './AxisPicker'
 import { CombinedPlanPreview } from './CombinedPlanPreview'
 import { ObjectiveFields } from './ObjectiveFields'
@@ -36,16 +37,6 @@ export function ObjectiveDialog({
   onClose,
   onSubmit,
 }: ObjectiveDialogProps) {
-  const draft = useJourneyDraft(today, { takenAxes, max: 1 })
-  const entry = draft.entries[0]
-
-  const submit = useAsyncAction(async () => {
-    await onSubmit(draft.combined.plans)
-    onClose()
-  })
-
-  const allTaken = !entry || takenAxes.includes(entry.axis)
-
   return (
     <Dialog
       open={open}
@@ -54,66 +45,103 @@ export function ObjectiveDialog({
       size="lg"
       onClose={onClose}
     >
-      {allTaken ? (
-        <EmptyState
-          title="Todas as áreas já têm objetivo"
-          description="Um objetivo ativo por área mantém o progresso claro. Fecha ou arquiva um deles pra abrir espaço."
-        />
-      ) : (
-        <div className="flex flex-col gap-5">
-          <div>
-            <p className="mb-2 text-sm font-medium text-ink">Área</p>
-            <AxisPicker
-              selected={[entry.axis]}
-              taken={takenAxes}
-              canAddMore={false}
-              onAdd={(axis) => draft.updateObjective(entry.axis, { axis })}
-              onRemove={() => undefined}
-            />
-          </div>
-
-          <ObjectiveFields
-            entry={entry}
-            onChange={(changes) => draft.updateObjective(entry.axis, changes)}
-            onRemove={null}
-          />
-
-          <div className="border-t border-line pt-5">
-            <TimeBudgetFields
-              minutesPerDay={draft.minutesPerDay}
-              daysPerWeek={draft.daysPerWeek}
-              objectiveCount={1}
-              onMinutesChange={draft.setMinutesPerDay}
-              onDaysChange={draft.setDaysPerWeek}
-            />
-          </div>
-
-          <div className="border-t border-line pt-5">
-            <CombinedPlanPreview
-              combined={draft.combined}
-              today={today}
-              onUseSuggestedDeadline={(_axis, days) => draft.updateObjective(entry.axis, { days })}
-              onUseFittingTarget={(_axis, target) =>
-                draft.updateObjective(entry.axis, { target: String(target) })
-              }
-            />
-          </div>
-
-          <div aria-live="polite" className="min-h-5">
-            {submit.error ? <p className="text-sm text-danger">{submit.error}</p> : null}
-          </div>
-
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <Button variant="ghost" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button onClick={() => void submit.run()} loading={submit.running}>
-              <Icon name="check" className="size-4" />
-              Criar objetivo e plano
-            </Button>
-          </div>
-        </div>
-      )}
+      {/*
+        O formulário só existe enquanto o diálogo está aberto. Mantido montado,
+        ele guardaria o rascunho da primeira abertura — e abriria apontando pra
+        uma área que ganhou objetivo no meio do caminho.
+      */}
+      {open ? (
+        <ObjectiveForm today={today} takenAxes={takenAxes} onClose={onClose} onSubmit={onSubmit} />
+      ) : null}
     </Dialog>
+  )
+}
+
+function ObjectiveForm({ today, takenAxes, onClose, onSubmit }: Omit<ObjectiveDialogProps, 'open'>) {
+  const planner = usePlanner()
+  const draft = useJourneyDraft(today, { axes: planner.axes, takenAxes, max: 1 })
+  const entry = draft.entries[0]
+
+  const submit = useAsyncAction(async () => {
+    await onSubmit(draft.combined.plans)
+    onClose()
+  })
+
+  if (!entry) {
+    return (
+      <EmptyState
+        title="Nenhuma área disponível"
+        description="Cria uma área nova ou arquiva um objetivo pra abrir espaço."
+      />
+    )
+  }
+
+  const axisTaken = takenAxes.includes(entry.axis)
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div>
+        <p className="mb-2 text-sm font-medium text-ink">Área</p>
+        <AxisPicker
+          axes={planner.axes}
+          selected={[entry.axis]}
+          taken={takenAxes}
+          canAddMore
+          onAdd={draft.addObjective}
+          onRemove={() => undefined}
+          onCreateAxis={async (label) => (await planner.createAxis(label))?.slug ?? null}
+        />
+      </div>
+
+      {axisTaken ? (
+        <p
+          role="status"
+          className="rounded-card border border-flame/30 bg-flame-dim/40 px-4 py-3 text-sm text-ink"
+        >
+          Essa área já tem um objetivo ativo. Escolhe outra, ou cria uma em “Outra área”.
+        </p>
+      ) : null}
+
+      <ObjectiveFields
+        entry={entry}
+        onChange={(changes) => draft.updateObjective(entry.axis, changes)}
+        onRemove={null}
+      />
+
+      <div className="border-t border-line pt-5">
+        <TimeBudgetFields
+          minutesPerDay={draft.minutesPerDay}
+          daysPerWeek={draft.daysPerWeek}
+          objectiveCount={1}
+          onMinutesChange={draft.setMinutesPerDay}
+          onDaysChange={draft.setDaysPerWeek}
+        />
+      </div>
+
+      <div className="border-t border-line pt-5">
+        <CombinedPlanPreview
+          combined={draft.combined}
+          today={today}
+          onUseSuggestedDeadline={(_axis, days) => draft.updateObjective(entry.axis, { days })}
+          onUseFittingTarget={(_axis, target) =>
+            draft.updateObjective(entry.axis, { target: String(target) })
+          }
+        />
+      </div>
+
+      <div aria-live="polite" className="min-h-5">
+        {submit.error ? <p className="text-sm text-danger">{submit.error}</p> : null}
+      </div>
+
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <Button variant="ghost" onClick={onClose}>
+          Cancelar
+        </Button>
+        <Button onClick={() => void submit.run()} loading={submit.running} disabled={axisTaken}>
+          <Icon name="check" className="size-4" />
+          Criar objetivo e plano
+        </Button>
+      </div>
+    </div>
   )
 }

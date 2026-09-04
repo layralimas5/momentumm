@@ -1,6 +1,5 @@
 import { DomainError } from '@/shared/errors'
 import {
-  ACTIVITY_TYPES,
   activityType,
   formatUnit,
   type ActivityTypeSlug,
@@ -121,7 +120,7 @@ function resolveDuration(
 }
 
 export function describeActivity(activity: Activity): string {
-  const type = ACTIVITY_TYPES[activity.type]
+  const type = activityType(activity.type)
   return `${type.verb} ${formatUnit(type, activity.value)}`
 }
 

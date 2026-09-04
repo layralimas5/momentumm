@@ -8,6 +8,7 @@ import { Icon } from '@/presentation/components/ui/Icon'
 import { Panel } from '@/presentation/components/ui/Surface'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 import { useJourneyDraft } from '@/presentation/planner/use-journey-draft'
+import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 import { AxisPicker } from './AxisPicker'
 import { CombinedPlanPreview } from './CombinedPlanPreview'
@@ -40,7 +41,8 @@ const STEPS = ['Áreas', 'Tempo', 'Objetivos', 'Plano'] as const
  */
 export function Onboarding({ firstName, today, onFinish }: OnboardingProps) {
   const [step, setStep] = useState(0)
-  const draft = useJourneyDraft(today)
+  const planner = usePlanner()
+  const draft = useJourneyDraft(today, { axes: planner.axes })
 
   const finish = useAsyncAction(async () => {
     await onFinish(draft.combined.plans)
@@ -95,14 +97,16 @@ export function Onboarding({ firstName, today, onFinish }: OnboardingProps) {
           {step === 0 ? (
             <Step
               title="O que você quer mudar?"
-              hint="Pode ser uma área só, e pode ser mais de uma. Cada área escolhida vira um objetivo com prazo próprio."
+              hint="Pode ser uma área só, e pode ser mais de uma. Se a tua não está na lista, escreve ela em “Outra área”."
             >
               <div className="mt-4">
                 <AxisPicker
+                  axes={planner.axes}
                   selected={selectedAxes}
                   canAddMore={draft.canAddMore}
                   onAdd={draft.addObjective}
                   onRemove={draft.removeObjective}
+                  onCreateAxis={async (label) => (await planner.createAxis(label))?.slug ?? null}
                 />
 
                 <p className="mt-3 text-xs text-ink-faint">

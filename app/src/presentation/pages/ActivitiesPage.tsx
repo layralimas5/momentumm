@@ -5,13 +5,14 @@ import {
   totalValueOfType,
   type Activity,
 } from '@/domain/entities/activity'
-import { ACTIVITY_TYPE_LIST, type ActivityTypeSlug } from '@/domain/entities/activity-type'
+import type { ActivityTypeSlug } from '@/domain/entities/activity-type'
 import { formatDayLabel, type DayKey } from '@/domain/entities/day'
 import { ActivityRow } from '@/presentation/components/activity/ActivityRow'
 import { QuickLog } from '@/presentation/components/activity/QuickLog'
 import { StreakCard } from '@/presentation/components/activity/StreakCard'
 import { Stat, StatGrid } from '@/presentation/components/ui/Stat'
 import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
+import { useIsDesktop } from '@/presentation/hooks/use-media-query'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 import { PageHeader } from './PageHeader'
@@ -21,12 +22,18 @@ type Filter = ActivityTypeSlug | 'todos'
 /**
  * Minha Jornada: o histórico completo.
  *
- * O registro rápido e a sequência ficam na coluna lateral porque é aqui que a
- * pessoa vem preencher o que fez fora do app — e ver que não parou.
+ * No desktop o registro rápido e a sequência ficam na coluna lateral, ao lado
+ * do histórico: há largura pra ver as duas coisas ao mesmo tempo.
+ *
+ * No celular não há. Lá a sequência ABRE a página, porque é a resposta que traz
+ * a pessoa aqui — "eu não parei" — e no fim da rolagem, depois de semanas de
+ * histórico, ela simplesmente não é vista.
  */
 export function ActivitiesPage() {
-  const { activities, today, loading, error, removeActivity, streak, logActivity } = usePlanner()
+  const { activities, today, loading, error, removeActivity, streak, logActivity, axes } =
+    usePlanner()
   const [filter, setFilter] = useState<Filter>('todos')
+  const isDesktop = useIsDesktop()
 
   const filtered = useMemo(
     () => (filter === 'todos' ? activities : activities.filter((item) => item.type === filter)),
@@ -52,6 +59,10 @@ export function ActivitiesPage() {
 
       {error ? <ErrorNote message={error} /> : null}
 
+      {isDesktop ? null : (
+        <StreakCard streak={streak} today={today} activeDays={activeDays} />
+      )}
+
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start 2xl:grid-cols-[minmax(0,1fr)_25rem]">
         <div className="flex min-w-0 flex-col gap-5">
           <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por área">
@@ -60,7 +71,7 @@ export function ActivitiesPage() {
               active={filter === 'todos'}
               onClick={() => setFilter('todos')}
             />
-            {ACTIVITY_TYPE_LIST.map((type) => (
+            {axes.map((type) => (
               <FilterChip
                 key={type.slug}
                 label={type.label}
@@ -113,7 +124,9 @@ export function ActivitiesPage() {
 
         <aside className="flex min-w-0 flex-col gap-5 xl:sticky xl:top-24">
           <QuickLog onLog={logActivity} />
-          <StreakCard streak={streak} today={today} activeDays={activeDays} />
+          {isDesktop ? (
+            <StreakCard streak={streak} today={today} activeDays={activeDays} />
+          ) : null}
         </aside>
       </div>
     </div>

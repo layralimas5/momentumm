@@ -5,7 +5,7 @@ import { countsAsDone, habitsScheduledOn, statusOf } from '@/domain/entities/hab
 import { initialsOf } from '@/domain/entities/profile'
 import { isPending } from '@/domain/entities/task'
 import { Button } from '@/presentation/components/ui/Button'
-import { Icon } from '@/presentation/components/ui/Icon'
+import { Icon, type IconName } from '@/presentation/components/ui/Icon'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
 import { usePlanner } from '@/presentation/planner/use-planner'
@@ -107,7 +107,7 @@ function AddMenu() {
     return () => document.removeEventListener('mousedown', onClickAway)
   }, [open])
 
-  const pick = (kind: 'acao' | 'habito' | 'meta') => {
+  const pick = (kind: 'acao' | 'habito' | 'meta' | 'objetivo') => {
     setOpen(false)
     composer.open(kind)
   }
@@ -132,6 +132,9 @@ function AddMenu() {
           </MenuItem>
           <MenuItem icon="metas" onClick={() => pick('meta')}>
             Nova meta
+          </MenuItem>
+          <MenuItem icon="trofeu" onClick={() => pick('objetivo')}>
+            Novo objetivo
           </MenuItem>
         </div>
       ) : null}
@@ -257,7 +260,7 @@ function MenuItem({
   onClick,
   children,
 }: {
-  icon: 'jornada' | 'habitos' | 'metas'
+  icon: IconName
   onClick: () => void
   children: React.ReactNode
 }) {

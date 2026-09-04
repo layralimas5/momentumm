@@ -1,4 +1,5 @@
 import { createActivity, type Activity, type NewActivityInput } from '@/domain/entities/activity'
+import { createActivityType, type ActivityType } from '@/domain/entities/activity-type'
 import {
   createCheckIn,
   type CheckIn,
@@ -31,7 +32,7 @@ import { DomainError } from '@/shared/errors'
  * `localStorage`. A versão do storage sobe junto com o formato — dado antigo
  * é descartado em silêncio em vez de quebrar a tela.
  */
-const STORAGE_KEY = 'momentumm.demo.v3'
+const STORAGE_KEY = 'momentumm.demo.v4'
 
 export const DEMO_USER = {
   id: 'demo-user',
@@ -40,6 +41,7 @@ export const DEMO_USER = {
 
 interface DemoState {
   profile: Profile
+  customAxes: ActivityType[]
   activities: Activity[]
   objectives: Objective[]
   goals: Goal[]
@@ -254,10 +256,11 @@ function seed(): DemoState {
     ),
   ]
 
-  return { profile, activities, objectives, goals, habits, habitLogs, tasks, checkIns, wins }
+  return { profile, customAxes: [], activities, objectives, goals, habits, habitLogs, tasks, checkIns, wins }
 }
 
 interface StoredState {
+  customAxes?: ActivityType[]
   profile: Omit<Profile, 'createdAt'> & { createdAt: string; plan?: PlanTier }
   activities: Array<Omit<Activity, 'occurredAt'> & { occurredAt: string }>
   objectives: Array<
@@ -279,6 +282,7 @@ function revive(raw: string): DemoState {
   const parsed = JSON.parse(raw) as StoredState
 
   return {
+    customAxes: parsed.customAxes ?? [],
     profile: {
       ...parsed.profile,
       plan: parsed.profile.plan ?? 'free',
@@ -372,6 +376,23 @@ export const demoStore = {
     const current = load()
     current.activities = current.activities.filter((activity) => activity.id !== id)
     persist()
+  },
+
+  customAxes(): ActivityType[] {
+    return [...load().customAxes]
+  },
+
+  addCustomAxis(label: string): ActivityType {
+    const current = load()
+    const axis = createActivityType({ label, order: current.customAxes.length })
+
+    if (current.customAxes.some((item) => item.slug === axis.slug)) {
+      throw new DomainError('Você já tem uma área com esse nome.')
+    }
+
+    current.customAxes = [...current.customAxes, axis]
+    persist()
+    return axis
   },
 
   objectives(): Objective[] {
@@ -581,6 +602,7 @@ export const demoStore = {
     const profile = load().profile
     state = {
       profile: { ...profile, name: profile.name },
+      customAxes: [],
       activities: [],
       objectives: [],
       goals: [],

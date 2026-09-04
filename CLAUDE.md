@@ -63,7 +63,7 @@ que existir base. Feed vazio afasta usuário.
 Fase 1 em pé, em `app/`. Roda em **modo demo** sem configurar nada (dados em
 `localStorage`) e vira contas reais ao preencher `.env.local` com o Supabase.
 
-Pronto: domínio completo com 158 testes, três migrations com RLS, repositórios demo e
+Pronto: domínio completo com 173 testes, quatro migrations com RLS, repositórios demo e
 Supabase, auth com rota protegida, registro rápido, cronômetro de sessão, streak
 dos últimos 7 dias, histórico com filtro por eixo, metas com progresso e perfil
 editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
@@ -111,6 +111,13 @@ eixo), diz quanto tempo por dia consegue dar, escreve os objetivos com prazo e
 recebe um plano pronto pra virar hábito e ação. O último passo é o primeiro dia
 começando, não um resumo.
 
+**As quatro áreas de fábrica são um começo, não a lista.** Em "Outra área" a
+pessoa escreve a dela (escrita, terapia, violão) e isso vira um eixo de verdade:
+`activity_types` ganha uma linha e a área entra no filtro do histórico, no
+registro rápido, no gráfico da semana e na review sem código novo — que era a
+promessa da arquitetura desde o primeiro commit. Área criada é medida em
+minutos e recebe roteiro e limites genéricos e conservadores.
+
 O **tempo vem antes dos objetivos** de propósito: é ele que calibra cada alvo
 sugerido, e perguntar depois faria o app propor números que ele já sabe que não
 cabem. Com mais de um objetivo, o tempo do dia é dividido em partes iguais e o
@@ -130,6 +137,11 @@ Entidades da jornada:
   natureza: a meta é um ritmo que se repete, o objetivo termina. Um ativo por
   eixo (índice único no banco). O progresso soma as `activities` do eixo dentro
   da janela, sem tabela de vínculo: a atividade continua sendo a unidade única
+- `activity-type` — deixou de ser constante e virou **registro**: quatro eixos
+  de fábrica mais os que a conta criou, carregados no início da sessão por
+  `registerCustomActivityTypes`. `ActivityTypeSlug` é `string` porque a lista é
+  aberta, e `activityType()` devolve um eixo genérico pra slug desconhecido —
+  registro de uma área apagada continua aparecendo no histórico
 - `plan-builder` — o gerador de plano. Aritmética pura sobre alvo, prazo, dias
   por semana e **minutos por dia**; o mesmo pedido gera sempre o mesmo plano. O
   tempo declarado é teto: nenhuma sessão pode passar dele. **Avisa quando não
@@ -161,7 +173,10 @@ O dashboard do celular é uma **árvore de componentes própria**
 decidir e começar, e a análise vem depois.
 
 - Barra inferior com cinco lugares (Hoje, Jornada, +, Foco, Perfil). Hábitos,
-  Metas e Insights não cabem lá e ficam nos atalhos do Perfil
+  Metas, Review e Insights não cabem lá e ficam nos atalhos do Perfil
+- Em `Minha Jornada` a **sequência abre a página**. No desktop ela mora na
+  coluna lateral, mas no celular, no fim da rolagem, ela simplesmente não é
+  vista — e é ela a resposta que traz a pessoa àquela tela
 - Check-in resolve em **um toque**. A energia só é perguntada nos estados
   baixos, onde a resposta muda o plano (`defaultsForMood`)
 - Camada modal do celular é o `BottomSheet`, não o `Dialog`
@@ -191,6 +206,6 @@ Quando incomodar, trocar por import dinâmico dentro do `container`.
 cd app
 npm install
 npm run dev     # modo demo, sem configurar nada
-npm test        # 158 testes de domínio
+npm test        # 173 testes de domínio
 npm run build
 ```

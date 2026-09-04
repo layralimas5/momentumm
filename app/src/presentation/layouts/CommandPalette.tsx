@@ -56,6 +56,13 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
         icon: 'metas',
         run: () => composer.open('meta'),
       },
+      {
+        id: 'novo-objetivo',
+        label: 'Criar objetivo',
+        hint: 'Com prazo, e o plano sai pronto',
+        icon: 'trofeu',
+        run: () => composer.open('objetivo'),
+      },
     ]
 
     return [...creation, ...navigation]

@@ -1,5 +1,6 @@
 import { createContext } from 'react'
 import type { Activity, NewActivityInput } from '@/domain/entities/activity'
+import type { ActivityType } from '@/domain/entities/activity-type'
 import type { CheckIn, NewCheckInInput } from '@/domain/entities/checkin'
 import type { DayKey } from '@/domain/entities/day'
 import type { Goal, GoalProgress, NewGoalInput } from '@/domain/entities/goal'
@@ -26,6 +27,11 @@ export interface PlannerState {
   readonly today: DayKey
   readonly activities: readonly Activity[]
   readonly todayActivities: readonly Activity[]
+  /**
+   * Todas as áreas da conta: as quatro de fábrica mais as que ela criou. É
+   * daqui que filtro, seletor e formulário leem — nunca da constante.
+   */
+  readonly axes: readonly ActivityType[]
   readonly objectives: readonly Objective[]
   readonly objectiveProgress: readonly ObjectiveProgress[]
   readonly goals: readonly Goal[]
@@ -46,6 +52,9 @@ export interface PlannerState {
 
   logActivity(input: Omit<NewActivityInput, 'userId'>): Promise<void>
   removeActivity(id: string): Promise<void>
+
+  /** Cria uma área nova a partir do nome escrito pela pessoa. */
+  createAxis(label: string): Promise<ActivityType | null>
 
   createObjective(input: Omit<NewObjectiveInput, 'userId'>): Promise<Objective | null>
   updateObjective(id: string, changes: ObjectiveUpdate): Promise<void>

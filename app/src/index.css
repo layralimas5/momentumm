@@ -39,6 +39,13 @@
   --color-axis-treino: #ff5c8a;
   --color-axis-meditacao: #3ecf8e;
 
+  /* Areas criadas pela pessoa. Quatro tons que nao colidem com os de fabrica
+     nem com o laranja da sequencia, que segue exclusivo do streak. */
+  --color-axis-custom-1: #a78bfa;
+  --color-axis-custom-2: #22d3ee;
+  --color-axis-custom-3: #f472b6;
+  --color-axis-custom-4: #a3e635;
+
   --font-sans:
     ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
     sans-serif;

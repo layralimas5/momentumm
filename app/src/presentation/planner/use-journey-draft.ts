@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import { ACTIVITY_TYPE_SLUGS, type ActivityTypeSlug } from '@/domain/entities/activity-type'
+import { activityType, type ActivityType, type ActivityTypeSlug } from '@/domain/entities/activity-type'
 import type { DayKey } from '@/domain/entities/day'
 import { deadlineFrom } from '@/domain/entities/objective'
 import {
@@ -11,11 +11,16 @@ import {
 } from '@/domain/entities/plan-builder'
 
 /** Objetivo sugerido por área, pra a pessoa editar em vez de encarar campo vazio. */
-export const TITLE_SUGGESTIONS: Readonly<Record<ActivityTypeSlug, string>> = {
+const TITLE_SUGGESTIONS: Readonly<Record<string, string>> = {
   leitura: 'Voltar a ler todo dia',
   estudo: 'Terminar o curso que comecei',
   treino: 'Sair do sedentarismo',
   meditacao: 'Criar uma prática diária de silêncio',
+}
+
+/** Área criada pela pessoa usa o próprio nome na sugestão. */
+export function suggestedTitleFor(axis: ActivityTypeSlug): string {
+  return TITLE_SUGGESTIONS[axis] ?? `Ter constância em ${activityType(axis).label.toLowerCase()}`
 }
 
 /** Menos de três dias por semana não constrói hábito, constrói lembrança. */
@@ -57,6 +62,8 @@ export interface JourneyDraftState {
 }
 
 interface Options {
+  /** Todas as áreas disponíveis, incluindo as que a pessoa criou. */
+  readonly axes: readonly ActivityType[]
   /** Áreas que já têm objetivo ativo. Um por eixo é regra de domínio. */
   readonly takenAxes?: readonly ActivityTypeSlug[]
   /** Quantos objetivos podem ser criados de uma vez. O diálogo usa 1. */
@@ -75,12 +82,13 @@ interface Options {
  * O tempo por dia é do conjunto, não de cada objetivo: é o dia da pessoa que
  * está sendo dividido, e é essa divisão que faz o app dizer quando não cabe.
  */
-export function useJourneyDraft(today: DayKey, options: Options = {}): JourneyDraftState {
+export function useJourneyDraft(today: DayKey, options: Options): JourneyDraftState {
+  const { axes } = options
   const takenAxes = useMemo(() => options.takenAxes ?? [], [options.takenAxes])
   const max = Math.min(options.max ?? MAX_OBJECTIVES_AT_ONCE, MAX_OBJECTIVES_AT_ONCE)
 
   const [entries, setEntries] = useState<readonly ObjectiveEntry[]>(() => {
-    const first = ACTIVITY_TYPE_SLUGS.find((slug) => !takenAxes.includes(slug)) ?? 'leitura'
+    const first = axes.find((axis) => !takenAxes.includes(axis.slug))?.slug ?? 'leitura'
     return [newEntry(first)]
   })
   const [minutesPerDay, setMinutesPerDay] = useState(DEFAULT_MINUTES_PER_DAY)
@@ -91,6 +99,9 @@ export function useJourneyDraft(today: DayKey, options: Options = {}): JourneyDr
       setEntries((current) => {
         if (current.length >= max) return current
         if (current.some((entry) => entry.axis === axis)) return current
+        // Quando o limite é 1 (o diálogo), escolher outra área é TROCAR de
+        // área, não empilhar: senão o botão da área nova não faria nada.
+        if (max === 1) return [newEntry(axis)]
         return [...current, newEntry(axis)]
       })
     },
@@ -127,7 +138,7 @@ export function useJourneyDraft(today: DayKey, options: Options = {}): JourneyDr
         const suggested = suggestedTarget(entry.axis, entry.days, share, daysPerWeek)
         return {
           ...entry,
-          suggestedTitle: TITLE_SUGGESTIONS[entry.axis],
+          suggestedTitle: suggestedTitleFor(entry.axis),
           suggested,
           finalTarget: Number(entry.target) > 0 ? Number(entry.target) : suggested,
         }
@@ -149,10 +160,13 @@ export function useJourneyDraft(today: DayKey, options: Options = {}): JourneyDr
 
   const availableAxes = useMemo(
     () =>
-      ACTIVITY_TYPE_SLUGS.filter(
-        (slug) => !takenAxes.includes(slug) && !entries.some((entry) => entry.axis === slug),
-      ),
-    [takenAxes, entries],
+      axes
+        .filter(
+          (axis) =>
+            !takenAxes.includes(axis.slug) && !entries.some((entry) => entry.axis === axis.slug),
+        )
+        .map((axis) => axis.slug),
+    [axes, takenAxes, entries],
   )
 
   return {

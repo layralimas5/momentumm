@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from 'framer-motion'
-import { ACTIVITY_TYPES } from '@/domain/entities/activity-type'
+import { BUILTIN_ACTIVITY_TYPES } from '@/domain/entities/activity-type'
 import { cn } from '@/shared/lib/cn'
 import { MockCard, MockHeader, PhoneMockup } from './PhoneMockup'
 
@@ -177,7 +177,7 @@ function FeedScreen() {
     <>
       <MockHeader title="Feed" subtitle="Quem você segue, hoje." />
       {posts.map((post) => {
-        const type = ACTIVITY_TYPES[post.axis]
+        const type = BUILTIN_ACTIVITY_TYPES[post.axis]
         return (
           <MockCard key={post.name} className="mt-2.5 first:mt-0">
             <div className="flex items-center gap-2">
@@ -283,7 +283,7 @@ function TrainingScreen() {
         { axis: 'leitura', text: 'leu 26 páginas' },
         { axis: 'meditacao', text: 'meditou 10 minutos' },
       ].map((row) => {
-        const type = ACTIVITY_TYPES[row.axis as keyof typeof ACTIVITY_TYPES]
+        const type = BUILTIN_ACTIVITY_TYPES[row.axis as keyof typeof BUILTIN_ACTIVITY_TYPES]
         return (
           <p key={row.axis} className="flex items-center gap-2 border-b border-line py-2.5 text-xs text-ink last:border-0">
             <span

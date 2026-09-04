@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ACTIVITY_TYPE_LIST, activityType, type ActivityTypeSlug } from '@/domain/entities/activity-type'
+import { activityType, type ActivityType, type ActivityTypeSlug } from '@/domain/entities/activity-type'
 import type { DayKey } from '@/domain/entities/day'
 import { addDays } from '@/domain/entities/day'
 import { GOAL_PERIODS, GOAL_PERIOD_LABELS, type Goal, type GoalPeriod } from '@/domain/entities/goal'
@@ -50,6 +50,8 @@ export interface GoalDraft {
 
 interface ComposerProps {
   readonly open: boolean
+  /** Áreas da conta, já com as que a pessoa criou. */
+  readonly axes: readonly ActivityType[]
   readonly kind: ComposerKind
   readonly today: DayKey
   readonly goals: readonly Goal[]
@@ -102,6 +104,7 @@ export function Composer(props: ComposerProps) {
 }
 
 function TaskForm({
+  axes,
   today,
   goals,
   editing,
@@ -200,7 +203,7 @@ function TaskForm({
               onChange={(event) => setAxis(event.target.value as ActivityTypeSlug | '')}
             >
               <option value="">Nenhuma</option>
-              {ACTIVITY_TYPE_LIST.map((type) => (
+              {axes.map((type) => (
                 <option key={type.slug} value={type.slug}>
                   {type.label}
                 </option>
@@ -280,7 +283,7 @@ function TaskForm({
   )
 }
 
-function HabitForm({ onSubmitHabit, onClose }: ComposerProps) {
+function HabitForm({ axes, onSubmitHabit, onClose }: ComposerProps) {
   const [name, setName] = useState('')
   const [icon, setIcon] = useState<HabitIcon>('livro')
   const [axis, setAxis] = useState<ActivityTypeSlug>('leitura')
@@ -359,7 +362,7 @@ function HabitForm({ onSubmitHabit, onClose }: ComposerProps) {
               value={axis}
               onChange={(event) => setAxis(event.target.value as ActivityTypeSlug)}
             >
-              {ACTIVITY_TYPE_LIST.map((type) => (
+              {axes.map((type) => (
                 <option key={type.slug} value={type.slug}>
                   {type.label}
                 </option>
@@ -454,7 +457,7 @@ function HabitForm({ onSubmitHabit, onClose }: ComposerProps) {
   )
 }
 
-function GoalForm({ onSubmitGoal, onClose }: ComposerProps) {
+function GoalForm({ axes, onSubmitGoal, onClose }: ComposerProps) {
   const [type, setType] = useState<ActivityTypeSlug>('leitura')
   const [period, setPeriod] = useState<GoalPeriod>('dia')
   const [target, setTarget] = useState('')
@@ -482,7 +485,7 @@ function GoalForm({ onSubmitGoal, onClose }: ComposerProps) {
             value={type}
             onChange={(event) => setType(event.target.value as ActivityTypeSlug)}
           >
-            {ACTIVITY_TYPE_LIST.map((item) => (
+            {axes.map((item) => (
               <option key={item.slug} value={item.slug}>
                 {item.label}
               </option>

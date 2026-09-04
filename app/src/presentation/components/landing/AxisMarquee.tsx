@@ -1,10 +1,10 @@
-import { ACTIVITY_TYPE_LIST } from '@/domain/entities/activity-type'
+import { BUILTIN_ACTIVITY_TYPE_LIST } from '@/domain/entities/activity-type'
 
 /** Eixos que já existem, seguidos dos que entram conforme o produto cresce. */
 const COMING = ['Escrita', 'Sono', 'Hidratação', 'Terapia', 'Curso', 'Caminhada'] as const
 
 const AXES: readonly string[] = [
-  ...ACTIVITY_TYPE_LIST.map((type) => type.label),
+  ...BUILTIN_ACTIVITY_TYPE_LIST.map((type) => type.label),
   ...COMING,
 ]
 

@@ -1,4 +1,4 @@
-import { ACTIVITY_TYPE_LIST } from '@/domain/entities/activity-type'
+import { BUILTIN_ACTIVITY_TYPE_LIST } from '@/domain/entities/activity-type'
 import { cn } from '@/shared/lib/cn'
 import { MockCard, MockHeader, PhoneMockup } from './PhoneMockup'
 import { Reveal } from './Reveal'
@@ -69,7 +69,7 @@ export function FeatureShowcase() {
             <PhoneMockup>
               <MockHeader title="Registrar agora" subtitle="Escolhe o eixo e o valor." />
               <div className="flex flex-wrap gap-1.5">
-                {ACTIVITY_TYPE_LIST.map((type, index) => (
+                {BUILTIN_ACTIVITY_TYPE_LIST.map((type, index) => (
                   <span
                     key={type.slug}
                     className={cn(

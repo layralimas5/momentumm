@@ -62,7 +62,13 @@ export function MobileGoals({
           const width = track.clientWidth
           setActive(Math.round(track.scrollLeft / Math.max(1, width - 32)))
         }}
-        className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        /*
+          A faixa sangra até as bordas pra o dedo poder arrastar de qualquer
+          ponto, mas o conteúdo respeita a mesma margem do resto da tela
+          (`px-4` + `scroll-px-4`), e o cartão seguinte aparece recuado em vez
+          de fatiado pela borda do aparelho.
+        */
+        className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 py-1 scroll-px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {goals.map((item) => {
           const { progress, pace, nextTask } = item
@@ -71,7 +77,7 @@ export function MobileGoals({
           return (
             <li
               key={progress.goal.id}
-              className="w-[85%] max-w-sm shrink-0 snap-start"
+              className="w-[82%] max-w-sm shrink-0 snap-start"
               aria-label={`Meta de ${type.label}`}
             >
               <div className="surface-card h-full p-4">
@@ -132,10 +138,13 @@ export function MobileGoals({
             </li>
           )
         })}
+        {/* Fecha a rolagem com a mesma margem da esquerda, senão o último
+            cartão encosta na borda do aparelho. */}
+        <li aria-hidden="true" className="w-px shrink-0" />
       </ul>
 
       {goals.length > 1 ? (
-        <div className="mt-3 flex justify-center gap-1.5" aria-hidden="true">
+        <div className="mt-4 flex justify-center gap-1.5" aria-hidden="true">
           {goals.map((item, index) => (
             <span
               key={item.progress.goal.id}

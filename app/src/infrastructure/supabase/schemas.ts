@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { ACTIVITY_SOURCES, ACTIVITY_VISIBILITIES, type Activity } from '@/domain/entities/activity'
-import { ACTIVITY_TYPE_SLUGS } from '@/domain/entities/activity-type'
+import { CUSTOM_AXIS_COLORS, type ActivityType } from '@/domain/entities/activity-type'
 import {
   FOCUS_CAPACITIES,
   MOOD_STATES,
@@ -32,7 +32,7 @@ import { ParseError } from '@/shared/errors'
 const activityRowSchema = z.object({
   id: z.string(),
   user_id: z.string(),
-  type_slug: z.enum(ACTIVITY_TYPE_SLUGS),
+  type_slug: z.string(),
   value: z.number().int(),
   unit: z.enum(['paginas', 'minutos']),
   duration_min: z.number().int(),
@@ -46,7 +46,7 @@ const activityRowSchema = z.object({
 const goalRowSchema = z.object({
   id: z.string(),
   user_id: z.string(),
-  type_slug: z.enum(ACTIVITY_TYPE_SLUGS),
+  type_slug: z.string(),
   target: z.number().int(),
   period: z.enum(GOAL_PERIODS),
   created_at: z.string(),
@@ -57,7 +57,7 @@ const objectiveRowSchema = z.object({
   id: z.string(),
   user_id: z.string(),
   title: z.string(),
-  axis_slug: z.enum(ACTIVITY_TYPE_SLUGS),
+  axis_slug: z.string(),
   motive: z.string().nullable(),
   target: z.number().int(),
   started_on: z.string(),
@@ -77,6 +77,15 @@ const profileRowSchema = z.object({
   // Conta criada antes da migration de planos não tem a coluna preenchida.
   plan: z.enum(PLAN_TIERS).nullish(),
   created_at: z.string(),
+})
+
+const customAxisRowSchema = z.object({
+  slug: z.string(),
+  label: z.string(),
+  verb: z.string(),
+  unit: z.enum(['paginas', 'minutos']),
+  color: z.string().nullish(),
+  sort_order: z.number().int().nullish(),
 })
 
 function parseOrThrow<T>(schema: z.ZodType<T>, value: unknown, label: string): T {
@@ -134,6 +143,26 @@ export function toObjective(row: unknown): Objective {
   }
 }
 
+export function toCustomAxis(row: unknown): ActivityType {
+  const parsed = parseOrThrow(customAxisRowSchema, row, 'área')
+  const order = parsed.sort_order ?? 0
+  const fallback = CUSTOM_AXIS_COLORS[Math.abs(order) % CUSTOM_AXIS_COLORS.length]
+
+  return {
+    slug: parsed.slug,
+    label: parsed.label,
+    verb: parsed.verb,
+    unit: parsed.unit,
+    unitLabel:
+      parsed.unit === 'paginas'
+        ? { one: 'página', many: 'páginas' }
+        : { one: 'minuto', many: 'minutos' },
+    colorToken: parsed.color ?? fallback ?? 'var(--color-brand)',
+    quickValues: parsed.unit === 'paginas' ? [10, 20, 30, 50] : [10, 20, 30, 45],
+    builtin: false,
+  }
+}
+
 export function toProfile(row: unknown): Profile {
   const parsed = parseOrThrow(profileRowSchema, row, 'perfil')
   return {
@@ -165,7 +194,7 @@ const habitRowSchema = z.object({
   name: z.string(),
   // Ícone desconhecido não pode derrubar a lista de hábitos: cai no padrão.
   icon: z.string(),
-  axis_slug: z.enum(ACTIVITY_TYPE_SLUGS),
+  axis_slug: z.string(),
   day_part: z.enum(DAY_PARTS),
   weekdays: z.array(z.number().int().min(0).max(6)).nullable(),
   target: z.number().int(),
@@ -188,7 +217,7 @@ const taskRowSchema = z.object({
   user_id: z.string(),
   title: z.string(),
   goal_id: z.string().nullable(),
-  axis_slug: z.enum(ACTIVITY_TYPE_SLUGS).nullable(),
+  axis_slug: z.string().nullable(),
   estimated_min: z.number().int(),
   effort: z.enum(TASK_EFFORTS),
   minimal_version: z.string().nullable(),

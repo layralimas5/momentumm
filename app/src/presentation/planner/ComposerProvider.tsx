@@ -93,6 +93,7 @@ export function ComposerProvider({ children }: { children: ReactNode }) {
       <Composer
         open={open}
         kind={kind}
+        axes={planner.axes}
         today={planner.today}
         goals={planner.goals}
         editing={editing}

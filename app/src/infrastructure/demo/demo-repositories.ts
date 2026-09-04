@@ -1,5 +1,6 @@
 import type { AuthService, AuthUser } from '@/domain/auth/auth-service'
 import type { Activity, NewActivityInput } from '@/domain/entities/activity'
+import type { ActivityType } from '@/domain/entities/activity-type'
 import type { CheckIn, NewCheckInInput } from '@/domain/entities/checkin'
 import type { DayKey } from '@/domain/entities/day'
 import type { Habit, HabitLog, HabitStatus, NewHabitInput } from '@/domain/entities/habit'
@@ -10,6 +11,10 @@ import type { NewObjectiveInput, Objective } from '@/domain/entities/objective'
 import type { Profile } from '@/domain/entities/profile'
 import { assertValidBio, assertValidHandle, assertValidName } from '@/domain/entities/profile'
 import type { ActivityRepository } from '@/domain/repositories/activity-repository'
+import type {
+  ActivityTypeRepository,
+  NewCustomAxisInput,
+} from '@/domain/repositories/activity-type-repository'
 import type { GoalRepository } from '@/domain/repositories/goal-repository'
 import type {
   ObjectiveRepository,
@@ -106,6 +111,16 @@ export class DemoGoalRepository implements GoalRepository {
 
   async archive(id: string): Promise<void> {
     demoStore.archiveGoal(id)
+  }
+}
+
+export class DemoActivityTypeRepository implements ActivityTypeRepository {
+  async listCustom(): Promise<ActivityType[]> {
+    return demoStore.customAxes()
+  }
+
+  async createCustom(input: NewCustomAxisInput): Promise<ActivityType> {
+    return demoStore.addCustomAxis(input.label)
   }
 }
 

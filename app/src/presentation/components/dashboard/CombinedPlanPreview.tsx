@@ -52,8 +52,10 @@ export function CombinedPlanPreview({
         <div className="min-w-0">
           <p className="text-sm text-pretty text-ink">{combined.verdict}</p>
           <p className="mt-1 text-xs text-ink-faint">
-            O conjunto pede {combined.requiredMinutesPerDay} minutos num dia de sessão, e você
-            reservou {combined.minutesPerDay}.
+            {/* "Cerca de" porque cada sessão arredonda pra cima: o número exato
+                daria a impressão de precisão que a conta não tem. */}
+            O conjunto pede cerca de {combined.requiredMinutesPerDay} minutos num dia de sessão, e
+            você reservou {combined.minutesPerDay}.
           </p>
         </div>
       </div>

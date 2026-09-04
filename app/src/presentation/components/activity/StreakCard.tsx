@@ -19,12 +19,19 @@ export function StreakCard({ streak, today, activeDays }: StreakCardProps) {
       aria-labelledby="streak-titulo"
       className="rounded-card border border-line bg-surface p-5"
     >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 id="streak-titulo" className="text-sm font-medium tracking-wide text-ink-muted uppercase">
-            Sequência
-          </h2>
-          <p className="mt-2 flex items-baseline gap-2">
+      <h2 id="streak-titulo" className="text-sm font-medium tracking-wide text-ink-muted uppercase">
+        Sequência
+      </h2>
+
+      {/*
+        O fogo anda colado no número. Empurrado pra borda oposta do card ele
+        vira enfeite solto na tela larga do celular — e o que ele representa é
+        exatamente aquele número, não a seção inteira.
+      */}
+      <div className="mt-2 flex items-center gap-3">
+        <Flame active={streak.current > 0} atRisk={streak.atRisk} />
+        <div className="min-w-0">
+          <p className="flex items-baseline gap-2">
             <motion.span
               key={streak.current}
               initial={{ scale: 0.9, opacity: 0.6 }}
@@ -38,12 +45,10 @@ export function StreakCard({ streak, today, activeDays }: StreakCardProps) {
               {streak.current === 1 ? 'dia' : 'dias'}
             </span>
           </p>
-          <p className="mt-1 text-xs text-ink-faint">
+          <p className="mt-0.5 text-xs text-ink-faint">
             Recorde: <span className="tabular">{streak.record}</span>
           </p>
         </div>
-
-        <Flame active={streak.current > 0} atRisk={streak.atRisk} />
       </div>
 
       <ol className="mt-5 flex justify-between gap-1" aria-label="Últimos sete dias">

@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import type { NewActivityInput } from '@/domain/entities/activity'
-import { ACTIVITY_TYPE_LIST, type ActivityType } from '@/domain/entities/activity-type'
+import type { ActivityType } from '@/domain/entities/activity-type'
 import { Button } from '@/presentation/components/ui/Button'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
+import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 
 interface QuickLogProps {
@@ -15,7 +16,11 @@ interface QuickLogProps {
  * toca no valor, acabou. O campo livre existe, mas ninguém é obrigado a usar.
  */
 export function QuickLog({ onLog }: QuickLogProps) {
-  const [type, setType] = useState<ActivityType>(ACTIVITY_TYPE_LIST[0] as ActivityType)
+  const { axes } = usePlanner()
+  const [slug, setSlug] = useState<string>(axes[0]?.slug ?? 'leitura')
+
+  // A área escolhida pode ter sido apagada em outra aba: cai na primeira.
+  const type: ActivityType = axes.find((item) => item.slug === slug) ?? (axes[0] as ActivityType)
   const [custom, setCustom] = useState('')
   const [justLogged, setJustLogged] = useState<number | null>(null)
 
@@ -36,13 +41,13 @@ export function QuickLog({ onLog }: QuickLogProps) {
       </h2>
 
       <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Eixo">
-        {ACTIVITY_TYPE_LIST.map((item) => {
+        {axes.map((item) => {
           const selected = item.slug === type.slug
           return (
             <button
               key={item.slug}
               type="button"
-              onClick={() => setType(item)}
+              onClick={() => setSlug(item.slug)}
               aria-pressed={selected}
               className={cn(
                 'rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors',

@@ -1,6 +1,7 @@
 import type { PostgrestError } from '@supabase/supabase-js'
 import type { AuthService, AuthUser } from '@/domain/auth/auth-service'
 import { createActivity, type Activity, type NewActivityInput } from '@/domain/entities/activity'
+import { createActivityType, type ActivityType } from '@/domain/entities/activity-type'
 import { createCheckIn, type CheckIn, type NewCheckInInput } from '@/domain/entities/checkin'
 import type { DayKey } from '@/domain/entities/day'
 import {
@@ -21,6 +22,10 @@ import {
 import type { Profile } from '@/domain/entities/profile'
 import { assertValidBio, assertValidHandle, assertValidName } from '@/domain/entities/profile'
 import type { ActivityRepository } from '@/domain/repositories/activity-repository'
+import type {
+  ActivityTypeRepository,
+  NewCustomAxisInput,
+} from '@/domain/repositories/activity-type-repository'
 import type { GoalRepository } from '@/domain/repositories/goal-repository'
 import type {
   ObjectiveRepository,
@@ -36,6 +41,7 @@ import { supabase } from './client'
 import {
   toActivity,
   toCheckIn,
+  toCustomAxis,
   toGoal,
   toHabit,
   toObjective,
@@ -185,6 +191,57 @@ export class SupabaseGoalRepository implements GoalRepository {
       .eq('user_id', userId)
 
     if (error) fail(error, 'arquivar a meta')
+  }
+}
+
+/**
+ * O slug de uma área criada é prefixado com o dono.
+ *
+ * `activity_types.slug` é chave primária global — é ela que as FKs de
+ * atividade, hábito, meta e objetivo apontam. Sem prefixo, duas pessoas
+ * criando "Escrita" colidiriam na mesma linha e passariam a dividir o eixo.
+ */
+function axisSlugFor(userId: string, slug: string): string {
+  return `${userId.slice(0, 8)}-${slug}`
+}
+
+export class SupabaseActivityTypeRepository implements ActivityTypeRepository {
+  async listCustom(userId: string): Promise<ActivityType[]> {
+    const { data, error } = await supabase()
+      .from('activity_types')
+      .select('*')
+      .eq('user_id', userId)
+      .order('sort_order', { ascending: true })
+
+    if (error) fail(error, 'carregar as áreas')
+    return (data ?? []).map(toCustomAxis)
+  }
+
+  async createCustom(input: NewCustomAxisInput): Promise<ActivityType> {
+    const draft = createActivityType({ label: input.label, order: input.order })
+    const slug = axisSlugFor(input.userId, draft.slug)
+
+    const { data, error } = await supabase()
+      .from('activity_types')
+      .insert({
+        slug,
+        user_id: input.userId,
+        label: draft.label,
+        verb: draft.verb,
+        unit: draft.unit,
+        color: draft.colorToken,
+        sort_order: 100 + input.order,
+      })
+      .select('*')
+      .single()
+
+    if (error) {
+      if (error.code === UNIQUE_VIOLATION) {
+        throw new DomainError('Você já tem uma área com esse nome.')
+      }
+      fail(error, 'criar a área')
+    }
+    return toCustomAxis(data)
   }
 }
 

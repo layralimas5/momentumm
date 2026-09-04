@@ -1,4 +1,4 @@
-import { ACTIVITY_TYPES } from '@/domain/entities/activity-type'
+import { BUILTIN_ACTIVITY_TYPES } from '@/domain/entities/activity-type'
 import { cn } from '@/shared/lib/cn'
 import { Reveal } from './Reveal'
 import { Section, SectionHeading } from './Section'
@@ -10,7 +10,7 @@ import { Section, SectionHeading } from './Section'
  */
 
 type Tile =
-  | { kind: 'record'; axis: keyof typeof ACTIVITY_TYPES; value: string; note: string }
+  | { kind: 'record'; axis: keyof typeof BUILTIN_ACTIVITY_TYPES; value: string; note: string }
   | { kind: 'streak'; days: number }
   | { kind: 'goal'; label: string; done: string; percent: number }
   | { kind: 'quote'; text: string }
@@ -55,7 +55,7 @@ export function Gallery() {
 function TileCard({ tile }: { tile: Tile }) {
   switch (tile.kind) {
     case 'record': {
-      const type = ACTIVITY_TYPES[tile.axis]
+      const type = BUILTIN_ACTIVITY_TYPES[tile.axis]
       return (
         <article className="flex h-full flex-col rounded-card border border-line bg-surface p-4">
           <span className="flex items-center gap-2">
