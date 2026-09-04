@@ -400,26 +400,36 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   )
 
   /**
-   * O plano gerado no onboarding virando dado de verdade.
+   * Os planos gerados no onboarding virando dado de verdade.
    *
-   * A ordem importa: o objetivo primeiro (é ele que pode ser recusado por já
-   * existir um ativo no eixo), depois o ritmo semanal, depois os hábitos e por
-   * último as ações — que nascem já apontando pra meta criada, senão o card de
-   * "próxima ação" da meta nasceria vazio.
+   * A ordem dentro de cada plano importa: o objetivo primeiro (é ele que pode
+   * ser recusado por já existir um ativo no eixo), depois o ritmo semanal,
+   * depois os hábitos e por último as ações — que nascem já apontando pra meta
+   * criada, senão o card de "próxima ação" da meta nasceria vazio.
+   *
+   * Só a primeira ação do primeiro plano fica como prioridade principal: a
+   * regra do produto é uma por dia, e três objetivos não podem virar três
+   * prioridades disputando o mesmo dia.
    */
   const applyPlan = useCallback(
-    async (plan: PlanDraft) => {
+    async (plans: readonly PlanDraft[]) => {
       if (!user) return
 
-      await createObjective(plan.objective)
-      const goal = await createGoal(plan.goal).catch(() => null)
+      let priorityTaken = false
 
-      for (const habit of plan.habits) {
-        await createHabit(habit)
-      }
+      for (const plan of plans) {
+        await createObjective(plan.objective)
+        const goal = await createGoal(plan.goal).catch(() => null)
 
-      for (const task of plan.tasks) {
-        await createTask({ ...task, goalId: goal?.id ?? null })
+        for (const habit of plan.habits) {
+          await createHabit(habit)
+        }
+
+        for (const task of plan.tasks) {
+          const isMainPriority = (task.isMainPriority ?? false) && !priorityTaken
+          if (isMainPriority) priorityTaken = true
+          await createTask({ ...task, isMainPriority, goalId: goal?.id ?? null })
+        }
       }
     },
     [user, createObjective, createGoal, createHabit, createTask],

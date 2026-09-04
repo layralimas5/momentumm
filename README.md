@@ -44,8 +44,9 @@ Visibilidade de atividade é regra de RLS no banco, não filtro no front.
 
 Fase 1 funcionando. A jornada principal é um ciclo de três telas:
 
-1. **Onboarding** — área, objetivo, prazo e um plano gerado que já vira hábito
-   e ação, com o primeiro dia começando ali mesmo.
+1. **Onboarding** — áreas (uma ou várias), quanto tempo por dia, objetivos com
+   prazo, e um plano gerado que já vira hábito e ação, com o primeiro dia
+   começando ali mesmo.
 2. **Hoje** — momentum, progresso dos objetivos, prioridade do dia, hábitos,
    ações e check-in.
 3. **Review** — a semana em números: quanto do planejado saiu, onde o ritmo
@@ -54,8 +55,10 @@ Fase 1 funcionando. A jornada principal é um ciclo de três telas:
 Além disso: sessão de foco, insights, metas com progresso, histórico e perfil.
 Fase 2 (feed, follows, kudos, recap mensal) ainda não começou.
 
-O plano nunca finge que cabe: quando o prazo exige mais do que se sustenta por
-semanas, ele avisa e sugere a data que funcionaria.
+O plano nunca finge que cabe. O tempo que você diz ter por dia é teto: nenhuma
+sessão pede mais que isso, e quando o alvo não entra no prazo, o app avisa e
+oferece as duas saídas — a data que funcionaria ou o alvo que cabe. Com vários
+objetivos, ele soma o que todos pedem e diz na cara quando o dia não estica.
 
 O dashboard trata o dia como variável: o check-in define a capacidade e, num dia
 de energia baixa, o app sugere a versão mínima do plano em vez de incentivar o

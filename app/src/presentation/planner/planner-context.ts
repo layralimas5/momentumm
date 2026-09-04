@@ -52,10 +52,11 @@ export interface PlannerState {
   archiveObjective(id: string): Promise<void>
   /**
    * O plano inteiro de uma vez: objetivo, ritmo semanal, hábitos e as
-   * primeiras ações. É uma operação só porque plano pela metade é pior que
-   * plano nenhum — a pessoa sairia do onboarding com meta sem ação.
+   * primeiras ações, pra cada objetivo da lista. É uma operação só porque
+   * plano pela metade é pior que plano nenhum — a pessoa sairia do onboarding
+   * com meta sem ação.
    */
-  applyPlan(plan: PlanDraft): Promise<void>
+  applyPlan(plans: readonly PlanDraft[]): Promise<void>
 
   createGoal(input: Omit<NewGoalInput, 'userId'>): Promise<Goal | null>
   archiveGoal(id: string): Promise<void>

@@ -105,6 +105,7 @@ export function ComposerProvider({ children }: { children: ReactNode }) {
       <ObjectiveDialog
         open={objectiveOpen}
         today={planner.today}
+        takenAxes={planner.objectives.map((objective) => objective.axis)}
         onClose={() => setObjectiveOpen(false)}
         onSubmit={planner.applyPlan}
       />

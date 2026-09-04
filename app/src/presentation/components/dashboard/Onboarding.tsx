@@ -1,52 +1,60 @@
 import { useState, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
-import { ACTIVITY_TYPE_LIST, activityType, formatUnit } from '@/domain/entities/activity-type'
+import { activityType, type ActivityTypeSlug } from '@/domain/entities/activity-type'
 import type { DayKey } from '@/domain/entities/day'
-import {
-  DEADLINE_PRESETS,
-  MAX_OBJECTIVE_MOTIVE,
-  MAX_OBJECTIVE_TITLE,
-} from '@/domain/entities/objective'
 import type { PlanDraft } from '@/domain/entities/plan-builder'
 import { Button } from '@/presentation/components/ui/Button'
-import { ChoiceGroup } from '@/presentation/components/ui/Choice'
-import { Field, TextInput } from '@/presentation/components/ui/Field'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { Panel } from '@/presentation/components/ui/Surface'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
-import { FREQUENCY_OPTIONS, useObjectiveDraft } from '@/presentation/planner/use-objective-draft'
+import { useJourneyDraft } from '@/presentation/planner/use-journey-draft'
 import { cn } from '@/shared/lib/cn'
-import { PlanPreview } from './PlanPreview'
+import { AxisPicker } from './AxisPicker'
+import { CombinedPlanPreview } from './CombinedPlanPreview'
+import { ObjectiveFields } from './ObjectiveFields'
+import { TimeBudgetFields } from './TimeBudgetFields'
 
 interface OnboardingProps {
   readonly firstName: string | null
   readonly today: DayKey
-  readonly onFinish: (plan: PlanDraft) => Promise<void>
+  readonly onFinish: (plans: readonly PlanDraft[]) => Promise<void>
 }
 
-const STEPS = ['Área', 'Objetivo', 'Prazo', 'Plano'] as const
+const STEPS = ['Áreas', 'Tempo', 'Objetivos', 'Plano'] as const
 
 /**
  * Primeiro acesso — a jornada inteira em uma tela.
  *
- * Conta nova não vê dez cards vazios: escolhe uma área, escreve o objetivo,
- * define o prazo e recebe um plano pronto pra virar hábito e ação. O último
- * passo não é um resumo, é o primeiro dia começando.
+ * Conta nova não vê dez cards vazios: escolhe o que quer mudar (uma área ou
+ * quantas quiser), diz quanto tempo por dia consegue dar, escreve os objetivos
+ * com prazo e recebe um plano pronto pra virar hábito e ação. O último passo
+ * não é um resumo, é o primeiro dia começando.
  *
- * O plano não é decorativo. Recalcula a cada mudança de prazo, alvo ou
- * frequência, e avisa quando a conta não fecha — cronograma que só funciona no
- * papel é a forma mais rápida de perder alguém na primeira semana.
+ * A ordem é deliberada: o TEMPO vem antes dos objetivos. É ele que calibra
+ * cada alvo sugerido, e perguntar depois faria o app propor números que ele
+ * mesmo já sabe que não cabem.
+ *
+ * O plano recalcula a cada mudança e avisa quando a conta não fecha —
+ * cronograma que só funciona no papel é a forma mais rápida de perder alguém
+ * na primeira semana.
  */
 export function Onboarding({ firstName, today, onFinish }: OnboardingProps) {
   const [step, setStep] = useState(0)
-  const draft = useObjectiveDraft(today)
-  const type = activityType(draft.axis)
+  const draft = useJourneyDraft(today)
 
   const finish = useAsyncAction(async () => {
-    await onFinish(draft.plan)
+    await onFinish(draft.combined.plans)
   })
 
-  const canAdvance = step !== 2 || draft.finalTarget > 0
+  const selectedAxes = draft.entries.map((entry) => entry.axis)
+
+  const useSuggestedDeadline = (axis: string, days: number) => {
+    draft.updateObjective(axis as ActivityTypeSlug, { days })
+  }
+
+  const useFittingTarget = (axis: string, target: number) => {
+    draft.updateObjective(axis as ActivityTypeSlug, { target: String(target) })
+  }
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 py-6">
@@ -86,136 +94,92 @@ export function Onboarding({ firstName, today, onFinish }: OnboardingProps) {
         <Panel tone="brand">
           {step === 0 ? (
             <Step
-              title="O que você quer mudar primeiro?"
-              hint="Uma área só. As outras entram quando essa virar rotina."
+              title="O que você quer mudar?"
+              hint="Pode ser uma área só, e pode ser mais de uma. Cada área escolhida vira um objetivo com prazo próprio."
             >
-              <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                {ACTIVITY_TYPE_LIST.map((item) => (
-                  <button
-                    key={item.slug}
-                    type="button"
-                    aria-pressed={item.slug === draft.axis}
-                    onClick={() => draft.setAxis(item.slug)}
-                    className={cn(
-                      'flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors',
-                      item.slug === draft.axis
-                        ? 'border-brand bg-brand-dim/50'
-                        : 'border-line bg-surface/60 hover:border-line-hi',
-                    )}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className="size-2.5 rounded-full"
-                      style={{ backgroundColor: item.colorToken }}
-                    />
-                    <span className="text-sm font-medium text-ink">{item.label}</span>
-                  </button>
-                ))}
+              <div className="mt-4">
+                <AxisPicker
+                  selected={selectedAxes}
+                  canAddMore={draft.canAddMore}
+                  onAdd={draft.addObjective}
+                  onRemove={draft.removeObjective}
+                />
+
+                <p className="mt-3 text-xs text-ink-faint">
+                  {selectedAxes.length === 1
+                    ? 'Uma área é o começo mais seguro. Se quiser mais, é só tocar em outra.'
+                    : `${selectedAxes.length} áreas escolhidas. Elas vão dividir o mesmo tempo do teu dia, e o plano diz se cabe.`}
+                </p>
               </div>
             </Step>
           ) : null}
 
           {step === 1 ? (
             <Step
-              title="Qual é o objetivo?"
-              hint="Escreve como você contaria pra alguém. O número entra no passo seguinte."
+              title="Quanto tempo por dia?"
+              hint="O tempo que você está disposta a dedicar de verdade. Nenhum plano daqui vai pedir mais que isso."
             >
-              <div className="mt-4 flex flex-col gap-4">
-                <Field label="Objetivo">
-                  {(id) => (
-                    <TextInput
-                      id={id}
-                      maxLength={MAX_OBJECTIVE_TITLE}
-                      value={draft.title}
-                      onChange={(event) => draft.setTitle(event.target.value)}
-                      placeholder={draft.suggestedTitle}
-                    />
-                  )}
-                </Field>
-
-                <Field
-                  label="Por que isso importa"
-                  hint="Opcional. É o que o app te devolve num dia em que você não quer levantar."
-                >
-                  {(id, describedBy) => (
-                    <TextInput
-                      id={id}
-                      aria-describedby={describedBy}
-                      maxLength={MAX_OBJECTIVE_MOTIVE}
-                      value={draft.motive}
-                      onChange={(event) => draft.setMotive(event.target.value)}
-                      placeholder="Quero voltar a terminar o que começo."
-                    />
-                  )}
-                </Field>
+              <div className="mt-4">
+                <TimeBudgetFields
+                  minutesPerDay={draft.minutesPerDay}
+                  daysPerWeek={draft.daysPerWeek}
+                  objectiveCount={draft.entries.length}
+                  onMinutesChange={draft.setMinutesPerDay}
+                  onDaysChange={draft.setDaysPerWeek}
+                />
               </div>
             </Step>
           ) : null}
 
           {step === 2 ? (
             <Step
-              title="Até quando, e quanto?"
-              hint="Prazo transforma intenção em plano. O alvo já vem sugerido pelo ritmo saudável da área."
+              title={draft.entries.length === 1 ? 'Qual é o objetivo?' : 'Quais são os objetivos?'}
+              hint="Escreve como você contaria pra alguém. O alvo já vem sugerido pelo tempo que você reservou."
             >
-              <div className="mt-4 flex flex-col gap-5">
-                <div>
-                  <p className="mb-2 text-sm font-medium text-ink">Prazo</p>
-                  <ChoiceGroup
-                    label="Prazo do objetivo"
-                    value={draft.days}
-                    onChange={draft.setDays}
-                    options={DEADLINE_PRESETS.map((preset) => ({
-                      value: preset.days,
-                      label: preset.label,
-                    }))}
+              <div className="mt-4 flex flex-col gap-4">
+                {draft.entries.map((entry) => (
+                  <ObjectiveFields
+                    key={entry.axis}
+                    entry={entry}
+                    onChange={(changes) => draft.updateObjective(entry.axis, changes)}
+                    onRemove={
+                      draft.entries.length > 1 ? () => draft.removeObjective(entry.axis) : null
+                    }
                   />
-                </div>
+                ))}
 
-                <Field
-                  label={`Alvo total em ${type.unitLabel.many}`}
-                  hint={`Sugestão pra esse prazo: ${formatUnit(type, draft.suggested)}.`}
-                >
-                  {(id, describedBy) => (
-                    <TextInput
-                      id={id}
-                      aria-describedby={describedBy}
-                      type="number"
-                      inputMode="numeric"
-                      min={1}
-                      value={draft.target}
-                      onChange={(event) => draft.setTarget(event.target.value)}
-                      placeholder={String(draft.suggested)}
-                    />
-                  )}
-                </Field>
-
-                <div>
-                  <p className="mb-2 text-sm font-medium text-ink">Dias por semana</p>
-                  <ChoiceGroup
-                    label="Dias por semana"
-                    size="sm"
-                    value={draft.daysPerWeek}
-                    onChange={draft.setDaysPerWeek}
-                    options={FREQUENCY_OPTIONS.map((value) => ({
-                      value,
-                      label: value === 7 ? 'Todo dia' : `${value}x`,
-                    }))}
-                  />
-                  <p className="mt-2 text-xs text-ink-faint">
-                    Escolhe o número que sobrevive a uma semana ruim, não o da semana perfeita.
-                  </p>
-                </div>
+                {draft.canAddMore ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm text-ink-faint">Adicionar outro objetivo:</span>
+                    {draft.availableAxes.map((axis) => (
+                      <Button
+                        key={axis}
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => draft.addObjective(axis)}
+                      >
+                        <Icon name="mais" className="size-3.5" />
+                        {activityType(axis).label}
+                      </Button>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             </Step>
           ) : null}
 
           {step === 3 ? (
             <Step
-              title="Esse é o teu plano"
+              title={draft.entries.length === 1 ? 'Esse é o teu plano' : 'Esses são os teus planos'}
               hint="Feito com a tua conta, não com frase pronta. Dá pra mudar tudo depois, sem perder nada."
             >
               <div className="mt-4">
-                <PlanPreview plan={draft.plan} today={today} onUseSuggestedDeadline={draft.setDays} />
+                <CombinedPlanPreview
+                  combined={draft.combined}
+                  today={today}
+                  onUseSuggestedDeadline={useSuggestedDeadline}
+                  onUseFittingTarget={useFittingTarget}
+                />
               </div>
             </Step>
           ) : null}
@@ -233,12 +197,7 @@ export function Onboarding({ firstName, today, onFinish }: OnboardingProps) {
 
             <div className="flex flex-1 items-center justify-end gap-2">
               {step < STEPS.length - 1 ? (
-                <Button
-                  size="lg"
-                  className="min-h-12"
-                  onClick={() => setStep((current) => current + 1)}
-                  disabled={!canAdvance}
-                >
+                <Button size="lg" className="min-h-12" onClick={() => setStep((current) => current + 1)}>
                   Continuar
                   <Icon name="seta" className="size-4" />
                 </Button>

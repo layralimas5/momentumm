@@ -22,8 +22,16 @@ const FEASIBILITY_LABEL: Readonly<Record<Feasibility, string>> = {
 interface PlanPreviewProps {
   readonly plan: PlanDraft
   readonly today: DayKey
+  /**
+   * Falso quando outro plano já ficou com a prioridade do dia. A regra é uma
+   * por dia, e o preview não pode prometer duas — o que a tela mostra aqui é
+   * exatamente o que vai ser gravado.
+   */
+  readonly ownsMainPriority?: boolean
   /** Recebe o prazo sustentável em dias, pra quem oferece o botão de ajuste. */
   readonly onUseSuggestedDeadline?: (days: number) => void
+  /** Recebe o alvo que caberia no prazo atual. A outra saída do mesmo aviso. */
+  readonly onUseFittingTarget?: (target: number) => void
 }
 
 /**
@@ -34,7 +42,13 @@ interface PlanPreviewProps {
  * no onboarding e na criação de um objetivo novo — o plano precisa ter sempre
  * a mesma cara, senão ele parece dois produtos diferentes.
  */
-export function PlanPreview({ plan, today, onUseSuggestedDeadline }: PlanPreviewProps) {
+export function PlanPreview({
+  plan,
+  today,
+  ownsMainPriority = true,
+  onUseSuggestedDeadline,
+  onUseFittingTarget,
+}: PlanPreviewProps) {
   const type = activityType(plan.objective.axis)
 
   return (
@@ -53,19 +67,33 @@ export function PlanPreview({ plan, today, onUseSuggestedDeadline }: PlanPreview
           className="flex flex-col gap-3 rounded-card border border-flame/30 bg-flame-dim/40 px-4 py-3"
         >
           <p className="text-sm text-pretty text-ink">{plan.warning}</p>
-          {plan.suggestedDeadline && onUseSuggestedDeadline ? (
-            <div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  const suggested = plan.suggestedDeadline
-                  if (suggested) onUseSuggestedDeadline(daysBetween(today, suggested) + 1)
-                }}
-              >
-                <Icon name="calendario" className="size-4" />
-                Usar o prazo que cabe
-              </Button>
+
+          {plan.feasibility === 'irreal' ? (
+            <div className="flex flex-wrap gap-2">
+              {plan.suggestedDeadline && onUseSuggestedDeadline ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const suggested = plan.suggestedDeadline
+                    if (suggested) onUseSuggestedDeadline(daysBetween(today, suggested) + 1)
+                  }}
+                >
+                  <Icon name="calendario" className="size-4" />
+                  Usar o prazo que cabe
+                </Button>
+              ) : null}
+
+              {onUseFittingTarget ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onUseFittingTarget(plan.fittingTarget)}
+                >
+                  <Icon name="minimo" className="size-4" />
+                  Usar o alvo que cabe
+                </Button>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -84,24 +112,28 @@ export function PlanPreview({ plan, today, onUseSuggestedDeadline }: PlanPreview
       </PlanBlock>
 
       <PlanBlock title="As primeiras ações" icon="jornada">
-        {plan.tasks.map((task) => (
-          <li key={task.title} className="flex items-start gap-3 py-2">
-            <span
-              aria-hidden="true"
-              className={cn(
-                'mt-1.5 size-1.5 shrink-0 rounded-full',
-                task.isMainPriority ? 'bg-brand' : 'bg-line-hi',
-              )}
-            />
-            <span className="min-w-0 flex-1">
-              <span className="block text-sm text-ink">{task.title}</span>
-              <span className="block text-xs text-ink-faint">
-                {task.day === today ? 'Hoje' : 'Mais pra frente'}
-                {task.isMainPriority ? ' · prioridade principal' : ''}
+        {plan.tasks.map((task) => {
+          const isMainPriority = Boolean(task.isMainPriority) && ownsMainPriority
+
+          return (
+            <li key={task.title} className="flex items-start gap-3 py-2">
+              <span
+                aria-hidden="true"
+                className={cn(
+                  'mt-1.5 size-1.5 shrink-0 rounded-full',
+                  isMainPriority ? 'bg-brand' : 'bg-line-hi',
+                )}
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm text-ink">{task.title}</span>
+                <span className="block text-xs text-ink-faint">
+                  {task.day === today ? 'Hoje' : 'Mais pra frente'}
+                  {isMainPriority ? ' · prioridade principal' : ''}
+                </span>
               </span>
-            </span>
-          </li>
-        ))}
+            </li>
+          )
+        })}
       </PlanBlock>
 
       <p className="text-xs text-pretty text-ink-faint">

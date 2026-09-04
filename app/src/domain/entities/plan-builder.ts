@@ -2,7 +2,7 @@ import { activityType, formatUnit, type ActivityTypeSlug } from './activity-type
 import { addDays, daysBetween, type DayKey } from './day'
 import type { NewGoalInput } from './goal'
 import type { HabitIcon, NewHabitInput } from './habit'
-import type { NewObjectiveInput } from './objective'
+import { MAX_OBJECTIVE_DAYS, type NewObjectiveInput } from './objective'
 import type { NewTaskInput } from './task'
 
 /**
@@ -20,7 +20,10 @@ import type { NewTaskInput } from './task'
  * 2. **O plano diz quando não cabe.** Se a sessão necessária passa do que um
  *    ser humano sustenta, o plano avisa e sugere esticar o prazo em vez de
  *    entregar um cronograma que só funciona no papel.
- * 3. **Sai daqui com uma ação pra hoje.** Plano que começa amanhã não começa.
+ * 3. **O tempo declarado manda.** A pessoa diz quantos minutos por dia consegue
+ *    dar, e nenhum plano pode pedir mais que isso. Quando pede, o plano diz em
+ *    voz alta que não cabe — e mostra o prazo em que caberia.
+ * 4. **Sai daqui com uma ação pra hoje.** Plano que começa amanhã não começa.
  */
 
 export type PlannedObjective = Omit<NewObjectiveInput, 'userId'>
@@ -40,14 +43,24 @@ export interface PlanDraft {
   readonly feasibility: Feasibility
   /** Quanto o plano pede por sessão, na unidade do eixo. */
   readonly perSession: number
+  /** O mesmo pedido convertido em minutos, pra bater com o tempo declarado. */
+  readonly minutesPerSession: number
+  /** Minutos por dia que este objetivo recebeu do orçamento da pessoa. */
+  readonly minutesPerDay: number
   readonly sessionsPerWeek: number
   readonly totalSessions: number
   /** A explicação da conta, em uma frase. */
   readonly rationale: string
   /** Preenchido só quando o plano não cabe: o que fazer a respeito. */
   readonly warning: string | null
-  /** Prazo que tornaria o plano sustentável. Null quando já está. */
+  /**
+   * Prazo que tornaria o plano sustentável. Null quando já está — e também
+   * quando a data necessária passaria do limite do objetivo: oferecer um prazo
+   * que o domínio vai recusar é pior que não oferecer nada.
+   */
   readonly suggestedDeadline: DayKey | null
+  /** Alvo que caberia no prazo e no tempo atuais. É a outra saída possível. */
+  readonly fittingTarget: number
 }
 
 export interface PlanInput {
@@ -58,6 +71,8 @@ export interface PlanInput {
   readonly deadline: DayKey
   /** Dias por semana que a pessoa se compromete a aparecer. */
   readonly daysPerWeek: number
+  /** Minutos por dia reservados PRA ESTE objetivo. É o teto de tudo. */
+  readonly minutesPerDay: number
   readonly motive?: string | null
 }
 
@@ -136,6 +151,26 @@ const WEEKDAYS_BY_FREQUENCY: Readonly<Record<number, readonly number[]>> = {
 export const MIN_DAYS_PER_WEEK = 1
 export const MAX_DAYS_PER_WEEK = 7
 
+export const MIN_MINUTES_PER_DAY = 5
+export const MAX_MINUTES_PER_DAY = 8 * 60
+
+/** Os tempos que a pergunta oferece. Quinze minutos é o piso que vira hábito. */
+export const MINUTES_PER_DAY_PRESETS: readonly number[] = [15, 30, 45, 60, 90]
+
+/**
+ * Ritmo médio de leitura. Existe pra converter minutos em páginas sem pedir
+ * mais um número no onboarding: erra pouco e a pessoa corrige o alvo se quiser.
+ */
+const MINUTES_PER_PAGE = 1.5
+
+/** O tempo declarado convertido pra unidade do eixo. É o teto de cada sessão. */
+function capacityPerSession(axis: ActivityTypeSlug, minutesPerDay: number): number {
+  const minutes = clamp(Math.round(minutesPerDay), MIN_MINUTES_PER_DAY, MAX_MINUTES_PER_DAY)
+  return activityType(axis).unit === 'minutos'
+    ? minutes
+    : Math.max(1, Math.floor(minutes / MINUTES_PER_PAGE))
+}
+
 export function buildPlan(input: PlanInput): PlanDraft {
   const type = activityType(input.axis)
   const template = TEMPLATES[input.axis]
@@ -151,15 +186,24 @@ export function buildPlan(input: PlanInput): PlanDraft {
   const perSession = Math.max(1, Math.ceil(input.target / totalSessions))
   const weeklyTarget = Math.max(1, Math.ceil(input.target / Math.max(1, weeks)))
 
+  /*
+    O tempo declarado entra como teto por cima dos limites do eixo. Quem diz que
+    tem 15 minutos por dia não recebe um plano de 45, mesmo que 45 seja
+    confortável pro eixo: o plano precisa caber na vida que a pessoa descreveu,
+    não na vida que o app gostaria que ela tivesse.
+  */
+  const capacity = capacityPerSession(input.axis, input.minutesPerDay)
+  const comfortable = Math.min(limits.comfortable, capacity)
+  const ceiling = Math.min(limits.ceiling, capacity)
+
   const feasibility: Feasibility =
-    perSession > limits.ceiling
-      ? 'irreal'
-      : perSession > limits.comfortable
-        ? 'exigente'
-        : 'confortavel'
+    perSession > ceiling ? 'irreal' : perSession > comfortable ? 'exigente' : 'confortavel'
+
+  // A outra saída: manter o prazo e baixar o alvo pro que o tempo comporta.
+  const fittingTarget = Math.max(1, comfortable * totalSessions)
 
   const suggestedDeadline =
-    feasibility === 'irreal' ? sustainableDeadline(input, daysPerWeek, limits.comfortable) : null
+    feasibility === 'irreal' ? sustainableDeadline(input, daysPerWeek, comfortable) : null
 
   const habit: PlannedHabit = {
     name: template.habit,
@@ -218,11 +262,14 @@ export function buildPlan(input: PlanInput): PlanDraft {
     tasks,
     feasibility,
     perSession,
+    minutesPerSession: estimatedMinutes(input.axis, perSession),
+    minutesPerDay: Math.round(input.minutesPerDay),
     sessionsPerWeek: daysPerWeek,
     totalSessions,
-    rationale: `${formatUnit(type, Math.round(input.target))} em ${totalDays} dias, em ${daysPerWeek} ${daysPerWeek === 1 ? 'dia' : 'dias'} por semana, dá ${formatUnit(type, perSession)} por sessão.`,
-    warning: warningFor(feasibility, input, perSession, suggestedDeadline),
+    rationale: `${formatUnit(type, Math.round(input.target))} em ${totalDays} dias, em ${daysPerWeek} ${daysPerWeek === 1 ? 'dia' : 'dias'} por semana, dá ${formatUnit(type, perSession)} por sessão — cerca de ${estimatedMinutes(input.axis, perSession)} minutos.`,
+    warning: warningFor(feasibility, input, perSession, capacity, suggestedDeadline, fittingTarget),
     suggestedDeadline,
+    fittingTarget,
   }
 }
 
@@ -230,38 +277,54 @@ function warningFor(
   feasibility: Feasibility,
   input: PlanInput,
   perSession: number,
+  capacity: number,
   suggestedDeadline: DayKey | null,
+  fittingTarget: number,
 ): string | null {
   const type = activityType(input.axis)
+  const minutes = estimatedMinutes(input.axis, perSession)
 
   if (feasibility === 'confortavel') return null
 
   if (feasibility === 'exigente') {
-    return `${formatUnit(type, perSession)} por sessão é puxado, mas cabe. Se apertar, a versão mínima do hábito segura a sequência.`
+    return `${formatUnit(type, perSession)} por sessão, cerca de ${minutes} minutos: é puxado, mas cabe. Se apertar, a versão mínima do hábito segura a sequência.`
   }
 
+  /*
+    As duas saídas honestas: esticar o prazo ou baixar o alvo. Quando nem o
+    prazo máximo resolve, sobra uma só — e é ela que o aviso oferece, em vez de
+    mandar a pessoa esperar dois anos por um objetivo.
+  */
   const extraDays = suggestedDeadline ? daysBetween(input.deadline, suggestedDeadline) : 0
-  return `Esse prazo exige ${formatUnit(type, perSession)} por sessão, acima do que se sustenta por semanas seguidas. Aumentar o prazo em ${extraDays} ${extraDays === 1 ? 'dia' : 'dias'} ou adicionar dias na semana resolve.`
+  const wayOut = suggestedDeadline
+    ? `Aumentar o prazo em ${extraDays} ${extraDays === 1 ? 'dia' : 'dias'} resolve, e baixar o alvo pra ${formatUnit(type, fittingTarget)} também.`
+    : `Nem o prazo máximo resolve esse alvo com esse tempo. Nesse prazo cabem ${formatUnit(type, fittingTarget)} — ou você reserva mais minutos por dia.`
+
+  // Quando o teto é o tempo declarado, o aviso diz isso com todas as letras: a
+  // pessoa acabou de responder quanto tempo tem, e o plano está pedindo mais.
+  return perSession > capacity
+    ? `Esse plano pede ${minutes} minutos por sessão e você reservou ${Math.round(input.minutesPerDay)} por dia. Não cabe. ${wayOut}`
+    : `Esse prazo exige ${formatUnit(type, perSession)} por sessão, acima do que se sustenta por semanas seguidas. ${wayOut}`
 }
 
-/** O prazo em que a sessão volta pro tamanho confortável do eixo. */
+/**
+ * O prazo em que a sessão volta pro tamanho confortável.
+ *
+ * Devolve null quando a data necessária passaria do limite do objetivo: um
+ * botão que oferece um prazo que o domínio recusa é pior que botão nenhum.
+ */
 function sustainableDeadline(
   input: PlanInput,
   daysPerWeek: number,
   comfortable: number,
-): DayKey {
+): DayKey | null {
   const sessionsNeeded = Math.ceil(input.target / comfortable)
   const daysNeeded = Math.ceil((sessionsNeeded / daysPerWeek) * 7)
+  if (daysNeeded > MAX_OBJECTIVE_DAYS) return null
   return addDays(input.today, daysNeeded - 1)
 }
 
-/**
- * Tempo estimado da ação. Eixo medido em minutos já é o próprio tempo; leitura
- * usa um ritmo médio de página, que erra pouco e evita pedir mais um número
- * no onboarding.
- */
-const MINUTES_PER_PAGE = 1.5
-
+/** Tempo estimado da ação. Eixo em minutos já é o próprio tempo. */
 function estimatedMinutes(axis: ActivityTypeSlug, perSession: number): number {
   const raw =
     activityType(axis).unit === 'minutos' ? perSession : Math.round(perSession * MINUTES_PER_PAGE)
@@ -273,11 +336,123 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 /**
- * Alvo sugerido pro objetivo quando a pessoa ainda não tem número na cabeça.
- * Parte do ritmo confortável do eixo, num compromisso de 5 dias por semana.
+ * Alvo sugerido quando a pessoa ainda não tem número na cabeça.
+ *
+ * Sai do tempo que ela acabou de declarar, não de uma tabela: sugerir um alvo
+ * maior do que o próprio app sabe que cabe seria pedir pra ela começar já
+ * atrasada.
  */
-export function suggestedTarget(axis: ActivityTypeSlug, days: number): number {
-  const { comfortable } = SESSION_LIMITS[axis]
-  const sessions = Math.max(1, Math.round((days / 7) * 5))
-  return comfortable * sessions
+export function suggestedTarget(
+  axis: ActivityTypeSlug,
+  days: number,
+  minutesPerDay: number,
+  daysPerWeek: number,
+): number {
+  const perSession = Math.min(
+    SESSION_LIMITS[axis].comfortable,
+    capacityPerSession(axis, minutesPerDay),
+  )
+  const frequency = clamp(Math.round(daysPerWeek), MIN_DAYS_PER_WEEK, MAX_DAYS_PER_WEEK)
+  const sessions = Math.max(1, Math.floor((days / 7) * frequency))
+  return Math.max(1, perSession * sessions)
+}
+
+// ---------------------------------------------------------------------------
+// mais de um objetivo
+// ---------------------------------------------------------------------------
+
+/** Mais que isso não é foco, é lista de desejos: um por eixo, quatro eixos. */
+export const MAX_OBJECTIVES_AT_ONCE = 4
+
+export interface ObjectiveSeed {
+  readonly axis: ActivityTypeSlug
+  readonly title: string
+  readonly target: number
+  readonly deadline: DayKey
+  readonly motive?: string | null
+}
+
+export interface CombinedPlanInput {
+  readonly seeds: readonly ObjectiveSeed[]
+  readonly today: DayKey
+  readonly daysPerWeek: number
+  /** O total que a pessoa tem por dia, pra dividir entre todos os objetivos. */
+  readonly minutesPerDay: number
+}
+
+export interface CombinedPlan {
+  readonly plans: readonly PlanDraft[]
+  /** O que a pessoa disse que tem. */
+  readonly minutesPerDay: number
+  /** O que os planos somados pedem num dia de sessão. */
+  readonly requiredMinutesPerDay: number
+  readonly fits: boolean
+  /** O veredito do conjunto, em uma frase. */
+  readonly verdict: string
+}
+
+/**
+ * Vários objetivos dividindo o mesmo dia.
+ *
+ * O tempo é dividido em partes iguais porque é a única divisão que a pessoa
+ * consegue conferir de cabeça — e porque no primeiro dia ninguém sabe ainda
+ * qual objetivo merece mais. O que o app não faz é fingir que 30 minutos viram
+ * 90 quando ela escolhe três áreas: o veredito soma o que os planos pedem e
+ * compara com o que ela disse que tem.
+ */
+export function buildCombinedPlan(input: CombinedPlanInput): CombinedPlan {
+  const seeds = input.seeds.slice(0, MAX_OBJECTIVES_AT_ONCE)
+  const share = seeds.length === 0 ? input.minutesPerDay : input.minutesPerDay / seeds.length
+
+  const plans = seeds.map((seed) =>
+    buildPlan({
+      axis: seed.axis,
+      title: seed.title,
+      target: seed.target,
+      today: input.today,
+      deadline: seed.deadline,
+      daysPerWeek: input.daysPerWeek,
+      minutesPerDay: share,
+      motive: seed.motive ?? null,
+    }),
+  )
+
+  const requiredMinutesPerDay = plans.reduce((total, plan) => total + plan.minutesPerSession, 0)
+  const minutesPerDay = Math.round(input.minutesPerDay)
+  const fits = requiredMinutesPerDay <= minutesPerDay
+
+  return {
+    plans,
+    minutesPerDay,
+    requiredMinutesPerDay,
+    fits,
+    verdict: verdictFor(plans, minutesPerDay, requiredMinutesPerDay, fits),
+  }
+}
+
+function verdictFor(
+  plans: readonly PlanDraft[],
+  minutesPerDay: number,
+  required: number,
+  fits: boolean,
+): string {
+  if (plans.length === 0) {
+    return 'Escolhe pelo menos uma área pra o plano existir.'
+  }
+
+  const share = Math.floor(minutesPerDay / plans.length)
+
+  if (plans.length === 1) {
+    return fits
+      ? `Um objetivo com ${minutesPerDay} minutos por dia: cabe com folga.`
+      : `Um objetivo pedindo ${required} minutos por dia contra os ${minutesPerDay} que você reservou.`
+  }
+
+  const split = `${plans.length} objetivos dividem os ${minutesPerDay} minutos do teu dia, ${share} pra cada`
+
+  if (fits) {
+    return `${split}. O conjunto cabe.`
+  }
+
+  return `${split}, mas o conjunto pede ${required}. Tira um objetivo dessa lista ou estica os prazos: o dia não estica.`
 }

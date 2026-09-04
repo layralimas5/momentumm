@@ -63,7 +63,7 @@ que existir base. Feed vazio afasta usuário.
 Fase 1 em pé, em `app/`. Roda em **modo demo** sem configurar nada (dados em
 `localStorage`) e vira contas reais ao preencher `.env.local` com o Supabase.
 
-Pronto: domínio completo com 144 testes, três migrations com RLS, repositórios demo e
+Pronto: domínio completo com 158 testes, três migrations com RLS, repositórios demo e
 Supabase, auth com rota protegida, registro rápido, cronômetro de sessão, streak
 dos últimos 7 dias, histórico com filtro por eixo, metas com progresso e perfil
 editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
@@ -105,10 +105,16 @@ e `/app/perfil` redirecionam).
 
 O produto é um ciclo de três telas, nessa ordem:
 
-**1. Onboarding.** Quatro passos: área, objetivo, prazo, plano. Conta nova não vê
-cards vazios — escolhe o que quer mudar, escreve o objetivo, define prazo e alvo,
-e recebe um plano que já vem pronto pra virar hábito e ação. O último passo é o
-primeiro dia começando, não um resumo.
+**1. Onboarding.** Quatro passos: **áreas, tempo, objetivos, plano**. Conta nova
+não vê cards vazios — escolhe o que quer mudar (uma área ou várias, uma por
+eixo), diz quanto tempo por dia consegue dar, escreve os objetivos com prazo e
+recebe um plano pronto pra virar hábito e ação. O último passo é o primeiro dia
+começando, não um resumo.
+
+O **tempo vem antes dos objetivos** de propósito: é ele que calibra cada alvo
+sugerido, e perguntar depois faria o app propor números que ele já sabe que não
+cabem. Com mais de um objetivo, o tempo do dia é dividido em partes iguais e o
+veredito soma o que os planos pedem — o dia não estica.
 
 **2. Dashboard (`Hoje`).** Saudação, momentum, progresso dos objetivos,
 prioridade do dia, hábitos, ações e check-in. O objetivo vem alto de propósito:
@@ -124,16 +130,25 @@ Entidades da jornada:
   natureza: a meta é um ritmo que se repete, o objetivo termina. Um ativo por
   eixo (índice único no banco). O progresso soma as `activities` do eixo dentro
   da janela, sem tabela de vínculo: a atividade continua sendo a unidade única
-- `plan-builder` — o gerador de plano. Aritmética pura sobre alvo, prazo e dias
-  por semana; o mesmo pedido gera sempre o mesmo plano. **Avisa quando não
-  cabe** e sugere o prazo que caberia, em vez de entregar cronograma de papel
+- `plan-builder` — o gerador de plano. Aritmética pura sobre alvo, prazo, dias
+  por semana e **minutos por dia**; o mesmo pedido gera sempre o mesmo plano. O
+  tempo declarado é teto: nenhuma sessão pode passar dele. **Avisa quando não
+  cabe** e oferece as duas saídas honestas — o prazo que caberia (nunca um que o
+  objetivo recusaria) ou o alvo que cabe no prazo atual. `buildCombinedPlan`
+  faz o mesmo pra vários objetivos e diz se o conjunto cabe no dia
 - `review` — a leitura da semana. Regras determinísticas: sem padrão detectado,
   o bloco não escreve nada. Não cobra dias anteriores à criação do hábito
 
-O rascunho do objetivo e o plano vivem em `presentation/planner/use-objective-draft`,
-compartilhados entre o onboarding (em passos) e o `ObjectiveDialog` (numa tela
-só). O `PlannerProvider.applyPlan` grava o plano inteiro numa operação: objetivo,
-ritmo semanal, hábitos e ações já apontando pra meta criada.
+O rascunho e os planos vivem em `presentation/planner/use-journey-draft`,
+compartilhados entre o onboarding (em passos, várias áreas) e o
+`ObjectiveDialog` (numa tela só, uma área). Os blocos de formulário também são
+os mesmos: `AxisPicker`, `ObjectiveFields`, `TimeBudgetFields` e
+`CombinedPlanPreview`.
+
+`PlannerProvider.applyPlan` recebe a lista de planos e grava tudo numa operação:
+objetivo, ritmo semanal, hábitos e ações já apontando pra meta criada. **Só a
+primeira ação do primeiro plano vira prioridade principal** — é uma por dia, e
+três objetivos não podem virar três prioridades disputando o mesmo dia.
 
 No modo demo, Configurações tem **Recomeçar do zero** — é o caminho pra rever o
 onboarding sem abrir o devtools.
@@ -176,6 +191,6 @@ Quando incomodar, trocar por import dinâmico dentro do `container`.
 cd app
 npm install
 npm run dev     # modo demo, sem configurar nada
-npm test        # 144 testes de domínio
+npm test        # 158 testes de domínio
 npm run build
 ```
