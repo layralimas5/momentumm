@@ -1,5 +1,5 @@
 import type { PostgrestError } from '@supabase/supabase-js'
-import type { AuthService, AuthUser } from '@/domain/auth/auth-service'
+import type { AuthService, AuthUser, SignUpResult } from '@/domain/auth/auth-service'
 import { createActivity, type Activity, type NewActivityInput } from '@/domain/entities/activity'
 import { createActivityType, type ActivityType } from '@/domain/entities/activity-type'
 import { createCheckIn, type CheckIn, type NewCheckInInput } from '@/domain/entities/checkin'
@@ -82,7 +82,7 @@ export class SupabaseAuthService implements AuthService {
     return { id: data.user.id, email: data.user.email }
   }
 
-  async signUp(email: string, password: string, name: string): Promise<AuthUser> {
+  async signUp(email: string, password: string, name: string): Promise<SignUpResult> {
     assertValidName(name)
 
     const { data, error } = await supabase().auth.signUp({
@@ -94,7 +94,13 @@ export class SupabaseAuthService implements AuthService {
     if (error || !data.user?.email) {
       throw new DomainError(error?.message ?? 'Não consegui criar a conta agora.')
     }
-    return { id: data.user.id, email: data.user.email }
+
+    // Sem sessão significa confirmação de e-mail pendente. É um caso normal,
+    // não um erro: o app precisa dizer isso em vez de tentar entrar.
+    return {
+      user: { id: data.user.id, email: data.user.email },
+      needsConfirmation: data.session === null,
+    }
   }
 
   async signOut(): Promise<void> {

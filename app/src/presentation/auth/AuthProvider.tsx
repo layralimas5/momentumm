@@ -58,9 +58,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await loadProfile(next)
       },
       async signUp(email, password, name) {
-        const next = await container.auth.signUp(email, password, name)
+        const { user: next, needsConfirmation } = await container.auth.signUp(
+          email,
+          password,
+          name,
+        )
+
+        // Sem sessão não dá pra carregar perfil: o RLS recusaria a leitura e o
+        // app entraria num estado logado-mas-sem-dados.
+        if (needsConfirmation) return true
+
         setUser(next)
         await loadProfile(next)
+        return false
       },
       async signOut() {
         await container.auth.signOut()

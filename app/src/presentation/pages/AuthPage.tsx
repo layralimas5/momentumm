@@ -18,14 +18,55 @@ export function AuthPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false)
+
   const submit = useAsyncAction(async () => {
-    if (mode === 'entrar') await signIn(email, password)
-    else await signUp(email, password, name)
+    if (mode === 'entrar') {
+      await signIn(email, password)
+      return
+    }
+    setAwaitingConfirmation(await signUp(email, password, name))
   })
 
   if (!loading && user) {
     const from = (location.state as { from?: string } | null)?.from ?? '/app'
     return <Navigate to={from} replace />
+  }
+
+  /*
+    Conta criada, sessão ainda não. Antes disso a tela tentava entrar e voltava
+    pro formulário em branco, sem dizer nada — e a pessoa ficava tentando o
+    mesmo cadastro de novo achando que tinha falhado.
+  */
+  if (awaitingConfirmation) {
+    return (
+      <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-4 py-10">
+        <Wordmark className="h-6 sm:h-7" />
+
+        <h1 className="mt-8 text-2xl font-semibold tracking-tight text-ink">
+          Confirma teu e-mail
+        </h1>
+        <p className="mt-2 text-pretty text-sm text-ink-muted">
+          A conta foi criada. Mandamos um link pra <strong className="text-ink">{email}</strong> —
+          abre ele e volta aqui pra entrar.
+        </p>
+        <p className="mt-3 text-sm text-ink-faint">
+          Se não chegar em alguns minutos, olha o spam. O link vale por 24 horas.
+        </p>
+
+        <Button
+          className="mt-6"
+          variant="secondary"
+          onClick={() => {
+            setAwaitingConfirmation(false)
+            setMode('entrar')
+            setPassword('')
+          }}
+        >
+          Já confirmei, quero entrar
+        </Button>
+      </main>
+    )
   }
 
   return (

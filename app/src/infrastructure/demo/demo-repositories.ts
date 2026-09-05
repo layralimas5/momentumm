@@ -1,4 +1,4 @@
-import type { AuthService, AuthUser } from '@/domain/auth/auth-service'
+import type { AuthService, AuthUser, SignUpResult } from '@/domain/auth/auth-service'
 import type { Activity, NewActivityInput } from '@/domain/entities/activity'
 import type { ActivityType } from '@/domain/entities/activity-type'
 import type { CheckIn, NewCheckInInput } from '@/domain/entities/checkin'
@@ -46,11 +46,12 @@ export class DemoAuthService implements AuthService {
     return this.startSession(email)
   }
 
-  async signUp(email: string, _password: string, name: string): Promise<AuthUser> {
+  async signUp(email: string, _password: string, name: string): Promise<SignUpResult> {
     const user = this.startSession(email)
     assertValidName(name)
     demoStore.updateProfile({ name: name.trim() })
-    return user
+    // No modo demo não existe e-mail pra confirmar: a sessão abre na hora.
+    return { user, needsConfirmation: false }
   }
 
   async signOut(): Promise<void> {

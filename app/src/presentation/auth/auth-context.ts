@@ -7,7 +7,12 @@ export interface AuthState {
   readonly profile: Profile | null
   readonly loading: boolean
   signIn(email: string, password: string): Promise<void>
-  signUp(email: string, password: string, name: string): Promise<void>
+  /**
+   * Devolve `true` quando a conta foi criada mas ainda falta confirmar o
+   * e-mail. Nesse caso não há sessão, e a tela precisa dizer isso em vez de
+   * tentar navegar pro app.
+   */
+  signUp(email: string, password: string, name: string): Promise<boolean>
   signOut(): Promise<void>
   refreshProfile(): Promise<void>
 }
