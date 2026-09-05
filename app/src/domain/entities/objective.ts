@@ -2,6 +2,7 @@ import { DomainError } from '@/shared/errors'
 import type { Activity } from './activity'
 import { activityType, formatUnit, type ActivityTypeSlug } from './activity-type'
 import { addDays, daysBetween, type DayKey } from './day'
+import type { Priority } from './priority'
 
 /**
  * Objetivo: o que a pessoa quer mudar, com prazo.
@@ -18,6 +19,7 @@ import { addDays, daysBetween, type DayKey } from './day'
 
 export const MAX_OBJECTIVE_TITLE = 80
 export const MAX_OBJECTIVE_MOTIVE = 140
+export const MAX_OBJECTIVE_DESCRIPTION = 400
 export const MAX_OBJECTIVE_TARGET = 1_000_000
 /** Prazo além disso deixa de ser objetivo e vira desejo. */
 export const MAX_OBJECTIVE_DAYS = 366
@@ -28,14 +30,23 @@ export interface Objective {
   readonly userId: string
   readonly title: string
   readonly axis: ActivityTypeSlug
+  /** Detalhe livre. Opcional: objetivo que exige parágrafo raramente vira plano. */
+  readonly description: string | null
   /** Por que isso importa. É o que a tela mostra de volta num dia ruim. */
   readonly motive: string | null
+  readonly priority: Priority
   /** Alvo acumulado até o prazo, na unidade do eixo. */
   readonly target: number
   readonly startedOn: DayKey
   readonly deadline: DayKey
   readonly createdAt: Date
   readonly completedAt: Date | null
+  /**
+   * Pausa explícita. Diferente de arquivar: o objetivo continua na lista, só
+   * para de cobrar prazo e de aparecer no dia. É a saída pra quem precisa
+   * suspender sem apagar — e apagar é justamente o que faz a pessoa desistir.
+   */
+  readonly pausedAt: Date | null
   readonly archivedAt: Date | null
 }
 
@@ -47,6 +58,8 @@ export interface NewObjectiveInput {
   readonly startedOn: DayKey
   readonly deadline: DayKey
   readonly motive?: string | null
+  readonly description?: string | null
+  readonly priority?: Priority
 }
 
 export function createObjective(
@@ -65,6 +78,13 @@ export function createObjective(
   const motive = input.motive?.trim() || null
   if (motive && motive.length > MAX_OBJECTIVE_MOTIVE) {
     throw new DomainError(`O motivo pode ter no máximo ${MAX_OBJECTIVE_MOTIVE} caracteres.`)
+  }
+
+  const description = input.description?.trim() || null
+  if (description && description.length > MAX_OBJECTIVE_DESCRIPTION) {
+    throw new DomainError(
+      `A descrição pode ter no máximo ${MAX_OBJECTIVE_DESCRIPTION} caracteres.`,
+    )
   }
 
   const target = Math.round(input.target)
@@ -88,18 +108,60 @@ export function createObjective(
     userId: input.userId,
     title,
     axis: input.axis,
+    description,
     motive,
+    priority: input.priority ?? 'media',
     target,
     startedOn: input.startedOn,
     deadline: input.deadline,
     createdAt: now,
     completedAt: null,
+    pausedAt: null,
     archivedAt: null,
   }
 }
 
 export function isActiveObjective(objective: Objective): boolean {
   return objective.archivedAt === null
+}
+
+/**
+ * Ciclo de vida do objetivo. Não confundir com `ObjectiveStatus`, que é a
+ * leitura de RITMO (no prazo, atrasado). Aqui é o estado que a pessoa controla:
+ * ela pausa, retoma, conclui e arquiva. Os dois convivem porque respondem
+ * perguntas diferentes — "como está indo" e "ainda está valendo".
+ *
+ * O estado é derivado, não guardado. Guardar abriria a porta pra um objetivo
+ * com `completedAt` preenchido e estado "em andamento", que é exatamente o tipo
+ * de contradição que o app não pode mostrar.
+ */
+export const OBJECTIVE_STATES = [
+  'nao-iniciado',
+  'em-andamento',
+  'pausado',
+  'concluido',
+  'arquivado',
+] as const
+export type ObjectiveState = (typeof OBJECTIVE_STATES)[number]
+
+export const OBJECTIVE_STATE_LABELS: Readonly<Record<ObjectiveState, string>> = {
+  'nao-iniciado': 'Não iniciado',
+  'em-andamento': 'Em andamento',
+  pausado: 'Pausado',
+  concluido: 'Concluído',
+  arquivado: 'Arquivado',
+}
+
+export function stateOf(objective: Objective, done: number): ObjectiveState {
+  if (objective.archivedAt) return 'arquivado'
+  if (objective.completedAt) return 'concluido'
+  if (objective.pausedAt) return 'pausado'
+  return done > 0 ? 'em-andamento' : 'nao-iniciado'
+}
+
+/** Objetivo que ainda cobra o dia. Pausado e concluído saem da fila. */
+export function isRunning(objective: Objective): boolean {
+  return objective.archivedAt === null && objective.pausedAt === null && objective.completedAt === null
 }
 
 export const OBJECTIVE_STATUSES = [
@@ -127,6 +189,8 @@ export interface ObjectiveProgress {
   readonly ratio: number
   readonly remaining: number
   readonly status: ObjectiveStatus
+  /** O estado que a pessoa controla: pausado, concluído, arquivado. */
+  readonly state: ObjectiveState
   readonly daysLeft: number
   readonly totalDays: number
   /** Quanto do prazo já foi consumido, de 0 a 1. */
@@ -180,6 +244,7 @@ export function progressOfObjective(
     ratio,
     remaining,
     status,
+    state: stateOf(objective, done),
     daysLeft,
     totalDays,
     elapsed,
@@ -195,6 +260,9 @@ function statusOfObjective(input: {
   daysLeft: number
   today: DayKey
 }): ObjectiveStatus {
+  // Concluir na mão vale tanto quanto bater o alvo: a pessoa é quem sabe se o
+  // objetivo terminou, e o número nem sempre acompanha.
+  if (input.objective.completedAt) return 'concluido'
   if (input.ratio >= 1) return 'concluido'
   if (input.today > input.objective.deadline) return 'vencido'
   if (input.ratio >= input.elapsed - ON_TRACK_TOLERANCE) return 'no-prazo'
@@ -214,6 +282,14 @@ function summarize(
 ): string {
   const type = activityType(objective.axis)
   const pace = `${Math.ceil(input.dailyPace)} ${type.unitLabel.many} por dia`
+
+  // Pausado NÃO cobra ritmo. O objetivo continua com prazo no banco, mas
+  // enquanto está pausado dizer "atrasado, faça 29 por dia" é exatamente o
+  // oposto do que pausar significa — e é o tipo de recado que faz a pessoa
+  // arquivar em vez de pausar da próxima vez.
+  if (objective.pausedAt && input.status !== 'concluido') {
+    return `Pausado com ${formatUnit(type, input.done)} de ${objective.target}. Retomar devolve ele pro teu dia.`
+  }
 
   switch (input.status) {
     case 'concluido':

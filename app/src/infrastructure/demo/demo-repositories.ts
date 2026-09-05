@@ -5,6 +5,7 @@ import type { CheckIn, NewCheckInInput } from '@/domain/entities/checkin'
 import type { DayKey } from '@/domain/entities/day'
 import type { Habit, HabitLog, HabitStatus, NewHabitInput } from '@/domain/entities/habit'
 import type { NewTaskInput, Task } from '@/domain/entities/task'
+import type { WeeklyReview, WeeklyReviewDraft } from '@/domain/entities/weekly-review'
 import type { NewWinInput, Win } from '@/domain/entities/win'
 import type { Goal, NewGoalInput } from '@/domain/entities/goal'
 import type { NewObjectiveInput, Objective } from '@/domain/entities/objective'
@@ -21,9 +22,14 @@ import type {
   ObjectiveUpdate,
 } from '@/domain/repositories/objective-repository'
 import type { CheckInRepository } from '@/domain/repositories/checkin-repository'
-import type { HabitRepository } from '@/domain/repositories/habit-repository'
+import type { HabitRepository, HabitUpdate } from '@/domain/repositories/habit-repository'
 import type { ProfileRepository, ProfileUpdate } from '@/domain/repositories/profile-repository'
-import type { TaskRepository, TaskUpdate } from '@/domain/repositories/task-repository'
+import type {
+  TaskReorder,
+  TaskRepository,
+  TaskUpdate,
+} from '@/domain/repositories/task-repository'
+import type { WeeklyReviewRepository } from '@/domain/repositories/weekly-review-repository'
 import type { WinRepository } from '@/domain/repositories/win-repository'
 import { DEMO_USER, demoStore } from './demo-store'
 
@@ -173,6 +179,10 @@ export class DemoHabitRepository implements HabitRepository {
     return demoStore.addHabit(input)
   }
 
+  async update(id: string, _userId: string, changes: HabitUpdate): Promise<Habit> {
+    return demoStore.updateHabit(id, changes)
+  }
+
   async archive(id: string): Promise<void> {
     demoStore.archiveHabit(id)
   }
@@ -204,8 +214,26 @@ export class DemoTaskRepository implements TaskRepository {
     return demoStore.updateTask(id, changes)
   }
 
+  async reorder(_userId: string, items: readonly TaskReorder[]): Promise<void> {
+    demoStore.reorderTasks(items)
+  }
+
   async remove(id: string): Promise<void> {
     demoStore.removeTask(id)
+  }
+}
+
+export class DemoWeeklyReviewRepository implements WeeklyReviewRepository {
+  async listByUser(): Promise<WeeklyReview[]> {
+    return demoStore.weeklyReviews()
+  }
+
+  async save(
+    _userId: string,
+    weekStart: DayKey,
+    draft: WeeklyReviewDraft,
+  ): Promise<WeeklyReview> {
+    return demoStore.saveWeeklyReview(weekStart, draft)
   }
 }
 

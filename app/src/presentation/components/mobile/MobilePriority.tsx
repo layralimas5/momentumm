@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { activityType } from '@/domain/entities/activity-type'
 import type { CapacityProfile } from '@/domain/entities/checkin'
 import type { Goal } from '@/domain/entities/goal'
+import type { Objective } from '@/domain/entities/objective'
+import { ObjectiveLink } from '@/presentation/components/shared/Meta'
 import { TASK_EFFORT_LABELS, type Task } from '@/domain/entities/task'
 import { Button } from '@/presentation/components/ui/Button'
 import { BottomSheet, SheetAction } from '@/presentation/components/ui/BottomSheet'
@@ -12,6 +14,7 @@ import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 interface MobilePriorityProps {
   readonly task: Task | null
   readonly goal: Goal | null
+  readonly objective: Objective | undefined
   readonly capacity: CapacityProfile
   readonly dayComplete: boolean
   readonly onStartFocus: (task: Task) => void
@@ -32,6 +35,7 @@ interface MobilePriorityProps {
 export function MobilePriority({
   task,
   goal,
+  objective,
   capacity,
   dayComplete,
   onStartFocus,
@@ -112,6 +116,9 @@ export function MobilePriority({
         <p className="mt-2 text-xl font-semibold tracking-tight text-balance text-ink">
           {task.title}
         </p>
+
+        {/* O destino por trás da ação mais importante do dia. */}
+        <ObjectiveLink objective={objective} className="mt-1.5" />
 
         {/* Duas informações secundárias por linha: mais que isso vira ruído. */}
         <p className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-faint">

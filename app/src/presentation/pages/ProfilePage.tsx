@@ -15,10 +15,15 @@ import { APP_NAV } from '@/presentation/layouts/nav-items'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 
-/** As telas que não cabem na barra inferior do celular. */
-const MOBILE_SHORTCUTS = APP_NAV.filter((item) =>
-  ['/app/habitos', '/app/metas', '/app/review', '/app/insights'].includes(item.to),
-)
+/**
+ * As telas que não cabem na barra inferior do celular.
+ *
+ * A barra leva Hoje, Objetivos, Plano e Perfil. Todo o resto chega por aqui —
+ * e é por isso que a lista se deriva da navegação em vez de ser escrita à mão:
+ * tela nova aparece no atalho sem ninguém lembrar de vir aqui.
+ */
+const MOBILE_TAB_ROUTES = ['/app', '/app/objetivos', '/app/plano', '/app/configuracoes']
+const MOBILE_SHORTCUTS = APP_NAV.filter((item) => !MOBILE_TAB_ROUTES.includes(item.to))
 
 export function ProfilePage() {
   const { user, profile, loading, signOut, refreshProfile } = useAuth()

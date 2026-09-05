@@ -14,11 +14,11 @@ interface TabItem {
 /** Dois de cada lado do botão central. Mais que isso vira alvo pequeno demais. */
 const LEFT: readonly TabItem[] = [
   { to: '/app', label: 'Hoje', icon: 'hoje', end: true },
-  { to: '/app/jornada', label: 'Jornada', icon: 'jornada', end: false },
+  { to: '/app/objetivos', label: 'Objetivos', icon: 'objetivo', end: false },
 ]
 
 const RIGHT: readonly TabItem[] = [
-  { to: '/app/foco', label: 'Foco', icon: 'foco', end: false },
+  { to: '/app/plano', label: 'Plano', icon: 'plano', end: false },
   { to: '/app/configuracoes', label: 'Perfil', icon: 'config', end: false },
 ]
 

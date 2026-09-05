@@ -13,6 +13,7 @@ import {
 } from '@/domain/entities/habit'
 import { createTask, type NewTaskInput, type Task } from '@/domain/entities/task'
 import { createWin, type NewWinInput, type Win } from '@/domain/entities/win'
+import type { WeeklyReview, WeeklyReviewDraft } from '@/domain/entities/weekly-review'
 import { createGoal, type Goal, type NewGoalInput } from '@/domain/entities/goal'
 import {
   createObjective,
@@ -32,9 +33,14 @@ import type {
   ObjectiveUpdate,
 } from '@/domain/repositories/objective-repository'
 import type { CheckInRepository } from '@/domain/repositories/checkin-repository'
-import type { HabitRepository } from '@/domain/repositories/habit-repository'
+import type { HabitRepository, HabitUpdate } from '@/domain/repositories/habit-repository'
 import type { ProfileRepository, ProfileUpdate } from '@/domain/repositories/profile-repository'
-import type { TaskRepository, TaskUpdate } from '@/domain/repositories/task-repository'
+import type {
+  TaskReorder,
+  TaskRepository,
+  TaskUpdate,
+} from '@/domain/repositories/task-repository'
+import type { WeeklyReviewRepository } from '@/domain/repositories/weekly-review-repository'
 import type { WinRepository } from '@/domain/repositories/win-repository'
 import { DomainError, InfrastructureError } from '@/shared/errors'
 import { supabase } from './client'
@@ -48,6 +54,7 @@ import {
   toHabitLog,
   toProfile,
   toTask,
+  toWeeklyReview,
   toWin,
 } from './schemas'
 
@@ -267,7 +274,9 @@ export class SupabaseObjectiveRepository implements ObjectiveRepository {
         user_id: draft.userId,
         title: draft.title,
         axis_slug: draft.axis,
+        description: draft.description,
         motive: draft.motive,
+        priority: draft.priority,
         target: draft.target,
         started_on: draft.startedOn,
         deadline: draft.deadline,
@@ -291,11 +300,16 @@ export class SupabaseObjectiveRepository implements ObjectiveRepository {
       .from('objectives')
       .update({
         ...(changes.title !== undefined ? { title: changes.title } : {}),
+        ...(changes.description !== undefined ? { description: changes.description } : {}),
         ...(changes.target !== undefined ? { target: changes.target } : {}),
         ...(changes.deadline !== undefined ? { deadline: changes.deadline } : {}),
         ...(changes.motive !== undefined ? { motive: changes.motive } : {}),
+        ...(changes.priority !== undefined ? { priority: changes.priority } : {}),
         ...(changes.completedAt !== undefined
           ? { completed_at: changes.completedAt?.toISOString() ?? null }
+          : {}),
+        ...(changes.pausedAt !== undefined
+          ? { paused_at: changes.pausedAt?.toISOString() ?? null }
           : {}),
       })
       .eq('id', id)
@@ -414,10 +428,16 @@ export class SupabaseHabitRepository implements HabitRepository {
       .insert({
         user_id: draft.userId,
         name: draft.name,
+        description: draft.description,
         icon: draft.icon,
         axis_slug: draft.axis,
+        objective_id: draft.objectiveId,
+        priority: draft.priority,
+        frequency: draft.frequency,
         day_part: draft.dayPart,
+        time_of_day: draft.timeOfDay,
         weekdays: draft.weekdays,
+        times_per_week: draft.timesPerWeek,
         target: draft.target,
         minimal_target: draft.minimalTarget,
       })
@@ -425,6 +445,36 @@ export class SupabaseHabitRepository implements HabitRepository {
       .single()
 
     if (error) fail(error, 'criar o hábito')
+    return toHabit(data)
+  }
+
+  async update(id: string, userId: string, changes: HabitUpdate): Promise<Habit> {
+    const { data, error } = await supabase()
+      .from('habits')
+      .update({
+        ...(changes.name !== undefined ? { name: changes.name } : {}),
+        ...(changes.description !== undefined ? { description: changes.description } : {}),
+        ...(changes.icon !== undefined ? { icon: changes.icon } : {}),
+        ...(changes.axis !== undefined ? { axis_slug: changes.axis } : {}),
+        ...(changes.objectiveId !== undefined ? { objective_id: changes.objectiveId } : {}),
+        ...(changes.priority !== undefined ? { priority: changes.priority } : {}),
+        ...(changes.frequency !== undefined ? { frequency: changes.frequency } : {}),
+        ...(changes.dayPart !== undefined ? { day_part: changes.dayPart } : {}),
+        ...(changes.timeOfDay !== undefined ? { time_of_day: changes.timeOfDay } : {}),
+        ...(changes.weekdays !== undefined ? { weekdays: changes.weekdays } : {}),
+        ...(changes.timesPerWeek !== undefined ? { times_per_week: changes.timesPerWeek } : {}),
+        ...(changes.target !== undefined ? { target: changes.target } : {}),
+        ...(changes.minimalTarget !== undefined ? { minimal_target: changes.minimalTarget } : {}),
+        ...(changes.pausedAt !== undefined
+          ? { paused_at: changes.pausedAt?.toISOString() ?? null }
+          : {}),
+      })
+      .eq('id', id)
+      .eq('user_id', userId)
+      .select('*')
+      .single()
+
+    if (error) fail(error, 'atualizar o hábito')
     return toHabit(data)
   }
 
@@ -507,12 +557,18 @@ export class SupabaseTaskRepository implements TaskRepository {
       .insert({
         user_id: draft.userId,
         title: draft.title,
+        description: draft.description,
         goal_id: draft.goalId,
+        objective_id: draft.objectiveId,
         axis_slug: draft.axis,
         estimated_min: draft.estimatedMin,
         effort: draft.effort,
+        priority: draft.priority,
         minimal_version: draft.minimalVersion,
         day: draft.day,
+        time_of_day: draft.timeOfDay,
+        sort_order: draft.order,
+        depends_on_id: draft.dependsOnId,
         is_main_priority: draft.isMainPriority,
       })
       .select('*')
@@ -531,10 +587,16 @@ export class SupabaseTaskRepository implements TaskRepository {
       .from('tasks')
       .update({
         ...(changes.title !== undefined ? { title: changes.title } : {}),
+        ...(changes.description !== undefined ? { description: changes.description } : {}),
         ...(changes.goalId !== undefined ? { goal_id: changes.goalId } : {}),
+        ...(changes.objectiveId !== undefined ? { objective_id: changes.objectiveId } : {}),
         ...(changes.axis !== undefined ? { axis_slug: changes.axis } : {}),
         ...(changes.estimatedMin !== undefined ? { estimated_min: changes.estimatedMin } : {}),
         ...(changes.effort !== undefined ? { effort: changes.effort } : {}),
+        ...(changes.priority !== undefined ? { priority: changes.priority } : {}),
+        ...(changes.timeOfDay !== undefined ? { time_of_day: changes.timeOfDay } : {}),
+        ...(changes.order !== undefined ? { sort_order: changes.order } : {}),
+        ...(changes.dependsOnId !== undefined ? { depends_on_id: changes.dependsOnId } : {}),
         ...(changes.minimalVersion !== undefined
           ? { minimal_version: changes.minimalVersion }
           : {}),
@@ -554,6 +616,26 @@ export class SupabaseTaskRepository implements TaskRepository {
 
     if (error) fail(error, 'atualizar a ação')
     return toTask(data)
+  }
+
+  async reorder(userId: string, items: readonly TaskReorder[]): Promise<void> {
+    if (items.length === 0) return
+
+    // Uma chamada por ação, mas em paralelo: o Postgrest não faz update em
+    // massa com valor diferente por linha, e um RPC só pra isso obrigaria a
+    // instalar função no banco antes do app rodar.
+    const results = await Promise.all(
+      items.map((item) =>
+        supabase()
+          .from('tasks')
+          .update({ sort_order: item.order })
+          .eq('id', item.id)
+          .eq('user_id', userId),
+      ),
+    )
+
+    const failed = results.find((result) => result.error)
+    if (failed?.error) fail(failed.error, 'reordenar as ações')
   }
 
   async remove(id: string, userId: string): Promise<void> {
@@ -602,5 +684,54 @@ export class SupabaseWinRepository implements WinRepository {
 
     if (error) fail(error, 'salvar a vitória')
     return toWin(data)
+  }
+}
+
+
+export class SupabaseWeeklyReviewRepository implements WeeklyReviewRepository {
+  async listByUser(userId: string): Promise<WeeklyReview[]> {
+    const { data, error } = await supabase()
+      .from('weekly_reviews')
+      .select('*')
+      .eq('user_id', userId)
+      .order('week_start', { ascending: false })
+      .limit(60)
+
+    if (error) fail(error, 'carregar os reviews')
+    return (data ?? []).map(toWeeklyReview)
+  }
+
+  async save(
+    userId: string,
+    weekStart: DayKey,
+    draft: WeeklyReviewDraft,
+  ): Promise<WeeklyReview> {
+    // Upsert por (user_id, week_start): o fluxo guiado salva a cada passo e
+    // precisa atualizar a mesma linha, nunca criar um review por resposta.
+    const { data, error } = await supabase()
+      .from('weekly_reviews')
+      .upsert(
+        {
+          user_id: userId,
+          week_start: weekStart,
+          ...(draft.achievements !== undefined ? { achievements: draft.achievements } : {}),
+          ...(draft.difficulties !== undefined ? { difficulties: draft.difficulties } : {}),
+          ...(draft.learnings !== undefined ? { learnings: draft.learnings } : {}),
+          ...(draft.adjustments !== undefined ? { adjustments: draft.adjustments } : {}),
+          ...(draft.priorities !== undefined ? { priorities: draft.priorities } : {}),
+          ...(draft.aiSummary !== undefined ? { ai_summary: draft.aiSummary } : {}),
+          ...(draft.lastStep !== undefined ? { last_step: draft.lastStep } : {}),
+          ...(draft.completedAt !== undefined
+            ? { completed_at: draft.completedAt?.toISOString() ?? null }
+            : {}),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id,week_start' },
+      )
+      .select('*')
+      .single()
+
+    if (error) fail(error, 'salvar o review')
+    return toWeeklyReview(data)
   }
 }

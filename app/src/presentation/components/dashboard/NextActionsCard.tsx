@@ -4,6 +4,8 @@ import { activityType } from '@/domain/entities/activity-type'
 import type { DayKey } from '@/domain/entities/day'
 import type { Goal } from '@/domain/entities/goal'
 import { groupPendingTasks, TASK_EFFORT_LABELS, type Task } from '@/domain/entities/task'
+import type { Objective } from '@/domain/entities/objective'
+import { ObjectiveLink } from '@/presentation/components/shared/Meta'
 import { Button } from '@/presentation/components/ui/Button'
 import { ChoiceGroup } from '@/presentation/components/ui/Choice'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
@@ -19,6 +21,7 @@ type GroupBy = 'horizonte' | 'meta' | 'esforco'
 interface NextActionsCardProps {
   readonly tasks: readonly Task[]
   readonly goals: readonly Goal[]
+  readonly objectives: readonly Objective[]
   readonly today: DayKey
   readonly excludeId?: string | undefined
   readonly onComplete: (task: Task) => Promise<void>
@@ -38,6 +41,7 @@ interface NextActionsCardProps {
 export function NextActionsCard({
   tasks,
   goals,
+  objectives,
   today,
   excludeId,
   onComplete,
@@ -124,6 +128,7 @@ export function NextActionsCard({
                           key={task.id}
                           task={task}
                           goal={goals.find((goal) => goal.id === task.goalId) ?? null}
+                          objective={objectives.find((item) => item.id === task.objectiveId)}
                           today={today}
                           onComplete={onComplete}
                           onPostpone={onPostpone}
@@ -159,6 +164,7 @@ export function NextActionsCard({
 function TaskRow({
   task,
   goal,
+  objective,
   today,
   onComplete,
   onPostpone,
@@ -168,6 +174,7 @@ function TaskRow({
 }: {
   task: Task
   goal: Goal | null
+  objective: Objective | undefined
   today: DayKey
   onComplete: (task: Task) => Promise<void>
   onPostpone: (task: Task) => Promise<void>
@@ -205,6 +212,9 @@ function TaskRow({
           <span>· {TASK_EFFORT_LABELS[task.effort]}</span>
           {overdue ? <span className="text-flame">· atrasada</span> : null}
         </p>
+        {/* O objetivo por trás da ação. É a diferença entre uma lista de
+            tarefas e um plano: sem isso a pessoa executa sem saber pra quê. */}
+        <ObjectiveLink objective={objective} className="mt-1" />
       </div>
 
       {/*

@@ -1,49 +1,70 @@
-import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { dayKeyToDate } from '@/domain/entities/day'
+import { useCallback, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { addDays, formatDayLabel } from '@/domain/entities/day'
+import { habitConsistency } from '@/domain/entities/habit'
+import { isPending, type Task } from '@/domain/entities/task'
 import {
   percent,
   reviewWeek,
   weekRangeLabel,
   type ReviewInput,
-  type ReviewPoint,
   type WeekReview,
 } from '@/domain/entities/review'
+import {
+  emptyReview,
+  isComplete,
+  MAX_PRIORITIES,
+  MAX_REVIEW_ANSWER,
+  REVIEW_STEPS,
+  REVIEW_STEP_META,
+  reviewProgress,
+  reviewWeekStart,
+  weekLabel,
+  type ReviewStep,
+  type WeeklyReview,
+} from '@/domain/entities/weekly-review'
+import { ObjectiveLink } from '@/presentation/components/shared/Meta'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
-import { EmptyState } from '@/presentation/components/ui/States'
-import { Stat, StatGrid } from '@/presentation/components/ui/Stat'
-import { Panel, PanelHeader, ProgressBar } from '@/presentation/components/ui/Surface'
-import { ObjectiveRow } from '@/presentation/components/dashboard/ObjectivesCard'
-import { UpgradeHint } from '@/presentation/components/dashboard/UpgradeHint'
-import { useComposer } from '@/presentation/planner/ComposerProvider'
+import { EmptyState, ErrorNote } from '@/presentation/components/ui/States'
+import { Panel, PanelHeader, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
+import { useAi } from '@/presentation/ai/use-ai'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 import { PageHeader } from './PageHeader'
 
-const WEEKDAY_INITIALS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'] as const
-
-/** Quantas semanas pra trás o histórico oferece. */
-const MAX_WEEKS_BACK = 3
-
 /**
- * Review da semana.
+ * Review semanal.
  *
- * O dashboard responde "o que eu faço agora". Esta tela responde "o que a
- * semana me ensinou", e por isso é outra tela: relatório dentro do dia
- * transforma execução em contabilidade.
+ * É um fluxo guiado, não um formulário. A diferença é prática: o formulário
+ * mostra oito campos vazios de uma vez e a pessoa fecha a aba; o fluxo mostra
+ * uma pergunta por vez e salva cada resposta na hora, então parar no meio é um
+ * caso previsto e não uma perda.
  *
- * A ordem é a da pergunta real: como foi, quanto do planejado saiu, onde o
- * ritmo caiu, onde subiu, e o que mudar na próxima. A recomendação fecha a
- * página porque é a única coisa que a pessoa leva daqui.
+ * Os passos que o app escreve sozinho vêm intercalados de propósito — a pessoa
+ * lê o dado antes de responder a pergunta que depende dele.
  */
 export function ReviewPage() {
   const planner = usePlanner()
-  const composer = useComposer()
-  const navigate = useNavigate()
-  const [weeksAgo, setWeeksAgo] = useState(0)
 
-  const review = useMemo<WeekReview>(() => {
+  const weekStart = reviewWeekStart(planner.today)
+
+  const stored = useMemo(
+    () =>
+      planner.weeklyReviews.find((item) => item.weekStart === weekStart) ??
+      emptyReview('local', weekStart, 'local'),
+    [planner.weeklyReviews, weekStart],
+  )
+
+  /**
+   * A leitura calculada da MESMA semana que o review escrito guarda.
+   *
+   * `reviewWeek` mede sete dias terminando no `today` que recebe. Passar o
+   * domingo da semana revisada faz a janela cair exatamente sobre a semana de
+   * calendário — com `weeksAgo: 1` ela viraria uma janela móvel e o cabeçalho
+   * diria "24 a 30" enquanto os números seriam de "23 a 29".
+   */
+  const computed = useMemo<WeekReview>(() => {
     const input: ReviewInput = {
       activities: planner.activities,
       habits: planner.habits,
@@ -51,249 +72,611 @@ export function ReviewPage() {
       tasks: planner.tasks,
       checkIns: planner.checkIns,
       objectives: planner.objectiveProgress,
-      today: planner.today,
-      weeksAgo,
+      today: addDays(weekStart, 6),
     }
     return reviewWeek(input)
-  }, [planner, weeksAgo])
+  }, [planner, weekStart])
+
+  const [step, setStep] = useState<ReviewStep>(stored.lastStep)
+  const [showHistory, setShowHistory] = useState(false)
+
+  const index = REVIEW_STEPS.indexOf(step)
+  const meta = REVIEW_STEP_META[index]
+
+  const save = useCallback(
+    async (patch: Parameters<typeof planner.saveWeeklyReview>[1]) => {
+      await planner.saveWeeklyReview(weekStart, patch)
+    },
+    [planner, weekStart],
+  )
+
+  const goTo = useCallback(
+    (next: ReviewStep) => {
+      setStep(next)
+      void save({ lastStep: next })
+    },
+    [save],
+  )
+
+  if (showHistory) {
+    return (
+      <ReviewHistory
+        reviews={planner.weeklyReviews}
+        onBack={() => setShowHistory(false)}
+      />
+    )
+  }
+
+  if (!meta) return null
+
+  const done = isComplete(stored)
+  const filled = reviewProgress(stored)
 
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
-        title="Review da semana"
-        description="O que os sete dias mostraram e o que isso muda na semana que vem."
+        title="Review semanal"
+        description={`A semana de ${weekLabel(weekStart)}. Rápido: uma pergunta por vez, e o que você escreve fica salvo na hora.`}
         action={
-          <Button variant="secondary" size="sm" onClick={() => navigate('/app')}>
-            <Icon name="hoje" className="size-4" />
-            Voltar pro dia
-          </Button>
+          planner.weeklyReviews.length > 0 ? (
+            <Button variant="secondary" size="sm" onClick={() => setShowHistory(true)}>
+              <Icon name="calendario" className="size-4" />
+              Reviews anteriores
+            </Button>
+          ) : undefined
         }
       />
 
-      <nav aria-label="Semanas anteriores" className="flex flex-wrap items-center gap-2">
-        {Array.from({ length: MAX_WEEKS_BACK + 1 }, (_, index) => (
-          <button
-            key={index}
-            type="button"
-            aria-pressed={weeksAgo === index}
-            onClick={() => setWeeksAgo(index)}
-            disabled={index > 0 && !planner.limits.advancedAnalytics}
-            className={cn(
-              'rounded-xl border px-3 py-1.5 text-xs font-medium transition-colors',
-              weeksAgo === index
-                ? 'border-brand bg-brand-dim/60 text-ink'
-                : 'border-line bg-surface-hi/60 text-ink-muted hover:border-line-hi hover:text-ink',
-              'disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line',
-            )}
-          >
-            {index === 0 ? 'Esta semana' : index === 1 ? 'Semana passada' : `${index} semanas atrás`}
-          </button>
-        ))}
-      </nav>
+      {planner.error ? <ErrorNote message={planner.error} /> : null}
 
-      {planner.limits.advancedAnalytics ? null : (
-        <UpgradeHint message="O histórico de semanas anteriores fica no PRO. A review da semana atual é sempre aberta." />
-      )}
+      {done ? (
+        <p className="flex items-center gap-2.5 rounded-lg border border-positive/30 bg-positive/10 px-3.5 py-3 text-sm text-ink-muted">
+          <Icon name="check" className="size-4 shrink-0 text-positive" />
+          Review dessa semana concluído. Dá pra continuar editando à vontade.
+        </p>
+      ) : null}
 
-      <Panel tone="brand" aria-labelledby="review-titulo">
+      <Stepper current={index} filled={filled} onSelect={goTo} />
+
+      <Panel>
         <PanelHeader
-          id="review-titulo"
-          title={`Semana de ${weekRangeLabel(review.start, review.end)}`}
-          icon="insights"
+          title={meta.title}
+          hint={meta.question}
+          action={
+            <span className="tabular text-xs text-ink-faint">
+              {index + 1}/{REVIEW_STEPS.length}
+            </span>
+          }
         />
-        <p className="mt-3 text-pretty text-ink">{review.headline}</p>
 
         <div className="mt-5">
-          <div className="flex items-baseline justify-between gap-3">
-            <span className="text-sm text-ink-muted">Execução do que estava planejado</span>
-            <span className="tabular text-2xl font-semibold text-ink">
-              {percent(review.execution.rate)}
-            </span>
-          </div>
-          <ProgressBar
-            className="mt-2"
-            value={review.execution.rate}
-            label="Percentual de execução da semana"
-            color={review.execution.rate >= 0.7 ? 'var(--color-positive)' : 'var(--color-brand)'}
-          />
-          <p className="mt-2 text-xs text-ink-faint">
-            {review.execution.done} de {review.execution.planned} compromissos:{' '}
-            {review.execution.habitsDone}/{review.execution.habitsPlanned} hábitos e{' '}
-            {review.execution.tasksDone}/{review.execution.tasksPlanned} ações.
-          </p>
-        </div>
-      </Panel>
+          {step === 'resumo' ? <SummaryStep review={computed} /> : null}
+          {step === 'pendencias' ? <PendingStep /> : null}
+          {step === 'habitos' ? <HabitsStep /> : null}
 
-      <StatGrid>
-        <Stat
-          label="Dias com movimento"
-          value={`${review.activeDays}`}
-          hint={`${review.previousActiveDays} na semana anterior`}
-        />
-        <Stat
-          label="Hábitos cumpridos"
-          value={`${review.execution.habitsDone}`}
-          hint={`${review.previousExecution.habitsDone} na semana anterior`}
-        />
-        <Stat
-          label="Ações concluídas"
-          value={`${review.execution.tasksDone}`}
-          hint={`${review.previousExecution.tasksDone} na semana anterior`}
-        />
-        <Stat
-          label="Minutos"
-          value={`${review.focusMinutes}`}
-          hint={`${review.previousFocusMinutes} na semana anterior`}
-        />
-      </StatGrid>
-
-      <Panel aria-labelledby="ritmo-titulo">
-        <PanelHeader
-          id="ritmo-titulo"
-          title="O ritmo dia a dia"
-          icon="hoje"
-          hint="Barra cheia é dia em que o planejado saiu inteiro."
-        />
-        <ol className="mt-5 flex items-end justify-between gap-1.5" aria-label="Dias da semana">
-          {review.series.map((day) => {
-            const height = Math.max(6, Math.round(day.intensity * 72))
-            const weekday = WEEKDAY_INITIALS[dayKeyToDate(day.day).getDay()]
-
-            return (
-              <li key={day.day} className="flex flex-1 flex-col items-center gap-2">
-                <span className="flex h-20 w-full items-end">
-                  <span
-                    aria-hidden="true"
-                    className={cn(
-                      'w-full rounded-md transition-[height] duration-500 ease-out',
-                      day.intensity > 0.6
-                        ? 'bg-brand'
-                        : day.intensity > 0
-                          ? 'bg-brand/45'
-                          : 'bg-surface-top',
-                    )}
-                    style={{ height: `${height}px` }}
-                  />
-                </span>
-                <span className="text-xs text-ink-faint">{weekday}</span>
-                <span className="sr-only">
-                  {day.day}: {day.minutes} minutos, {day.habitsDone} hábitos e {day.tasksDone} ações
-                </span>
-              </li>
-            )
-          })}
-        </ol>
-      </Panel>
-
-      <div className="grid gap-5 xl:grid-cols-2 xl:items-start">
-        <PointList
-          title="Onde o ritmo caiu"
-          icon="adiar"
-          tone="warn"
-          points={review.lost}
-          empty="Nenhuma queda relevante nessa semana. Não é elogio: é o que os números mostram."
-        />
-        <PointList
-          title="Onde você evoluiu"
-          icon="trofeu"
-          tone="positive"
-          points={review.gained}
-          empty="Ainda não houve variação pra cima. Mais uma semana de registro e a comparação começa a valer."
-        />
-      </div>
-
-      <Panel tone="raised" aria-labelledby="recomendacao-titulo">
-        <PanelHeader
-          id="recomendacao-titulo"
-          title="Pra próxima semana"
-          icon="raio"
-          hint="Uma mudança por vez. Duas ao mesmo tempo escondem qual delas funcionou."
-        />
-        <p className="mt-4 text-lg font-semibold text-balance text-ink">
-          {review.recommendation.title}
-        </p>
-        <p className="mt-2 text-pretty text-ink-muted">{review.recommendation.detail}</p>
-
-        <div className="mt-5 flex flex-wrap gap-2">
-          <Button variant="secondary" size="sm" onClick={() => composer.open('acao')}>
-            <Icon name="mais" className="size-4" />
-            Planejar a próxima ação
-          </Button>
-          {review.recommendation.action === 'ajustar-prazo' ? (
-            <Button variant="ghost" size="sm" onClick={() => navigate('/app/metas')}>
-              <Icon name="calendario" className="size-4" />
-              Rever prazos
-            </Button>
+          {step === 'conquistas' ? (
+            <AnswerField
+              label="Conquistas"
+              placeholder={meta.placeholder}
+              value={stored.achievements ?? ''}
+              onSave={(value) => void save({ achievements: value })}
+            />
+          ) : null}
+          {step === 'dificuldades' ? (
+            <AnswerField
+              label="Dificuldades"
+              placeholder={meta.placeholder}
+              value={stored.difficulties ?? ''}
+              onSave={(value) => void save({ difficulties: value })}
+            />
+          ) : null}
+          {step === 'aprendizados' ? (
+            <AnswerField
+              label="Aprendizados"
+              placeholder={meta.placeholder}
+              value={stored.learnings ?? ''}
+              onSave={(value) => void save({ learnings: value })}
+            />
+          ) : null}
+          {step === 'ajustes' ? (
+            <>
+              <AnswerField
+                label="Ajustes"
+                placeholder={meta.placeholder}
+                value={stored.adjustments ?? ''}
+                onSave={(value) => void save({ adjustments: value })}
+              />
+              <div className="mt-5 rounded-lg border border-line bg-surface-hi px-3.5 py-3">
+                <p className="text-sm text-ink-muted">
+                  <span className="text-ink-faint">O app sugere: </span>
+                  {computed.recommendation.title}
+                </p>
+                <p className="mt-1 text-xs text-ink-faint">{computed.recommendation.detail}</p>
+              </div>
+            </>
+          ) : null}
+          {step === 'prioridades' ? (
+            <PrioritiesStep
+              values={stored.priorities}
+              onSave={(priorities) => void save({ priorities })}
+            />
           ) : null}
         </div>
-      </Panel>
 
-      <Panel aria-labelledby="objetivos-review-titulo">
-        <PanelHeader
-          id="objetivos-review-titulo"
-          title="Os objetivos depois dessa semana"
-          icon="trofeu"
-        />
-        {planner.objectiveProgress.length === 0 ? (
-          <div className="mt-4">
-            <EmptyState
-              title="Nenhum objetivo com prazo"
-              description="A review compara o que você fez com o que você queria chegar. Sem objetivo, sobra só o número solto."
-              action={
-                <Button size="sm" onClick={() => composer.open('objetivo')}>
-                  <Icon name="mais" className="size-4" />
-                  Definir objetivo
-                </Button>
-              }
-            />
-          </div>
-        ) : (
-          <ul className="mt-4 flex flex-col gap-3">
-            {planner.objectiveProgress.map((progress) => (
-              <ObjectiveRow key={progress.objective.id} progress={progress} />
-            ))}
-          </ul>
-        )}
+        {step === 'prioridades' ? (
+          <AiSummary review={stored} computed={computed} onSave={save} />
+        ) : null}
+
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
+          <Button
+            variant="ghost"
+            disabled={index === 0}
+            onClick={() => {
+              const previous = REVIEW_STEPS[index - 1]
+              if (previous) goTo(previous)
+            }}
+          >
+            <Icon name="setaEsq" className="size-4" />
+            Voltar
+          </Button>
+
+          {index === REVIEW_STEPS.length - 1 ? (
+            <Button onClick={() => void save({ completedAt: new Date() })}>
+              <Icon name="check" className="size-4" />
+              {done ? 'Salvar de novo' : 'Concluir review'}
+            </Button>
+          ) : (
+            <Button
+              onClick={() => {
+                const next = REVIEW_STEPS[index + 1]
+                if (next) goTo(next)
+              }}
+            >
+              Próximo
+              <Icon name="seta" className="size-4" />
+            </Button>
+          )}
+        </div>
       </Panel>
     </div>
   )
 }
 
-function PointList({
-  title,
-  icon,
-  tone,
-  points,
-  empty,
+function Stepper({
+  current,
+  filled,
+  onSelect,
 }: {
-  readonly title: string
-  readonly icon: 'adiar' | 'trofeu'
-  readonly tone: 'warn' | 'positive'
-  readonly points: readonly ReviewPoint[]
-  readonly empty: string
+  readonly current: number
+  readonly filled: number
+  readonly onSelect: (step: ReviewStep) => void
 }) {
   return (
-    <Panel aria-label={title}>
-      <PanelHeader title={title} icon={icon} />
-
-      {points.length === 0 ? (
-        <p className="mt-4 text-sm text-pretty text-ink-faint">{empty}</p>
-      ) : (
-        <ul className="mt-4 flex flex-col gap-3">
-          {points.map((point) => (
-            <li
-              key={point.id}
+    <div>
+      <ol className="flex flex-wrap gap-1.5">
+        {REVIEW_STEP_META.map((meta, index) => (
+          <li key={meta.key}>
+            <button
+              type="button"
+              aria-current={index === current ? 'step' : undefined}
+              onClick={() => onSelect(meta.key)}
               className={cn(
-                'rounded-xl border-l-2 bg-surface-hi/50 py-3 pr-3.5 pl-3',
-                tone === 'warn' ? 'border-l-flame' : 'border-l-positive',
+                'rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors',
+                index === current
+                  ? 'border-brand bg-brand-dim/60 text-ink'
+                  : index < current
+                    ? 'border-line bg-surface-hi text-ink-muted'
+                    : 'border-line text-ink-faint hover:text-ink-muted',
               )}
             >
-              <p className="text-sm font-medium text-ink">{point.title}</p>
-              <p className="mt-1 text-sm text-pretty text-ink-muted">{point.detail}</p>
+              {meta.title}
+            </button>
+          </li>
+        ))}
+      </ol>
+      <div className="mt-3 flex items-center gap-3">
+        <ProgressBar className="flex-1" value={filled} label="Progresso do review" />
+        <span className="tabular shrink-0 text-xs text-ink-faint">
+          {Math.round(filled * 100)}% respondido
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function SummaryStep({ review }: { readonly review: WeekReview }) {
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-pretty text-base text-ink">{review.headline}</p>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Figure label="Execução" value={percent(review.execution.rate)} />
+        <Figure label="Dias ativos" value={`${review.activeDays}/7`} />
+        <Figure
+          label="Hábitos"
+          value={`${review.execution.habitsDone}/${review.execution.habitsPlanned}`}
+        />
+        <Figure
+          label="Ações"
+          value={`${review.execution.tasksDone}/${review.execution.tasksPlanned}`}
+        />
+      </div>
+
+      <p className="text-xs text-ink-faint">
+        Semana de {weekRangeLabel(review.start, review.end)}
+      </p>
+
+      {review.gained.length > 0 ? (
+        <section>
+          <h4 className="text-sm font-semibold text-ink">Onde evoluiu</h4>
+          <ul className="mt-2 flex flex-col gap-2">
+            {review.gained.map((point) => (
+              <li key={point.id} className="text-sm text-ink-muted">
+                <span className="text-ink">{point.title}.</span> {point.detail}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {review.lost.length > 0 ? (
+        <section>
+          <h4 className="text-sm font-semibold text-ink">Onde o ritmo caiu</h4>
+          <ul className="mt-2 flex flex-col gap-2">
+            {review.lost.map((point) => (
+              <li key={point.id} className="text-sm text-ink-muted">
+                <span className="text-ink">{point.title}.</span> {point.detail}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+    </div>
+  )
+}
+
+/**
+ * As ações que não saíram, com a saída na mesma linha.
+ *
+ * Listar pendência sem oferecer o que fazer com ela transforma o review em
+ * cobrança. Aqui cada linha remarca pra hoje ou cancela — as duas decisões
+ * honestas.
+ */
+function PendingStep() {
+  const planner = usePlanner()
+
+  const weekStart = addDays(planner.today, -13)
+  const weekEnd = addDays(planner.today, -7)
+
+  const pending = planner.tasks.filter(
+    (task) => isPending(task) && task.day >= weekStart && task.day <= weekEnd,
+  )
+
+  if (pending.length === 0) {
+    return (
+      <p className="text-sm text-ink-muted">
+        Nada ficou pendente da semana passada. Isso é resultado, não sorte.
+      </p>
+    )
+  }
+
+  return (
+    <ul className="flex flex-col divide-y divide-line">
+      {pending.map((task) => (
+        <PendingRow key={task.id} task={task} />
+      ))}
+    </ul>
+  )
+}
+
+function PendingRow({ task }: { readonly task: Task }) {
+  const planner = usePlanner()
+  const objective = planner.objectives.find((item) => item.id === task.objectiveId)
+
+  return (
+    <li className="flex flex-wrap items-center gap-3 py-3">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm text-ink">{task.title}</p>
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-ink-faint">
+          <span>Era pra {formatDayLabel(task.day, planner.today)}</span>
+          <ObjectiveLink objective={objective} />
+        </div>
+      </div>
+
+      <div className="flex shrink-0 gap-2">
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => void planner.updateTask(task.id, { day: planner.today })}
+        >
+          Trazer pra hoje
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() =>
+            void planner.updateTask(task.id, { status: 'cancelada', isMainPriority: false })
+          }
+        >
+          Cancelar
+        </Button>
+      </div>
+    </li>
+  )
+}
+
+function HabitsStep() {
+  const planner = usePlanner()
+  const start = addDays(planner.today, -13)
+  const end = addDays(planner.today, -7)
+
+  const rows = planner.habits
+    .filter((habit) => habit.archivedAt === null)
+    .map((habit) => ({ habit, consistency: habitConsistency(habit, planner.habitLogs, start, end) }))
+    .filter((row) => row.consistency.expected > 0)
+
+  if (rows.length === 0) {
+    return (
+      <p className="text-sm text-ink-muted">
+        Nenhum hábito estava programado nessa semana.
+      </p>
+    )
+  }
+
+  return (
+    <ul className="flex flex-col gap-4">
+      {rows.map(({ habit, consistency }) => (
+        <li key={habit.id} className="flex flex-col gap-1.5">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="truncate text-sm text-ink">{habit.name}</span>
+            <span className="tabular shrink-0 text-sm text-ink-muted">
+              {consistency.done}/{consistency.expected}
+            </span>
+          </div>
+          <ProgressBar value={consistency.rate} label={`Constância de ${habit.name}`} />
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/**
+ * Campo de resposta com salvamento no blur.
+ *
+ * Salvar a cada tecla mandaria uma escrita por caractere; salvar só no fim
+ * perderia tudo quem fechasse a aba. O blur é o meio termo que cobre os dois.
+ */
+function AnswerField({
+  label,
+  placeholder,
+  value,
+  onSave,
+}: {
+  readonly label: string
+  readonly placeholder: string
+  readonly value: string
+  readonly onSave: (value: string) => void
+}) {
+  const [draft, setDraft] = useState(value)
+
+  return (
+    <label className="flex flex-col gap-2">
+      <span className="sr-only">{label}</span>
+      <textarea
+        value={draft}
+        rows={4}
+        maxLength={MAX_REVIEW_ANSWER}
+        placeholder={placeholder}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={() => {
+          if (draft !== value) onSave(draft)
+        }}
+        className="w-full resize-y rounded-xl border border-line bg-surface-hi px-3.5 py-3 text-sm text-ink placeholder:text-ink-faint transition-colors focus:border-brand"
+      />
+      <span className="tabular text-right text-xs text-ink-faint">
+        {draft.length}/{MAX_REVIEW_ANSWER}
+      </span>
+    </label>
+  )
+}
+
+function PrioritiesStep({
+  values,
+  onSave,
+}: {
+  readonly values: readonly string[]
+  readonly onSave: (values: readonly string[]) => void
+}) {
+  const [draft, setDraft] = useState<string[]>(() => {
+    const filled = [...values]
+    while (filled.length < MAX_PRIORITIES) filled.push('')
+    return filled
+  })
+
+  const commit = (next: string[]) => {
+    setDraft(next)
+    onSave(next.filter((item) => item.trim().length > 0))
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {draft.map((item, index) => (
+        <label key={index} className="flex items-center gap-3">
+          <span
+            aria-hidden="true"
+            className="tabular grid size-8 shrink-0 place-items-center rounded-lg border border-line text-sm text-ink-faint"
+          >
+            {index + 1}
+          </span>
+          <span className="sr-only">Prioridade {index + 1}</span>
+          <input
+            value={item}
+            placeholder={index === 0 ? 'A coisa mais importante da semana' : 'Opcional'}
+            onChange={(event) =>
+              setDraft(draft.map((entry, position) => (position === index ? event.target.value : entry)))
+            }
+            onBlur={() => commit(draft)}
+            className="h-11 w-full rounded-xl border border-line bg-surface-hi px-3 text-sm text-ink placeholder:text-ink-faint transition-colors focus:border-brand"
+          />
+        </label>
+      ))}
+      <p className="text-xs text-ink-faint">
+        Três no máximo. Uma semana com sete prioridades não tem nenhuma.
+      </p>
+    </div>
+  )
+}
+
+function AiSummary({
+  review,
+  computed,
+  onSave,
+}: {
+  readonly review: WeeklyReview
+  readonly computed: WeekReview
+  readonly onSave: (patch: { aiSummary: string }) => Promise<void>
+}) {
+  const ai = useAi()
+  const [loading, setLoading] = useState(false)
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const summary = await ai.summarizeReview({
+        weekLabel: weekRangeLabel(computed.start, computed.end),
+        executionRate: computed.execution.rate,
+        habitsDone: computed.execution.habitsDone,
+        activeDays: computed.activeDays,
+        achievements: review.achievements,
+        difficulties: review.difficulties,
+        learnings: review.learnings,
+      })
+      await onSave({ aiSummary: summary })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <section className="mt-6 border-t border-line pt-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h4 className="text-sm font-semibold text-ink">Síntese da semana</h4>
+        <Button size="sm" variant="secondary" loading={loading} onClick={() => void generate()}>
+          <Icon name="ia" className="size-4" />
+          {review.aiSummary ? 'Gerar de novo' : 'Gerar com o Momentumm AI'}
+        </Button>
+      </div>
+
+      {review.aiSummary ? (
+        <p className="mt-3 text-pretty rounded-lg bg-surface-hi px-3.5 py-3 text-sm text-ink-muted">
+          {review.aiSummary}
+        </p>
+      ) : (
+        <p className="mt-2 text-xs text-ink-faint">
+          Junta o que você escreveu com os números da semana numa frase só.
+        </p>
+      )}
+
+      {ai.simulated && review.aiSummary ? (
+        <p className="mt-2 text-xs text-flame">Texto simulado: a IA de verdade ainda não está ligada.</p>
+      ) : null}
+    </section>
+  )
+}
+
+function ReviewHistory({
+  reviews,
+  onBack,
+}: {
+  readonly reviews: readonly WeeklyReview[]
+  readonly onBack: () => void
+}) {
+  const sorted = [...reviews].sort((a, b) => (a.weekStart < b.weekStart ? 1 : -1))
+
+  return (
+    <div className="flex flex-col gap-5">
+      <button
+        type="button"
+        onClick={onBack}
+        className="inline-flex w-fit items-center gap-1.5 rounded-md text-sm text-ink-faint transition-colors hover:text-ink-muted"
+      >
+        <Icon name="setaEsq" className="size-4" />
+        Voltar pro review da semana
+      </button>
+
+      <PageHeader
+        title="Reviews anteriores"
+        description="O que você escreveu nas semanas passadas. É aqui que dá pra ver se o ajuste da semana passada pegou."
+      />
+
+      {sorted.length === 0 ? (
+        <EmptyState
+          title="Nenhum review ainda"
+          description="O primeiro review fica guardado aqui assim que você responder."
+        />
+      ) : (
+        <ul className="flex flex-col gap-4">
+          {sorted.map((review) => (
+            <li key={review.id}>
+              <Panel>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h3 className="text-sm font-semibold text-ink">{weekLabel(review.weekStart)}</h3>
+                  <Tag tone={isComplete(review) ? 'positive' : 'neutral'}>
+                    {isComplete(review) ? 'Concluído' : 'Incompleto'}
+                  </Tag>
+                </div>
+
+                <dl className="mt-4 flex flex-col gap-3 text-sm">
+                  <Entry label="Conquistas" value={review.achievements} />
+                  <Entry label="Dificuldades" value={review.difficulties} />
+                  <Entry label="Aprendizados" value={review.learnings} />
+                  <Entry label="Ajustes" value={review.adjustments} />
+                </dl>
+
+                {review.priorities.length > 0 ? (
+                  <div className="mt-4 border-t border-line pt-3">
+                    <p className="text-xs text-ink-faint">Prioridades da semana seguinte</p>
+                    <ol className="mt-1.5 flex flex-col gap-1">
+                      {review.priorities.map((item, index) => (
+                        <li key={item} className="text-sm text-ink-muted">
+                          {index + 1}. {item}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ) : null}
+              </Panel>
             </li>
           ))}
         </ul>
       )}
-    </Panel>
+
+      <Link
+        to="/app/progresso"
+        className="inline-flex items-center gap-1.5 text-sm text-brand-ink transition-colors hover:text-brand-hi"
+      >
+        Ver a evolução em números
+        <Icon name="seta" className="size-4" />
+      </Link>
+    </div>
+  )
+}
+
+function Entry({ label, value }: { readonly label: string; readonly value: string | null }) {
+  if (!value) return null
+  return (
+    <div>
+      <dt className="text-xs text-ink-faint">{label}</dt>
+      <dd className="mt-0.5 text-pretty text-ink-muted">{value}</dd>
+    </div>
+  )
+}
+
+function Figure({ label, value }: { readonly label: string; readonly value: string }) {
+  return (
+    <div className="rounded-lg border border-line bg-surface-hi px-3 py-2.5">
+      <p className="text-xs text-ink-faint">{label}</p>
+      <p className="tabular mt-0.5 text-lg font-semibold text-ink">{value}</p>
+    </div>
   )
 }

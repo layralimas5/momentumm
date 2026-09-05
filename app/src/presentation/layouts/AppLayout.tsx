@@ -15,7 +15,7 @@ import { useIsDesktop } from '@/presentation/hooks/use-media-query'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 import { AppHeader } from './AppHeader'
-import { APP_NAV, type AppNavItem } from './nav-items'
+import { PRIMARY_NAV, type AppNavItem } from './nav-items'
 
 const COLLAPSED_KEY = 'momentumm.sidebar.collapsed'
 
@@ -130,7 +130,7 @@ function SidebarContent({
 
       <nav aria-label="Navegação principal" className={cn('flex-1', collapsed ? 'mt-14' : 'mt-8')}>
         <ul className="flex flex-col gap-1">
-          {APP_NAV.map((item) => (
+          {PRIMARY_NAV.map((item) => (
             <li key={item.to}>
               <SidebarLink item={item} collapsed={collapsed} />
             </li>

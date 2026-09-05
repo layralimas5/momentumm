@@ -27,8 +27,10 @@ import type { PlanDraft } from '@/domain/entities/plan-builder'
 import { calculateStreakFromDays } from '@/domain/entities/streak'
 import type { NewTaskInput, Task } from '@/domain/entities/task'
 import type { NewWinInput, Win } from '@/domain/entities/win'
+import type { WeeklyReview, WeeklyReviewDraft } from '@/domain/entities/weekly-review'
+import type { HabitUpdate } from '@/domain/repositories/habit-repository'
 import type { ObjectiveUpdate } from '@/domain/repositories/objective-repository'
-import type { TaskUpdate } from '@/domain/repositories/task-repository'
+import type { TaskReorder, TaskUpdate } from '@/domain/repositories/task-repository'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { toUserMessage } from '@/shared/errors'
@@ -44,6 +46,7 @@ interface Snapshot {
   readonly tasks: Task[]
   readonly checkIns: CheckIn[]
   readonly wins: Win[]
+  readonly weeklyReviews: WeeklyReview[]
 }
 
 const EMPTY: Snapshot = {
@@ -56,6 +59,7 @@ const EMPTY: Snapshot = {
   tasks: [],
   checkIns: [],
   wins: [],
+  weeklyReviews: [],
 }
 
 /**
@@ -103,8 +107,18 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
 
     setLoading(true)
     try {
-      const [customAxes, activities, objectives, goals, habits, habitLogs, tasks, checkIns, wins] =
-        await Promise.all([
+      const [
+        customAxes,
+        activities,
+        objectives,
+        goals,
+        habits,
+        habitLogs,
+        tasks,
+        checkIns,
+        wins,
+        weeklyReviews,
+      ] = await Promise.all([
         container.activityTypes.listCustom(user.id),
         container.activities.listByUser(user.id),
         container.objectives.listByUser(user.id),
@@ -114,6 +128,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         container.tasks.listByUser(user.id),
         container.checkIns.listByUser(user.id),
         container.wins.listByUser(user.id),
+        container.weeklyReviews.listByUser(user.id),
       ])
 
       if (!mounted.current) return
@@ -132,6 +147,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         tasks,
         checkIns,
         wins,
+        weeklyReviews,
       })
       setError(null)
     } catch (cause) {
@@ -256,6 +272,52 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     [user, mutate],
   )
 
+  const setObjectivePaused = useCallback(
+    async (id: string, paused: boolean) => {
+      await updateObjective(id, { pausedAt: paused ? new Date() : null })
+    },
+    [updateObjective],
+  )
+
+  /**
+   * Concluir o objetivo e limpar o rastro dele no plano.
+   *
+   * As ações em aberto são canceladas, não apagadas: elas são o registro do que
+   * ficou pra trás e a review usa isso. Reabrir só devolve o objetivo — as
+   * ações canceladas ficam canceladas, porque ressuscitar tarefa antiga de
+   * surpresa é a forma mais rápida de encher o dia de coisa que ninguém pediu.
+   */
+  const completeObjective = useCallback(
+    async (id: string, done: boolean) => {
+      if (!user) return
+
+      await updateObjective(id, { completedAt: done ? new Date() : null })
+      if (!done) return
+
+      const open = data.tasks.filter(
+        (task) => task.objectiveId === id && (task.status === 'pendente' || task.status === 'em-andamento'),
+      )
+
+      for (const task of open) {
+        await container.tasks.update(task.id, user.id, {
+          status: 'cancelada',
+          isMainPriority: false,
+        })
+      }
+
+      if (open.length > 0) {
+        const ids = new Set(open.map((task) => task.id))
+        setData((current) => ({
+          ...current,
+          tasks: current.tasks.map((task) =>
+            ids.has(task.id) ? { ...task, status: 'cancelada', isMainPriority: false } : task,
+          ),
+        }))
+      }
+    },
+    [user, data.tasks, updateObjective],
+  )
+
   const createGoal = useCallback(
     async (input: Omit<NewGoalInput, 'userId'>): Promise<Goal | null> => {
       if (!user) return null
@@ -294,6 +356,31 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       return habit
     },
     [user],
+  )
+
+  const updateHabit = useCallback(
+    async (id: string, changes: HabitUpdate) => {
+      if (!user) return
+      await mutate(
+        (current) => ({
+          ...current,
+          habits: current.habits.map((habit) =>
+            habit.id === id ? { ...habit, ...changes } : habit,
+          ),
+        }),
+        async () => {
+          await container.habits.update(id, user.id, changes)
+        },
+      )
+    },
+    [user, mutate],
+  )
+
+  const setHabitPaused = useCallback(
+    async (id: string, paused: boolean) => {
+      await updateHabit(id, { pausedAt: paused ? new Date() : null })
+    },
+    [updateHabit],
   )
 
   const archiveHabit = useCallback(
@@ -392,11 +479,35 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     [user, mutate],
   )
 
+  const reorderTasks = useCallback(
+    async (items: readonly TaskReorder[]) => {
+      if (!user || items.length === 0) return
+      const order = new Map(items.map((item) => [item.id, item.order]))
+      await mutate(
+        (current) => ({
+          ...current,
+          tasks: current.tasks.map((task) =>
+            order.has(task.id) ? { ...task, order: order.get(task.id) ?? task.order } : task,
+          ),
+        }),
+        () => container.tasks.reorder(user.id, items),
+      )
+    },
+    [user, mutate],
+  )
+
   const removeTask = useCallback(
     async (id: string) => {
       if (!user) return
       await mutate(
-        (current) => ({ ...current, tasks: current.tasks.filter((task) => task.id !== id) }),
+        (current) => ({
+          ...current,
+          // O vínculo de dependência morre junto: senão a próxima ação fica
+          // travada por uma que não existe mais.
+          tasks: current.tasks
+            .filter((task) => task.id !== id)
+            .map((task) => (task.dependsOnId === id ? { ...task, dependsOnId: null } : task)),
+        }),
         () => container.tasks.remove(id, user.id),
       )
     },
@@ -432,6 +543,22 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     [user],
   )
 
+  const saveWeeklyReview = useCallback(
+    async (weekStart: DayKey, draft: WeeklyReviewDraft) => {
+      if (!user) return
+      const saved = await container.weeklyReviews.save(user.id, weekStart, draft)
+      setData((current) => ({
+        ...current,
+        weeklyReviews: [
+          ...current.weeklyReviews.filter((item) => item.weekStart !== weekStart),
+          saved,
+        ],
+      }))
+      setError(null)
+    },
+    [user],
+  )
+
   /**
    * Os planos gerados no onboarding virando dado de verdade.
    *
@@ -451,17 +578,27 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       let priorityTaken = false
 
       for (const plan of plans) {
-        await createObjective(plan.objective)
+        // O objetivo vem primeiro porque hábitos e ações nascem apontando pra
+        // ele: é esse vínculo que faz o `Hoje` conseguir dizer pra que serve
+        // cada linha, em vez de mostrar uma lista de tarefas soltas.
+        const objective = await createObjective(plan.objective)
         const goal = await createGoal(plan.goal).catch(() => null)
 
         for (const habit of plan.habits) {
-          await createHabit(habit)
+          await createHabit({ ...habit, objectiveId: objective?.id ?? null })
         }
 
+        let order = 0
         for (const task of plan.tasks) {
           const isMainPriority = (task.isMainPriority ?? false) && !priorityTaken
           if (isMainPriority) priorityTaken = true
-          await createTask({ ...task, isMainPriority, goalId: goal?.id ?? null })
+          await createTask({
+            ...task,
+            isMainPriority,
+            goalId: goal?.id ?? null,
+            objectiveId: objective?.id ?? null,
+            order: order++,
+          })
         }
       }
     },
@@ -525,6 +662,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       tasks: data.tasks,
       checkIns: data.checkIns,
       wins: data.wins,
+      weeklyReviews: data.weeklyReviews,
       streak,
       limits,
       loading,
@@ -537,17 +675,23 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       createObjective,
       updateObjective,
       archiveObjective,
+      setObjectivePaused,
+      completeObjective,
       applyPlan,
       createGoal,
       archiveGoal,
       createHabit,
+      updateHabit,
+      setHabitPaused,
       archiveHabit,
       setHabitStatus,
       createTask,
       updateTask,
+      reorderTasks,
       removeTask,
       saveCheckIn,
       saveWin,
+      saveWeeklyReview,
       reload,
     }),
     [
@@ -569,17 +713,23 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       createObjective,
       updateObjective,
       archiveObjective,
+      setObjectivePaused,
+      completeObjective,
       applyPlan,
       createGoal,
       archiveGoal,
       createHabit,
+      updateHabit,
+      setHabitPaused,
       archiveHabit,
       setHabitStatus,
       createTask,
       updateTask,
+      reorderTasks,
       removeTask,
       saveCheckIn,
       saveWin,
+      saveWeeklyReview,
       reload,
     ],
   )

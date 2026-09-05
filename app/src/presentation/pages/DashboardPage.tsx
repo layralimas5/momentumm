@@ -5,6 +5,7 @@ import { addDays } from '@/domain/entities/day'
 import { isPending, shrinkToMinimal, type Task } from '@/domain/entities/task'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { CheckInCard } from '@/presentation/components/dashboard/CheckInCard'
+import { DayHeader } from '@/presentation/components/dashboard/DayHeader'
 import { DashboardSkeleton } from '@/presentation/components/dashboard/DashboardSkeleton'
 import { FocusCard } from '@/presentation/components/dashboard/FocusCard'
 import { GoalsInMotionCard } from '@/presentation/components/dashboard/GoalsInMotionCard'
@@ -163,6 +164,13 @@ export function DashboardPage() {
     return (
       <div className="flex flex-col gap-6">
         {planner.error ? <ErrorNote message={planner.error} /> : null}
+        <DayHeader
+          compact
+          name={profile?.name.split(' ')[0] ?? null}
+          today={planner.today}
+          progress={view.dayProgress}
+          resumeNote={view.resumeNote}
+        />
         <MobileDashboard
           view={view}
           onStartFocus={startFocus}
@@ -179,9 +187,18 @@ export function DashboardPage() {
   const mainGoal =
     planner.goals.find((goal) => goal.id === view.mainPriority?.goalId) ?? null
 
+  const firstName = profile?.name.split(' ')[0] ?? null
+
   return (
     <div className="flex flex-col gap-5">
       {planner.error ? <ErrorNote message={planner.error} /> : null}
+
+      <DayHeader
+        name={firstName}
+        today={planner.today}
+        progress={view.dayProgress}
+        resumeNote={view.resumeNote}
+      />
 
       {/*
         Linha de contexto: como estou hoje. O check-in vem primeiro porque é ele
@@ -216,6 +233,9 @@ export function DashboardPage() {
       <PriorityCard
         task={view.mainPriority}
         goal={mainGoal}
+        objective={planner.objectives.find(
+          (item) => item.id === view.mainPriority?.objectiveId,
+        )}
         capacity={view.capacity}
         dayComplete={view.dayComplete}
         onStartFocus={startFocus}
@@ -248,6 +268,7 @@ export function DashboardPage() {
             <NextActionsCard
               tasks={planner.tasks}
               goals={planner.goals}
+              objectives={planner.objectives}
               today={planner.today}
               excludeId={view.mainPriority?.id}
               onComplete={completeTask}
@@ -256,7 +277,7 @@ export function DashboardPage() {
               onStartFocus={startFocus}
               onEdit={(task) => composer.open('acao', { editing: task })}
               onCreate={() => composer.open('acao')}
-              onSeeAll={() => navigate('/app/jornada')}
+              onSeeAll={() => navigate('/app/plano')}
             />
           </div>
 

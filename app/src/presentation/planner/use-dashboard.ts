@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { totalMinutes } from '@/domain/entities/activity'
+import { addDays } from '@/domain/entities/day'
 import { capacityOf, checkInOfDay, type CapacityProfile, type CheckIn } from '@/domain/entities/checkin'
 import { paceOf, type GoalPace, type GoalProgress } from '@/domain/entities/goal'
 import { habitDayProgress, habitDayStates, type HabitDayProgress, type HabitDayState } from '@/domain/entities/habit'
@@ -23,8 +24,22 @@ export interface GoalInMotion {
   readonly nextTask: Task | null
 }
 
+export interface DayProgress {
+  readonly done: number
+  readonly total: number
+  /** 0 a 1: hábitos e ações do dia somados. */
+  readonly ratio: number
+}
+
 export interface DashboardView {
   readonly checkIn: CheckIn | null
+  /** Quanto do dia já saiu, contando hábitos e ações juntos. */
+  readonly dayProgress: DayProgress
+  /**
+   * O recado de retomada quando ontem ficou pra trás. Null quando não há nada
+   * a retomar — a mensagem só aparece se muda alguma decisão de hoje.
+   */
+  readonly resumeNote: string | null
   readonly capacity: CapacityProfile
   readonly momentum: MomentumScore
   readonly recommendation: string
@@ -121,8 +136,48 @@ export function useDashboard(): DashboardView {
 
   const pendingToday = tasks.filter((task) => task.day === today && isPending(task)).length
 
+  const dayProgress = useMemo<DayProgress>(() => {
+    const dayTasks = tasks.filter((task) => task.day === today && task.status !== 'cancelada')
+    const tasksDone = dayTasks.filter((task) => task.status === 'feita').length
+
+    const total = habitProgress.total + dayTasks.length
+    const done = habitProgress.done + tasksDone
+
+    return { done, total, ratio: total === 0 ? 0 : done / total }
+  }, [tasks, today, habitProgress])
+
+  /**
+   * A retomada.
+   *
+   * O tom aqui é decisão de produto, não de copy: a frase diz o que ficou e o
+   * que dá pra fazer, e nunca quantos dias foram perdidos. "Você quebrou uma
+   * sequência de 12 dias" é verdade e é exatamente o que faz a pessoa não
+   * voltar.
+   */
+  const resumeNote = useMemo(() => {
+    const yesterday = addDays(today, -1)
+
+    const missedTasks = tasks.filter((task) => task.day === yesterday && isPending(task)).length
+    const scheduledYesterday = habitDayStates(habits, habitLogs, yesterday)
+    const missedHabits = scheduledYesterday.filter((state) => state.status === 'pendente').length
+
+    if (missedTasks === 0 && missedHabits === 0) return null
+
+    const parts: string[] = []
+    if (missedTasks > 0) {
+      parts.push(`${missedTasks} ${missedTasks === 1 ? 'ação' : 'ações'}`)
+    }
+    if (missedHabits > 0) {
+      parts.push(`${missedHabits} ${missedHabits === 1 ? 'hábito' : 'hábitos'}`)
+    }
+
+    return `Ontem ficaram ${parts.join(' e ')} sem sair. Não precisa compensar: escolhe o que ainda faz sentido hoje e segue daqui.`
+  }, [tasks, habits, habitLogs, today])
+
   return {
     checkIn,
+    dayProgress,
+    resumeNote,
     capacity,
     momentum,
     recommendation: recommendationFor(momentum, capacity),

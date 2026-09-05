@@ -1,3 +1,4 @@
+import type { AiService } from '@/domain/ai/ai-service'
 import type { AuthService } from '@/domain/auth/auth-service'
 import type { ActivityRepository } from '@/domain/repositories/activity-repository'
 import type { ActivityTypeRepository } from '@/domain/repositories/activity-type-repository'
@@ -7,7 +8,9 @@ import type { HabitRepository } from '@/domain/repositories/habit-repository'
 import type { ObjectiveRepository } from '@/domain/repositories/objective-repository'
 import type { ProfileRepository } from '@/domain/repositories/profile-repository'
 import type { TaskRepository } from '@/domain/repositories/task-repository'
+import type { WeeklyReviewRepository } from '@/domain/repositories/weekly-review-repository'
 import type { WinRepository } from '@/domain/repositories/win-repository'
+import { SimulatedAiService } from './ai/simulated-ai-service'
 import { isDemoMode } from './config/env'
 import {
   DemoActivityRepository,
@@ -19,6 +22,7 @@ import {
   DemoObjectiveRepository,
   DemoProfileRepository,
   DemoTaskRepository,
+  DemoWeeklyReviewRepository,
   DemoWinRepository,
 } from './demo/demo-repositories'
 import {
@@ -31,6 +35,7 @@ import {
   SupabaseObjectiveRepository,
   SupabaseProfileRepository,
   SupabaseTaskRepository,
+  SupabaseWeeklyReviewRepository,
   SupabaseWinRepository,
 } from './supabase/supabase-repositories'
 
@@ -45,6 +50,13 @@ export interface Container {
   readonly tasks: TaskRepository
   readonly checkIns: CheckInRepository
   readonly wins: WinRepository
+  readonly weeklyReviews: WeeklyReviewRepository
+  /**
+   * Momentumm AI. Hoje é sempre a implementação simulada: não existe endpoint
+   * de IA ainda, e chave de LLM não pode viver no frontend. Quando o endpoint
+   * existir, é aqui que a troca acontece — e `simulated` deixa de ser true.
+   */
+  readonly ai: AiService
   readonly demo: boolean
 }
 
@@ -61,6 +73,8 @@ export const container: Container = isDemoMode
       tasks: new DemoTaskRepository(),
       checkIns: new DemoCheckInRepository(),
       wins: new DemoWinRepository(),
+      weeklyReviews: new DemoWeeklyReviewRepository(),
+      ai: new SimulatedAiService(),
       demo: true,
     }
   : {
@@ -74,5 +88,7 @@ export const container: Container = isDemoMode
       tasks: new SupabaseTaskRepository(),
       checkIns: new SupabaseCheckInRepository(),
       wins: new SupabaseWinRepository(),
+      weeklyReviews: new SupabaseWeeklyReviewRepository(),
+      ai: new SimulatedAiService(),
       demo: false,
     }

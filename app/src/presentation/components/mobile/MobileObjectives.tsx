@@ -55,9 +55,15 @@ export function MobileObjectives({ objectives, onCreate, onOpenReview }: MobileO
             <li key={progress.objective.id} className="surface-card p-4">
               <div className="flex items-start justify-between gap-3">
                 <p className="min-w-0 text-sm font-medium text-ink">{progress.objective.title}</p>
-                <Tag tone={statusTone(progress.status)}>
-                  {OBJECTIVE_STATUS_LABELS[progress.status]}
-                </Tag>
+                {/* Pausado mostra o estado, não o ritmo: cobrar prazo de um
+                    objetivo que a pessoa suspendeu é o oposto de pausar. */}
+                {progress.state === 'pausado' ? (
+                  <Tag>Pausado</Tag>
+                ) : (
+                  <Tag tone={statusTone(progress.status)}>
+                    {OBJECTIVE_STATUS_LABELS[progress.status]}
+                  </Tag>
+                )}
               </div>
 
               <p className="mt-1 text-sm text-ink-faint">

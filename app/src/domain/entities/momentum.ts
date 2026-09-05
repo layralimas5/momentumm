@@ -2,7 +2,13 @@ import type { Activity } from './activity'
 import { totalMinutes } from './activity'
 import type { CapacityProfile } from './checkin'
 import { addDays, dayRange, type DayKey } from './day'
-import { countsAsDone, isScheduledOn, type Habit, type HabitLog } from './habit'
+import {
+  countsAsDone,
+  isScheduledOn,
+  scheduledCountBetween,
+  type Habit,
+  type HabitLog,
+} from './habit'
 import type { Task } from './task'
 
 /**
@@ -38,12 +44,40 @@ export const MOMENTUM_LEVEL_LABELS: Readonly<Record<MomentumLevel, string>> = {
 /** Minutos diários a partir dos quais o volume deixa de somar pontos. */
 const VOLUME_CEILING_MIN = 90
 
-const WEIGHTS = {
-  consistency: 0.4,
-  habits: 0.25,
-  priorities: 0.2,
-  volume: 0.15,
-} as const
+/**
+ * Os pesos do score, em um lugar só e somando 1.
+ *
+ * Ficam exportados de propósito: a calibragem certa desses números só aparece
+ * com uso real, e mexer neles não pode exigir caçar constantes espalhadas pelo
+ * arquivo. Qualquer ajuste futuro acontece aqui e o resto continua valendo.
+ *
+ * `recovery` é o fator que o produto não pode não ter: quem volta depois de
+ * uma semana parada precisa ver o número subir na primeira ação, senão o score
+ * vira mais um motivo pra não voltar.
+ */
+export interface MomentumWeights {
+  readonly consistency: number
+  readonly habits: number
+  readonly priorities: number
+  readonly volume: number
+  readonly recovery: number
+}
+
+export const DEFAULT_MOMENTUM_WEIGHTS: MomentumWeights = {
+  consistency: 0.35,
+  habits: 0.22,
+  priorities: 0.18,
+  volume: 0.1,
+  recovery: 0.15,
+}
+
+export const MOMENTUM_PART_LABELS: Readonly<Record<keyof MomentumWeights, string>> = {
+  consistency: 'Constância',
+  habits: 'Hábitos',
+  priorities: 'Ações',
+  volume: 'Volume',
+  recovery: 'Retomada',
+}
 
 export interface MomentumInput {
   readonly activities: readonly Activity[]
@@ -53,12 +87,7 @@ export interface MomentumInput {
   readonly today: DayKey
 }
 
-export interface MomentumParts {
-  readonly consistency: number
-  readonly habits: number
-  readonly priorities: number
-  readonly volume: number
-}
+export type MomentumParts = Readonly<Record<keyof MomentumWeights, number>>
 
 export interface MomentumScore {
   /** 0 a 100. */
@@ -72,10 +101,13 @@ export interface MomentumScore {
   readonly explanation: string
 }
 
-export function calculateMomentum(input: MomentumInput): MomentumScore {
-  const current = windowScore(input, input.today)
+export function calculateMomentum(
+  input: MomentumInput,
+  weights: MomentumWeights = DEFAULT_MOMENTUM_WEIGHTS,
+): MomentumScore {
+  const current = windowScore(input, input.today, weights)
   const previousEnd = addDays(input.today, -MOMENTUM_WINDOW_DAYS)
-  const previous = windowScore(input, previousEnd)
+  const previous = windowScore(input, previousEnd, weights)
 
   const value = Math.round(current.value)
   const delta = value - Math.round(previous.value)
@@ -97,9 +129,12 @@ interface WindowScore {
   readonly parts: MomentumParts
 }
 
-function windowScore(input: MomentumInput, end: DayKey): WindowScore {
+function windowScore(
+  input: MomentumInput,
+  end: DayKey,
+  weights: MomentumWeights,
+): WindowScore {
   const start = addDays(end, -(MOMENTUM_WINDOW_DAYS - 1))
-  const days = dayRange(start, end)
 
   const inWindow = <T extends { readonly day: DayKey }>(items: readonly T[]): T[] =>
     items.filter((item) => item.day >= start && item.day <= end)
@@ -111,31 +146,83 @@ function windowScore(input: MomentumInput, end: DayKey): WindowScore {
   const activeDays = new Set(activities.map((activity) => activity.day)).size
   const consistency = activeDays / MOMENTUM_WINDOW_DAYS
 
-  const scheduled = days.reduce(
-    (total, day) =>
-      total + input.habits.filter((habit) => isScheduledOn(habit, day)).length,
+  const scheduled = input.habits.reduce(
+    (total, habit) => total + scheduledCountBetween(habit, start, end),
     0,
   )
   const habitsDone = logs.filter((log) => countsAsDone(log.status)).length
   const habits = scheduled === 0 ? consistency : Math.min(1, habitsDone / scheduled)
 
-  const plannedTasks = tasks.length
-  const doneTasks = tasks.filter((task) => task.status === 'feita').length
-  const priorities = plannedTasks === 0 ? consistency : Math.min(1, doneTasks / plannedTasks)
+  // Cancelada sai da conta: largar uma ação conscientemente não é o mesmo que
+  // deixá-la pendente, e punir a decisão empurra a pessoa a mentir pro app.
+  const counted = tasks.filter((task) => task.status !== 'cancelada')
+  const doneTasks = counted.filter((task) => task.status === 'feita').length
+  const priorities = counted.length === 0 ? consistency : Math.min(1, doneTasks / counted.length)
 
   const ceiling = VOLUME_CEILING_MIN * MOMENTUM_WINDOW_DAYS
   const volume = Math.min(1, totalMinutes(activities) / ceiling)
 
-  const parts: MomentumParts = { consistency, habits, priorities, volume }
+  const recovery = recoveryScore(input, start, end, consistency)
+
+  const parts: MomentumParts = { consistency, habits, priorities, volume, recovery }
 
   const value =
-    (consistency * WEIGHTS.consistency +
-      habits * WEIGHTS.habits +
-      priorities * WEIGHTS.priorities +
-      volume * WEIGHTS.volume) *
+    (consistency * weights.consistency +
+      habits * weights.habits +
+      priorities * weights.priorities +
+      volume * weights.volume +
+      recovery * weights.recovery) *
     100
 
   return { value, activeDays, parts }
+}
+
+/** Dias parados a partir dos quais voltar conta como retomada de verdade. */
+const GAP_FOR_RECOVERY = 2
+
+/**
+ * Retomada: o quanto a pessoa consegue voltar depois de parar.
+ *
+ * A conta olha cada intervalo sem registro dentro da janela e mede se ele foi
+ * fechado. Quem nunca parou recebe a nota da própria constância — não faz
+ * sentido penalizar quem não precisou se recuperar de nada. Quem parou e voltou
+ * recebe nota cheia, e é essa a regra que impede um único dia perdido de
+ * derrubar o score: o dia seguinte devolve o ponto.
+ */
+function recoveryScore(
+  input: MomentumInput,
+  start: DayKey,
+  end: DayKey,
+  consistency: number,
+): number {
+  const moved = new Set<DayKey>()
+  for (const activity of input.activities) moved.add(activity.day)
+  for (const log of input.habitLogs) if (countsAsDone(log.status)) moved.add(log.day)
+  for (const task of input.tasks) if (task.status === 'feita') moved.add(task.day)
+
+  const days = dayRange(start, end)
+
+  let gaps = 0
+  let closed = 0
+  let running = 0
+
+  for (const day of days) {
+    if (moved.has(day)) {
+      if (running >= GAP_FOR_RECOVERY) {
+        gaps += 1
+        closed += 1
+      }
+      running = 0
+      continue
+    }
+    running += 1
+  }
+
+  // Buraco ainda aberto no fim da janela: conta como pausa não retomada.
+  if (running >= GAP_FOR_RECOVERY) gaps += 1
+
+  if (gaps === 0) return consistency
+  return closed / gaps
 }
 
 function levelOf(value: number, delta: number, activeDays: number): MomentumLevel {
@@ -198,6 +285,47 @@ export function recommendationFor(score: MomentumScore, capacity: CapacityProfil
     case 'desacelerando':
       return 'Escolhe uma ação só e faz ela pequena. Voltar é mais importante que acertar o tamanho.'
   }
+}
+
+export interface MomentumFactor {
+  readonly key: keyof MomentumWeights
+  readonly label: string
+  /** 0 a 1: quanto desse fator a pessoa cumpriu. */
+  readonly value: number
+  /** Pontos que esse fator entregou dos 100. */
+  readonly points: number
+  /** Máximo que ele poderia entregar. */
+  readonly maxPoints: number
+}
+
+/**
+ * O score aberto em fatores. Existe pro número não ser um oráculo: a pessoa
+ * precisa ver de onde vieram os pontos pra saber o que mexer amanhã.
+ */
+export function momentumFactors(
+  score: MomentumScore,
+  weights: MomentumWeights = DEFAULT_MOMENTUM_WEIGHTS,
+): MomentumFactor[] {
+  return (Object.keys(weights) as (keyof MomentumWeights)[]).map((key) => ({
+    key,
+    label: MOMENTUM_PART_LABELS[key],
+    value: score.parts[key],
+    points: Math.round(score.parts[key] * weights[key] * 100),
+    maxPoints: Math.round(weights[key] * 100),
+  }))
+}
+
+/** O fator que mais deixou pontos na mesa. É o que vira sugestão de ajuste. */
+export function weakestFactor(
+  score: MomentumScore,
+  weights: MomentumWeights = DEFAULT_MOMENTUM_WEIGHTS,
+): MomentumFactor | null {
+  const gaps = momentumFactors(score, weights)
+    .map((factor) => ({ factor, gap: factor.maxPoints - factor.points }))
+    .sort((a, b) => b.gap - a.gap)
+
+  const worst = gaps[0]
+  return worst && worst.gap > 0 ? worst.factor : null
 }
 
 export interface DayDot {

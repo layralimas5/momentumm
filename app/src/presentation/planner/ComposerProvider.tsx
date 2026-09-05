@@ -1,4 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
+import type { DayKey } from '@/domain/entities/day'
+import type { Habit } from '@/domain/entities/habit'
+import { isRunning } from '@/domain/entities/objective'
 import type { Task } from '@/domain/entities/task'
 import {
   Composer,
@@ -12,7 +15,10 @@ import { usePlanner } from './use-planner'
 
 interface OpenOptions {
   readonly editing?: Task | null
+  readonly editingHabit?: Habit | null
   readonly presetGoalId?: string | null
+  readonly presetObjectiveId?: string | null
+  readonly presetDay?: DayKey | null
 }
 
 /**
@@ -40,7 +46,10 @@ export function ComposerProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)
   const [objectiveOpen, setObjectiveOpen] = useState(false)
   const [editing, setEditing] = useState<Task | null>(null)
+  const [editingHabit, setEditingHabit] = useState<Habit | null>(null)
   const [presetGoalId, setPresetGoalId] = useState<string | null>(null)
+  const [presetObjectiveId, setPresetObjectiveId] = useState<string | null>(null)
+  const [presetDay, setPresetDay] = useState<DayKey | null>(null)
 
   const controls = useMemo<ComposerControls>(
     () => ({
@@ -51,7 +60,10 @@ export function ComposerProvider({ children }: { children: ReactNode }) {
         }
         setKind(nextKind)
         setEditing(options?.editing ?? null)
+        setEditingHabit(options?.editingHabit ?? null)
         setPresetGoalId(options?.presetGoalId ?? null)
+        setPresetObjectiveId(options?.presetObjectiveId ?? null)
+        setPresetDay(options?.presetDay ?? null)
         setOpen(true)
       },
       close() {
@@ -74,7 +86,11 @@ export function ComposerProvider({ children }: { children: ReactNode }) {
   )
 
   const submitHabit = useCallback(
-    async (draft: HabitDraft) => {
+    async (draft: HabitDraft, editingId: string | null) => {
+      if (editingId) {
+        await planner.updateHabit(editingId, draft)
+        return
+      }
       await planner.createHabit(draft)
     },
     [planner],
@@ -87,6 +103,10 @@ export function ComposerProvider({ children }: { children: ReactNode }) {
     [planner],
   )
 
+  // Só objetivo em andamento entra no seletor. Pendurar uma ação nova num
+  // objetivo pausado ou concluído cria trabalho que não vai aparecer no dia.
+  const linkable = planner.objectives.filter(isRunning)
+
   return (
     <ComposerContext.Provider value={controls}>
       {children}
@@ -96,8 +116,12 @@ export function ComposerProvider({ children }: { children: ReactNode }) {
         axes={planner.axes}
         today={planner.today}
         goals={planner.goals}
+        objectives={linkable}
         editing={editing}
+        editingHabit={editingHabit}
         presetGoalId={presetGoalId}
+        presetObjectiveId={presetObjectiveId}
+        presetDay={presetDay}
         onClose={controls.close}
         onSubmitTask={submitTask}
         onSubmitHabit={submitHabit}

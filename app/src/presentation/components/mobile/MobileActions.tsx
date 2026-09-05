@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { activityType } from '@/domain/entities/activity-type'
 import type { DayKey } from '@/domain/entities/day'
 import type { Goal } from '@/domain/entities/goal'
+import type { Objective } from '@/domain/entities/objective'
 import { isPending, type Task } from '@/domain/entities/task'
 import { Button } from '@/presentation/components/ui/Button'
 import { BottomSheet, SheetAction } from '@/presentation/components/ui/BottomSheet'
@@ -17,6 +18,7 @@ const VISIBLE_LIMIT = 3
 interface MobileActionsProps {
   readonly tasks: readonly Task[]
   readonly goals: readonly Goal[]
+  readonly objectives: readonly Objective[]
   readonly today: DayKey
   readonly excludeId?: string | undefined
   readonly onComplete: (task: Task) => Promise<void>
@@ -31,6 +33,7 @@ interface MobileActionsProps {
 export function MobileActions({
   tasks,
   goals,
+  objectives,
   today,
   excludeId,
   onComplete,
@@ -76,6 +79,7 @@ export function MobileActions({
                   key={task.id}
                   task={task}
                   goal={goals.find((goal) => goal.id === task.goalId) ?? null}
+                  objective={objectives.find((item) => item.id === task.objectiveId)}
                   today={today}
                   first={index === 0}
                   onComplete={() => {
@@ -170,6 +174,7 @@ const SWIPE_THRESHOLD = 88
 function ActionRow({
   task,
   goal,
+  objective,
   today,
   first,
   onComplete,
@@ -178,6 +183,7 @@ function ActionRow({
 }: {
   task: Task
   goal: Goal | null
+  objective: Objective | undefined
   today: DayKey
   first: boolean
   onComplete: () => void
@@ -273,10 +279,14 @@ function ActionRow({
           <span className="mt-0.5 flex items-center gap-1.5 text-sm text-ink-faint">
             <span className="shrink-0">{task.estimatedMin} min</span>
             <span aria-hidden="true">·</span>
+            {/* O objetivo ganha da meta quando existe: é ele que responde
+                "pra que serve", e a meta é só um ritmo. */}
             <span className="truncate" style={axis ? { color: axis.colorToken } : undefined}>
-              {goal
-                ? `Meta de ${activityType(goal.type).label}`
-                : (axis?.label ?? 'Sem meta')}
+              {objective
+                ? objective.title
+                : goal
+                  ? `Meta de ${activityType(goal.type).label}`
+                  : (axis?.label ?? 'Sem meta')}
             </span>
             {overdue ? <span className="shrink-0 text-flame">· atrasada</span> : null}
           </span>

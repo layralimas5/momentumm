@@ -1,6 +1,8 @@
 import { activityType } from '@/domain/entities/activity-type'
 import type { CapacityProfile } from '@/domain/entities/checkin'
 import type { Goal } from '@/domain/entities/goal'
+import type { Objective } from '@/domain/entities/objective'
+import { ObjectiveLink } from '@/presentation/components/shared/Meta'
 import { TASK_EFFORT_LABELS, type Task } from '@/domain/entities/task'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
@@ -11,6 +13,7 @@ import { cn } from '@/shared/lib/cn'
 interface PriorityCardProps {
   readonly task: Task | null
   readonly goal: Goal | null
+  readonly objective: Objective | undefined
   readonly capacity: CapacityProfile
   /** Dia fechado: o card para de pedir ação em vez de insistir. */
   readonly dayComplete: boolean
@@ -31,6 +34,7 @@ interface PriorityCardProps {
 export function PriorityCard({
   task,
   goal,
+  objective,
   capacity,
   dayComplete,
   onStartFocus,
@@ -110,6 +114,10 @@ export function PriorityCard({
               <p className="mt-3 max-w-3xl text-2xl font-semibold tracking-tight text-balance text-ink lg:text-3xl">
                 {task.title}
               </p>
+
+              {/* O destino por trás da prioridade. A ação mais importante do dia
+                  é justamente a que mais precisa dizer pra onde está levando. */}
+              <ObjectiveLink objective={objective} className="mt-2" />
 
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 {axis ? <Tag color={axis.colorToken}>{axis.label}</Tag> : null}

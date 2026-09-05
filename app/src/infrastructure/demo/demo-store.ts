@@ -22,9 +22,16 @@ import {
 import type { PlanTier } from '@/domain/entities/plan'
 import type { Profile } from '@/domain/entities/profile'
 import { createTask, type NewTaskInput, type Task } from '@/domain/entities/task'
+import {
+  applyDraft,
+  emptyReview,
+  type WeeklyReview,
+  type WeeklyReviewDraft,
+} from '@/domain/entities/weekly-review'
 import { createWin, type NewWinInput, type Win } from '@/domain/entities/win'
+import type { HabitUpdate } from '@/domain/repositories/habit-repository'
 import type { ObjectiveUpdate } from '@/domain/repositories/objective-repository'
-import type { TaskUpdate } from '@/domain/repositories/task-repository'
+import type { TaskReorder, TaskUpdate } from '@/domain/repositories/task-repository'
 import { DomainError } from '@/shared/errors'
 
 /**
@@ -32,7 +39,7 @@ import { DomainError } from '@/shared/errors'
  * `localStorage`. A versão do storage sobe junto com o formato — dado antigo
  * é descartado em silêncio em vez de quebrar a tela.
  */
-const STORAGE_KEY = 'momentumm.demo.v4'
+const STORAGE_KEY = 'momentumm.demo.v5'
 
 export const DEMO_USER = {
   id: 'demo-user',
@@ -50,6 +57,7 @@ interface DemoState {
   tasks: Task[]
   checkIns: CheckIn[]
   wins: Win[]
+  weeklyReviews: WeeklyReview[]
 }
 
 let state: DemoState | null = null
@@ -97,6 +105,10 @@ function seed(): DemoState {
     ),
   )
 
+  // Três objetivos em estados diferentes de propósito: um em andamento, um
+  // recém-criado sem progresso e um pausado. É o que mostra na demo que pausar
+  // não é apagar — que é justamente a decisão de produto mais fácil de perder
+  // de vista quando a tela só tem exemplos que deram certo.
   const objectives = [
     createObjective(
       {
@@ -104,6 +116,8 @@ function seed(): DemoState {
         title: 'Ler 6 livros até o fim do trimestre',
         axis: 'leitura',
         motive: 'Quero voltar a terminar o que começo.',
+        description: 'Seis livros, sem contar releitura. Vale audiolivro se eu anotar.',
+        priority: 'alta',
         target: 1800,
         startedOn: addDays(today, -30),
         deadline: addDays(today, 60),
@@ -111,6 +125,37 @@ function seed(): DemoState {
       'demo-objective-1',
       dateAt(addDays(today, -30), 8),
     ),
+    createObjective(
+      {
+        userId: DEMO_USER.id,
+        title: 'Terminar o curso de arquitetura',
+        axis: 'estudo',
+        motive: 'Trava minha promoção.',
+        priority: 'media',
+        target: 1200,
+        startedOn: addDays(today, -20),
+        deadline: addDays(today, 70),
+      },
+      'demo-objective-2',
+      dateAt(addDays(today, -20), 8),
+    ),
+    {
+      ...createObjective(
+        {
+          userId: DEMO_USER.id,
+          title: 'Correr 10 km sem parar',
+          axis: 'treino',
+          motive: 'Voltar ao ritmo de antes da lesão.',
+          priority: 'baixa',
+          target: 900,
+          startedOn: addDays(today, -40),
+          deadline: addDays(today, 50),
+        },
+        'demo-objective-3',
+        dateAt(addDays(today, -40), 8),
+      ),
+      pausedAt: dateAt(addDays(today, -6), 9),
+    },
   ]
 
   const goals = [
@@ -130,9 +175,13 @@ function seed(): DemoState {
       {
         userId: DEMO_USER.id,
         name: 'Ler antes de dormir',
+        description: 'Vinte páginas, sem celular na mesa de cabeceira.',
         icon: 'livro',
         axis: 'leitura',
+        objectiveId: 'demo-objective-1',
+        priority: 'alta',
         dayPart: 'noite',
+        timeOfDay: '22:00',
         target: 20,
         minimalTarget: 5,
       },
@@ -158,8 +207,12 @@ function seed(): DemoState {
         name: 'Treinar',
         icon: 'halter',
         axis: 'treino',
+        priority: 'media',
+        // Cota semanal em vez de dias fixos: é o hábito que mais muda de dia
+        // na vida real, e é ele que mostra a diferença das duas frequências.
+        frequency: 'vezes-semana',
+        timesPerWeek: 3,
         dayPart: 'tarde',
-        weekdays: [1, 3, 5],
         target: 45,
         minimalTarget: 10,
       },
@@ -192,11 +245,14 @@ function seed(): DemoState {
         userId: DEMO_USER.id,
         title: 'Treinar 45 minutos',
         goalId: 'demo-goal-2',
+        objectiveId: 'demo-objective-3',
         axis: 'treino',
         estimatedMin: 45,
         effort: 'pesado',
+        priority: 'alta',
         minimalVersion: 'Fazer 10 minutos de movimento',
         day: today,
+        timeOfDay: '18:30',
         isMainPriority: true,
       },
       'demo-task-1',
@@ -206,11 +262,14 @@ function seed(): DemoState {
         userId: DEMO_USER.id,
         title: 'Ler o capítulo 4',
         goalId: 'demo-goal-1',
+        objectiveId: 'demo-objective-1',
         axis: 'leitura',
         estimatedMin: 25,
         effort: 'leve',
+        priority: 'alta',
         minimalVersion: 'Ler 3 páginas',
         day: today,
+        order: 0,
       },
       'demo-task-2',
     ),
@@ -219,13 +278,45 @@ function seed(): DemoState {
         userId: DEMO_USER.id,
         title: 'Revisar o módulo de arquitetura',
         goalId: 'demo-goal-3',
+        objectiveId: 'demo-objective-2',
         axis: 'estudo',
         estimatedMin: 60,
         effort: 'medio',
         minimalVersion: 'Reler as anotações do módulo',
         day: addDays(today, 2),
+        order: 0,
       },
       'demo-task-3',
+    ),
+    createTask(
+      {
+        userId: DEMO_USER.id,
+        title: 'Fazer o exercício final do módulo',
+        objectiveId: 'demo-objective-2',
+        axis: 'estudo',
+        estimatedMin: 45,
+        effort: 'pesado',
+        day: addDays(today, 4),
+        order: 1,
+        // Depende da revisão: é o caso que faz a tela do plano mostrar
+        // uma ação travada em vez de esconder o tamanho real do caminho.
+        dependsOnId: 'demo-task-3',
+      },
+      'demo-task-4',
+    ),
+    createTask(
+      {
+        userId: DEMO_USER.id,
+        title: 'Escolher o próximo livro',
+        objectiveId: 'demo-objective-1',
+        axis: 'leitura',
+        estimatedMin: 10,
+        effort: 'leve',
+        priority: 'baixa',
+        day: addDays(today, -2),
+        order: 1,
+      },
+      'demo-task-5',
     ),
   ]
 
@@ -256,7 +347,19 @@ function seed(): DemoState {
     ),
   ]
 
-  return { profile, customAxes: [], activities, objectives, goals, habits, habitLogs, tasks, checkIns, wins }
+  return {
+    profile,
+    customAxes: [],
+    activities,
+    objectives,
+    goals,
+    habits,
+    habitLogs,
+    tasks,
+    checkIns,
+    wins,
+    weeklyReviews: [],
+  }
 }
 
 interface StoredState {
@@ -276,6 +379,13 @@ interface StoredState {
   tasks: Array<Omit<Task, 'createdAt' | 'completedAt'> & { createdAt: string; completedAt: string | null }>
   checkIns: Array<Omit<CheckIn, 'createdAt'> & { createdAt: string }>
   wins: Array<Omit<Win, 'createdAt'> & { createdAt: string }>
+  weeklyReviews?: Array<
+    Omit<WeeklyReview, 'createdAt' | 'updatedAt' | 'completedAt'> & {
+      createdAt: string
+      updatedAt: string
+      completedAt: string | null
+    }
+  >
 }
 
 function revive(raw: string): DemoState {
@@ -322,6 +432,12 @@ function revive(raw: string): DemoState {
       createdAt: new Date(item.createdAt),
     })),
     wins: (parsed.wins ?? []).map((item) => ({ ...item, createdAt: new Date(item.createdAt) })),
+    weeklyReviews: (parsed.weeklyReviews ?? []).map((item) => ({
+      ...item,
+      createdAt: new Date(item.createdAt),
+      updatedAt: new Date(item.updatedAt),
+      completedAt: item.completedAt ? new Date(item.completedAt) : null,
+    })),
   }
 }
 
@@ -471,6 +587,17 @@ export const demoStore = {
     return habit
   },
 
+  updateHabit(id: string, changes: HabitUpdate): Habit {
+    const current = load()
+    const found = current.habits.find((habit) => habit.id === id)
+    if (!found) throw new DomainError('Esse hábito não existe mais.')
+
+    const updated: Habit = { ...found, ...changes }
+    current.habits = current.habits.map((habit) => (habit.id === id ? updated : habit))
+    persist()
+    return updated
+  },
+
   archiveHabit(id: string): void {
     const current = load()
     current.habits = current.habits.map((habit) =>
@@ -557,10 +684,41 @@ export const demoStore = {
     return updated
   },
 
+  reorderTasks(items: readonly TaskReorder[]): void {
+    const current = load()
+    const order = new Map(items.map((item) => [item.id, item.order]))
+    current.tasks = current.tasks.map((task) =>
+      order.has(task.id) ? { ...task, order: order.get(task.id) ?? task.order } : task,
+    )
+    persist()
+  },
+
   removeTask(id: string): void {
     const current = load()
-    current.tasks = current.tasks.filter((task) => task.id !== id)
+    // A dependência morre junto: manter o vínculo com uma ação apagada travaria
+    // a próxima pra sempre, sem nada na tela explicando o porquê.
+    current.tasks = current.tasks
+      .filter((task) => task.id !== id)
+      .map((task) => (task.dependsOnId === id ? { ...task, dependsOnId: null } : task))
     persist()
+  },
+
+  weeklyReviews(): WeeklyReview[] {
+    return [...load().weeklyReviews]
+  },
+
+  saveWeeklyReview(weekStart: DayKey, draft: WeeklyReviewDraft): WeeklyReview {
+    const current = load()
+    const existing = current.weeklyReviews.find((item) => item.weekStart === weekStart)
+    const base = existing ?? emptyReview(DEMO_USER.id, weekStart, newId())
+    const review = applyDraft(base, draft)
+
+    current.weeklyReviews = existing
+      ? current.weeklyReviews.map((item) => (item.weekStart === weekStart ? review : item))
+      : [...current.weeklyReviews, review]
+
+    persist()
+    return review
   },
 
   checkIns(): CheckIn[] {
@@ -611,6 +769,7 @@ export const demoStore = {
       tasks: [],
       checkIns: [],
       wins: [],
+      weeklyReviews: [],
     }
     persist()
   },

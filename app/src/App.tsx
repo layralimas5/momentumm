@@ -36,6 +36,23 @@ const GoalsPage = lazy(() =>
 const ProfilePage = lazy(() =>
   import('@/presentation/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })),
 )
+const ObjectivesPage = lazy(() =>
+  import('@/presentation/pages/ObjectivesPage').then((m) => ({ default: m.ObjectivesPage })),
+)
+const ObjectiveDetailPage = lazy(() =>
+  import('@/presentation/pages/ObjectiveDetailPage').then((m) => ({
+    default: m.ObjectiveDetailPage,
+  })),
+)
+const PlanPage = lazy(() =>
+  import('@/presentation/pages/PlanPage').then((m) => ({ default: m.PlanPage })),
+)
+const ProgressPage = lazy(() =>
+  import('@/presentation/pages/ProgressPage').then((m) => ({ default: m.ProgressPage })),
+)
+const AiPage = lazy(() =>
+  import('@/presentation/pages/AiPage').then((m) => ({ default: m.AiPage })),
+)
 
 export function App() {
   return (
@@ -57,11 +74,17 @@ export function App() {
               }
             >
               <Route index element={<DashboardPage />} />
-              <Route path="jornada" element={<ActivitiesPage />} />
+              <Route path="objetivos" element={<ObjectivesPage />} />
+              <Route path="objetivos/:id" element={<ObjectiveDetailPage />} />
               <Route path="habitos" element={<HabitsPage />} />
+              <Route path="plano" element={<PlanPage />} />
+              <Route path="progresso" element={<ProgressPage />} />
+              <Route path="review" element={<ReviewPage />} />
+              <Route path="ia" element={<AiPage />} />
+
+              <Route path="jornada" element={<ActivitiesPage />} />
               <Route path="metas" element={<GoalsPage />} />
               <Route path="foco" element={<FocusPage />} />
-              <Route path="review" element={<ReviewPage />} />
               <Route path="insights" element={<InsightsPage />} />
               <Route path="configuracoes" element={<ProfilePage />} />
 

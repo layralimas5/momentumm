@@ -1,6 +1,7 @@
 import { DomainError } from '@/shared/errors'
 import type { ActivityTypeSlug } from './activity-type'
 import { addDays, daysBetween, startOfWeek, type DayKey } from './day'
+import { comparePriority, type Priority } from './priority'
 
 /**
  * Ação: o degrau entre a meta e o movimento. Meta sem ação é intenção; por isso
@@ -20,10 +21,30 @@ export const TASK_EFFORT_LABELS: Readonly<Record<TaskEffort, string>> = {
   pesado: 'Esforço alto',
 }
 
-export const TASK_STATUSES = ['pendente', 'feita', 'adiada'] as const
+/**
+ * Estados da ação.
+ *
+ * `em-andamento` existe pro cronômetro ter onde marcar que a ação começou —
+ * sem ele, sair no meio de uma sessão de foco deixa a ação indistinguível de
+ * uma nunca tocada. `cancelada` é diferente de excluída: a decisão de largar
+ * uma ação é informação, e é ela que a review usa pra perguntar o porquê.
+ */
+export const TASK_STATUSES = ['pendente', 'em-andamento', 'feita', 'adiada', 'cancelada'] as const
 export type TaskStatus = (typeof TASK_STATUSES)[number]
 
+export const TASK_STATUS_LABELS: Readonly<Record<TaskStatus, string>> = {
+  pendente: 'Pendente',
+  'em-andamento': 'Em andamento',
+  feita: 'Concluída',
+  adiada: 'Adiada',
+  cancelada: 'Cancelada',
+}
+
+/** Estados que ainda esperam movimento. Cancelada e feita saíram da fila. */
+export const OPEN_TASK_STATUSES: readonly TaskStatus[] = ['pendente', 'em-andamento', 'adiada']
+
 export const MAX_TASK_TITLE = 90
+export const MAX_TASK_DESCRIPTION = 400
 export const MAX_MINIMAL_VERSION = 90
 export const MAX_ESTIMATED_MIN = 8 * 60
 
@@ -31,15 +52,28 @@ export interface Task {
   readonly id: string
   readonly userId: string
   readonly title: string
+  readonly description: string | null
   /** Meta que essa ação empurra. Null quando é uma ação solta do dia. */
   readonly goalId: string | null
+  /**
+   * Objetivo que essa ação empurra. É o vínculo que faz o `Hoje` responder
+   * "pra que serve isso" em vez de mostrar uma lista de tarefas soltas.
+   */
+  readonly objectiveId: string | null
   readonly axis: ActivityTypeSlug | null
   readonly estimatedMin: number
   readonly effort: TaskEffort
+  readonly priority: Priority
   /** O que fazer no lugar num dia ruim. É a saída em vez do abandono. */
   readonly minimalVersion: string | null
   /** Dia em que a ação está planejada. */
   readonly day: DayKey
+  /** Horário sugerido em `HH:MM`. Opcional. */
+  readonly timeOfDay: string | null
+  /** Posição dentro do plano do objetivo. Menor vem primeiro. */
+  readonly order: number
+  /** Ação que precisa sair antes dessa. Null quando não depende de nada. */
+  readonly dependsOnId: string | null
   /** Só uma ação por dia pode ser a principal. */
   readonly isMainPriority: boolean
   readonly status: TaskStatus
@@ -52,12 +86,20 @@ export interface NewTaskInput {
   readonly title: string
   readonly day: DayKey
   readonly goalId?: string | null
+  readonly objectiveId?: string | null
   readonly axis?: ActivityTypeSlug | null
   readonly estimatedMin?: number
   readonly effort?: TaskEffort
+  readonly priority?: Priority
   readonly minimalVersion?: string | null
   readonly isMainPriority?: boolean
+  readonly description?: string | null
+  readonly timeOfDay?: string | null
+  readonly order?: number
+  readonly dependsOnId?: string | null
 }
+
+const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/
 
 export function createTask(input: NewTaskInput, id: string, now = new Date()): Task {
   const title = input.title.trim()
@@ -73,18 +115,34 @@ export function createTask(input: NewTaskInput, id: string, now = new Date()): T
     throw new DomainError(`A versão mínima pode ter no máximo ${MAX_MINIMAL_VERSION} caracteres.`)
   }
 
+  const description = input.description?.trim() || null
+  if (description && description.length > MAX_TASK_DESCRIPTION) {
+    throw new DomainError(`A descrição pode ter no máximo ${MAX_TASK_DESCRIPTION} caracteres.`)
+  }
+
+  const timeOfDay = input.timeOfDay?.trim() || null
+  if (timeOfDay && !TIME_PATTERN.test(timeOfDay)) {
+    throw new DomainError('O horário precisa estar no formato HH:MM.')
+  }
+
   const estimatedMin = normalizeEstimate(input.estimatedMin ?? 25)
 
   return {
     id,
     userId: input.userId,
     title,
+    description,
     goalId: input.goalId ?? null,
+    objectiveId: input.objectiveId ?? null,
     axis: input.axis ?? null,
     estimatedMin,
     effort: input.effort ?? 'medio',
+    priority: input.priority ?? 'media',
     minimalVersion,
     day: input.day,
+    timeOfDay,
+    order: input.order ?? 0,
+    dependsOnId: input.dependsOnId ?? null,
     isMainPriority: input.isMainPriority ?? false,
     status: 'pendente',
     completedAt: null,
@@ -103,8 +161,73 @@ function normalizeEstimate(value: number): number {
   return rounded
 }
 
+/**
+ * Ação que ainda espera ser feita hoje. Uma ação em andamento continua
+ * pendente: começar não é terminar, e ela precisa seguir na tela.
+ */
 export function isPending(task: Task): boolean {
-  return task.status === 'pendente'
+  return task.status === 'pendente' || task.status === 'em-andamento'
+}
+
+export function isDone(task: Task): boolean {
+  return task.status === 'feita'
+}
+
+export function isCancelled(task: Task): boolean {
+  return task.status === 'cancelada'
+}
+
+/**
+ * A ação está travada por outra que ainda não saiu?
+ *
+ * Dependência não some da lista, aparece travada. Esconder a ação faria o plano
+ * mentir sobre o tamanho: a pessoa acharia que a semana tem três passos quando
+ * tem seis.
+ */
+export function isBlocked(task: Task, all: readonly Task[]): boolean {
+  if (!task.dependsOnId) return false
+  const parent = all.find((item) => item.id === task.dependsOnId)
+  if (!parent) return false
+  return parent.status !== 'feita' && parent.status !== 'cancelada'
+}
+
+export function startTask(task: Task): Task {
+  return { ...task, status: 'em-andamento' }
+}
+
+export function cancelTask(task: Task): Task {
+  return { ...task, status: 'cancelada', isMainPriority: false, completedAt: null }
+}
+
+/** Ordena pelo que o plano manda: ordem definida, depois prioridade, depois dia. */
+export function byPlanOrder(a: Task, b: Task): number {
+  if (a.order !== b.order) return a.order - b.order
+  const priority = comparePriority(a.priority, b.priority)
+  if (priority !== 0) return priority
+  return a.day < b.day ? -1 : a.day > b.day ? 1 : 0
+}
+
+/** Ordena o dia: prioridade principal na frente, depois prioridade e horário. */
+export function byDayOrder(a: Task, b: Task): number {
+  if (a.isMainPriority !== b.isMainPriority) return a.isMainPriority ? -1 : 1
+  const priority = comparePriority(a.priority, b.priority)
+  if (priority !== 0) return priority
+  if (a.timeOfDay && b.timeOfDay) return a.timeOfDay.localeCompare(b.timeOfDay)
+  if (a.timeOfDay) return -1
+  if (b.timeOfDay) return 1
+  return a.order - b.order
+}
+
+export function tasksOfObjective(tasks: readonly Task[], objectiveId: string): Task[] {
+  return tasks.filter((task) => task.objectiveId === objectiveId).sort(byPlanOrder)
+}
+
+/**
+ * Reordena a lista aplicando `order` sequencial. Usado depois de arrastar uma
+ * ação: a ordem visível e a guardada precisam ser a mesma coisa.
+ */
+export function resequence(tasks: readonly Task[]): { id: string; order: number }[] {
+  return tasks.map((task, index) => ({ id: task.id, order: index }))
 }
 
 export function tasksOfDay(tasks: readonly Task[], day: DayKey): Task[] {
@@ -162,6 +285,55 @@ export function groupPendingTasks(tasks: readonly Task[], today: DayKey): TaskGr
   ]
 
   return groups.filter((group) => group.tasks.length > 0)
+}
+
+export type PlanHorizonKey = 'atrasada' | 'hoje' | 'semana' | 'depois'
+
+export interface PlanHorizon {
+  readonly key: PlanHorizonKey
+  readonly label: string
+  readonly hint: string
+  readonly tasks: readonly Task[]
+}
+
+/**
+ * Os horizontes do plano. Diferente de `groupPendingTasks`, que serve ao dia e
+ * de propósito puxa o atrasado pra hoje: aqui o atraso aparece separado, porque
+ * a tela do plano existe justamente pra a pessoa decidir o que fazer com ele —
+ * refazer a data, encolher ou cancelar.
+ */
+export function planHorizons(tasks: readonly Task[], today: DayKey): PlanHorizon[] {
+  const weekEnd = addDays(startOfWeek(today), 6)
+  const open = tasks.filter(isPending).sort(byDayOrder)
+
+  const horizons: PlanHorizon[] = [
+    {
+      key: 'atrasada',
+      label: 'Atrasadas',
+      hint: 'Ficaram pra trás. Remarcar não é falhar.',
+      tasks: open.filter((task) => task.day < today),
+    },
+    {
+      key: 'hoje',
+      label: 'Hoje',
+      hint: 'O que está na mesa agora.',
+      tasks: open.filter((task) => task.day === today),
+    },
+    {
+      key: 'semana',
+      label: 'Esta semana',
+      hint: 'Já tem data e ainda não chegou.',
+      tasks: open.filter((task) => task.day > today && task.day <= weekEnd),
+    },
+    {
+      key: 'depois',
+      label: 'Mais pra frente',
+      hint: 'O resto do caminho.',
+      tasks: open.filter((task) => task.day > weekEnd),
+    },
+  ]
+
+  return horizons.filter((horizon) => horizon.tasks.length > 0)
 }
 
 export function completeTask(task: Task, now = new Date()): Task {

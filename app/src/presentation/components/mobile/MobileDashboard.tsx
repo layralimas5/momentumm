@@ -87,6 +87,9 @@ export function MobileDashboard({
         <MobilePriority
           task={view.mainPriority}
           goal={mainGoal}
+          objective={planner.objectives.find(
+            (item) => item.id === view.mainPriority?.objectiveId,
+          )}
           capacity={view.capacity}
           dayComplete={view.dayComplete}
           onStartFocus={onStartFocus}
@@ -109,6 +112,7 @@ export function MobileDashboard({
       <MobileActions
         tasks={planner.tasks}
         goals={planner.goals}
+        objectives={planner.objectives}
         today={planner.today}
         excludeId={view.mainPriority?.id}
         onComplete={onCompleteTask}

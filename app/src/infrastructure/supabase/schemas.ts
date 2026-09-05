@@ -9,6 +9,7 @@ import {
 } from '@/domain/entities/checkin'
 import {
   DAY_PARTS,
+  HABIT_FREQUENCIES,
   HABIT_ICONS,
   HABIT_STATUSES,
   type Habit,
@@ -21,7 +22,9 @@ import { parseDayKey } from '@/domain/entities/day'
 import { GOAL_PERIODS, type Goal } from '@/domain/entities/goal'
 import type { Objective } from '@/domain/entities/objective'
 import { PLAN_TIERS } from '@/domain/entities/plan'
+import { PRIORITIES } from '@/domain/entities/priority'
 import type { Profile } from '@/domain/entities/profile'
+import { REVIEW_STEPS, type WeeklyReview } from '@/domain/entities/weekly-review'
 import { ParseError } from '@/shared/errors'
 
 /**
@@ -65,6 +68,11 @@ const objectiveRowSchema = z.object({
   created_at: z.string(),
   completed_at: z.string().nullable(),
   archived_at: z.string().nullable(),
+  // Colunas do V1. `nullish` de propósito: um banco que ainda não rodou a
+  // migration 0005 devolve a linha sem elas, e a lista não pode quebrar por isso.
+  description: z.string().nullish(),
+  priority: z.enum(PRIORITIES).nullish(),
+  paused_at: z.string().nullish(),
 })
 
 const profileRowSchema = z.object({
@@ -133,12 +141,15 @@ export function toObjective(row: unknown): Objective {
     userId: parsed.user_id,
     title: parsed.title,
     axis: parsed.axis_slug,
+    description: parsed.description ?? null,
     motive: parsed.motive,
+    priority: parsed.priority ?? 'media',
     target: parsed.target,
     startedOn: parseDayKey(parsed.started_on.slice(0, 10)),
     deadline: parseDayKey(parsed.deadline.slice(0, 10)),
     createdAt: new Date(parsed.created_at),
     completedAt: parsed.completed_at ? new Date(parsed.completed_at) : null,
+    pausedAt: parsed.paused_at ? new Date(parsed.paused_at) : null,
     archivedAt: parsed.archived_at ? new Date(parsed.archived_at) : null,
   }
 }
@@ -201,6 +212,13 @@ const habitRowSchema = z.object({
   minimal_target: z.number().int(),
   created_at: z.string(),
   archived_at: z.string().nullable(),
+  description: z.string().nullish(),
+  objective_id: z.string().nullish(),
+  priority: z.enum(PRIORITIES).nullish(),
+  frequency: z.enum(HABIT_FREQUENCIES).nullish(),
+  time_of_day: z.string().nullish(),
+  times_per_week: z.number().int().min(1).max(7).nullish(),
+  paused_at: z.string().nullish(),
 })
 
 const habitLogRowSchema = z.object({
@@ -226,6 +244,12 @@ const taskRowSchema = z.object({
   status: z.enum(TASK_STATUSES),
   completed_at: z.string().nullable(),
   created_at: z.string(),
+  description: z.string().nullish(),
+  objective_id: z.string().nullish(),
+  priority: z.enum(PRIORITIES).nullish(),
+  time_of_day: z.string().nullish(),
+  sort_order: z.number().int().nullish(),
+  depends_on_id: z.string().nullish(),
 })
 
 const winRowSchema = z.object({
@@ -260,13 +284,23 @@ export function toHabit(row: unknown): Habit {
     id: parsed.id,
     userId: parsed.user_id,
     name: parsed.name,
+    description: parsed.description ?? null,
     icon: isHabitIcon(parsed.icon) ? parsed.icon : 'livro',
     axis: parsed.axis_slug,
+    objectiveId: parsed.objective_id ?? null,
+    priority: parsed.priority ?? 'media',
+    // Hábito criado antes da frequência existir: dias marcados viram
+    // "dias específicos", sem dias marcados vira diário. É a mesma inferência
+    // que `createHabit` faz, e as duas precisam concordar.
+    frequency: parsed.frequency ?? ((parsed.weekdays ?? []).length > 0 ? 'dias-semana' : 'diario'),
     dayPart: parsed.day_part,
+    timeOfDay: parsed.time_of_day ?? null,
     weekdays: parsed.weekdays ?? [],
+    timesPerWeek: parsed.times_per_week ?? 7,
     target: parsed.target,
     minimalTarget: parsed.minimal_target,
     createdAt: new Date(parsed.created_at),
+    pausedAt: parsed.paused_at ? new Date(parsed.paused_at) : null,
     archivedAt: parsed.archived_at ? new Date(parsed.archived_at) : null,
   }
 }
@@ -289,12 +323,18 @@ export function toTask(row: unknown): Task {
     id: parsed.id,
     userId: parsed.user_id,
     title: parsed.title,
+    description: parsed.description ?? null,
     goalId: parsed.goal_id,
+    objectiveId: parsed.objective_id ?? null,
     axis: parsed.axis_slug,
     estimatedMin: parsed.estimated_min,
     effort: parsed.effort,
+    priority: parsed.priority ?? 'media',
     minimalVersion: parsed.minimal_version,
     day: parseDayKey(parsed.day.slice(0, 10)),
+    timeOfDay: parsed.time_of_day ?? null,
+    order: parsed.sort_order ?? 0,
+    dependsOnId: parsed.depends_on_id ?? null,
     isMainPriority: parsed.is_main_priority,
     status: parsed.status,
     completedAt: parsed.completed_at ? new Date(parsed.completed_at) : null,
@@ -310,5 +350,40 @@ export function toWin(row: unknown): Win {
     day: parseDayKey(parsed.day.slice(0, 10)),
     text: parsed.text,
     createdAt: new Date(parsed.created_at),
+  }
+}
+
+const weeklyReviewRowSchema = z.object({
+  id: z.string(),
+  user_id: z.string(),
+  week_start: z.string(),
+  achievements: z.string().nullable(),
+  difficulties: z.string().nullable(),
+  learnings: z.string().nullable(),
+  adjustments: z.string().nullable(),
+  priorities: z.array(z.string()).nullable(),
+  ai_summary: z.string().nullable(),
+  last_step: z.enum(REVIEW_STEPS),
+  completed_at: z.string().nullable(),
+  created_at: z.string(),
+  updated_at: z.string(),
+})
+
+export function toWeeklyReview(row: unknown): WeeklyReview {
+  const parsed = parseOrThrow(weeklyReviewRowSchema, row, 'review da semana')
+  return {
+    id: parsed.id,
+    userId: parsed.user_id,
+    weekStart: parseDayKey(parsed.week_start.slice(0, 10)),
+    achievements: parsed.achievements,
+    difficulties: parsed.difficulties,
+    learnings: parsed.learnings,
+    adjustments: parsed.adjustments,
+    priorities: parsed.priorities ?? [],
+    aiSummary: parsed.ai_summary,
+    lastStep: parsed.last_step,
+    completedAt: parsed.completed_at ? new Date(parsed.completed_at) : null,
+    createdAt: new Date(parsed.created_at),
+    updatedAt: new Date(parsed.updated_at),
   }
 }

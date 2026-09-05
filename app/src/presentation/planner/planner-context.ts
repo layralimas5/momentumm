@@ -5,6 +5,7 @@ import type { CheckIn, NewCheckInInput } from '@/domain/entities/checkin'
 import type { DayKey } from '@/domain/entities/day'
 import type { Goal, GoalProgress, NewGoalInput } from '@/domain/entities/goal'
 import type { Habit, HabitLog, HabitStatus, NewHabitInput } from '@/domain/entities/habit'
+import type { WeeklyReview, WeeklyReviewDraft } from '@/domain/entities/weekly-review'
 import type {
   NewObjectiveInput,
   Objective,
@@ -15,8 +16,9 @@ import type { PlanDraft } from '@/domain/entities/plan-builder'
 import type { Streak } from '@/domain/entities/streak'
 import type { NewTaskInput, Task } from '@/domain/entities/task'
 import type { NewWinInput, Win } from '@/domain/entities/win'
+import type { HabitUpdate } from '@/domain/repositories/habit-repository'
 import type { ObjectiveUpdate } from '@/domain/repositories/objective-repository'
-import type { TaskUpdate } from '@/domain/repositories/task-repository'
+import type { TaskReorder, TaskUpdate } from '@/domain/repositories/task-repository'
 
 /**
  * Estado único do planejamento. Tudo que o dashboard mostra sai daqui, e é por
@@ -41,6 +43,7 @@ export interface PlannerState {
   readonly tasks: readonly Task[]
   readonly checkIns: readonly CheckIn[]
   readonly wins: readonly Win[]
+  readonly weeklyReviews: readonly WeeklyReview[]
   readonly streak: Streak
   readonly limits: PlanLimits
   readonly loading: boolean
@@ -59,6 +62,14 @@ export interface PlannerState {
   createObjective(input: Omit<NewObjectiveInput, 'userId'>): Promise<Objective | null>
   updateObjective(id: string, changes: ObjectiveUpdate): Promise<void>
   archiveObjective(id: string): Promise<void>
+  /** Pausa e retomada são o mesmo caminho: `true` para, `false` volta. */
+  setObjectivePaused(id: string, paused: boolean): Promise<void>
+  /**
+   * Concluir o objetivo. Fecha também as ações em aberto dele: deixar ação
+   * pendente de objetivo concluído entulha o plano com trabalho que ninguém
+   * vai fazer.
+   */
+  completeObjective(id: string, done: boolean): Promise<void>
   /**
    * O plano inteiro de uma vez: objetivo, ritmo semanal, hábitos e as
    * primeiras ações, pra cada objetivo da lista. É uma operação só porque
@@ -71,15 +82,20 @@ export interface PlannerState {
   archiveGoal(id: string): Promise<void>
 
   createHabit(input: Omit<NewHabitInput, 'userId'>): Promise<Habit | null>
+  updateHabit(id: string, changes: HabitUpdate): Promise<void>
+  setHabitPaused(id: string, paused: boolean): Promise<void>
   archiveHabit(id: string): Promise<void>
   setHabitStatus(habitId: string, status: HabitStatus, day?: DayKey): Promise<void>
 
   createTask(input: Omit<NewTaskInput, 'userId'>): Promise<Task | null>
   updateTask(id: string, changes: TaskUpdate): Promise<void>
+  reorderTasks(items: readonly TaskReorder[]): Promise<void>
   removeTask(id: string): Promise<void>
 
   saveCheckIn(input: Omit<NewCheckInInput, 'userId'>): Promise<void>
   saveWin(input: Omit<NewWinInput, 'userId'>): Promise<void>
+
+  saveWeeklyReview(weekStart: DayKey, draft: WeeklyReviewDraft): Promise<void>
 
   reload(): Promise<void>
 }
