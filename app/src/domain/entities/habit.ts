@@ -332,11 +332,20 @@ export function habitConsistency(
   from: DayKey,
   to: DayKey,
 ): HabitConsistency {
-  const expected = scheduledCountBetween(habit, from, to)
   const done = logs.filter(
     (log) =>
       log.habitId === habit.id && countsAsDone(log.status) && log.day >= from && log.day <= to,
   ).length
+
+  /*
+    O esperado nunca fica abaixo do que foi feito.
+
+    Sem isso, cumprir o hábito num dia fora da frequência — sábado num hábito de
+    segunda a sexta, ou o próprio dia em que ele foi criado — produz "1 de 0":
+    um número que não significa nada e uma taxa de 0% pra quem acabou de fazer.
+    Fazer além do combinado dá 100%, nunca mais que isso.
+  */
+  const expected = Math.max(scheduledCountBetween(habit, from, to), done)
 
   const recentFrom = addDays(to, -6)
   const recent = logs.filter(

@@ -235,7 +235,7 @@ function HabitCard({ habit }: { readonly habit: Habit }) {
 
       <p className="mt-1.5 text-xs text-ink-faint">
         {consistency.expected === 0
-          ? 'Sem histórico suficiente ainda.'
+          ? 'Hábito novo: a consistência começa a contar amanhã.'
           : `${Math.round(consistency.rate * 100)}% de consistência em ${HISTORY_DAYS} dias.`}
       </p>
 

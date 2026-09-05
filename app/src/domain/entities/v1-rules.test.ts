@@ -143,6 +143,23 @@ describe('habitConsistency', () => {
     expect(rate.rate).toBeGreaterThan(0.8)
   })
 
+  it('fazer em dia fora da frequência não vira "1 de 0"', () => {
+    // Hábito de segunda a sexta, cumprido num sábado.
+    const seg_sex = habit({ frequency: 'dias-semana', weekdays: [1, 2, 3, 4, 5] })
+    const sabado = parseDayKey('2026-09-12')
+    const rate = habitConsistency(seg_sex, [log('h1', sabado, 'l1')], sabado, sabado)
+
+    expect(rate.done).toBe(1)
+    expect(rate.expected).toBe(1)
+    expect(rate.rate).toBe(1)
+  })
+
+  it('fazer além do combinado não passa de 100%', () => {
+    const weekly = habit({ frequency: 'vezes-semana', timesPerWeek: 2 })
+    const logs = [1, 2, 3, 4].map((offset) => log('h1', addDays(TODAY, -offset), `l${offset}`))
+    expect(habitConsistency(weekly, logs, addDays(TODAY, -6), TODAY).rate).toBe(1)
+  })
+
   it('sem expectativa no período devolve zero em vez de dividir por zero', () => {
     const rate = habitConsistency(habit(), [], addDays(TODAY, -400), addDays(TODAY, -390))
     expect(rate.expected).toBe(0)
