@@ -15,7 +15,7 @@ from (
   from (values
     ('profiles'), ('follows'), ('activity_types'), ('activities'), ('goals'),
     ('check_ins'), ('habits'), ('habit_logs'), ('tasks'), ('wins'),
-    ('objectives'), ('weekly_reviews')
+    ('objectives'), ('weekly_reviews'), ('plan_stages')
   ) as t(nome)
 
   union all
@@ -35,7 +35,10 @@ from (
     ('habits', 'paused_at'), ('habits', 'time_of_day'),
     ('tasks', 'objective_id'), ('tasks', 'sort_order'), ('tasks', 'depends_on_id'),
     ('tasks', 'priority'), ('tasks', 'time_of_day'),
-    ('activity_types', 'user_id'), ('profiles', 'plan')
+    ('activity_types', 'user_id'), ('profiles', 'plan'),
+    -- A hierarquia (0007): é o que separa um banco na 0006 de um na 0007.
+    ('tasks', 'stage_id'), ('tasks', 'weight'), ('tasks', 'is_required'),
+    ('habits', 'stage_id')
   ) as c(tabela, coluna)
 
   union all
@@ -52,11 +55,20 @@ from (
 
   union all
 
-  -- O trigger que cria o perfil junto com a conta. Sem ele, todo cadastro
-  -- novo entra sem perfil e o app quebra no primeiro carregamento.
-  select 'trigger: on_auth_user_created',
-         exists (select 1 from pg_trigger where tgname = 'on_auth_user_created'),
-         4, ''
+  -- Os triggers. O primeiro cria o perfil junto com a conta — sem ele todo
+  -- cadastro novo entra sem perfil e o app quebra no primeiro carregamento.
+  -- Os outros guardam a integridade da hierarquia: etapa de outro objetivo é
+  -- recusada, e conclusão sem data é carimbada.
+  select 'trigger: ' || g.nome,
+         exists (select 1 from pg_trigger where tgname = g.nome),
+         4, g.nome
+  from (values
+    ('on_auth_user_created'),
+    ('tasks_stage_matches_objective'),
+    ('habits_stage_matches_objective'),
+    ('tasks_stamp_completion'),
+    ('plan_stages_stamp_completion')
+  ) as g(nome)
 
   union all
 
@@ -83,7 +95,7 @@ from (
   from (values
     ('profiles'), ('activities'), ('goals'), ('check_ins'), ('habits'),
     ('habit_logs'), ('tasks'), ('wins'), ('objectives'), ('weekly_reviews'),
-    ('activity_types')
+    ('activity_types'), ('plan_stages')
   ) as r(nome)
 
   union all
