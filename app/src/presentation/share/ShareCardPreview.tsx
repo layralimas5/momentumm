@@ -6,13 +6,14 @@ import {
   type ShareFormat,
   type ShareTemplateId,
 } from '@/domain/share/share-card'
-import { renderShareCard } from './render/render-share-card'
+import { renderShareCard, type SharePhoto } from './render/render-share-card'
 import { cn } from '@/shared/lib/cn'
 
 interface ShareCardPreviewProps {
   readonly data: ShareCardData
   readonly template: ShareTemplateId
   readonly format: ShareFormat
+  readonly photo?: SharePhoto | null
   readonly className?: string
 }
 
@@ -29,13 +30,21 @@ interface ShareCardPreviewProps {
  * precisa saber o que está prestes a publicar — principalmente por causa dos
  * campos de privacidade.
  */
-export function ShareCardPreview({ data, template, format, className }: ShareCardPreviewProps) {
+export function ShareCardPreview({
+  data,
+  template,
+  format,
+  photo = null,
+  className,
+}: ShareCardPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const frameRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(0)
 
   const spec = SHARE_FORMAT_SPECS[format]
-  const transparent = SHARE_TEMPLATE_SPECS[template].transparent
+  // Com foto o card deixa de ser transparente: ela é o fundo. O xadrez atrás do
+  // preview só faz sentido quando realmente não há nada por baixo.
+  const transparent = SHARE_TEMPLATE_SPECS[template].transparent && photo === null
 
   useEffect(() => {
     const frame = frameRef.current
@@ -70,8 +79,8 @@ export function ShareCardPreview({ data, template, format, className }: ShareCar
     ctx.setTransform(1, 0, 0, 1, 0, 0)
     const scale = (width * dpr) / spec.width
     ctx.scale(scale, scale)
-    renderShareCard(ctx, data, { template, format })
-  }, [data, template, format, width, spec.height, spec.width])
+    renderShareCard(ctx, data, { template, format, photo })
+  }, [data, template, format, photo, width, spec.height, spec.width])
 
   return (
     /*

@@ -143,12 +143,15 @@ describe('a métrica dominante', () => {
 
 describe('tom das mensagens', () => {
   it('a retomada conta os dias parados sem cobrar', () => {
-    const data = card({
-      type: 'comeback',
-      sourceType: 'streak',
-      title: 'Voltei hoje',
-      metadata: { daysAway: 4 },
-    })
+    const data = card(
+      {
+        type: 'comeback',
+        sourceType: 'streak',
+        title: 'Voltei hoje',
+        metadata: { daysAway: 4 },
+      },
+      { note: true },
+    )
     expect(data.kicker).toBe('De volta ao ritmo')
     expect(data.subtitle).toContain('4 dias')
     expect(data.note).toBe('Continue de onde parou.')
@@ -156,9 +159,14 @@ describe('tom das mensagens', () => {
 
   it('nunca escreve elogio genérico', () => {
     for (const type of ['day_completed', 'goal_completed', 'weekly_review'] as const) {
-      const data = card({ type })
+      const data = card({ type }, { note: true })
       expect(data.note?.toLowerCase()).not.toContain('parabéns')
     }
+  })
+
+  it('a frase do app fica de fora até a pessoa pedir', () => {
+    expect(defaultFieldsFor('day_completed').note).toBe(false)
+    expect(card({ type: 'day_completed' }).note).toBeNull()
   })
 })
 

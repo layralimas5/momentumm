@@ -19,7 +19,9 @@ import { cn } from '@/shared/lib/cn'
 import { ShareCardPreview } from './ShareCardPreview'
 import { ShareStudioControls } from './ShareStudioControls'
 import { ShareStudioFormatSelector } from './ShareStudioFormatSelector'
+import { ShareStudioPhotoPicker } from './ShareStudioPhotoPicker'
 import { ShareStudioVisibilityControls } from './ShareStudioVisibilityControls'
+import { useSharePhoto } from './use-share-photo'
 import { trackShare } from './share-analytics'
 import {
   downloadImage,
@@ -56,6 +58,7 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
   const [fields, setFields] = useState<ShareFieldSet>(() => defaultFieldsFor(event.type))
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState<string | null>(null)
+  const background = useSharePhoto()
 
   // Momento novo, decisões de privacidade zeradas. Herdar os toggles do card
   // anterior faria o nome de um objetivo aparecer num card que a pessoa nunca
@@ -106,10 +109,10 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
   )
 
   const generate = useCallback(async () => {
-    const blob = await renderToBlob({ data, template, format })
+    const blob = await renderToBlob({ data, template, format, photo: background.photo })
     trackShare('share_generated', analytics)
     return blob
-  }, [data, template, format, analytics])
+  }, [data, template, format, background.photo, analytics])
 
   const handleShare = useCallback(async () => {
     setStatus('generating')
@@ -117,6 +120,7 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
     try {
       const blob = await generate()
       const name = fileNameFor({ data, template, format }, event.day)
+
 
       // Sem share nativo (desktop, quase sempre), o botão principal salva em
       // vez de não fazer nada: a pessoa clicou em "Compartilhar" e precisa sair
@@ -171,6 +175,7 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
       data={data}
       template={template}
       format={format}
+      photo={background.photo}
       /*
         O preview é limitado pela altura nos dois layouts. No celular, um 9:16
         com a largura da tela empurra formato, template e ações pra fora da
@@ -186,7 +191,16 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
         <ShareStudioFormatSelector value={format} onChange={chooseFormat} />
       </Field>
 
-      <Field label="Template">
+      <Field label="Fundo">
+        <ShareStudioPhotoPicker state={background} />
+      </Field>
+
+      <Field
+        label="Template"
+        {...(background.photo
+          ? { hint: 'Com foto, o template decide só o alinhamento do texto.' }
+          : {})}
+      >
         <ShareStudioControls value={template} onChange={chooseTemplate} />
       </Field>
 

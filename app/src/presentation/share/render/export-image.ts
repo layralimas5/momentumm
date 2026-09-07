@@ -5,7 +5,7 @@ import {
   type ShareFormat,
   type ShareTemplateId,
 } from '@/domain/share/share-card'
-import { renderShareCard } from './render-share-card'
+import { renderShareCard, type SharePhoto } from './render-share-card'
 
 /**
  * Exportação e compartilhamento da imagem.
@@ -20,6 +20,8 @@ export interface ExportRequest {
   readonly data: ShareCardData
   readonly template: ShareTemplateId
   readonly format: ShareFormat
+  /** A foto de fundo, quando existe. Ela é desenhada no PNG, nunca enviada. */
+  readonly photo?: SharePhoto | null
 }
 
 export type ShareOutcome = 'shared' | 'cancelled' | 'unsupported'
@@ -45,7 +47,11 @@ export async function renderToBlob(request: ExportRequest): Promise<Blob> {
     throw new ExportError('Este navegador não conseguiu preparar a imagem.')
   }
 
-  renderShareCard(ctx, request.data, { template: request.template, format: request.format })
+  renderShareCard(ctx, request.data, {
+    template: request.template,
+    format: request.format,
+    photo: request.photo ?? null,
+  })
 
   const blob = await new Promise<Blob | null>((resolve) => {
     canvas.toBlob(resolve, 'image/png')

@@ -183,6 +183,32 @@ export const SHARE_TEMPLATE_TRANSPARENT: ShareTheme = {
   },
 }
 
+/**
+ * O tema quando existe foto de fundo.
+ *
+ * Com a foto da pessoa atrás, a paleta do template perde o sentido: o Light
+ * ficaria com texto preto sobre uma foto noturna e sumiria. Sobre foto existe
+ * uma resposta certa só — branco com sombra — então o template passa a decidir
+ * apenas alinhamento e densidade, que é o que ainda diferencia os cards.
+ *
+ * O fundo não é pintado aqui: quem desenha a foto e o véu é o renderizador,
+ * porque só ele conhece o recorte e a proporção do arquivo escolhido.
+ */
+export function overPhoto(theme: ShareTheme): ShareTheme {
+  return {
+    ...theme,
+    ink: '#ffffff',
+    inkMuted: 'rgba(255, 255, 255, 0.88)',
+    inkFaint: 'rgba(255, 255, 255, 0.7)',
+    line: 'rgba(255, 255, 255, 0.4)',
+    chipBg: 'rgba(255, 255, 255, 0.16)',
+    chipInk: '#ffffff',
+    transparent: false,
+    shadow: true,
+    paintBackground: () => {},
+  }
+}
+
 export const SHARE_THEMES: Readonly<Record<ShareTemplateId, ShareTheme>> = {
   dark: SHARE_TEMPLATE_DARK,
   light: SHARE_TEMPLATE_LIGHT,

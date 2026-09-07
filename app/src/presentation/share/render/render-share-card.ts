@@ -7,16 +7,13 @@ import {
 import {
   drawCheckDot,
   drawLine,
-  drawProgressTrack,
   lineHeightOf,
   measureText,
   resolveColor,
-  roundRect,
-  withAlpha,
   wrapLines,
   type TextStyle,
 } from './canvas-kit'
-import { SHARE_THEMES, type ShareTheme } from './share-templates'
+import { SHARE_THEMES, overPhoto, type ShareTheme } from './share-templates'
 
 /**
  * O renderizador único do Share Studio.
@@ -33,9 +30,25 @@ import { SHARE_THEMES, type ShareTheme } from './share-templates'
  * densidade — nunca a estrutura.
  */
 
+/**
+ * A foto de fundo escolhida pela pessoa.
+ *
+ * Vem já decodificada porque desenhar é síncrono: o renderizador não pode
+ * esperar um `onload` no meio do preview. As medidas vêm junto porque
+ * `CanvasImageSource` não expõe tamanho de forma uniforme, e sem elas não dá
+ * pra recortar a foto preservando a proporção.
+ */
+export interface SharePhoto {
+  readonly image: CanvasImageSource
+  readonly width: number
+  readonly height: number
+}
+
 export interface RenderOptions {
   readonly template: ShareTemplateId
   readonly format: ShareFormat
+  /** Nula quando a pessoa não escolheu foto: o template pinta o próprio fundo. */
+  readonly photo?: SharePhoto | null
 }
 
 /** Um bloco já medido. O desenho só acontece depois que a pilha inteira cabe. */
@@ -75,13 +88,20 @@ export function renderShareCard(
   options: RenderOptions,
 ): void {
   const spec = SHARE_FORMAT_SPECS[options.format]
-  const theme = SHARE_THEMES[options.template]
+  const photo = options.photo ?? null
+  const theme = photo ? overPhoto(SHARE_THEMES[options.template]) : SHARE_THEMES[options.template]
   const { width, height } = spec
   const accent = resolveColor(data.accent)
   const m = metricsFor(options.format, width, theme)
 
   ctx.clearRect(0, 0, width, height)
-  theme.paintBackground(ctx, width, height, accent)
+
+  if (photo) {
+    drawPhotoCover(ctx, photo, width, height)
+    drawScrim(ctx, width, height)
+  } else {
+    theme.paintBackground(ctx, width, height, accent)
+  }
 
   // Sem fundo, o texto pode cair sobre uma foto clara: a sombra vale pro card
   // inteiro, incluindo chips e barra, senão só as letras sobreviveriam.
@@ -100,11 +120,18 @@ export function renderShareCard(
     0,
   )
 
+  /*
+    Sem foto, a pilha fica centrada no espaço livre.
+
+    Com foto, ela desce e encosta no rodapé. É a diferença entre um card do app
+    e um card da pessoa: ancorando embaixo, os dois terços de cima da foto
+    ficam limpos — o rosto, o lugar, o treino — e o texto cai justamente sobre a
+    faixa que o véu mais escurece. Centralizado, o número aterrissaria no meio
+    da foto e cobriria o que ela tem de melhor.
+  */
   const available = footerTop - headerBottom
-  // Centrado no espaço livre, mas nunca por cima do cabeçalho: com pilha maior
-  // que o espaço, ela começa colada embaixo dele e o corte fica no fim, onde
-  // mora a informação menos importante.
-  let cursor = headerBottom + Math.max(0, (available - total) / 2)
+  const offset = photo ? Math.max(0, available - total) : Math.max(0, (available - total) / 2)
+  let cursor = headerBottom + offset
 
   blocks.forEach((block, index) => {
     if (index > 0) cursor += block.gap
@@ -115,6 +142,62 @@ export function renderShareCard(
   ctx.shadowColor = 'transparent'
   ctx.shadowBlur = 0
   ctx.shadowOffsetY = 0
+}
+
+/**
+ * A foto preenchendo o card sem deformar.
+ *
+ * Recorte por cobertura, centrado: a foto do celular é 3:4 e o Story é 9:16, e
+ * esticar pra encaixar deixaria a pessoa da foto mais magra ou mais gorda — o
+ * tipo de detalhe que faz alguém desistir de postar.
+ */
+function drawPhotoCover(
+  ctx: CanvasRenderingContext2D,
+  photo: SharePhoto,
+  width: number,
+  height: number,
+): void {
+  const scale = Math.max(width / photo.width, height / photo.height)
+  const drawWidth = photo.width * scale
+  const drawHeight = photo.height * scale
+
+  ctx.drawImage(
+    photo.image,
+    (width - drawWidth) / 2,
+    (height - drawHeight) / 2,
+    drawWidth,
+    drawHeight,
+  )
+}
+
+/**
+ * O véu por cima da foto.
+ *
+ * Sem ele, o card não tem como prometer legibilidade: a foto pode ser uma
+ * parede branca ao meio-dia. É um escurecimento leve e uniforme mais um
+ * gradiente que fecha em cima e embaixo, onde moram data e assinatura. A parte
+ * do meio, que é onde a foto interessa, é a que menos escurece.
+ */
+function drawScrim(ctx: CanvasRenderingContext2D, width: number, height: number): void {
+  // Escurecimento base leve: garante contraste mínimo mesmo numa parede branca
+  // ao meio-dia, sem apagar a foto.
+  ctx.fillStyle = 'rgba(10, 10, 11, 0.16)'
+  ctx.fillRect(0, 0, width, height)
+
+  /*
+    O gradiente é assimétrico porque o conteúdo é. Em cima mora só a data, então
+    basta uma sombra fraca; embaixo mora o número, a métrica, o momentum e a
+    assinatura, e é lá que o véu fecha. O miolo quase não escurece: é a parte da
+    foto que a pessoa escolheu mostrar.
+  */
+  const veil = ctx.createLinearGradient(0, 0, 0, height)
+  veil.addColorStop(0, 'rgba(10, 10, 11, 0.42)')
+  veil.addColorStop(0.18, 'rgba(10, 10, 11, 0.06)')
+  veil.addColorStop(0.45, 'rgba(10, 10, 11, 0.06)')
+  veil.addColorStop(0.72, 'rgba(10, 10, 11, 0.42)')
+  veil.addColorStop(1, 'rgba(10, 10, 11, 0.82)')
+  ctx.fillStyle = veil
+  ctx.fillRect(0, 0, width, height)
 }
 
 // ---------------------------------------------------------------------------
@@ -239,10 +322,6 @@ function buildBody(
     blocks.push(secondaryBlock(ctx, data.secondaryMetric.value, data.secondaryMetric.label, theme, m))
   }
 
-  if (full && data.completionPercentage !== null) {
-    blocks.push(progressBlock(ctx, data.completionPercentage, theme, m, accent))
-  }
-
   if (full && data.items.length > 0) blocks.push(itemsBlock(ctx, data, theme, m, accent))
 
   /*
@@ -268,7 +347,10 @@ function kickerBlock(
   const style: TextStyle = {
     size: 32,
     weight: 700,
-    color: theme.transparent ? theme.ink : accent,
+    // Sobre foto (ou sem fundo), o violeta da marca some numa parede clara e
+    // briga com qualquer cor que a foto tenha. Branco é a única escolha que
+    // funciona sem saber o que está atrás.
+    color: theme.shadow ? theme.ink : accent,
     tracking: 7,
     uppercase: true,
   }
@@ -397,27 +479,6 @@ function secondaryBlock(
   }
 }
 
-function progressBlock(
-  ctx: CanvasRenderingContext2D,
-  ratio: number,
-  theme: ShareTheme,
-  m: Metrics,
-  accent: string,
-): Block {
-  const thickness = 12
-  // Centrado, `m.x` é o meio do card: a barra precisa recuar meia largura pra
-  // nascer na borda esquerda do conteúdo em vez de no centro.
-  const startX = theme.align === 'center' ? m.x - m.contentWidth / 2 : m.x
-
-  return {
-    gap: 40,
-    height: thickness,
-    draw(y) {
-      drawProgressTrack(ctx, startX, y, m.contentWidth, ratio, theme.line, accent, thickness)
-    },
-  }
-}
-
 function itemsBlock(
   ctx: CanvasRenderingContext2D,
   data: ShareCardData,
@@ -471,7 +532,13 @@ function itemsBlock(
 }
 
 /**
- * O momentum: rótulo pequeno e o "antes → depois".
+ * O momentum: uma linha, não um selo.
+ *
+ * A versão anterior era um chip com caixa e borda. Sobre a foto de alguém, uma
+ * caixa desenhada por cima é o elemento que denuncia "isto saiu de um app" —
+ * e é exatamente essa a impressão que o card não pode dar. Rótulo pequeno em
+ * caixa alta e os dois números do lado resolvem a mesma informação sem
+ * construir moldura nenhuma.
  *
  * Mostrar os dois lados é o que dá sentido ao número. "81" sozinho é uma nota;
  * "76 → 81" é movimento, que é a única coisa que este produto mede.
@@ -486,48 +553,30 @@ function momentumBlock(
   const labelStyle: TextStyle = {
     size: 26,
     weight: 700,
-    color: theme.inkFaint,
+    color: theme.transparent || theme.shadow ? theme.inkFaint : accent,
     tracking: 5,
     uppercase: true,
   }
-  const valueStyle: TextStyle = { size: 46, weight: 700, color: theme.ink }
+  const valueStyle: TextStyle = { size: 40, weight: 700, color: theme.ink }
 
   const before = data.momentumBefore
   const after = data.momentumAfter ?? 0
   const value = before !== null && before !== after ? `${before} → ${after}` : `${after}`
 
-  const paddingX = 34
-  const paddingY = 26
+  const spacing = 18
   const labelWidth = measureText(ctx, 'Momentum', labelStyle)
   const valueWidth = measureText(ctx, value, valueStyle)
-  const innerWidth = Math.max(labelWidth, valueWidth)
-  const chipWidth = Math.min(m.contentWidth, innerWidth + paddingX * 2)
-  const chipHeight = paddingY * 2 + labelStyle.size + 14 + valueStyle.size * 0.8
+  const total = labelWidth + spacing + valueWidth
 
   return {
-    gap: 40,
-    height: chipHeight,
+    gap: 34,
+    height: valueStyle.size,
     draw(y) {
-      const startX = theme.align === 'center' ? m.x - chipWidth / 2 : m.x
-      ctx.fillStyle = theme.chipBg
-      roundRect(ctx, startX, y, chipWidth, chipHeight, 26)
-      ctx.fill()
+      const startX = theme.align === 'center' ? m.x - total / 2 : m.x
+      const baseline = y + valueStyle.size * 0.78
 
-      ctx.strokeStyle = withAlpha(accent, 0.35)
-      ctx.lineWidth = 2
-      roundRect(ctx, startX, y, chipWidth, chipHeight, 26)
-      ctx.stroke()
-
-      const centerX = startX + chipWidth / 2
-      drawLine(ctx, 'Momentum', centerX, y + paddingY + labelStyle.size * 0.82, labelStyle, 'center')
-      drawLine(
-        ctx,
-        value,
-        centerX,
-        y + paddingY + labelStyle.size + 14 + valueStyle.size * 0.78,
-        { ...valueStyle, color: theme.chipInk },
-        'center',
-      )
+      drawLine(ctx, 'Momentum', startX, baseline - 2, labelStyle, 'left')
+      drawLine(ctx, value, startX + labelWidth + spacing, baseline, valueStyle, 'left')
     },
   }
 }

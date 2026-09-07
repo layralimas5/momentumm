@@ -51,7 +51,7 @@ export function toShareCardData(event: JourneyEvent, options: ShareCardOptions):
     date: fields.date ? formatDayLong(event.day, options.today) : null,
     username: fields.username ? (options.displayName?.trim() || null) : null,
     branding: fields.branding,
-    note: noteOf(event),
+    note: fields.note ? noteOf(event) : null,
     accent,
   }
 }

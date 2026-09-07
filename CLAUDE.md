@@ -63,7 +63,7 @@ que existir base. Feed vazio afasta usuário.
 Fase 1 em pé, em `app/`. Roda em **modo demo** sem configurar nada (dados em
 `localStorage`) e vira contas reais ao preencher `.env.local` com o Supabase.
 
-Pronto: domínio completo com 293 testes, quatro migrations com RLS, repositórios demo e
+Pronto: domínio completo com 294 testes, quatro migrations com RLS, repositórios demo e
 Supabase, auth com rota protegida, registro rápido, cronômetro de sessão, streak
 dos últimos 7 dias, histórico com filtro por eixo, metas com progresso e perfil
 editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
@@ -205,6 +205,29 @@ paleta, alinhamento, densidade e fundo — sobre o mesmo layout. Cinco funções
 desenho independentes seriam cinco lugares pra corrigir, e quatro ficariam pra
 trás. Transparent exporta PNG com alpha real, pra ir sobre a foto da pessoa.
 
+**Foto de fundo, no modelo do Strava.** A pessoa escolhe uma foto do aparelho e
+ela vira o fundo do card. Três decisões sustentam isso:
+
+- A foto **nunca sai do aparelho**. É lida pelo navegador, desenhada no canvas e
+  vira parte do PNG. Não existe upload, bucket nem servidor sabendo dela
+- Com foto, o conteúdo **desce e encosta no rodapé** em vez de ficar centrado.
+  Os dois terços de cima da foto ficam limpos — o rosto, o lugar, o treino — e o
+  texto cai sobre a faixa que o véu escurece. Centralizado, o número cobriria
+  justamente o que a foto tem de melhor
+- Com foto, o template decide só **alinhamento e densidade**: a paleta vira
+  branco com sombra. Não existe resposta certa pra texto preto sobre uma foto
+  que pode ser noturna
+
+O card também emagreceu. Saiu a barra de progresso (o "87%" já é a informação),
+o selo do momentum virou uma linha sem caixa — moldura desenhada por cima da
+foto de alguém é o que denuncia "isto saiu de um app" — e a frase do Momentumm
+virou um toggle **desligado por padrão**. O card que a pessoa posta precisa
+parecer dela, não o print de um dashboard.
+
+**O produto é de celular.** O Share Studio nasceu mobile-first e é ali que ele é
+afinado; o desktop tem o layout de duas colunas e funciona, mas não recebe
+investimento novo.
+
 Saída sempre em PNG (1080×1920 / 1080×1350 / 1080×1080). Compartilhamento pelo
 share sheet nativo (Web Share API com arquivo) e download como saída quando ele
 não existe — sem SDK de Instagram, TikTok ou WhatsApp. Analytics tem contrato e
@@ -325,6 +348,6 @@ Quando incomodar, trocar por import dinâmico dentro do `container`.
 cd app
 npm install
 npm run dev     # modo demo, sem configurar nada
-npm test        # 293 testes de domínio
+npm test        # 294 testes de domínio
 npm run build
 ```

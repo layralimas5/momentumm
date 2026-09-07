@@ -79,6 +79,7 @@ export const SHARE_FIELDS = [
   'duration',
   'date',
   'username',
+  'note',
   'branding',
 ] as const
 
@@ -107,6 +108,7 @@ export const SHARE_FIELD_SPECS: Readonly<Record<ShareField, ShareFieldSpec>> = {
     warning: 'O título que você escreveu aparece na imagem.',
   },
   duration: { id: 'duration', label: 'Duração', warning: null },
+  note: { id: 'note', label: 'Frase do Momentumm', warning: null },
   date: { id: 'date', label: 'Data', warning: null },
   username: { id: 'username', label: 'Seu nome', warning: 'Identifica você na imagem.' },
   branding: { id: 'branding', label: 'Assinatura Momentumm', warning: null },
@@ -120,15 +122,15 @@ export const SHARE_FIELD_SPECS: Readonly<Record<ShareField, ShareFieldSpec>> = {
  * objetivo; lista não existe em momentum.
  */
 const FIELDS_BY_TYPE: Readonly<Record<JourneyEventType, readonly ShareField[]>> = {
-  habit_completed: ['momentum', 'completion', 'objective', 'duration', 'date', 'username', 'branding'],
-  routine_completed: ['momentum', 'items', 'completion', 'duration', 'date', 'username', 'branding'],
-  day_completed: ['momentum', 'items', 'completion', 'duration', 'date', 'username', 'branding'],
-  goal_progress: ['momentum', 'completion', 'objective', 'date', 'username', 'branding'],
-  goal_completed: ['momentum', 'completion', 'objective', 'date', 'username', 'branding'],
-  milestone: ['momentum', 'date', 'username', 'branding'],
-  weekly_review: ['momentum', 'items', 'completion', 'duration', 'date', 'username', 'branding'],
-  comeback: ['momentum', 'date', 'username', 'branding'],
-  momentum_record: ['momentum', 'date', 'username', 'branding'],
+  habit_completed: ['momentum', 'completion', 'objective', 'duration', 'date', 'username', 'note', 'branding'],
+  routine_completed: ['momentum', 'items', 'completion', 'duration', 'date', 'username', 'note', 'branding'],
+  day_completed: ['momentum', 'items', 'completion', 'duration', 'date', 'username', 'note', 'branding'],
+  goal_progress: ['momentum', 'completion', 'objective', 'date', 'username', 'note', 'branding'],
+  goal_completed: ['momentum', 'completion', 'objective', 'date', 'username', 'note', 'branding'],
+  milestone: ['momentum', 'date', 'username', 'note', 'branding'],
+  weekly_review: ['momentum', 'items', 'completion', 'duration', 'date', 'username', 'note', 'branding'],
+  comeback: ['momentum', 'date', 'username', 'note', 'branding'],
+  momentum_record: ['momentum', 'date', 'username', 'note', 'branding'],
 }
 
 export function availableFieldsFor(type: JourneyEventType): readonly ShareField[] {
@@ -140,13 +142,21 @@ export function supportsField(type: JourneyEventType, field: ShareField): boolea
 }
 
 /**
- * O estado inicial dos toggles: MENOR EXPOSIÇÃO.
+ * O estado inicial dos toggles: MENOR EXPOSIÇÃO e MENOS COISA NA TELA.
  *
- * Nome do objetivo, lista de hábitos e nome da pessoa começam desligados. São
- * os três campos que carregam conteúdo escrito por ela — "Sair da terapia",
- * "Remédio 8h", o nome completo — e nenhum deles deveria ir pro Instagram por
- * omissão. Número e percentual começam ligados: são o motivo do card existir e
- * não dizem nada sobre a vida de ninguém.
+ * Duas regras se somam aqui.
+ *
+ * Privacidade: nome do objetivo, lista de hábitos e nome da pessoa começam
+ * desligados. São os três campos que carregam conteúdo escrito por ela — "Sair
+ * da terapia", "Remédio 8h", o nome completo — e nenhum deles deveria ir pro
+ * Instagram por omissão.
+ *
+ * Estética: a frase do app ("Você avançou hoje.") também começa desligada. Ela
+ * é a coisa mais "de aplicativo" do card, e o card que a pessoa quer postar é o
+ * que parece dela — não o print de um dashboard. Quem quiser, liga.
+ *
+ * Número e percentual começam ligados: são o motivo do card existir e não dizem
+ * nada sobre a vida de ninguém.
  */
 export function defaultFieldsFor(type: JourneyEventType): ShareFieldSet {
   const available = FIELDS_BY_TYPE[type]
@@ -161,6 +171,7 @@ export function defaultFieldsFor(type: JourneyEventType): ShareFieldSet {
     items: on('items', false),
     objective: on('objective', false),
     username: on('username', false),
+    note: on('note', false),
   }
 }
 
