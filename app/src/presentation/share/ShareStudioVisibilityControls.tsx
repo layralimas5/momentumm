@@ -49,13 +49,24 @@ export function ShareStudioVisibilityControls({
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-medium text-ink">{spec.label}</span>
                 {spec.warning ? (
+                  /*
+                    Ligado, o aviso vira uma CONFIRMAÇÃO do que está no card.
+
+                    Ele já foi um cadeado laranja, e errava duas vezes. Cadeado
+                    é o símbolo de trancado, e aqui ele aparecia justamente
+                    quando o campo estava aberto — gente lia como bloqueio e
+                    procurava onde liberar. E o laranja é o token do streak,
+                    reservado a ele; usá-lo como alerta transformava uma escolha
+                    legítima da pessoa em risco, num painel em que ela acabou de
+                    decidir mostrar o próprio progresso.
+                  */
                   <span
                     className={cn(
                       'mt-0.5 flex items-center gap-1.5 text-xs',
-                      checked ? 'text-flame' : 'text-ink-faint',
+                      checked ? 'text-ink-muted' : 'text-ink-faint',
                     )}
                   >
-                    {checked ? <Icon name="cadeado" className="size-3.5 shrink-0" /> : null}
+                    {checked ? <Icon name="visivel" className="size-3.5 shrink-0" /> : null}
                     {spec.warning}
                   </span>
                 ) : null}

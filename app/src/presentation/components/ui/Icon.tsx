@@ -45,6 +45,8 @@ export const ICON_PATHS = {
   descer: 'M12 5v14M6 13l6 6 6-6',
   cadeado: 'M7 11V8a5 5 0 0 1 10 0v3M6 11h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1Z',
   lixeira: 'M5 7h14M10 11v6M14 11v6M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12M9 7V4h6v3',
+  // "Isso está aparecendo". Não confundir com `cadeado`, que diz o contrário.
+  visivel: 'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Zm10 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
 } as const
 
 export type IconName = keyof typeof ICON_PATHS
