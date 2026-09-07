@@ -18,6 +18,8 @@ interface OpenOptions {
   readonly editingHabit?: Habit | null
   readonly presetGoalId?: string | null
   readonly presetObjectiveId?: string | null
+  /** Etapa já escolhida quando a ação nasce de dentro de uma etapa do plano. */
+  readonly presetStageId?: string | null
   readonly presetDay?: DayKey | null
 }
 
@@ -49,6 +51,7 @@ export function ComposerProvider({ children }: { children: ReactNode }) {
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null)
   const [presetGoalId, setPresetGoalId] = useState<string | null>(null)
   const [presetObjectiveId, setPresetObjectiveId] = useState<string | null>(null)
+  const [presetStageId, setPresetStageId] = useState<string | null>(null)
   const [presetDay, setPresetDay] = useState<DayKey | null>(null)
 
   const controls = useMemo<ComposerControls>(
@@ -63,6 +66,7 @@ export function ComposerProvider({ children }: { children: ReactNode }) {
         setEditingHabit(options?.editingHabit ?? null)
         setPresetGoalId(options?.presetGoalId ?? null)
         setPresetObjectiveId(options?.presetObjectiveId ?? null)
+        setPresetStageId(options?.presetStageId ?? null)
         setPresetDay(options?.presetDay ?? null)
         setOpen(true)
       },
@@ -121,6 +125,8 @@ export function ComposerProvider({ children }: { children: ReactNode }) {
         editingHabit={editingHabit}
         presetGoalId={presetGoalId}
         presetObjectiveId={presetObjectiveId}
+        presetStageId={presetStageId}
+        stages={planner.planStages}
         presetDay={presetDay}
         onClose={controls.close}
         onSubmitTask={submitTask}

@@ -2,7 +2,7 @@ import { activityType } from '@/domain/entities/activity-type'
 import type { CapacityProfile } from '@/domain/entities/checkin'
 import type { Goal } from '@/domain/entities/goal'
 import type { Objective } from '@/domain/entities/objective'
-import { ObjectiveLink } from '@/presentation/components/shared/Meta'
+import { ContextLine } from '@/presentation/components/shared/Meta'
 import { TASK_EFFORT_LABELS, type Task } from '@/domain/entities/task'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
@@ -14,6 +14,8 @@ interface PriorityCardProps {
   readonly task: Task | null
   readonly goal: Goal | null
   readonly objective: Objective | undefined
+  /** Etapa do plano a que a ação pertence. Null quando ela não tem etapa. */
+  readonly stageTitle?: string | null
   readonly capacity: CapacityProfile
   /** Dia fechado: o card para de pedir ação em vez de insistir. */
   readonly dayComplete: boolean
@@ -35,6 +37,7 @@ export function PriorityCard({
   task,
   goal,
   objective,
+  stageTitle,
   capacity,
   dayComplete,
   onStartFocus,
@@ -115,9 +118,14 @@ export function PriorityCard({
                 {task.title}
               </p>
 
-              {/* O destino por trás da prioridade. A ação mais importante do dia
-                  é justamente a que mais precisa dizer pra onde está levando. */}
-              <ObjectiveLink objective={objective} className="mt-2" />
+              {/* O caminho por trás da prioridade. A ação mais importante do
+                  dia é justamente a que mais precisa dizer pra onde leva. */}
+              <ContextLine
+                className="mt-2"
+                role="Ação prioritária"
+                stage={stageTitle}
+                objective={objective}
+              />
 
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 {axis ? <Tag color={axis.colorToken}>{axis.label}</Tag> : null}

@@ -12,12 +12,15 @@ import type {
   ObjectiveProgress,
 } from '@/domain/entities/objective'
 import type { PlanLimits } from '@/domain/entities/plan'
+import type { PlanProgress } from '@/domain/entities/plan-progress'
+import type { NewPlanStageInput, PlanStage } from '@/domain/entities/plan-stage'
 import type { PlanDraft } from '@/domain/entities/plan-builder'
 import type { Streak } from '@/domain/entities/streak'
 import type { NewTaskInput, Task } from '@/domain/entities/task'
 import type { NewWinInput, Win } from '@/domain/entities/win'
 import type { HabitUpdate } from '@/domain/repositories/habit-repository'
 import type { ObjectiveUpdate } from '@/domain/repositories/objective-repository'
+import type { PlanStageUpdate } from '@/domain/repositories/plan-stage-repository'
 import type { TaskReorder, TaskUpdate } from '@/domain/repositories/task-repository'
 
 /**
@@ -35,7 +38,14 @@ export interface PlannerState {
    */
   readonly axes: readonly ActivityType[]
   readonly objectives: readonly Objective[]
+  /** O volume registrado contra o alvo: o ritmo do objetivo. */
   readonly objectiveProgress: readonly ObjectiveProgress[]
+  readonly planStages: readonly PlanStage[]
+  /**
+   * O plano de cada objetivo com progresso ponderado, gargalo e próxima ação.
+   * É a ÚNICA resposta pra "quanto do objetivo está feito" no app inteiro.
+   */
+  readonly plans: readonly PlanProgress[]
   readonly goals: readonly Goal[]
   readonly goalProgress: readonly GoalProgress[]
   readonly habits: readonly Habit[]
@@ -70,6 +80,19 @@ export interface PlannerState {
    * vai fazer.
    */
   completeObjective(id: string, done: boolean): Promise<void>
+
+  /**
+   * Cria a etapa. Sem peso informado, os pesos do objetivo são reequilibrados
+   * pra continuar somando 100 — peso é propriedade do conjunto, não da linha.
+   */
+  createStage(input: Omit<NewPlanStageInput, 'userId'>): Promise<PlanStage | null>
+  updateStage(id: string, changes: PlanStageUpdate): Promise<void>
+  /** Concluir e reabrir a etapa, com a data de conclusão andando junto. */
+  completeStage(id: string, done: boolean): Promise<void>
+  /** Salva ordem e pesos numa operação só: o conjunto precisa fechar 100. */
+  reweightStages(objectiveId: string, stages: readonly PlanStage[]): Promise<void>
+  /** Apaga a etapa. As ações dela voltam pro objetivo, sem etapa. */
+  removeStage(id: string): Promise<void>
   /**
    * O plano inteiro de uma vez: objetivo, ritmo semanal, hábitos e as
    * primeiras ações, pra cada objetivo da lista. É uma operação só porque
@@ -89,6 +112,11 @@ export interface PlannerState {
 
   createTask(input: Omit<NewTaskInput, 'userId'>): Promise<Task | null>
   updateTask(id: string, changes: TaskUpdate): Promise<void>
+  /**
+   * Concluir e reabrir a ação. Toda conclusão passa por aqui: é o que garante
+   * a data de conclusão carimbada e a etapa saindo de "não iniciada".
+   */
+  setTaskDone(id: string, done: boolean): Promise<void>
   reorderTasks(items: readonly TaskReorder[]): Promise<void>
   removeTask(id: string): Promise<void>
 

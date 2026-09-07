@@ -16,11 +16,13 @@ import {
   type HabitIcon,
 } from '@/domain/entities/habit'
 import type { Objective } from '@/domain/entities/objective'
+import { stagesOfObjective, type PlanStage } from '@/domain/entities/plan-stage'
 import { PRIORITIES, PRIORITY_LABELS, type Priority } from '@/domain/entities/priority'
 import {
   MAX_MINIMAL_VERSION,
   MAX_TASK_DESCRIPTION,
   MAX_TASK_TITLE,
+  MAX_TASK_WEIGHT,
   TASK_EFFORTS,
   TASK_EFFORT_LABELS,
   type Task,
@@ -42,6 +44,9 @@ export interface TaskDraft {
   readonly description: string | null
   readonly goalId: string | null
   readonly objectiveId: string | null
+  readonly stageId: string | null
+  readonly weight: number
+  readonly isRequired: boolean
   readonly axis: ActivityTypeSlug | null
   readonly estimatedMin: number
   readonly effort: TaskEffort
@@ -58,6 +63,7 @@ export interface HabitDraft {
   readonly icon: HabitIcon
   readonly axis: ActivityTypeSlug
   readonly objectiveId: string | null
+  readonly stageId: string | null
   readonly priority: Priority
   readonly frequency: HabitFrequency
   readonly dayPart: DayPart
@@ -91,6 +97,10 @@ interface ComposerProps {
   readonly presetGoalId?: string | null
   /** Objetivo já escolhido quando a ação nasce de dentro de um objetivo. */
   readonly presetObjectiveId?: string | null
+  /** Etapa já escolhida quando a ação nasce de dentro de uma etapa. */
+  readonly presetStageId?: string | null
+  /** Todas as etapas da conta: o seletor filtra pelas do objetivo escolhido. */
+  readonly stages: readonly PlanStage[]
   readonly presetDay?: DayKey | null
   readonly onClose: () => void
   readonly onSubmitTask: (draft: TaskDraft, editingId: string | null) => Promise<void>
@@ -143,9 +153,11 @@ function TaskForm({
   today,
   goals,
   objectives,
+  stages,
   editing,
   presetGoalId,
   presetObjectiveId,
+  presetStageId,
   presetDay,
   onSubmitTask,
   onClose,
@@ -154,6 +166,9 @@ function TaskForm({
   const [description, setDescription] = useState(editing?.description ?? '')
   const [goalId, setGoalId] = useState(editing?.goalId ?? presetGoalId ?? '')
   const [objectiveId, setObjectiveId] = useState(editing?.objectiveId ?? presetObjectiveId ?? '')
+  const [stageId, setStageId] = useState(editing?.stageId ?? presetStageId ?? '')
+  const [weight, setWeight] = useState(String(editing?.weight ?? 1))
+  const [isRequired, setIsRequired] = useState(editing?.isRequired ?? true)
   const [axis, setAxis] = useState<ActivityTypeSlug | ''>(editing?.axis ?? '')
   const [estimatedMin, setEstimatedMin] = useState(String(editing?.estimatedMin ?? 25))
   const [effort, setEffort] = useState<TaskEffort>(editing?.effort ?? 'medio')
@@ -171,6 +186,11 @@ function TaskForm({
   const chosenObjective = objectives.find((item) => item.id === objectiveId)
   const effectiveAxis = chosenObjective?.axis ?? (axis || null)
 
+  // As etapas mudam com o objetivo, e a escolhida só vale se for dele: uma ação
+  // numa etapa de outro objetivo faz o progresso dos dois mentir ao mesmo tempo.
+  const stageOptions = objectiveId ? stagesOfObjective(stages, objectiveId) : []
+  const effectiveStageId = stageOptions.some((stage) => stage.id === stageId) ? stageId : ''
+
   const submit = useAsyncAction(async () => {
     await onSubmitTask(
       {
@@ -178,6 +198,9 @@ function TaskForm({
         description: description.trim() || null,
         goalId: goalId || null,
         objectiveId: objectiveId || null,
+        stageId: effectiveStageId || null,
+        weight: Math.min(MAX_TASK_WEIGHT, Math.max(1, Number(weight) || 1)),
+        isRequired,
         axis: effectiveAxis,
         estimatedMin: Number(estimatedMin),
         effort,
@@ -256,7 +279,7 @@ function TaskForm({
             value={objectiveId}
             onChange={(event) => setObjectiveId(event.target.value)}
           >
-            <option value="">Sem objetivo (ação solta)</option>
+            <option value="">Sem objetivo (vai pra caixa de entrada)</option>
             {objectives.map((objective) => (
               <option key={objective.id} value={objective.id}>
                 {objective.title}
@@ -265,6 +288,71 @@ function TaskForm({
           </Select>
         )}
       </Field>
+
+      <Field
+        label="Etapa do plano"
+        hint={
+          objectiveId
+            ? stageOptions.length === 0
+              ? 'Esse objetivo ainda não tem etapas. Sem etapa a ação não conta pro progresso.'
+              : 'É a etapa que a conclusão dessa ação vai empurrar.'
+            : 'Escolhe um objetivo primeiro.'
+        }
+      >
+        {(id, describedBy) => (
+          <Select
+            id={id}
+            aria-describedby={describedBy}
+            value={effectiveStageId}
+            disabled={stageOptions.length === 0}
+            onChange={(event) => setStageId(event.target.value)}
+          >
+            <option value="">Sem etapa</option>
+            {stageOptions.map((stage) => (
+              <option key={stage.id} value={stage.id}>
+                {stage.title} ({stage.weight}%)
+              </option>
+            ))}
+          </Select>
+        )}
+      </Field>
+
+      {effectiveStageId ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field
+            label="Peso dentro da etapa"
+            hint="Ações de peso igual dividem a etapa por igual."
+          >
+            {(id, describedBy) => (
+              <TextInput
+                id={id}
+                aria-describedby={describedBy}
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={MAX_TASK_WEIGHT}
+                value={weight}
+                onChange={(event) => setWeight(event.target.value)}
+              />
+            )}
+          </Field>
+
+          <label className="flex cursor-pointer items-start gap-3 self-end rounded-xl border border-line bg-surface-hi/50 px-3.5 py-3">
+            <input
+              type="checkbox"
+              checked={isRequired}
+              onChange={(event) => setIsRequired(event.target.checked)}
+              className="mt-0.5 size-4 accent-[var(--color-brand)]"
+            />
+            <span className="text-sm">
+              <span className="font-medium text-ink">Obrigatória pra etapa fechar</span>
+              <span className="mt-0.5 block text-xs text-ink-faint">
+                Desmarcada, ela soma progresso mas não segura a conclusão da etapa.
+              </span>
+            </span>
+          </label>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Meta relacionada">
@@ -416,8 +504,10 @@ function TaskForm({
 function HabitForm({
   axes,
   objectives,
+  stages,
   editingHabit,
   presetObjectiveId,
+  presetStageId,
   onSubmitHabit,
   onClose,
 }: ComposerProps) {
@@ -428,6 +518,7 @@ function HabitForm({
   const [objectiveId, setObjectiveId] = useState(
     editingHabit?.objectiveId ?? presetObjectiveId ?? '',
   )
+  const [stageId, setStageId] = useState(editingHabit?.stageId ?? presetStageId ?? '')
   const [priority, setPriority] = useState<Priority>(editingHabit?.priority ?? 'media')
   const [frequency, setFrequency] = useState<HabitFrequency>(editingHabit?.frequency ?? 'diario')
   const [dayPart, setDayPart] = useState<DayPart>(editingHabit?.dayPart ?? 'qualquer')
@@ -439,6 +530,9 @@ function HabitForm({
   const chosenObjective = objectives.find((item) => item.id === objectiveId)
   const effectiveAxis = chosenObjective?.axis ?? axis
 
+  const stageOptions = objectiveId ? stagesOfObjective(stages, objectiveId) : []
+  const effectiveStageId = stageOptions.some((stage) => stage.id === stageId) ? stageId : ''
+
   const submit = useAsyncAction(async () => {
     const targetValue = Number(target)
     await onSubmitHabit(
@@ -448,6 +542,7 @@ function HabitForm({
         icon,
         axis: effectiveAxis,
         objectiveId: objectiveId || null,
+        stageId: effectiveStageId || null,
         priority,
         frequency,
         dayPart,
@@ -547,6 +642,34 @@ function HabitForm({
           </Select>
         )}
       </Field>
+
+      {/*
+        A etapa do hábito é opcional mesmo com objetivo escolhido, e isso é
+        deliberado: "desenvolver uma hora por dia" atravessa o plano inteiro.
+        Obrigar uma etapa faria a pessoa recriar o mesmo hábito a cada fase.
+      */}
+      {stageOptions.length > 0 ? (
+        <Field
+          label="Etapa que ele sustenta"
+          hint="Opcional. Hábito que atravessa o plano inteiro não precisa de etapa."
+        >
+          {(id, describedBy) => (
+            <Select
+              id={id}
+              aria-describedby={describedBy}
+              value={effectiveStageId}
+              onChange={(event) => setStageId(event.target.value)}
+            >
+              <option value="">O objetivo inteiro</option>
+              {stageOptions.map((stage) => (
+                <option key={stage.id} value={stage.id}>
+                  {stage.title}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field

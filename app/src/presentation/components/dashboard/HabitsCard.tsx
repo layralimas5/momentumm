@@ -12,12 +12,18 @@ import {
 } from '@/domain/entities/habit'
 import { Button } from '@/presentation/components/ui/Button'
 import { EmptyState } from '@/presentation/components/ui/States'
+import type { Objective } from '@/domain/entities/objective'
+import { ContextLine } from '@/presentation/components/shared/Meta'
 import { HabitGlyph, Icon } from '@/presentation/components/ui/Icon'
 import { Panel, PanelHeader, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
 import { cn } from '@/shared/lib/cn'
 
 interface HabitsCardProps {
   readonly states: readonly HabitDayState[]
+  /** Objetivos ativos: o hábito precisa dizer o que ele sustenta. */
+  readonly objectives: readonly Objective[]
+  /** Título de cada etapa por id, pra linha de contexto. */
+  readonly stageTitles: ReadonlyMap<string, string>
   readonly progress: HabitDayProgress
   readonly onSetStatus: (habitId: string, status: HabitStatus) => Promise<void>
   readonly onSeeAll: () => void
@@ -31,7 +37,15 @@ interface HabitsCardProps {
  * legítimas, e a versão mínima conta como cumprido. O que o card mede é
  * presença, não perfeição.
  */
-export function HabitsCard({ states, progress, onSetStatus, onSeeAll, onCreate }: HabitsCardProps) {
+export function HabitsCard({
+  states,
+  objectives,
+  stageTitles,
+  progress,
+  onSetStatus,
+  onSeeAll,
+  onCreate,
+}: HabitsCardProps) {
   return (
     <Panel aria-labelledby="habitos-titulo">
       <PanelHeader
@@ -83,7 +97,15 @@ export function HabitsCard({ states, progress, onSetStatus, onSeeAll, onCreate }
 
           <ul className="mt-4 flex flex-col gap-2">
             {states.map((state) => (
-              <HabitRow key={state.habit.id} state={state} onSetStatus={onSetStatus} />
+              <HabitRow
+                key={state.habit.id}
+                state={state}
+                objective={objectives.find((item) => item.id === state.habit.objectiveId)}
+                stageTitle={
+                  state.habit.stageId ? (stageTitles.get(state.habit.stageId) ?? null) : null
+                }
+                onSetStatus={onSetStatus}
+              />
             ))}
           </ul>
         </>
@@ -94,9 +116,13 @@ export function HabitsCard({ states, progress, onSetStatus, onSeeAll, onCreate }
 
 function HabitRow({
   state,
+  objective,
+  stageTitle,
   onSetStatus,
 }: {
   state: HabitDayState
+  objective: Objective | undefined
+  stageTitle: string | null
   onSetStatus: (habitId: string, status: HabitStatus) => Promise<void>
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -164,6 +190,14 @@ function HabitRow({
             <span aria-hidden="true">·</span>
             <span>{habitTargetLabel(habit)}</span>
           </p>
+          {/* O que esse hábito sustenta. Sem isso ele vira uma caixinha pra
+              marcar, e caixinha marcada não sobrevive a uma semana ruim. */}
+          <ContextLine
+            className="mt-0.5"
+            role={objective ? 'Hábito de apoio' : undefined}
+            stage={stageTitle}
+            objective={objective}
+          />
         </div>
 
         {streak > 0 ? (

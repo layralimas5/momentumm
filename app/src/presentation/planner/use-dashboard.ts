@@ -1,10 +1,17 @@
 import { useCallback, useMemo, useState } from 'react'
 import { totalMinutes } from '@/domain/entities/activity'
-import { addDays } from '@/domain/entities/day'
+import { addDays, dayKeyOf, type DayKey } from '@/domain/entities/day'
 import { capacityOf, checkInOfDay, type CapacityProfile, type CheckIn } from '@/domain/entities/checkin'
 import { paceOf, type GoalPace, type GoalProgress } from '@/domain/entities/goal'
 import { habitDayProgress, habitDayStates, type HabitDayProgress, type HabitDayState } from '@/domain/entities/habit'
-import { primaryInsight, type Insight, type InsightInput } from '@/domain/entities/insight'
+import {
+  primaryInsight,
+  type Insight,
+  type InsightInput,
+  type ObjectiveInsightInput,
+} from '@/domain/entities/insight'
+import { planRatioAt } from '@/domain/entities/plan-progress'
+import { MOMENTUM_WINDOW_DAYS } from '@/domain/entities/momentum'
 import {
   calculateMomentum,
   recommendationFor,
@@ -15,6 +22,7 @@ import { isPending, mainPriorityOf, nextTaskForGoal, supportingTasksOf, type Tas
 import { summarizeWeek, type WeeklySummary } from '@/domain/entities/week'
 import { winOfDay, type Win } from '@/domain/entities/win'
 import { usePlanner } from './use-planner'
+import { useObjectives, type ObjectiveView } from './use-objectives'
 
 const DISMISSED_KEY = 'momentumm.insights.dismissed.v1'
 
@@ -22,6 +30,14 @@ export interface GoalInMotion {
   readonly progress: GoalProgress
   readonly pace: GoalPace
   readonly nextTask: Task | null
+}
+
+/** Uma ação com o caminho dela: objetivo, etapa e por que ela importa hoje. */
+export interface NextUp {
+  readonly task: Task
+  readonly view: ObjectiveView
+  readonly stageTitle: string | null
+  readonly reason: string
 }
 
 export interface DayProgress {
@@ -33,6 +49,14 @@ export interface DayProgress {
 
 export interface DashboardView {
   readonly checkIn: CheckIn | null
+  /**
+   * Os objetivos com plano e previsão. O dia lê daqui pra dizer a que etapa e
+   * a que objetivo cada linha pertence — é o que separa uma lista de tarefas
+   * de um sistema de progresso.
+   */
+  readonly objectives: readonly ObjectiveView[]
+  /** A próxima ação recomendada, com o contexto dela. Null quando não há. */
+  readonly nextUp: NextUp | null
   /** Quanto do dia já saiu, contando hábitos e ações juntos. */
   readonly dayProgress: DayProgress
   /**
@@ -65,6 +89,7 @@ export interface DashboardView {
  */
 export function useDashboard(): DashboardView {
   const planner = usePlanner()
+  const objectives = useObjectives()
   const [dismissed, setDismissed] = useState<ReadonlySet<string>>(loadDismissed)
 
   const {
@@ -83,9 +108,48 @@ export function useDashboard(): DashboardView {
   const checkIn = useMemo(() => checkInOfDay(checkIns, today), [checkIns, today])
   const capacity = useMemo(() => capacityOf(checkIn), [checkIn])
 
+  /**
+   * O avanço de plano na janela do momentum, somado entre os objetivos.
+   *
+   * É o que faz fechar uma etapa mexer no ritmo — sem isso o momentum
+   * enxergaria só hábito e ação solta, e uma semana de trabalho pesado num
+   * objetivo apareceria como semana parada.
+   */
+  const planGains = useMemo<Pick<MomentumInput, 'planGain' | 'previousPlanGain'>>(() => {
+    const running = objectives.filter((view) => view.plan.hasPlan)
+    // Objeto vazio, não `undefined` explícito: sem plano nenhum o fator fica
+    // neutro no momentum em vez de valer zero.
+    if (running.length === 0) return {}
+
+    const gainSince = (end: DayKey) => {
+      const start = addDays(end, -(MOMENTUM_WINDOW_DAYS - 1))
+      const total = running.reduce(
+        (sum, view) =>
+          sum +
+          (planRatioAt(view.plan.stages, end, dayKeyOf) -
+            planRatioAt(view.plan.stages, start, dayKeyOf)),
+        0,
+      )
+      return Math.max(0, total / running.length)
+    }
+
+    return {
+      planGain: gainSince(today),
+      previousPlanGain: gainSince(addDays(today, -MOMENTUM_WINDOW_DAYS)),
+    }
+  }, [objectives, today])
+
   const momentumInput = useMemo<MomentumInput>(
-    () => ({ activities, habits, habitLogs, tasks, today }),
-    [activities, habits, habitLogs, tasks, today],
+    () => ({
+      activities,
+      habits,
+      habitLogs,
+      tasks,
+      today,
+      weeklyReviews: planner.weeklyReviews,
+      ...planGains,
+    }),
+    [activities, habits, habitLogs, tasks, today, planner.weeklyReviews, planGains],
   )
 
   const momentum = useMemo(() => calculateMomentum(momentumInput), [momentumInput])
@@ -110,6 +174,11 @@ export function useDashboard(): DashboardView {
     [goalProgress, tasks, today],
   )
 
+  const objectiveInput = useMemo<ObjectiveInsightInput[]>(
+    () => objectives.map((view) => ({ plan: view.plan, forecast: view.forecast })),
+    [objectives],
+  )
+
   const insight = useMemo(() => {
     const input: InsightInput = {
       activities,
@@ -121,9 +190,54 @@ export function useDashboard(): DashboardView {
       momentum,
       capacity,
       today,
+      objectives: objectiveInput,
     }
     return primaryInsight(input, dismissed)
-  }, [activities, habits, habitLogs, tasks, checkIns, streak, momentum, capacity, today, dismissed])
+  }, [
+    activities,
+    habits,
+    habitLogs,
+    tasks,
+    checkIns,
+    streak,
+    momentum,
+    capacity,
+    today,
+    objectiveInput,
+    dismissed,
+  ])
+
+  /**
+   * A próxima ação, com o motivo dela.
+   *
+   * A prioridade principal vem primeiro por ser uma escolha explícita da
+   * pessoa. Sem ela, o app propõe a próxima ação do objetivo mais apertado —
+   * e diz por quê, porque uma sugestão sem motivo é indistinguível de um chute.
+   */
+  const nextUp = useMemo<NextUp | null>(() => {
+    const candidates = objectives.filter((view) => view.plan.nextTask !== null)
+    if (candidates.length === 0) return null
+
+    const chosen =
+      candidates.find((view) => view.plan.nextTask?.id === mainPriority?.id) ??
+      candidates.find((view) => view.plan.bottleneck !== null) ??
+      candidates[0]
+
+    const task = chosen?.plan.nextTask
+    if (!chosen || !task) return null
+
+    const stage =
+      chosen.plan.stages.find((item) => item.stage.id === task.stageId)?.stage ?? null
+
+    const reason =
+      chosen.plan.bottleneck?.stage.id === stage?.id && stage
+        ? `Destrava a etapa ${stage.title}, que está segurando o objetivo.`
+        : stage
+          ? `Próximo passo da etapa ${stage.title}.`
+          : 'Próxima ação em aberto desse objetivo.'
+
+    return { task, view: chosen, stageTitle: stage?.title ?? null, reason }
+  }, [objectives, mainPriority])
 
   const dismissInsight = useCallback((id: string) => {
     setDismissed((current) => {
@@ -176,6 +290,8 @@ export function useDashboard(): DashboardView {
 
   return {
     checkIn,
+    objectives,
+    nextUp,
     dayProgress,
     resumeNote,
     capacity,

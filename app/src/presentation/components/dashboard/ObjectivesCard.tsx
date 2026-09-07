@@ -2,16 +2,16 @@ import { activityType, formatUnit } from '@/domain/entities/activity-type'
 import {
   deadlineLabelOf,
   OBJECTIVE_STATUS_LABELS,
-  type ObjectiveProgress,
   type ObjectiveStatus,
 } from '@/domain/entities/objective'
+import type { ObjectiveView } from '@/presentation/planner/use-objectives'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { EmptyState } from '@/presentation/components/ui/States'
 import { Panel, PanelHeader, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
 
 interface ObjectivesCardProps {
-  readonly objectives: readonly ObjectiveProgress[]
+  readonly objectives: readonly ObjectiveView[]
   readonly onCreate: () => void
   readonly onOpenReview: () => void
 }
@@ -59,8 +59,8 @@ export function ObjectivesCard({ objectives, onCreate, onOpenReview }: Objective
         </div>
       ) : (
         <ul className="mt-4 flex flex-col gap-3">
-          {objectives.map((progress) => (
-            <ObjectiveRow key={progress.objective.id} progress={progress} />
+          {objectives.map((view) => (
+            <ObjectiveRow key={view.progress.objective.id} view={view} />
           ))}
         </ul>
       )}
@@ -68,10 +68,14 @@ export function ObjectivesCard({ objectives, onCreate, onOpenReview }: Objective
   )
 }
 
-export function ObjectiveRow({ progress }: { readonly progress: ObjectiveProgress }) {
+export function ObjectiveRow({ view }: { readonly view: ObjectiveView }) {
+  const { progress, plan } = view
   const { objective } = progress
   const type = activityType(objective.axis)
-  const percent = Math.round(progress.ratio * 100)
+  // O percentual é o do PLANO quando ele existe. Era essa a divergência que a
+  // hierarquia veio resolver: esse card mostrava volume e a tela do plano
+  // mostrava ações concluídas, dois números diferentes pro mesmo objetivo.
+  const percent = Math.round(view.ratio * 100)
   const elapsedPercent = Math.round(progress.elapsed * 100)
 
   return (
@@ -80,6 +84,7 @@ export function ObjectiveRow({ progress }: { readonly progress: ObjectiveProgres
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-ink">{objective.title}</p>
           <p className="mt-0.5 text-xs text-ink-faint">
+            {plan.currentStage ? `Etapa: ${plan.currentStage.stage.title} · ` : ''}
             {formatUnit(type, progress.done)} de {objective.target} · {deadlineLabelOf(progress)}
           </p>
         </div>
@@ -91,7 +96,7 @@ export function ObjectiveRow({ progress }: { readonly progress: ObjectiveProgres
       <div className="mt-3 flex items-center gap-3">
         <div className="relative flex-1">
           <ProgressBar
-            value={progress.ratio}
+            value={view.ratio}
             label={`Progresso de ${objective.title}`}
             color={progress.status === 'concluido' ? 'var(--color-positive)' : type.colorToken}
           />

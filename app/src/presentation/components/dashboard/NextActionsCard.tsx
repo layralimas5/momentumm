@@ -5,7 +5,7 @@ import type { DayKey } from '@/domain/entities/day'
 import type { Goal } from '@/domain/entities/goal'
 import { groupPendingTasks, TASK_EFFORT_LABELS, type Task } from '@/domain/entities/task'
 import type { Objective } from '@/domain/entities/objective'
-import { ObjectiveLink } from '@/presentation/components/shared/Meta'
+import { ContextLine } from '@/presentation/components/shared/Meta'
 import { Button } from '@/presentation/components/ui/Button'
 import { ChoiceGroup } from '@/presentation/components/ui/Choice'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
@@ -22,6 +22,8 @@ interface NextActionsCardProps {
   readonly tasks: readonly Task[]
   readonly goals: readonly Goal[]
   readonly objectives: readonly Objective[]
+  /** Título da etapa de cada ação, por id. O dia mostra o caminho, não só o item. */
+  readonly stageTitles: ReadonlyMap<string, string>
   readonly today: DayKey
   readonly excludeId?: string | undefined
   readonly onComplete: (task: Task) => Promise<void>
@@ -42,6 +44,7 @@ export function NextActionsCard({
   tasks,
   goals,
   objectives,
+  stageTitles,
   today,
   excludeId,
   onComplete,
@@ -129,6 +132,7 @@ export function NextActionsCard({
                           task={task}
                           goal={goals.find((goal) => goal.id === task.goalId) ?? null}
                           objective={objectives.find((item) => item.id === task.objectiveId)}
+                          stageTitle={task.stageId ? (stageTitles.get(task.stageId) ?? null) : null}
                           today={today}
                           onComplete={onComplete}
                           onPostpone={onPostpone}
@@ -165,6 +169,7 @@ function TaskRow({
   task,
   goal,
   objective,
+  stageTitle,
   today,
   onComplete,
   onPostpone,
@@ -175,6 +180,7 @@ function TaskRow({
   task: Task
   goal: Goal | null
   objective: Objective | undefined
+  stageTitle: string | null
   today: DayKey
   onComplete: (task: Task) => Promise<void>
   onPostpone: (task: Task) => Promise<void>
@@ -212,9 +218,9 @@ function TaskRow({
           <span>· {TASK_EFFORT_LABELS[task.effort]}</span>
           {overdue ? <span className="text-flame">· atrasada</span> : null}
         </p>
-        {/* O objetivo por trás da ação. É a diferença entre uma lista de
+        {/* O caminho por trás da ação. É a diferença entre uma lista de
             tarefas e um plano: sem isso a pessoa executa sem saber pra quê. */}
-        <ObjectiveLink objective={objective} className="mt-1" />
+        <ContextLine className="mt-1" stage={stageTitle} objective={objective} />
       </div>
 
       {/*

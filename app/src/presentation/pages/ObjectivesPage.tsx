@@ -129,17 +129,22 @@ function ObjectiveCard({ view }: { readonly view: ObjectiveView }) {
       <div className="mt-4 flex items-center gap-3">
         <ProgressBar
           className="flex-1"
-          value={view.progress.ratio}
+          value={view.ratio}
           label={`Progresso de ${objective.title}`}
           color={axis.colorToken}
         />
         <span className="tabular shrink-0 text-sm font-semibold text-ink">
-          {Math.round(view.progress.ratio * 100)}%
+          {Math.round(view.ratio * 100)}%
         </span>
       </div>
 
+      {/* O que a barra mede vem escrito: com plano ela mede execução, sem
+          plano ela cai no volume. Uma barra sem legenda é uma barra que anda
+          sozinha. */}
       <p className="mt-2 text-xs text-ink-faint">
-        {formatUnit(axis, view.progress.done)} de {objective.target}
+        {view.ratioSource === 'plano'
+          ? `${view.plan.stages.filter((item) => item.stage.status === 'concluida').length} de ${view.plan.stages.length} etapas · ${formatUnit(axis, view.progress.done)} registradas`
+          : `${formatUnit(axis, view.progress.done)} de ${objective.target} · sem etapas ainda`}
       </p>
 
       {view.progress.state === 'concluido' ? null : (

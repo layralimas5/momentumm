@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Insight } from '@/domain/entities/insight'
 import { addDays } from '@/domain/entities/day'
@@ -88,6 +88,16 @@ export function DashboardPage() {
     [planner],
   )
 
+  /**
+   * Título de cada etapa por id. O dia inteiro lê daqui pra dizer a que ponto
+   * do plano cada linha pertence — é o que separa "Finalizar onboarding" de
+   * "Finalizar onboarding · Etapa: MVP · Objetivo: Lançar meu SaaS".
+   */
+  const stageTitles = useMemo(
+    () => new Map(planner.planStages.map((stage) => [stage.id, stage.title])),
+    [planner.planStages],
+  )
+
   /** "Aplicar sugestão": o insight precisa mudar o dia, não só aconselhar. */
   const applyInsight = useCallback(
     async (insight: Insight) => {
@@ -127,13 +137,33 @@ export function DashboardPage() {
           composer.open('acao')
           break
         }
+        /*
+          As três ações da hierarquia levam a pessoa até onde a decisão
+          acontece. Um insight que aponta uma etapa travada e não abre essa
+          etapa transfere pra pessoa o trabalho de encontrar de novo o que o
+          app acabou de achar.
+        */
+        case 'abrir-objetivo': {
+          const target = insight.focus?.objectiveId
+          if (target) navigate(`/app/objetivos/${target}`)
+          break
+        }
+        case 'abrir-plano': {
+          navigate('/app/plano')
+          break
+        }
+        case 'comecar-acao': {
+          const task = planner.tasks.find((item) => item.id === insight.focus?.taskId)
+          if (task) startFocus(task)
+          break
+        }
         case 'nenhuma':
           break
       }
 
       view.dismissInsight(insight.id)
     },
-    [planner, view, composer, shrinkTask, startFocus],
+    [planner, view, composer, navigate, shrinkTask, startFocus],
   )
 
   const continueGoal = useCallback(
@@ -223,7 +253,7 @@ export function DashboardPage() {
         cumpre a lista do dia e nunca chega em lugar nenhum.
       */}
       <ObjectivesCard
-        objectives={planner.objectiveProgress}
+        objectives={view.objectives}
         onCreate={() => composer.open('objetivo')}
         onOpenReview={() => navigate('/app/review')}
       />
@@ -232,6 +262,7 @@ export function DashboardPage() {
 
       <PriorityCard
         task={view.mainPriority}
+        stageTitle={stageTitles.get(view.mainPriority?.stageId ?? '') ?? null}
         goal={mainGoal}
         objective={planner.objectives.find(
           (item) => item.id === view.mainPriority?.objectiveId,
@@ -260,6 +291,8 @@ export function DashboardPage() {
           <div className="grid gap-5 2xl:grid-cols-2 2xl:items-start">
             <HabitsCard
               states={view.habitStates}
+              objectives={planner.objectives}
+              stageTitles={stageTitles}
               progress={view.habitProgress}
               onSetStatus={planner.setHabitStatus}
               onSeeAll={() => navigate('/app/habitos')}
@@ -269,6 +302,7 @@ export function DashboardPage() {
               tasks={planner.tasks}
               goals={planner.goals}
               objectives={planner.objectives}
+              stageTitles={stageTitles}
               today={planner.today}
               excludeId={view.mainPriority?.id}
               onComplete={completeTask}

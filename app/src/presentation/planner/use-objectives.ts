@@ -1,8 +1,10 @@
 import { useMemo } from 'react'
 import type { Activity } from '@/domain/entities/activity'
-import { addDays } from '@/domain/entities/day'
+import { addDays, dayKeyOf } from '@/domain/entities/day'
 import { habitConsistency, type Habit, type HabitConsistency } from '@/domain/entities/habit'
+import { forecastOf, type Forecast } from '@/domain/entities/forecast'
 import type { ObjectiveProgress } from '@/domain/entities/objective'
+import { planProgressOf, type PlanProgress } from '@/domain/entities/plan-progress'
 import { comparePriority } from '@/domain/entities/priority'
 import { byPlanOrder, isPending, type Task } from '@/domain/entities/task'
 import { usePlanner } from './use-planner'
@@ -11,7 +13,25 @@ import { usePlanner } from './use-planner'
 export const STALLED_AFTER_DAYS = 7
 
 export interface ObjectiveView {
+  /** O volume registrado contra o alvo: o ritmo. */
   readonly progress: ObjectiveProgress
+  /**
+   * O plano: etapas, progresso ponderado, gargalo e próxima ação. É daqui que
+   * sai a porcentagem que a tela mostra quando o objetivo tem plano.
+   */
+  readonly plan: PlanProgress
+  readonly forecast: Forecast
+  /**
+   * A porcentagem que a tela mostra.
+   *
+   * Com plano, é a execução ponderada — é ela que responde "quanto do caminho
+   * eu andei". Sem plano, cai no volume: uma barra em zero pra quem leu 400
+   * páginas seria simplesmente falsa, e o produto perderia a promessa de que
+   * registrar empurra o objetivo.
+   */
+  readonly ratio: number
+  /** De onde veio o número acima. A tela precisa dizer isso em voz alta. */
+  readonly ratioSource: 'plano' | 'volume'
   readonly habits: readonly { habit: Habit; consistency: HabitConsistency }[]
   readonly tasks: readonly Task[]
   readonly openTasks: readonly Task[]
@@ -31,11 +51,21 @@ export interface ObjectiveView {
  * quatro que faz um app parecer quatro apps.
  */
 export function useObjectives(): readonly ObjectiveView[] {
-  const { objectiveProgress, habits, tasks, activities, habitLogs, today } = usePlanner()
+  const { objectiveProgress, plans, habits, tasks, activities, habitLogs, today } = usePlanner()
 
   return useMemo(() => {
     const views = objectiveProgress.map((progress) => {
       const objective = progress.objective
+      /*
+        O plano vem calculado do provider. O fallback existe só pro instante
+        entre uma escrita otimista e o recálculo: melhor uma linha sem etapa
+        por um quadro do que a tela inteira quebrando.
+      */
+      const plan =
+        plans.find((item) => item.objective.id === objective.id) ??
+        planProgressOf(objective, [], tasks, habits, today)
+
+      const forecast = forecastOf({ plan, habits, habitLogs, today })
 
       const linkedHabits = habits
         .filter((habit) => habit.objectiveId === objective.id && habit.archivedAt === null)
@@ -59,13 +89,31 @@ export function useObjectives(): readonly ObjectiveView[] {
         )
         .slice(0, 8)
 
+      /*
+        Parado é não ter movimento NENHUM: nem registro do eixo, nem ação
+        concluída. Olhar só a atividade marcaria como parado quem passou a
+        semana fechando ações de planejamento, que é justamente quem está
+        avançando o objetivo.
+      */
+      const lastCompletion = linkedTasks
+        .map((task) => task.completedAt)
+        .filter((date): date is Date => date !== null)
+        .sort((a, b) => b.getTime() - a.getTime())[0]
+
       const lastMove = recent[0]?.day ?? null
-      const stalled =
-        progress.state === 'em-andamento' &&
-        (lastMove === null || lastMove < addDays(today, -STALLED_AFTER_DAYS))
+      const limit = addDays(today, -STALLED_AFTER_DAYS)
+      const movedRecently =
+        (lastMove !== null && lastMove >= limit) ||
+        (lastCompletion !== undefined && dayKeyOf(lastCompletion) >= limit)
+
+      const stalled = progress.state === 'em-andamento' && !movedRecently
 
       return {
         progress,
+        plan,
+        forecast,
+        ratio: plan.hasPlan ? plan.ratio : progress.ratio,
+        ratioSource: plan.hasPlan ? ('plano' as const) : ('volume' as const),
         habits: linkedHabits,
         tasks: linkedTasks,
         openTasks,
@@ -90,7 +138,7 @@ export function useObjectives(): readonly ObjectiveView[] {
 
       return a.progress.daysLeft - b.progress.daysLeft
     })
-  }, [objectiveProgress, habits, tasks, activities, habitLogs, today])
+  }, [objectiveProgress, plans, habits, tasks, activities, habitLogs, today])
 }
 
 export function useObjective(id: string | undefined): ObjectiveView | null {

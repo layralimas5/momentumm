@@ -23,23 +23,33 @@ import {
   type Objective,
 } from '@/domain/entities/objective'
 import { limitsOf } from '@/domain/entities/plan'
+import { planProgressOf } from '@/domain/entities/plan-progress'
+import {
+  assertStageBelongsTo,
+  rebalanceWeights,
+  stagesOfObjective,
+  type NewPlanStageInput,
+  type PlanStage,
+} from '@/domain/entities/plan-stage'
 import type { PlanDraft } from '@/domain/entities/plan-builder'
 import { calculateStreakFromDays } from '@/domain/entities/streak'
-import type { NewTaskInput, Task } from '@/domain/entities/task'
+import { completeTask, reopenTask, type NewTaskInput, type Task } from '@/domain/entities/task'
 import type { NewWinInput, Win } from '@/domain/entities/win'
 import type { WeeklyReview, WeeklyReviewDraft } from '@/domain/entities/weekly-review'
 import type { HabitUpdate } from '@/domain/repositories/habit-repository'
 import type { ObjectiveUpdate } from '@/domain/repositories/objective-repository'
+import type { PlanStageUpdate } from '@/domain/repositories/plan-stage-repository'
 import type { TaskReorder, TaskUpdate } from '@/domain/repositories/task-repository'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
-import { toUserMessage } from '@/shared/errors'
+import { DomainError, toUserMessage } from '@/shared/errors'
 import { PlannerContext, type PlannerState } from './planner-context'
 
 interface Snapshot {
   readonly customAxes: ActivityType[]
   readonly activities: Activity[]
   readonly objectives: Objective[]
+  readonly planStages: PlanStage[]
   readonly goals: Goal[]
   readonly habits: Habit[]
   readonly habitLogs: HabitLog[]
@@ -53,6 +63,7 @@ const EMPTY: Snapshot = {
   customAxes: [],
   activities: [],
   objectives: [],
+  planStages: [],
   goals: [],
   habits: [],
   habitLogs: [],
@@ -111,6 +122,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         customAxes,
         activities,
         objectives,
+        planStages,
         goals,
         habits,
         habitLogs,
@@ -122,6 +134,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         container.activityTypes.listCustom(user.id),
         container.activities.listByUser(user.id),
         container.objectives.listByUser(user.id),
+        container.planStages.listByUser(user.id),
         container.goals.listByUser(user.id),
         container.habits.listByUser(user.id),
         container.habits.listLogs(user.id),
@@ -141,6 +154,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         customAxes,
         activities: sortByRecent(activities),
         objectives: objectives.filter(isActiveObjective),
+        planStages,
         goals: goals.filter(isActive),
         habits,
         habitLogs,
@@ -258,18 +272,37 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     [user, mutate],
   )
 
+  /**
+   * Arquivar o objetivo leva o plano dele junto.
+   *
+   * Etapa não existe fora do objetivo: uma etapa órfã não significa nada e não
+   * aparece em lugar nenhum. Ação e hábito NÃO somem — eles perdem só o
+   * vínculo com a etapa, porque são trabalho registrado e histórico. É a mesma
+   * regra do banco (`cascade` na etapa, `set null` na ação).
+   */
   const archiveObjective = useCallback(
     async (id: string) => {
       if (!user) return
+      const orphans = new Set(
+        data.planStages.filter((stage) => stage.objectiveId === id).map((stage) => stage.id),
+      )
+
       await mutate(
         (current) => ({
           ...current,
           objectives: current.objectives.filter((objective) => objective.id !== id),
+          planStages: current.planStages.filter((stage) => stage.objectiveId !== id),
+          tasks: current.tasks.map((task) =>
+            task.stageId && orphans.has(task.stageId) ? { ...task, stageId: null } : task,
+          ),
+          habits: current.habits.map((habit) =>
+            habit.stageId && orphans.has(habit.stageId) ? { ...habit, stageId: null } : habit,
+          ),
         }),
         () => container.objectives.archive(id, user.id),
       )
     },
-    [user, mutate],
+    [user, data.planStages, mutate],
   )
 
   const setObjectivePaused = useCallback(
@@ -318,6 +351,161 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     [user, data.tasks, updateObjective],
   )
 
+  /**
+   * Cria a etapa e reequilibra os pesos do objetivo.
+   *
+   * O peso é propriedade do CONJUNTO: criar a quarta etapa muda o valor das
+   * outras três. Gravar só a nova deixaria o plano somando 133% até alguém
+   * abrir a tela de pesos — e uma barra de progresso passando de 100 destrói a
+   * confiança em todos os outros números da tela junto.
+   */
+  const createStage = useCallback(
+    async (input: Omit<NewPlanStageInput, 'userId'>): Promise<PlanStage | null> => {
+      if (!user) return null
+
+      const siblings = stagesOfObjective(data.planStages, input.objectiveId)
+      const created = await container.planStages.create({
+        userId: user.id,
+        ...input,
+        order: input.order ?? siblings.length,
+      })
+
+      const balanced =
+        input.weight === undefined ? rebalanceWeights([...siblings, created]) : [...siblings, created]
+
+      if (input.weight === undefined && balanced.length > 1) {
+        await container.planStages.reweight(
+          user.id,
+          balanced.map((stage) => ({ id: stage.id, order: stage.order, weight: stage.weight })),
+        )
+      }
+
+      const byId = new Map(balanced.map((stage) => [stage.id, stage]))
+      setData((current) => ({
+        ...current,
+        planStages: [
+          ...current.planStages.map((stage) => byId.get(stage.id) ?? stage),
+          byId.get(created.id) ?? created,
+        ],
+      }))
+      setError(null)
+      return byId.get(created.id) ?? created
+    },
+    [user, data.planStages],
+  )
+
+  const updateStage = useCallback(
+    async (id: string, changes: PlanStageUpdate) => {
+      if (!user) return
+      await mutate(
+        (current) => ({
+          ...current,
+          planStages: current.planStages.map((stage) =>
+            stage.id === id ? { ...stage, ...changes } : stage,
+          ),
+        }),
+        async () => {
+          await container.planStages.update(id, user.id, changes)
+        },
+      )
+    },
+    [user, mutate],
+  )
+
+  /**
+   * Concluir e reabrir a etapa. A data de conclusão anda junto com o estado:
+   * etapa concluída sem carimbo quebraria a série que a previsão usa pra medir
+   * velocidade.
+   */
+  const completeStage = useCallback(
+    async (id: string, done: boolean) => {
+      await updateStage(id, {
+        status: done ? 'concluida' : 'em-andamento',
+        completedAt: done ? new Date() : null,
+      })
+    },
+    [updateStage],
+  )
+
+  /** Reordena e repesa em uma operação: os pesos precisam somar 100 sempre. */
+  const reweightStages = useCallback(
+    async (objectiveId: string, stages: readonly PlanStage[]) => {
+      if (!user) return
+      const items = stages.map((stage) => ({
+        id: stage.id,
+        order: stage.order,
+        weight: stage.weight,
+      }))
+      const byId = new Map(items.map((item) => [item.id, item]))
+
+      await mutate(
+        (current) => ({
+          ...current,
+          planStages: current.planStages.map((stage) => {
+            const change = byId.get(stage.id)
+            return change ? { ...stage, order: change.order, weight: change.weight } : stage
+          }),
+        }),
+        () => container.planStages.reweight(user.id, items),
+      )
+
+      // Silencia o lint sobre o parâmetro: ele existe pra deixar a chamada
+      // legível no ponto de uso, onde "repesar as etapas DESSE objetivo" é a
+      // informação que importa.
+      void objectiveId
+    },
+    [user, mutate],
+  )
+
+  /**
+   * Apagar a etapa não apaga o trabalho.
+   *
+   * As ações voltam pro objetivo sem etapa, onde a pessoa decide o destino —
+   * apagar tarefa junto com uma reorganização é a forma mais rápida de alguém
+   * perder confiança no app. Os pesos das que sobraram são reequilibrados.
+   */
+  const removeStage = useCallback(
+    async (id: string) => {
+      if (!user) return
+      const target = data.planStages.find((stage) => stage.id === id)
+      if (!target) return
+
+      const remaining = rebalanceWeights(
+        stagesOfObjective(data.planStages, target.objectiveId).filter((stage) => stage.id !== id),
+      )
+      const byId = new Map(remaining.map((stage) => [stage.id, stage]))
+
+      await mutate(
+        (current) => ({
+          ...current,
+          planStages: current.planStages
+            .filter((stage) => stage.id !== id)
+            .map((stage) => byId.get(stage.id) ?? stage),
+          tasks: current.tasks.map((task) =>
+            task.stageId === id ? { ...task, stageId: null } : task,
+          ),
+          habits: current.habits.map((habit) =>
+            habit.stageId === id ? { ...habit, stageId: null } : habit,
+          ),
+        }),
+        async () => {
+          await container.planStages.remove(id, user.id)
+          if (remaining.length > 0) {
+            await container.planStages.reweight(
+              user.id,
+              remaining.map((stage) => ({
+                id: stage.id,
+                order: stage.order,
+                weight: stage.weight,
+              })),
+            )
+          }
+        },
+      )
+    },
+    [user, data.planStages, mutate],
+  )
+
   const createGoal = useCallback(
     async (input: Omit<NewGoalInput, 'userId'>): Promise<Goal | null> => {
       if (!user) return null
@@ -347,15 +535,42 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     [user, mutate],
   )
 
+  /**
+   * A etapa e o objetivo precisam combinar.
+   *
+   * Uma ação de leitura pendurada numa etapa de treino faz o progresso dos DOIS
+   * objetivos mentir ao mesmo tempo, e o erro é invisível: nada quebra, a barra
+   * só passa a andar errado. Por isso a checagem acontece aqui, antes de gravar,
+   * além do trigger que o banco tem pra quem não passa pelo app.
+   *
+   * Quando só a etapa vem preenchida, o objetivo é deduzido dela em vez de
+   * recusado: escolher a etapa já é escolher o objetivo.
+   */
+  const resolveStage = useCallback(
+    (objectiveId: string | null | undefined, stageId: string | null | undefined) => {
+      if (!stageId) return { objectiveId: objectiveId ?? null, stageId: null }
+
+      const stage = data.planStages.find((item) => item.id === stageId)
+      if (!stage) throw new DomainError('Essa etapa não existe mais.')
+
+      if (!objectiveId) return { objectiveId: stage.objectiveId, stageId }
+
+      assertStageBelongsTo(stage, objectiveId)
+      return { objectiveId, stageId }
+    },
+    [data.planStages],
+  )
+
   const createHabit = useCallback(
     async (input: Omit<NewHabitInput, 'userId'>): Promise<Habit | null> => {
       if (!user) return null
-      const habit = await container.habits.create({ userId: user.id, ...input })
+      const link = resolveStage(input.objectiveId, input.stageId)
+      const habit = await container.habits.create({ userId: user.id, ...input, ...link })
       setData((current) => ({ ...current, habits: [...current.habits, habit] }))
       setError(null)
       return habit
     },
-    [user],
+    [user, resolveStage],
   )
 
   const updateHabit = useCallback(
@@ -434,7 +649,8 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   const createTask = useCallback(
     async (input: Omit<NewTaskInput, 'userId'>): Promise<Task | null> => {
       if (!user) return null
-      const task = await container.tasks.create({ userId: user.id, ...input })
+      const link = resolveStage(input.objectiveId, input.stageId)
+      const task = await container.tasks.create({ userId: user.id, ...input, ...link })
       setData((current) => ({
         ...current,
         tasks: [
@@ -449,12 +665,23 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       setError(null)
       return task
     },
-    [user],
+    [user, resolveStage],
   )
 
   const updateTask = useCallback(
     async (id: string, changes: TaskUpdate) => {
       if (!user) return
+
+      if (changes.stageId !== undefined || changes.objectiveId !== undefined) {
+        const target = data.tasks.find((task) => task.id === id)
+        const nextObjective =
+          changes.objectiveId !== undefined ? changes.objectiveId : (target?.objectiveId ?? null)
+        const nextStage =
+          changes.stageId !== undefined ? changes.stageId : (target?.stageId ?? null)
+        const link = resolveStage(nextObjective, nextStage)
+        changes = { ...changes, ...link }
+      }
+
       await mutate(
         (current) => {
           const target = current.tasks.find((task) => task.id === id)
@@ -476,7 +703,40 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         },
       )
     },
-    [user, mutate],
+    [user, data.tasks, mutate, resolveStage],
+  )
+
+  /**
+   * Concluir ou reabrir uma ação. É por aqui que TODA conclusão passa.
+   *
+   * O domínio é quem carimba a data — `completeTask` e `reopenTask` — em vez de
+   * cada tela montar o objeto na mão. Duas telas construindo o mesmo estado é
+   * como nasce a ação concluída sem `completedAt`, que some da série da
+   * previsão sem nenhum erro aparecer.
+   *
+   * O resto da cadeia acontece sozinho: progresso da etapa, do objetivo, do
+   * dia, do período, momentum, previsão e insights derivam desse mesmo estado
+   * por `useMemo`. Não existe cópia pra sincronizar.
+   */
+  const setTaskDone = useCallback(
+    async (id: string, done: boolean) => {
+      const target = data.tasks.find((task) => task.id === id)
+      if (!target) return
+
+      const next = done ? completeTask(target) : reopenTask(target)
+      await updateTask(id, { status: next.status, completedAt: next.completedAt })
+
+      if (!done || !target.stageId) return
+
+      // Primeira ação concluída tira a etapa de "não iniciada". É o único
+      // avanço automático que existe: fechar a etapa continua sendo decisão da
+      // pessoa, porque só ela sabe se o que faltava acontecia fora do app.
+      const stage = data.planStages.find((item) => item.id === target.stageId)
+      if (stage && stage.status === 'nao-iniciada') {
+        await updateStage(stage.id, { status: 'em-andamento' })
+      }
+    },
+    [data.tasks, data.planStages, updateTask, updateStage],
   )
 
   const reorderTasks = useCallback(
@@ -637,11 +897,28 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     [data.objectives, data.activities, today],
   )
 
+  /**
+   * O plano de cada objetivo, calculado uma vez pro app inteiro.
+   *
+   * Dashboard, plano, progresso, detalhe e insight leem daqui. Foi a
+   * divergência entre essas telas — cada uma com a sua conta de "quanto está
+   * feito" — que motivou a hierarquia; recalcular por tela traria o problema
+   * de volta pela porta dos fundos.
+   */
+  const plans = useMemo(
+    () =>
+      data.objectives.map((objective) =>
+        planProgressOf(objective, data.planStages, data.tasks, data.habits, today),
+      ),
+    [data.objectives, data.planStages, data.tasks, data.habits, today],
+  )
+
   const limits = useMemo(() => limitsOf(profile?.plan ?? 'free'), [profile])
 
   const isNewUser =
     !loading &&
     data.objectives.length === 0 &&
+    data.planStages.length === 0 &&
     data.habits.length === 0 &&
     data.goals.length === 0 &&
     data.tasks.length === 0 &&
@@ -655,6 +932,8 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       axes,
       objectives: data.objectives,
       objectiveProgress,
+      planStages: data.planStages,
+      plans,
       goals: data.goals,
       goalProgress,
       habits: data.habits,
@@ -678,6 +957,11 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       setObjectivePaused,
       completeObjective,
       applyPlan,
+      createStage,
+      updateStage,
+      completeStage,
+      reweightStages,
+      removeStage,
       createGoal,
       archiveGoal,
       createHabit,
@@ -687,6 +971,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       setHabitStatus,
       createTask,
       updateTask,
+      setTaskDone,
       reorderTasks,
       removeTask,
       saveCheckIn,
@@ -701,6 +986,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       axes,
       goalProgress,
       objectiveProgress,
+      plans,
       streak,
       limits,
       loading,
@@ -716,6 +1002,11 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       setObjectivePaused,
       completeObjective,
       applyPlan,
+      createStage,
+      updateStage,
+      completeStage,
+      reweightStages,
+      removeStage,
       createGoal,
       archiveGoal,
       createHabit,
@@ -725,6 +1016,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       setHabitStatus,
       createTask,
       updateTask,
+      setTaskDone,
       reorderTasks,
       removeTask,
       saveCheckIn,

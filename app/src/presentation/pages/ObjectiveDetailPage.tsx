@@ -4,7 +4,6 @@ import { activityType, formatUnit } from '@/domain/entities/activity-type'
 import { formatDayLabel } from '@/domain/entities/day'
 import { DAY_PART_LABELS, frequencyLabel, habitTargetLabel } from '@/domain/entities/habit'
 import { deadlineLabelOf, OBJECTIVE_STATUS_LABELS } from '@/domain/entities/objective'
-import { TASK_STATUS_LABELS } from '@/domain/entities/task'
 import { ObjectiveStateTag, PriorityTag } from '@/presentation/components/shared/Meta'
 import { Button } from '@/presentation/components/ui/Button'
 import { ConfirmDialog } from '@/presentation/components/ui/ConfirmDialog'
@@ -12,6 +11,8 @@ import { HabitGlyph, Icon } from '@/presentation/components/ui/Icon'
 import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { Panel, PanelHeader, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
 import { ObjectiveEditDialog } from '@/presentation/components/objective/ObjectiveEditDialog'
+import { ForecastPanel } from '@/presentation/components/plan/ForecastPanel'
+import { StagePanel } from '@/presentation/components/plan/StagePanel'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
 import { useObjective } from '@/presentation/planner/use-objectives'
 import { usePlanner } from '@/presentation/planner/use-planner'
@@ -88,20 +89,35 @@ export function ObjectiveDetailPage() {
           <Panel>
             <PanelHeader title="Progresso" icon="progresso" />
 
+            {/*
+              O número grande é a EXECUÇÃO do plano, não o volume registrado.
+              São perguntas diferentes: "quanto do caminho eu andei" e "quanto
+              eu produzi", e a segunda vem logo abaixo, com nome. Sem plano, o
+              volume assume — uma barra em zero pra quem leu 400 páginas seria
+              simplesmente falsa.
+            */}
             <div className="mt-4 flex items-end justify-between gap-4">
-              <p className="tabular text-4xl font-semibold tracking-tight text-ink">
-                {Math.round(view.progress.ratio * 100)}
-                <span className="text-2xl text-ink-faint">%</span>
-              </p>
+              <div>
+                <p className="tabular text-4xl font-semibold tracking-tight text-ink">
+                  {Math.round(view.ratio * 100)}
+                  <span className="text-2xl text-ink-faint">%</span>
+                </p>
+                <p className="mt-0.5 text-xs text-ink-faint">
+                  {view.ratioSource === 'plano'
+                    ? 'do plano concluído'
+                    : 'do alvo registrado (sem plano ainda)'}
+                </p>
+              </div>
               <p className="text-right text-sm text-ink-muted">
                 {formatUnit(axis, view.progress.done)}
                 <span className="text-ink-faint"> de {objective.target}</span>
+                <span className="mt-0.5 block text-xs text-ink-faint">volume registrado</span>
               </p>
             </div>
 
             <ProgressBar
               className="mt-3"
-              value={view.progress.ratio}
+              value={view.ratio}
               label={`Progresso de ${objective.title}`}
               color={axis.colorToken}
             />
@@ -118,7 +134,10 @@ export function ObjectiveDetailPage() {
                     : `${Math.ceil(view.progress.dailyPace)}/dia`
                 }
               />
-              <Figure label="Restam" value={String(view.progress.remaining)} />
+              <Figure
+                label="Etapa atual"
+                value={view.plan.currentStage?.stage.title ?? '—'}
+              />
             </div>
 
             {objective.motive ? (
@@ -129,72 +148,12 @@ export function ObjectiveDetailPage() {
             ) : null}
           </Panel>
 
-          <Panel>
-            <PanelHeader
-              title="Ações"
-              icon="plano"
-              hint="Os passos concretos desse objetivo."
-              action={
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => composer.open('acao', { presetObjectiveId: objective.id })}
-                >
-                  <Icon name="mais" className="size-4" />
-                  Nova ação
-                </Button>
-              }
-            />
-
-            {view.tasks.length === 0 ? (
-              <p className="mt-4 text-sm text-ink-muted">
-                Nenhuma ação ainda. Objetivo sem ação é intenção: cria uma pequena pra hoje.
-              </p>
-            ) : (
-              <ul className="mt-4 flex flex-col divide-y divide-line">
-                {view.tasks.map((task) => (
-                  <li key={task.id} className="flex items-center gap-3 py-3">
-                    <span
-                      aria-hidden="true"
-                      className={`size-2 shrink-0 rounded-full ${
-                        task.status === 'feita'
-                          ? 'bg-positive'
-                          : task.status === 'cancelada'
-                            ? 'bg-line-hi'
-                            : 'bg-brand'
-                      }`}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p
-                        className={`truncate text-sm ${
-                          task.status === 'feita' || task.status === 'cancelada'
-                            ? 'text-ink-faint line-through'
-                            : 'text-ink'
-                        }`}
-                      >
-                        {task.title}
-                      </p>
-                      <p className="mt-0.5 text-xs text-ink-faint">
-                        {formatDayLabel(task.day, planner.today)} · {TASK_STATUS_LABELS[task.status]}
-                      </p>
-                    </div>
-                    <PriorityTag priority={task.priority} />
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            <Link
-              to="/app/plano"
-              className="mt-4 inline-flex items-center gap-1.5 text-sm text-brand-ink transition-colors hover:text-brand-hi"
-            >
-              Abrir no plano
-              <Icon name="seta" className="size-4" />
-            </Link>
-          </Panel>
+          <StagePanel plan={view.plan} />
         </div>
 
         <div className="flex flex-col gap-5">
+          <ForecastPanel view={view} />
+
           <Panel>
             <PanelHeader
               title="Hábitos"
@@ -224,6 +183,15 @@ export function ObjectiveDetailPage() {
                         {frequencyLabel(habit)} · {habitTargetLabel(habit)} ·{' '}
                         {DAY_PART_LABELS[habit.dayPart]}
                       </p>
+                      {/* A etapa aparece quando existe: é o que diz que o hábito
+                          sustenta uma fase e não o objetivo inteiro. */}
+                      {habit.stageId ? (
+                        <p className="mt-0.5 truncate text-xs text-ink-faint">
+                          Etapa:{' '}
+                          {view.plan.stages.find((item) => item.stage.id === habit.stageId)?.stage
+                            .title ?? '—'}
+                        </p>
+                      ) : null}
                     </div>
                     <span className="tabular shrink-0 text-xs text-ink-muted">
                       {Math.round(consistency.rate * 100)}%
@@ -276,18 +244,19 @@ export function ObjectiveDetailPage() {
                 Arquivar
               </Button>
               <p className="text-xs text-ink-faint">
-                Arquivar tira o objetivo da lista e libera a área pra um objetivo novo. O histórico
-                de atividades continua onde está.
+                Arquivar tira o objetivo da lista, apaga as etapas dele e libera a área pra um
+                objetivo novo. As ações e os hábitos continuam, sem etapa, e o histórico de
+                atividades fica onde está.
               </p>
             </div>
           </Panel>
         </div>
       </div>
 
-      {view.tasks.length === 0 && view.habits.length === 0 ? (
+      {!view.plan.hasPlan && view.tasks.length === 0 && view.habits.length === 0 ? (
         <EmptyState
           title="Esse objetivo ainda não virou plano"
-          description="Sem hábito nem ação ele é só uma intenção com data. Cria a primeira ação ou deixa o Momentumm AI montar o caminho."
+          description="Sem etapa, hábito nem ação ele é só uma intenção com data. Quebra ele em três a cinco etapas, ou deixa o Momentumm AI montar o caminho."
           action={
             <div className="flex flex-wrap justify-center gap-2">
               <Button onClick={() => composer.open('acao', { presetObjectiveId: objective.id })}>
@@ -321,7 +290,7 @@ export function ObjectiveDetailPage() {
       <ConfirmDialog
         open={confirming === 'arquivar'}
         title="Arquivar esse objetivo?"
-        description="Ele sai da lista e some do dia. Isso não apaga as atividades já registradas, e a área fica livre pra um objetivo novo."
+        description="Ele sai da lista e some do dia, e as etapas do plano são apagadas junto — elas não existem fora do objetivo. As ações e os hábitos ficam, sem etapa. Nenhuma atividade registrada é apagada, e a área fica livre pra um objetivo novo."
         confirmLabel="Arquivar"
         destructive
         onConfirm={() => {
