@@ -141,3 +141,17 @@ describe('feed do círculo', () => {
     ])
   })
 })
+
+describe('desafio no feed do círculo', () => {
+  it('aceita os quatro momentos de desafio', () => {
+    expect(belongsInCircle('challenge_joined')).toBe(true)
+    expect(belongsInCircle('challenge_progress')).toBe(true)
+    expect(belongsInCircle('challenge_milestone')).toBe(true)
+    expect(belongsInCircle('challenge_completed')).toBe(true)
+  })
+
+  it('continua recusando hábito e dia: o volume deles encheria o feed', () => {
+    expect(belongsInCircle('habit_completed')).toBe(false)
+    expect(belongsInCircle('day_completed')).toBe(false)
+  })
+})

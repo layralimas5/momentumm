@@ -16,6 +16,12 @@ import {
   type NewPlanStageInput,
   type PlanStage,
 } from '@/domain/entities/plan-stage'
+import {
+  createChallenge,
+  type Challenge,
+  type ChallengeParticipant,
+  type NewChallengeInput,
+} from '@/domain/entities/challenge'
 import type { CircleAuthor, CircleFeedItem } from '@/domain/entities/circle-feed'
 import {
   createFriendship,
@@ -62,6 +68,10 @@ import type {
   TaskRepository,
   TaskUpdate,
 } from '@/domain/repositories/task-repository'
+import type {
+  ChallengeRepository,
+  ChallengeUpdate,
+} from '@/domain/repositories/challenge-repository'
 import type { FriendshipRepository } from '@/domain/repositories/friendship-repository'
 import type { JourneyEventRepository } from '@/domain/repositories/journey-event-repository'
 import type { WeeklyReviewRepository } from '@/domain/repositories/weekly-review-repository'
@@ -70,6 +80,8 @@ import { DomainError, InfrastructureError } from '@/shared/errors'
 import { supabase } from './client'
 import {
   toActivity,
+  toChallenge,
+  toChallengeParticipant,
   toCheckIn,
   toCircleAuthor,
   toFriendship,
@@ -1143,5 +1155,220 @@ export class SupabaseFriendshipRepository implements FriendshipRepository {
       .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
 
     if (error) fail(error, 'desfazer a amizade')
+  }
+}
+
+/**
+ * Desafios.
+ *
+ * Nenhuma consulta filtra por participação: quem decide o que esta pessoa
+ * enxerga é a RLS da migration 0011. Repetir a regra aqui criaria dois lugares
+ * onde ela pode divergir, e o que valeria de verdade seria sempre o do banco.
+ */
+export class SupabaseChallengeRepository implements ChallengeRepository {
+  async listByUser(userId: string): Promise<Challenge[]> {
+    /*
+      Dois passos, e o primeiro existe pra ORDENAR, não pra proteger.
+
+      A política de `challenges` já responde "posso ver este?". O que ela não
+      faz é separar o que a pessoa criou do que aceitaram — e a tela precisa
+      dos dois lados. Buscar antes os ids em que ela aparece deixa a lista sob
+      controle sem duplicar a regra de acesso: o banco continua sendo quem
+      recusa.
+    */
+    const mine = await supabase()
+      .from('challenge_participants')
+      .select('challenge_id')
+      .eq('user_id', userId)
+
+    if (mine.error) fail(mine.error, 'carregar teus desafios')
+
+    const ids = [...new Set((mine.data ?? []).map((row) => row.challenge_id as string))]
+    const filter = ids.length > 0 ? `owner_id.eq.${userId},id.in.(${ids.join(',')})` : `owner_id.eq.${userId}`
+
+    const { data, error } = await supabase()
+      .from('challenges')
+      .select('*')
+      .or(filter)
+      .order('created_at', { ascending: false })
+      .limit(50)
+
+    if (error) fail(error, 'carregar teus desafios')
+    return (data ?? []).map(toChallenge)
+  }
+
+  async listParticipants(challengeIds: readonly string[]): Promise<ChallengeParticipant[]> {
+    if (challengeIds.length === 0) return []
+
+    const { data, error } = await supabase()
+      .from('challenge_participants')
+      .select('*')
+      .in('challenge_id', [...challengeIds])
+
+    if (error) fail(error, 'carregar quem está nos desafios')
+    return (data ?? []).map(toChallengeParticipant)
+  }
+
+  async create(input: NewChallengeInput): Promise<{
+    challenge: Challenge
+    participant: ChallengeParticipant
+  }> {
+    const draft = createChallenge(input, crypto.randomUUID())
+
+    const created = await supabase()
+      .from('challenges')
+      .insert({
+        owner_id: draft.ownerId,
+        name: draft.name,
+        description: draft.description,
+        axis: draft.axis,
+        mode: draft.mode,
+        target: draft.target,
+        daily_target: draft.dailyTarget,
+        starts_on: draft.startsOn,
+        ends_on: draft.endsOn,
+      })
+      .select('*')
+      .single()
+
+    if (created.error) fail(created.error, 'criar o desafio')
+    const challenge = toChallenge(created.data)
+
+    /*
+      O dono entra na mesma operação, e se a entrada falhar o desafio some.
+
+      Não é transação de verdade — o PostgREST não oferece uma — mas é a
+      compensação honesta: um desafio sem o dono dentro não é desafio, é uma
+      linha órfã que a interface não consegue abrir nem apagar.
+    */
+    const joined = await supabase()
+      .from('challenge_participants')
+      .insert({
+        challenge_id: challenge.id,
+        user_id: draft.ownerId,
+        status: 'ativo',
+        habit_id: input.habitId ?? null,
+      })
+      .select('*')
+      .single()
+
+    if (joined.error) {
+      await supabase().from('challenges').delete().eq('id', challenge.id)
+      fail(joined.error, 'entrar no desafio que você criou')
+    }
+
+    return { challenge, participant: toChallengeParticipant(joined.data) }
+  }
+
+  async update(id: string, ownerId: string, changes: ChallengeUpdate): Promise<Challenge> {
+    const { data, error } = await supabase()
+      .from('challenges')
+      .update({
+        ...(changes.name !== undefined ? { name: changes.name } : {}),
+        ...(changes.description !== undefined ? { description: changes.description } : {}),
+        ...(changes.completedAt !== undefined
+          ? { completed_at: changes.completedAt?.toISOString() ?? null }
+          : {}),
+        ...(changes.archivedAt !== undefined
+          ? { archived_at: changes.archivedAt?.toISOString() ?? null }
+          : {}),
+      })
+      .eq('id', id)
+      .eq('owner_id', ownerId)
+      .select('*')
+      .single()
+
+    if (error) fail(error, 'atualizar o desafio')
+    return toChallenge(data)
+  }
+
+  async invite(
+    challengeId: string,
+    _ownerId: string,
+    userId: string,
+  ): Promise<ChallengeParticipant> {
+    const { data, error } = await supabase()
+      .from('challenge_participants')
+      .insert({ challenge_id: challengeId, user_id: userId, status: 'convidado' })
+      .select('*')
+      .single()
+
+    if (error) {
+      if (error.code === UNIQUE_VIOLATION) {
+        throw new DomainError('Essa pessoa já está no desafio.')
+      }
+      fail(error, 'convidar pro desafio')
+    }
+    return toChallengeParticipant(data)
+  }
+
+  async respond(
+    participantId: string,
+    userId: string,
+    accept: boolean,
+  ): Promise<ChallengeParticipant> {
+    // O filtro pelo dono da linha é redundante com a RLS de propósito: a
+    // política é quem garante, o filtro é quem deixa o erro compreensível.
+    const { data, error } = await supabase()
+      .from('challenge_participants')
+      .update({ status: accept ? 'ativo' : 'recusado' })
+      .eq('id', participantId)
+      .eq('user_id', userId)
+      .select('*')
+      .single()
+
+    if (error) fail(error, 'responder o convite')
+    return toChallengeParticipant(data)
+  }
+
+  async leave(participantId: string, userId: string): Promise<void> {
+    // Sair MARCA a linha, não apaga: o desafio precisa continuar sabendo quem
+    // estava dentro enquanto ele rodava, e apagar reabriria o convite como se
+    // nada tivesse acontecido.
+    const { error } = await supabase()
+      .from('challenge_participants')
+      .update({ status: 'saiu' })
+      .eq('id', participantId)
+      .eq('user_id', userId)
+
+    if (error) fail(error, 'sair do desafio')
+  }
+
+  async setHabit(
+    participantId: string,
+    userId: string,
+    habitId: string | null,
+  ): Promise<ChallengeParticipant> {
+    const { data, error } = await supabase()
+      .from('challenge_participants')
+      .update({ habit_id: habitId })
+      .eq('id', participantId)
+      .eq('user_id', userId)
+      .select('*')
+      .single()
+
+    if (error) fail(error, 'vincular o hábito ao desafio')
+    return toChallengeParticipant(data)
+  }
+
+  async publishProgress(
+    participantId: string,
+    userId: string,
+    doneDays: number,
+    completed: boolean,
+  ): Promise<ChallengeParticipant> {
+    const { data, error } = await supabase()
+      .from('challenge_participants')
+      .update({
+        done_days: Math.max(0, Math.round(doneDays)),
+        completed_at: completed ? new Date().toISOString() : null,
+      })
+      .eq('id', participantId)
+      .eq('user_id', userId)
+      .select('*')
+      .single()
+
+    if (error) fail(error, 'publicar teu avanço no desafio')
+    return toChallengeParticipant(data)
   }
 }

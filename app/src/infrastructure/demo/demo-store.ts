@@ -14,6 +14,14 @@ import {
   type NewHabitInput,
 } from '@/domain/entities/habit'
 import { createGoal, type Goal, type NewGoalInput } from '@/domain/entities/goal'
+import {
+  createChallenge,
+  createParticipant,
+  type Challenge,
+  type ChallengeParticipant,
+  type NewChallengeInput,
+  type ParticipantStatus,
+} from '@/domain/entities/challenge'
 import type { CircleAuthor } from '@/domain/entities/circle-feed'
 import {
   createFriendship,
@@ -62,7 +70,7 @@ import { DomainError } from '@/shared/errors'
  * `localStorage`. A versão do storage sobe junto com o formato — dado antigo
  * é descartado em silêncio em vez de quebrar a tela.
  */
-const STORAGE_KEY = 'momentumm.demo.v8'
+const STORAGE_KEY = 'momentumm.demo.v9'
 
 export const DEMO_USER = {
   id: 'demo-user',
@@ -98,6 +106,8 @@ interface DemoState {
   weeklyReviews: WeeklyReview[]
   journeyEvents: JourneyEvent[]
   friendships: Friendship[]
+  challenges: Challenge[]
+  challengeParticipants: ChallengeParticipant[]
   /** Apoios dados e recebidos, no formato `eventId::userId`. */
   supports: string[]
 }
@@ -507,8 +517,87 @@ function seed(): DemoState {
     */
     journeyEvents: friendMoments(today),
     friendships: seedFriendships(),
+    ...seedChallenge(today, habits),
     supports: [],
   }
+}
+
+/**
+ * Um desafio em andamento, com as duas amigas dentro.
+ *
+ * Diferente dos momentos, o desafio SEU vem de fábrica aqui — e por um motivo
+ * que não vale pros outros: desafio é a única parte do produto que não dá pra
+ * conferir sozinho. Um desafio vazio na demo mostraria a tela de criação e nada
+ * mais; com gente dentro, dá pra ver o progresso do grupo, o ranking interno e
+ * o convite esperando resposta.
+ *
+ * Os números de quem não é você são os que o banco publicaria: `doneDays`, e
+ * nada além. Nenhum hábito, nenhuma atividade, nenhum momentum.
+ */
+function seedChallenge(
+  today: DayKey,
+  habits: readonly Habit[],
+): Pick<DemoState, 'challenges' | 'challengeParticipants'> {
+  const [marina, rafa, bia] = DEMO_PEOPLE as readonly CircleAuthor[]
+  const treino = habits.find((habit) => habit.axis === 'treino')
+
+  const challenge = createChallenge(
+    {
+      ownerId: DEMO_USER.id,
+      name: 'Treinar 12 dias no mês',
+      description: 'Sem dia marcado. Vale o treino que couber no dia.',
+      axis: 'treino',
+      mode: 'total',
+      target: 12,
+      dailyTarget: 20,
+      startsOn: addDays(today, -9),
+      endsOn: addDays(today, 20),
+    },
+    'demo-desafio-1',
+    dateAt(addDays(today, -9), 9),
+  )
+
+  const participants: ChallengeParticipant[] = [
+    {
+      ...createParticipant(
+        {
+          challengeId: challenge.id,
+          userId: DEMO_USER.id,
+          status: 'ativo',
+          habitId: treino?.id ?? null,
+        },
+        'demo-participacao-1',
+        dateAt(addDays(today, -9), 9),
+      ),
+      // Zero de propósito: o seu número sai dos SEUS registros, e quem calcula
+      // é o app na primeira carga. Plantá-lo aqui faria a tela mostrar dias
+      // que os hábitos da demo não conseguem explicar.
+      doneDays: 0,
+    },
+    {
+      ...createParticipant(
+        { challengeId: challenge.id, userId: marina?.id ?? '', status: 'ativo' },
+        'demo-participacao-2',
+        dateAt(addDays(today, -9), 10),
+      ),
+      doneDays: 6,
+    },
+    {
+      ...createParticipant(
+        { challengeId: challenge.id, userId: rafa?.id ?? '', status: 'ativo' },
+        'demo-participacao-3',
+        dateAt(addDays(today, -8), 20),
+      ),
+      doneDays: 4,
+    },
+    createParticipant(
+      { challengeId: challenge.id, userId: bia?.id ?? '' },
+      'demo-participacao-4',
+      dateAt(addDays(today, -2), 12),
+    ),
+  ]
+
+  return { challenges: [challenge], challengeParticipants: participants }
 }
 
 /** As três relações da tela: dois amigos aceitos e um pedido esperando resposta. */
@@ -666,6 +755,20 @@ interface StoredState {
       respondedAt: string | null
     }
   >
+  challenges?: Array<
+    Omit<Challenge, 'createdAt' | 'completedAt' | 'archivedAt'> & {
+      createdAt: string
+      completedAt: string | null
+      archivedAt: string | null
+    }
+  >
+  challengeParticipants?: Array<
+    Omit<ChallengeParticipant, 'invitedAt' | 'joinedAt' | 'completedAt'> & {
+      invitedAt: string
+      joinedAt: string | null
+      completedAt: string | null
+    }
+  >
   supports?: string[]
 }
 
@@ -733,6 +836,18 @@ function revive(raw: string): DemoState {
       ...item,
       createdAt: new Date(item.createdAt),
       respondedAt: item.respondedAt ? new Date(item.respondedAt) : null,
+    })),
+    challenges: (parsed.challenges ?? []).map((item) => ({
+      ...item,
+      createdAt: new Date(item.createdAt),
+      completedAt: item.completedAt ? new Date(item.completedAt) : null,
+      archivedAt: item.archivedAt ? new Date(item.archivedAt) : null,
+    })),
+    challengeParticipants: (parsed.challengeParticipants ?? []).map((item) => ({
+      ...item,
+      invitedAt: new Date(item.invitedAt),
+      joinedAt: item.joinedAt ? new Date(item.joinedAt) : null,
+      completedAt: item.completedAt ? new Date(item.completedAt) : null,
     })),
     supports: parsed.supports ?? [],
   }
@@ -1264,6 +1379,87 @@ export const demoStore = {
     persist()
   },
 
+  challenges(): Challenge[] {
+    return [...load().challenges]
+  },
+
+  challengeParticipants(): ChallengeParticipant[] {
+    return [...load().challengeParticipants]
+  },
+
+  addChallenge(input: NewChallengeInput): {
+    challenge: Challenge
+    participant: ChallengeParticipant
+  } {
+    const current = load()
+    const challenge = createChallenge(input, newId())
+    const participant = createParticipant(
+      {
+        challengeId: challenge.id,
+        userId: input.ownerId,
+        status: 'ativo',
+        habitId: input.habitId ?? null,
+      },
+      newId(),
+    )
+
+    current.challenges = [challenge, ...current.challenges]
+    current.challengeParticipants = [...current.challengeParticipants, participant]
+    persist()
+    return { challenge, participant }
+  },
+
+  updateChallenge(id: string, changes: Partial<Challenge>): Challenge {
+    const current = load()
+    const found = current.challenges.find((item) => item.id === id)
+    if (!found) throw new DomainError('Desafio não encontrado.')
+
+    const updated = { ...found, ...changes }
+    current.challenges = current.challenges.map((item) => (item.id === id ? updated : item))
+    persist()
+    return updated
+  },
+
+  inviteToChallenge(challengeId: string, userId: string): ChallengeParticipant {
+    const current = load()
+    const existing = current.challengeParticipants.find(
+      (item) => item.challengeId === challengeId && item.userId === userId,
+    )
+    if (existing) throw new DomainError('Essa pessoa já está no desafio.')
+
+    const participant = createParticipant({ challengeId, userId }, newId())
+    current.challengeParticipants = [...current.challengeParticipants, participant]
+    persist()
+    return participant
+  },
+
+  updateParticipant(
+    id: string,
+    userId: string,
+    changes: Partial<ChallengeParticipant>,
+  ): ChallengeParticipant {
+    const current = load()
+    const found = current.challengeParticipants.find((item) => item.id === id)
+    if (!found) throw new DomainError('Participação não encontrada.')
+    if (found.userId !== userId) throw new DomainError('Essa participação não é sua.')
+
+    const status = (changes.status ?? found.status) as ParticipantStatus
+    const updated: ChallengeParticipant = {
+      ...found,
+      ...changes,
+      status,
+      // Entrar carimba a data, e só a primeira vez: sair e voltar não pode
+      // reescrever quando a pessoa topou o desafio.
+      joinedAt: status === 'ativo' ? (found.joinedAt ?? new Date()) : found.joinedAt,
+    }
+
+    current.challengeParticipants = current.challengeParticipants.map((item) =>
+      item.id === id ? updated : item,
+    )
+    persist()
+    return updated
+  },
+
   supportsOf(eventId: string): string[] {
     return load()
       .supports.filter((item) => item.startsWith(`${eventId}::`))
@@ -1290,6 +1486,11 @@ export const demoStore = {
       // não a lista de gente que você conhece.
       journeyEvents: friendMoments(dayKeyOf(new Date())),
       friendships: seedFriendships(),
+      // Desafio some junto com o progresso, e não com o círculo: ele é um
+      // combinado sobre dias cumpridos, e não faria sentido continuar de pé
+      // marcando dias que a conta zerada não tem mais como explicar.
+      challenges: [],
+      challengeParticipants: [],
       supports: [],
     }
     persist()

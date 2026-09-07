@@ -289,3 +289,57 @@ export function milestoneEvent(input: MilestoneEventInput): JourneyEvent {
     `marco:${input.count}:${input.unit}`,
   )
 }
+
+// ---------------------------------------------------------------------------
+// desafio
+// ---------------------------------------------------------------------------
+
+export interface ChallengeEventInput {
+  readonly userId: string
+  readonly today: DayKey
+  readonly challengeId: string
+  readonly name: string
+  readonly axis: ActivityTypeSlug
+  readonly doneDays: number
+  readonly requiredDays: number
+  /** Quantas pessoas estão dentro. Nunca quem são. */
+  readonly people: number
+  readonly momentum: MomentumScore | null
+}
+
+/**
+ * O card do desafio, montado na hora.
+ *
+ * Compartilhar "como está indo o desafio" numa terça qualquer não é uma
+ * transição: é a foto do estado, e por isso sai daqui em vez de virar linha no
+ * banco. O evento gravado — entrada, marco, conclusão — continua vindo do
+ * `challenge-recorder`.
+ *
+ * O tipo acompanha o estado: fechado vira conclusão, o resto vira avanço. É o
+ * que faz o card dizer "Desafio concluído" sem ninguém precisar escolher isso
+ * numa lista.
+ */
+export function challengeShareEvent(input: ChallengeEventInput): JourneyEvent {
+  const ratio = input.requiredDays === 0 ? 0 : Math.min(1, input.doneDays / input.requiredDays)
+  const done = ratio >= 1
+
+  return ephemeral(
+    {
+      userId: input.userId,
+      type: done ? 'challenge_completed' : 'challenge_progress',
+      sourceType: 'challenge',
+      sourceId: input.challengeId,
+      title: input.name,
+      completionPercentage: ratio,
+      progressAfter: ratio,
+      metadata: {
+        axis: input.axis,
+        challengeDoneDays: input.doneDays,
+        challengeRequiredDays: input.requiredDays,
+        challengePeople: input.people,
+      },
+      ...momentumPair(input.momentum),
+    },
+    `desafio:${input.challengeId}:${input.today}`,
+  )
+}

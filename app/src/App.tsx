@@ -40,6 +40,14 @@ const ProfilePage = lazy(() =>
 const CirclePage = lazy(() =>
   import('@/presentation/pages/CirclePage').then((m) => ({ default: m.CirclePage })),
 )
+const ChallengesPage = lazy(() =>
+  import('@/presentation/pages/ChallengesPage').then((m) => ({ default: m.ChallengesPage })),
+)
+const ChallengeDetailPage = lazy(() =>
+  import('@/presentation/pages/ChallengeDetailPage').then((m) => ({
+    default: m.ChallengeDetailPage,
+  })),
+)
 const FriendProfilePage = lazy(() =>
   import('@/presentation/pages/FriendProfilePage').then((m) => ({
     default: m.FriendProfilePage,
@@ -105,6 +113,8 @@ export function App() {
               <Route path="insights" element={<InsightsPage />} />
               <Route path="perfil" element={<PersonalProfilePage />} />
               <Route path="circulo" element={<CirclePage />} />
+              <Route path="desafios" element={<ChallengesPage />} />
+              <Route path="desafios/:id" element={<ChallengeDetailPage />} />
               <Route path="circulo/:id" element={<FriendProfilePage />} />
               <Route path="configuracoes" element={<ProfilePage />} />
 

@@ -2,6 +2,7 @@ import type { AiService } from '@/domain/ai/ai-service'
 import type { AuthService } from '@/domain/auth/auth-service'
 import type { ActivityRepository } from '@/domain/repositories/activity-repository'
 import type { ActivityTypeRepository } from '@/domain/repositories/activity-type-repository'
+import type { ChallengeRepository } from '@/domain/repositories/challenge-repository'
 import type { CheckInRepository } from '@/domain/repositories/checkin-repository'
 import type { GoalRepository } from '@/domain/repositories/goal-repository'
 import type { FriendshipRepository } from '@/domain/repositories/friendship-repository'
@@ -19,6 +20,7 @@ import {
   DemoActivityRepository,
   DemoActivityTypeRepository,
   DemoAuthService,
+  DemoChallengeRepository,
   DemoCheckInRepository,
   DemoGoalRepository,
   DemoFriendshipRepository,
@@ -35,6 +37,7 @@ import {
   SupabaseActivityRepository,
   SupabaseActivityTypeRepository,
   SupabaseAuthService,
+  SupabaseChallengeRepository,
   SupabaseCheckInRepository,
   SupabaseGoalRepository,
   SupabaseFriendshipRepository,
@@ -71,6 +74,11 @@ export interface Container {
   /** O Círculo: amizades e a busca por gente. */
   readonly friendships: FriendshipRepository
   /**
+   * Os desafios entre amigos e quem está em cada um. O progresso de cada
+   * pessoa é publicado por ela mesma: aqui não se lê a rotina de ninguém.
+   */
+  readonly challenges: ChallengeRepository
+  /**
    * Momentumm AI. Hoje é sempre a implementação simulada: não existe endpoint
    * de IA ainda, e chave de LLM não pode viver no frontend. Quando o endpoint
    * existir, é aqui que a troca acontece — e `simulated` deixa de ser true.
@@ -96,6 +104,7 @@ export const container: Container = isDemoMode
       weeklyReviews: new DemoWeeklyReviewRepository(),
       journeyEvents: new DemoJourneyEventRepository(),
       friendships: new DemoFriendshipRepository(),
+      challenges: new DemoChallengeRepository(),
       ai: new SimulatedAiService(),
       demo: true,
     }
@@ -114,6 +123,7 @@ export const container: Container = isDemoMode
       weeklyReviews: new SupabaseWeeklyReviewRepository(),
       journeyEvents: new SupabaseJourneyEventRepository(),
       friendships: new SupabaseFriendshipRepository(),
+      challenges: new SupabaseChallengeRepository(),
       ai: new SimulatedAiService(),
       demo: false,
     }

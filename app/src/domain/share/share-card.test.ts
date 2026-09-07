@@ -179,3 +179,83 @@ describe('campos disponíveis por tipo', () => {
     expect(availableFieldsFor('routine_completed')).toContain('items')
   })
 })
+
+describe('o card do desafio', () => {
+  const meta = {
+    axis: 'treino',
+    challengeDoneDays: 14,
+    challengeRequiredDays: 20,
+    challengePeople: 3,
+  } as const
+
+  it('mostra DIAS, e não o percentual: é o número que as pessoas combinaram', () => {
+    const data = card({
+      type: 'challenge_progress',
+      sourceType: 'challenge',
+      title: 'Treinar 20 dias no mês',
+      completionPercentage: 0.7,
+      metadata: meta,
+    })
+
+    expect(data.primaryMetric.value).toBe('14/20')
+    expect(data.primaryMetric.label).toBe('dias')
+  })
+
+  it('cai no percentual quando a fração não veio', () => {
+    const data = card({
+      type: 'challenge_completed',
+      sourceType: 'challenge',
+      title: 'Treinar 20 dias no mês',
+      completionPercentage: 1,
+      metadata: { axis: 'treino' },
+    })
+
+    expect(data.primaryMetric.value).toBe('100%')
+    expect(data.primaryMetric.label).toBe('do desafio')
+  })
+
+  it('esconde o nome do desafio enquanto o campo estiver desligado', () => {
+    const escondido = card({
+      type: 'challenge_progress',
+      sourceType: 'challenge',
+      title: 'Parar de fumar em 30 dias',
+      metadata: meta,
+    })
+    const mostrado = card(
+      {
+        type: 'challenge_progress',
+        sourceType: 'challenge',
+        title: 'Parar de fumar em 30 dias',
+        metadata: meta,
+      },
+      { objective: true },
+    )
+
+    // Sem placeholder: um "Desafio oculto" denunciaria que havia algo escondido.
+    expect(escondido.title).toBe('Um desafio em andamento')
+    expect(mostrado.title).toBe('Parar de fumar em 30 dias')
+  })
+
+  it('diz quantas pessoas estão dentro, nunca quem são', () => {
+    const data = card({
+      type: 'challenge_progress',
+      sourceType: 'challenge',
+      title: 'Treinar 20 dias no mês',
+      metadata: meta,
+    })
+
+    expect(data.secondaryMetric?.value).toBe('3 pessoas no desafio')
+  })
+
+  it('não anuncia o que falta ao entrar num desafio', () => {
+    const data = card({
+      type: 'challenge_joined',
+      sourceType: 'challenge',
+      title: 'Treinar 20 dias no mês',
+      metadata: { axis: 'treino', challengeRequiredDays: 20, challengePeople: 2 },
+    })
+
+    expect(data.primaryMetric.value).toBe('Topei')
+    expect(data.primaryMetric.value).not.toContain('0')
+  })
+})

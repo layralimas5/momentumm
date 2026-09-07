@@ -22,7 +22,22 @@ export const CIRCLE_FEED_TYPES: readonly JourneyEventType[] = [
   'milestone',
   'weekly_review',
   'comeback',
+  'challenge_joined',
+  'challenge_progress',
+  'challenge_milestone',
+  'challenge_completed',
 ]
+
+/*
+  Os quatro de desafio entram inteiros, inclusive o avanço — que é a exceção
+  aparente à regra de cima.
+ 
+  Ela não vale aqui pelo mesmo motivo que valia lá: hábito e dia são
+  automáticos e acontecem cinco vezes por dia, enquanto o avanço no desafio é
+  no máximo um por dia POR DESAFIO, e num desafio de gente que combinou de
+  aparecer junto. O que os amigos veem é o combinado deles avançando, não a
+  rotina de alguém vazando linha a linha.
+*/
 
 export function belongsInCircle(type: JourneyEventType): boolean {
   return CIRCLE_FEED_TYPES.includes(type)
@@ -81,6 +96,14 @@ export function circleHeadline(event: JourneyEvent, firstName: string): string {
       return `${firstName} fechou a semana`
     case 'comeback':
       return `${firstName} voltou ao ritmo`
+    case 'challenge_joined':
+      return `${firstName} entrou num desafio`
+    case 'challenge_progress':
+      return `${firstName} avançou no desafio`
+    case 'challenge_milestone':
+      return `${firstName} chegou num marco do desafio`
+    case 'challenge_completed':
+      return `${firstName} concluiu um desafio`
     default:
       return `${firstName} avançou`
   }

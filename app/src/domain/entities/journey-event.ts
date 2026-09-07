@@ -40,6 +40,10 @@ export const JOURNEY_EVENT_TYPES = [
   'weekly_review',
   'comeback',
   'momentum_record',
+  'challenge_joined',
+  'challenge_progress',
+  'challenge_milestone',
+  'challenge_completed',
 ] as const
 
 export type JourneyEventType = (typeof JOURNEY_EVENT_TYPES)[number]
@@ -54,6 +58,10 @@ export const JOURNEY_EVENT_TYPE_LABELS: Readonly<Record<JourneyEventType, string
   weekly_review: 'Resumo da semana',
   comeback: 'Retomada',
   momentum_record: 'Momentum',
+  challenge_joined: 'Entrou no desafio',
+  challenge_progress: 'Avanço no desafio',
+  challenge_milestone: 'Marco do desafio',
+  challenge_completed: 'Desafio concluído',
 }
 
 /** De onde o evento veio. Só o produtor do evento sabe traduzir o `sourceId`. */
@@ -65,6 +73,7 @@ export const JOURNEY_EVENT_SOURCES = [
   'week',
   'momentum',
   'streak',
+  'challenge',
 ] as const
 
 export type JourneyEventSource = (typeof JOURNEY_EVENT_SOURCES)[number]
@@ -115,6 +124,12 @@ export interface JourneyEventMetadata {
   /** O número do marco: 50 treinos, 100 dias. Só em `milestone`. */
   readonly milestoneCount?: number
   readonly milestoneUnit?: string
+  /** Dias fechados no desafio até aqui. Só nos eventos de desafio. */
+  readonly challengeDoneDays?: number
+  /** Dias que o desafio pede. É o denominador do "12 de 20". */
+  readonly challengeRequiredDays?: number
+  /** Quantas pessoas estão dentro do desafio. Nunca quem são. */
+  readonly challengePeople?: number
 }
 
 export interface JourneyEvent {

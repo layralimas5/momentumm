@@ -4,6 +4,11 @@ import type { ActivityType } from '@/domain/entities/activity-type'
 import type { CheckIn, NewCheckInInput } from '@/domain/entities/checkin'
 import type { DayKey } from '@/domain/entities/day'
 import type { Habit, HabitLog, HabitStatus, NewHabitInput } from '@/domain/entities/habit'
+import type {
+  Challenge,
+  ChallengeParticipant,
+  NewChallengeInput,
+} from '@/domain/entities/challenge'
 import type { CircleAuthor, CircleFeedItem } from '@/domain/entities/circle-feed'
 import {
   friendIdsOf,
@@ -40,6 +45,10 @@ import type {
   TaskRepository,
   TaskUpdate,
 } from '@/domain/repositories/task-repository'
+import type {
+  ChallengeRepository,
+  ChallengeUpdate,
+} from '@/domain/repositories/challenge-repository'
 import type { FriendshipRepository } from '@/domain/repositories/friendship-repository'
 import type { JourneyEventRepository } from '@/domain/repositories/journey-event-repository'
 import type { WeeklyReviewRepository } from '@/domain/repositories/weekly-review-repository'
@@ -392,5 +401,92 @@ export class DemoFriendshipRepository implements FriendshipRepository {
 
   async remove(id: string, userId: string): Promise<void> {
     demoStore.removeFriendship(id, userId)
+  }
+}
+
+/**
+ * Desafios no modo demo.
+ *
+ * O filtro por participação acontece aqui porque não existe RLS pra fazê-lo:
+ * contra o Supabase é a política que decide o que a pessoa enxerga, e o
+ * repositório de lá não filtra nada. Os dois chegam ao mesmo resultado por
+ * caminhos diferentes, e é assim que tem que ser — a regra de acesso mora no
+ * banco quando existe banco.
+ */
+export class DemoChallengeRepository implements ChallengeRepository {
+  async listByUser(userId: string): Promise<Challenge[]> {
+    const mine = new Set(
+      demoStore
+        .challengeParticipants()
+        .filter((item) => item.userId === userId)
+        .map((item) => item.challengeId),
+    )
+
+    return demoStore
+      .challenges()
+      .filter((challenge) => challenge.ownerId === userId || mine.has(challenge.id))
+  }
+
+  async listParticipants(challengeIds: readonly string[]): Promise<ChallengeParticipant[]> {
+    const ids = new Set(challengeIds)
+    return demoStore.challengeParticipants().filter((item) => ids.has(item.challengeId))
+  }
+
+  async create(input: NewChallengeInput): Promise<{
+    challenge: Challenge
+    participant: ChallengeParticipant
+  }> {
+    return demoStore.addChallenge(input)
+  }
+
+  async update(id: string, _ownerId: string, changes: ChallengeUpdate): Promise<Challenge> {
+    return demoStore.updateChallenge(id, {
+      ...(changes.name !== undefined ? { name: changes.name } : {}),
+      ...(changes.description !== undefined ? { description: changes.description } : {}),
+      ...(changes.completedAt !== undefined ? { completedAt: changes.completedAt } : {}),
+      ...(changes.archivedAt !== undefined ? { archivedAt: changes.archivedAt } : {}),
+    })
+  }
+
+  async invite(
+    challengeId: string,
+    _ownerId: string,
+    userId: string,
+  ): Promise<ChallengeParticipant> {
+    return demoStore.inviteToChallenge(challengeId, userId)
+  }
+
+  async respond(
+    participantId: string,
+    userId: string,
+    accept: boolean,
+  ): Promise<ChallengeParticipant> {
+    return demoStore.updateParticipant(participantId, userId, {
+      status: accept ? 'ativo' : 'recusado',
+    })
+  }
+
+  async leave(participantId: string, userId: string): Promise<void> {
+    demoStore.updateParticipant(participantId, userId, { status: 'saiu' })
+  }
+
+  async setHabit(
+    participantId: string,
+    userId: string,
+    habitId: string | null,
+  ): Promise<ChallengeParticipant> {
+    return demoStore.updateParticipant(participantId, userId, { habitId })
+  }
+
+  async publishProgress(
+    participantId: string,
+    userId: string,
+    doneDays: number,
+    completed: boolean,
+  ): Promise<ChallengeParticipant> {
+    return demoStore.updateParticipant(participantId, userId, {
+      doneDays: Math.max(0, Math.round(doneDays)),
+      completedAt: completed ? new Date() : null,
+    })
   }
 }

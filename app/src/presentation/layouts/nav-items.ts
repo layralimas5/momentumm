@@ -84,6 +84,23 @@ export const APP_NAV: readonly AppNavItem[] = [
     description: 'Os amigos que você acompanha e o que eles compartilharam',
   },
 
+  /*
+    Desafio fica FORA da navegação principal, ao contrário do Círculo.
+
+    Ele não é uma tela que se abre todo dia: o desafio acontece no dia comum,
+    pelo hábito que a pessoa já cumpre, e a tela existe pra combinar, conferir
+    e encerrar. Colocá-lo na barra principal criaria a expectativa de ter algo
+    novo ali toda manhã — e a semana em que não tem nada ensinaria a ignorar.
+  */
+  {
+    to: '/app/desafios',
+    label: 'Desafios',
+    end: false,
+    icon: 'trofeu',
+    description: 'Combinados curtos com o teu círculo, medidos pelo que você já faz',
+    secondary: true,
+  },
+
   // Fora da barra principal. Continuam existindo e continuam achaveis pela
   // busca — o que sai da navegação é o peso visual, não a funcionalidade.
   {

@@ -81,7 +81,17 @@ function titleOf(event: JourneyEvent, showsTitle: boolean): string {
  * sem título nenhum.
  */
 function titleIsSensitive(type: JourneyEventType): boolean {
-  return type === 'goal_progress' || type === 'goal_completed' || type === 'habit_completed'
+  return (
+    type === 'goal_progress' ||
+    type === 'goal_completed' ||
+    type === 'habit_completed' ||
+    // O nome do desafio também é escrito por gente: "Parar de fumar em 30
+    // dias" conta uma história que a pessoa pode não querer no Stories.
+    type === 'challenge_joined' ||
+    type === 'challenge_progress' ||
+    type === 'challenge_milestone' ||
+    type === 'challenge_completed'
+  )
 }
 
 function neutralTitleOf(type: JourneyEventType): string {
@@ -90,6 +100,12 @@ function neutralTitleOf(type: JourneyEventType): string {
       return 'Um objetivo fechado'
     case 'goal_progress':
       return 'Um objetivo em andamento'
+    case 'challenge_completed':
+      return 'Um desafio fechado'
+    case 'challenge_joined':
+    case 'challenge_progress':
+    case 'challenge_milestone':
+      return 'Um desafio em andamento'
     default:
       return 'Mais um passo'
   }
@@ -109,6 +125,14 @@ function kickerOf(event: JourneyEvent): string | null {
       return 'Resumo da semana'
     case 'routine_completed':
       return 'Rotina concluída'
+    case 'challenge_joined':
+      return 'Desafio aceito'
+    case 'challenge_progress':
+      return 'Desafio em andamento'
+    case 'challenge_milestone':
+      return 'Marco do desafio'
+    case 'challenge_completed':
+      return 'Desafio concluído'
     default:
       return null
   }
@@ -151,6 +175,31 @@ function primaryMetricOf(event: JourneyEvent, fields: ShareFieldSet): ShareMetri
     case 'comeback':
       return { value: 'Você voltou', label: null }
 
+    /*
+      O desafio mostra DIAS, não porcentagem.
+
+      "14/20 dias" é o número que as duas pessoas combinaram entre si; "70%" é
+      a tradução dele pra uma escala que ninguém acordou pra cumprir. Sem os
+      dois lados da fração o card cai no percentual, que continua sendo verdade.
+    */
+    case 'challenge_progress':
+    case 'challenge_milestone':
+    case 'challenge_completed': {
+      const done = event.metadata.challengeDoneDays
+      const required = event.metadata.challengeRequiredDays
+      if (fields.completion && done !== undefined && required) {
+        return { value: `${done}/${required}`, label: 'dias' }
+      }
+      return fallbackMetric(event, fields, percent)
+    }
+
+    /*
+      Entrar num desafio ainda não tem número, e inventar um "0/20" gigante
+      seria abrir a participação anunciando o que falta.
+    */
+    case 'challenge_joined':
+      return { value: 'Topei', label: null }
+
     case 'goal_progress':
     case 'goal_completed':
     case 'day_completed':
@@ -186,6 +235,10 @@ function labelForPercent(type: JourneyEventType): string {
     case 'goal_progress':
     case 'goal_completed':
       return 'do objetivo'
+    case 'challenge_progress':
+    case 'challenge_milestone':
+    case 'challenge_completed':
+      return 'do desafio'
     default:
       return 'concluído'
   }
@@ -228,6 +281,18 @@ function secondaryMetricOf(event: JourneyEvent, fields: ShareFieldSet): ShareMet
       return fields.duration && event.durationMin
         ? { value: formatMinutes(event.durationMin), label: null }
         : null
+
+    // Quantas pessoas estão dentro, nunca quem. O desafio é privado e o card
+    // não pode ser a porta que apresenta os participantes a quem não foi
+    // convidado.
+    case 'challenge_joined':
+    case 'challenge_progress':
+    case 'challenge_milestone':
+    case 'challenge_completed': {
+      const people = event.metadata.challengePeople
+      if (!people || people < 2) return null
+      return { value: `${people} pessoas no desafio`, label: null }
+    }
 
     case 'routine_completed':
     case 'goal_completed':
@@ -276,6 +341,14 @@ function noteOf(event: JourneyEvent): string | null {
       return 'Um passo de cada vez, até virar isso.'
     case 'habit_completed':
       return 'Mais um dia construído.'
+    case 'challenge_joined':
+      return 'Combinado é combinado.'
+    case 'challenge_progress':
+      return 'Um dia de cada vez, junto.'
+    case 'challenge_milestone':
+      return 'Metade do caminho também é caminho.'
+    case 'challenge_completed':
+      return 'Fechado do começo ao fim.'
   }
 }
 

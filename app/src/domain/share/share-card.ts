@@ -104,7 +104,7 @@ export const SHARE_FIELD_SPECS: Readonly<Record<ShareField, ShareFieldSpec>> = {
   completion: { id: 'completion', label: 'Percentual de execução', warning: null },
   objective: {
     id: 'objective',
-    label: 'Nome do objetivo',
+    label: 'Nome do objetivo ou desafio',
     warning: 'O título que você escreveu aparece na imagem.',
   },
   duration: { id: 'duration', label: 'Duração', warning: null },
@@ -131,6 +131,10 @@ const FIELDS_BY_TYPE: Readonly<Record<JourneyEventType, readonly ShareField[]>> 
   weekly_review: ['momentum', 'items', 'completion', 'duration', 'date', 'username', 'note', 'branding'],
   comeback: ['momentum', 'date', 'username', 'note', 'branding'],
   momentum_record: ['momentum', 'date', 'username', 'note', 'branding'],
+  challenge_joined: ['momentum', 'objective', 'date', 'username', 'note', 'branding'],
+  challenge_progress: ['momentum', 'completion', 'objective', 'date', 'username', 'note', 'branding'],
+  challenge_milestone: ['momentum', 'completion', 'objective', 'date', 'username', 'note', 'branding'],
+  challenge_completed: ['momentum', 'completion', 'objective', 'date', 'username', 'note', 'branding'],
 }
 
 export function availableFieldsFor(type: JourneyEventType): readonly ShareField[] {

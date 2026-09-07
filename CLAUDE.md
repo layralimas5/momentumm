@@ -63,7 +63,7 @@ que existir base. Feed vazio afasta usuário.
 Fase 1 em pé, em `app/`. Roda em **modo demo** sem configurar nada (dados em
 `localStorage`) e vira contas reais ao preencher `.env.local` com o Supabase.
 
-Pronto: domínio completo com 328 testes, quatro migrations com RLS, repositórios demo e
+Pronto: domínio completo com 388 testes, migrations com RLS até a 0011, repositórios demo e
 Supabase, auth com rota protegida, registro rápido, cronômetro de sessão, streak
 dos últimos 7 dias, histórico com filtro por eixo, metas com progresso e perfil
 editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
@@ -160,9 +160,11 @@ meta e histórico. O que o Share Studio precisa é de outra coisa: o EVENTO que
 vale contar. Reaproveitar o nome faria as duas tabelas discordarem sobre o que
 "atividade" significa, e o feed futuro leria a errada.
 
-- `journey-event` — o momento notável. Nove tipos (`day_completed`,
+- `journey-event` — o momento notável. Treze tipos (`day_completed`,
   `routine_completed`, `goal_progress`, `goal_completed`, `milestone`,
-  `weekly_review`, `comeback`, `momentum_record`, `habit_completed`), com
+  `weekly_review`, `comeback`, `momentum_record`, `habit_completed` e os quatro
+  de desafio: `challenge_joined`, `challenge_progress`, `challenge_milestone`,
+  `challenge_completed`), com
   `sourceType` + `sourceId`, progresso antes/depois, momentum antes/depois,
   percentual, duração e metadata **tipada** (nada de `Record<string, unknown>`).
   A variação do momentum é DERIVADA, nunca guardada
@@ -345,8 +347,75 @@ No modo demo existem três pessoas de fábrica (dois amigos aceitos e um pedido
 esperando resposta): o Círculo só dá pra conferir com os olhos se houver com
 quem tê-lo.
 
-**Não implementado:** comentário, seguidor, comunidade pública, grupo, chat,
-desafio e ranking.
+**Não implementado:** comentário, seguidor, comunidade pública, grupo e chat.
+
+### Desafios entre amigos
+
+A segunda camada social, e ela herda o freio da primeira: desafio é privado por
+definição, o convite sai só do dono e só pra quem já é amigo dele no Círculo.
+
+**A unidade do desafio é o DIA CUMPRIDO.** Três modos que contam a mesma coisa
+e diferem só no que exigem dela: `diaria` (todo dia da janela), `semanal` (X
+dias por semana, sem dia marcado) e `total` (X dias ao longo da janela, quando
+não importa quais). Contar volume acumulado seria a quarta forma, e ela já
+existe: chama-se objetivo. O desafio é sobre APARECER, e é por isso que ele
+funciona entre pessoas cujas metas são diferentes — 30 minutos dela e 1h dele
+fecham o mesmo dia.
+
+**O desafio não guarda progresso por dia.** Quem move o progresso continua
+sendo a atividade — ou o hábito que a pessoa vinculou. `doneDaysOf` é uma
+função pura sobre o que ela já registrou: com hábito vinculado, o dia fecha
+quando o hábito é marcado (a versão mínima conta, como em todo o resto); sem
+hábito, quando o volume do eixo alcança `dailyTarget`. O hábito vem primeiro
+porque é o que já existe na rotina — desafio que obriga a registrar de novo o
+que ela registrou hoje de manhã morre na segunda semana.
+
+**`done_days` é o único número que atravessa a fronteira entre duas pessoas.**
+Ele é materializado em `challenge_participants` porque o progresso de alguém
+sai de hábitos e atividades que a RLS não deixa mais ninguém ler — e nem
+deveria. Entrar num desafio é consentir em mostrar quantos dias você fechou
+NELE, e nada além: nem o hábito, nem o volume, nem o momentum. Quem escreve é
+sempre o dono da linha; o cliente recalcula, compara e só publica quando os dois
+divergem.
+
+**Ranking existe, e só dentro do desafio.** Ordena por dia cumprido, que é o que
+as duas pessoas combinaram — nunca por Momentum, constância ou volume. Empate
+mantém a mesma posição: desempatar por horário premiaria quem acordou cedo. E
+os eventos de desafio saem SEM momentum de propósito, ao contrário de todos os
+outros: pendurar o score pessoal num card que vem acompanhado de uma lista de
+participantes monta exatamente a comparação entre pessoas que o produto recusa.
+
+`challenge-recorder` é o gravador, no mesmo molde do `journey-recorder`: função
+pura, recebe o estado mais o que já foi gravado, devolve só o que falta. Entrada,
+marco (25/50/75%) e conclusão são eventos de VIDA; avanço é de DIA, no máximo um
+por dia por desafio. Marco cruzado hoje CALA o avanço do mesmo dia — a versão
+menor da mesma frase, lado a lado no feed, seria a mesma notícia duas vezes.
+
+Os quatro tipos entram no `circle-feed` inteiros, inclusive o avanço. A regra que
+barrou hábito e dia não vale aqui: eles são automáticos e acontecem cinco vezes
+por dia, enquanto o avanço no desafio é um por dia por desafio, e num combinado
+entre gente que topou aparecer junto. E como todo evento, ele nasce `privada`:
+o feed só recebe o que a pessoa marcar.
+
+Migration `0011_challenges.sql`: `challenges` e `challenge_participants` com
+RLS, mais `is_challenge_member` e `owns_challenge` — as duas `security definer`
+com `search_path` fixo e revoke explícito ao `anon`, seguindo a lição da 0010. A
+política de convite exige as duas condições juntas (é o dono E é amigo dele):
+sem a primeira, um participante encheria o desafio de gente que ninguém chamou;
+sem a segunda, o convite viraria a porta dos fundos do Círculo. Os quatro
+valores novos do enum de evento entram aditivos e não são usados na mesma
+migration, que é a condição pra `add value` conviver com a transação do CLI.
+
+No modo demo o desafio vem de fábrica com as duas amigas dentro — diferente dos
+momentos, e por um motivo que não vale pros outros: desafio é a única parte do
+produto que não dá pra conferir sozinho.
+
+Rotas: `/app/desafios` e `/app/desafios/:id`. Ele fica FORA da navegação
+principal, ao contrário do Círculo: o desafio acontece no dia comum, pelo hábito
+que a pessoa já cumpre, e a tela existe pra combinar, conferir e encerrar.
+
+**Não implementado de propósito:** desafio público, descoberta, comunidade,
+grupo, chat, premiação e ranking global.
 
 ### A jornada principal
 
@@ -453,6 +522,6 @@ Quando incomodar, trocar por import dinâmico dentro do `container`.
 cd app
 npm install
 npm run dev     # modo demo, sem configurar nada
-npm test        # 328 testes de domínio
+npm test        # 388 testes de domínio
 npm run build
 ```

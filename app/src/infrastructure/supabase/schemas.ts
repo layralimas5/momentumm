@@ -16,6 +16,12 @@ import {
   type HabitIcon,
   type HabitLog,
 } from '@/domain/entities/habit'
+import {
+  CHALLENGE_MODES,
+  PARTICIPANT_STATUSES,
+  type Challenge,
+  type ChallengeParticipant,
+} from '@/domain/entities/challenge'
 import type { CircleAuthor } from '@/domain/entities/circle-feed'
 import { FRIENDSHIP_STATUSES, type Friendship } from '@/domain/entities/friendship'
 import {
@@ -470,6 +476,9 @@ const journeyMetadataSchema = z
     gainPercentage: z.number().nullish(),
     milestoneCount: z.number().nullish(),
     milestoneUnit: z.string().nullish(),
+    challengeDoneDays: z.number().nullish(),
+    challengeRequiredDays: z.number().nullish(),
+    challengePeople: z.number().nullish(),
   })
   .nullish()
 
@@ -540,6 +549,15 @@ export function toJourneyEvent(row: unknown): JourneyEvent {
         ? { milestoneCount: meta.milestoneCount }
         : {}),
       ...(meta.milestoneUnit ? { milestoneUnit: meta.milestoneUnit } : {}),
+      ...(meta.challengeDoneDays !== null && meta.challengeDoneDays !== undefined
+        ? { challengeDoneDays: meta.challengeDoneDays }
+        : {}),
+      ...(meta.challengeRequiredDays !== null && meta.challengeRequiredDays !== undefined
+        ? { challengeRequiredDays: meta.challengeRequiredDays }
+        : {}),
+      ...(meta.challengePeople !== null && meta.challengePeople !== undefined
+        ? { challengePeople: meta.challengePeople }
+        : {}),
     },
     visibility: parsed.visibility,
     day: parseDayKey(parsed.day.slice(0, 10)),
@@ -588,5 +606,75 @@ export function toCircleAuthor(row: unknown): CircleAuthor {
     name: parsed.name,
     handle: parsed.handle,
     avatarUrl: parsed.avatar_url,
+  }
+}
+
+/*
+  Desafios.
+
+  `done_days` chega como inteiro e é o único número de outra pessoa que
+  atravessa esta fronteira. O ratio não vem do banco: ele é derivado do modo e
+  da janela, e guardá-lo abriria a porta pra uma linha dizendo 70% com 12 de 20
+  na coluna ao lado.
+*/
+const challengeRowSchema = z.object({
+  id: z.string(),
+  owner_id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  axis: z.string(),
+  mode: z.enum(CHALLENGE_MODES),
+  target: z.number().int(),
+  daily_target: z.number().int(),
+  starts_on: z.string(),
+  ends_on: z.string(),
+  created_at: z.string(),
+  completed_at: z.string().nullable(),
+  archived_at: z.string().nullable(),
+})
+
+export function toChallenge(row: unknown): Challenge {
+  const parsed = parseOrThrow(challengeRowSchema, row, 'desafio')
+  return {
+    id: parsed.id,
+    ownerId: parsed.owner_id,
+    name: parsed.name,
+    description: parsed.description,
+    axis: parsed.axis,
+    mode: parsed.mode,
+    target: parsed.target,
+    dailyTarget: parsed.daily_target,
+    startsOn: parseDayKey(parsed.starts_on),
+    endsOn: parseDayKey(parsed.ends_on),
+    createdAt: new Date(parsed.created_at),
+    completedAt: parsed.completed_at ? new Date(parsed.completed_at) : null,
+    archivedAt: parsed.archived_at ? new Date(parsed.archived_at) : null,
+  }
+}
+
+const challengeParticipantRowSchema = z.object({
+  id: z.string(),
+  challenge_id: z.string(),
+  user_id: z.string(),
+  status: z.enum(PARTICIPANT_STATUSES),
+  habit_id: z.string().nullable(),
+  done_days: z.number().int(),
+  invited_at: z.string(),
+  joined_at: z.string().nullable(),
+  completed_at: z.string().nullable(),
+})
+
+export function toChallengeParticipant(row: unknown): ChallengeParticipant {
+  const parsed = parseOrThrow(challengeParticipantRowSchema, row, 'participação no desafio')
+  return {
+    id: parsed.id,
+    challengeId: parsed.challenge_id,
+    userId: parsed.user_id,
+    status: parsed.status,
+    habitId: parsed.habit_id,
+    doneDays: parsed.done_days,
+    invitedAt: new Date(parsed.invited_at),
+    joinedAt: parsed.joined_at ? new Date(parsed.joined_at) : null,
+    completedAt: parsed.completed_at ? new Date(parsed.completed_at) : null,
   }
 }
