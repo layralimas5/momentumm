@@ -1,0 +1,309 @@
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { DayKey } from '@/domain/entities/day'
+import type { JourneyEvent } from '@/domain/entities/journey-event'
+import { toShareCardData } from '@/domain/share/share-card-adapter'
+import {
+  DEFAULT_SHARE_FORMAT,
+  DEFAULT_SHARE_TEMPLATE,
+  defaultFieldsFor,
+  type ShareCardData,
+  type ShareField,
+  type ShareFieldSet,
+  type ShareFormat,
+  type ShareTemplateId,
+} from '@/domain/share/share-card'
+import { Button } from '@/presentation/components/ui/Button'
+import { Icon } from '@/presentation/components/ui/Icon'
+import { EmptyState, ErrorNote } from '@/presentation/components/ui/States'
+import { cn } from '@/shared/lib/cn'
+import { ShareCardPreview } from './ShareCardPreview'
+import { ShareStudioControls } from './ShareStudioControls'
+import { ShareStudioFormatSelector } from './ShareStudioFormatSelector'
+import { ShareStudioVisibilityControls } from './ShareStudioVisibilityControls'
+import { trackShare } from './share-analytics'
+import {
+  downloadImage,
+  fileNameFor,
+  renderToBlob,
+  shareImage,
+  supportsFileShare,
+} from './render/export-image'
+
+interface ShareStudioProps {
+  readonly event: JourneyEvent
+  readonly displayName: string | null
+  readonly today: DayKey
+  readonly compact: boolean
+}
+
+type Status = 'idle' | 'generating' | 'shared' | 'saved' | 'cancelled'
+
+/**
+ * Share Studio.
+ *
+ * A tela é curta de propósito: escolher formato, escolher template, decidir o
+ * que aparece, compartilhar. Não é editor — a hora que ele virar um Canva
+ * dentro do app, o caminho de "concluí minha rotina" até "postei" deixa de
+ * caber em poucos segundos, que é a única métrica que importa aqui.
+ *
+ * No celular a ordem é preview, formato, templates, privacidade, ações. No
+ * desktop vira duas colunas com o preview fixo à esquerda: personalizar sem ver
+ * o resultado é escolher no escuro.
+ */
+export function ShareStudio({ event, displayName, today, compact }: ShareStudioProps) {
+  const [format, setFormat] = useState<ShareFormat>(DEFAULT_SHARE_FORMAT)
+  const [template, setTemplate] = useState<ShareTemplateId>(DEFAULT_SHARE_TEMPLATE)
+  const [fields, setFields] = useState<ShareFieldSet>(() => defaultFieldsFor(event.type))
+  const [status, setStatus] = useState<Status>('idle')
+  const [error, setError] = useState<string | null>(null)
+
+  // Momento novo, decisões de privacidade zeradas. Herdar os toggles do card
+  // anterior faria o nome de um objetivo aparecer num card que a pessoa nunca
+  // pediu pra expor.
+  useEffect(() => {
+    setFields(defaultFieldsFor(event.type))
+    setStatus('idle')
+    setError(null)
+  }, [event.id, event.type])
+
+  const data = useMemo<ShareCardData>(
+    () => toShareCardData(event, { fields, displayName, today }),
+    [event, fields, displayName, today],
+  )
+
+  const analytics = useMemo(
+    () => ({ activity_type: event.type, template, format }),
+    [event.type, template, format],
+  )
+
+  useEffect(() => {
+    trackShare('share_studio_opened', { activity_type: event.type, template, format })
+    // A dependência é só o momento: incluir template e formato transformaria
+    // cada troca de opção numa nova "abertura" e inflaria a métrica.
+  }, [event.id])
+
+  const toggleField = useCallback((field: ShareField, value: boolean) => {
+    setFields((current) => ({ ...current, [field]: value }))
+    setStatus('idle')
+  }, [])
+
+  const chooseTemplate = useCallback(
+    (next: ShareTemplateId) => {
+      setTemplate(next)
+      setStatus('idle')
+      trackShare('share_template_selected', { ...analytics, template: next })
+    },
+    [analytics],
+  )
+
+  const chooseFormat = useCallback(
+    (next: ShareFormat) => {
+      setFormat(next)
+      setStatus('idle')
+      trackShare('share_format_selected', { ...analytics, format: next })
+    },
+    [analytics],
+  )
+
+  const generate = useCallback(async () => {
+    const blob = await renderToBlob({ data, template, format })
+    trackShare('share_generated', analytics)
+    return blob
+  }, [data, template, format, analytics])
+
+  const handleShare = useCallback(async () => {
+    setStatus('generating')
+    setError(null)
+    try {
+      const blob = await generate()
+      const name = fileNameFor({ data, template, format }, event.day)
+
+      // Sem share nativo (desktop, quase sempre), o botão principal salva em
+      // vez de não fazer nada: a pessoa clicou em "Compartilhar" e precisa sair
+      // com o arquivo na mão.
+      if (!supportsFileShare()) {
+        downloadImage(blob, name)
+        trackShare('share_saved', analytics)
+        setStatus('saved')
+        return
+      }
+
+      const outcome = await shareImage(blob, name, data.title)
+      if (outcome === 'shared') {
+        trackShare('share_shared', analytics)
+        setStatus('shared')
+        return
+      }
+      setStatus(outcome === 'cancelled' ? 'cancelled' : 'idle')
+    } catch (cause) {
+      setStatus('idle')
+      setError(messageOf(cause))
+    }
+  }, [generate, data, template, format, event.day, analytics])
+
+  const handleSave = useCallback(async () => {
+    setStatus('generating')
+    setError(null)
+    try {
+      const blob = await generate()
+      downloadImage(blob, fileNameFor({ data, template, format }, event.day))
+      trackShare('share_saved', analytics)
+      setStatus('saved')
+    } catch (cause) {
+      setStatus('idle')
+      setError(messageOf(cause))
+    }
+  }, [generate, data, template, format, event.day, analytics])
+
+  if (!hasSomethingToShow(data)) {
+    return (
+      <EmptyState
+        title="Ainda não há o que mostrar aqui"
+        description="Esse momento não tem nenhum número pra virar card. Registra alguma coisa hoje e volta — o card fica bom quando tem o que contar."
+      />
+    )
+  }
+
+  const busy = status === 'generating'
+
+  const preview = (
+    <ShareCardPreview
+      data={data}
+      template={template}
+      format={format}
+      /*
+        O preview é limitado pela altura nos dois layouts. No celular, um 9:16
+        com a largura da tela empurra formato, template e ações pra fora da
+        primeira dobra; no desktop, ele afastaria os botões do fim da coluna.
+      */
+      className={cn('mx-auto', compact ? 'max-h-[40dvh]' : 'max-h-[58dvh]')}
+    />
+  )
+
+  const options = (
+    <div className="flex flex-col gap-5">
+      <Field label="Formato">
+        <ShareStudioFormatSelector value={format} onChange={chooseFormat} />
+      </Field>
+
+      <Field label="Template">
+        <ShareStudioControls value={template} onChange={chooseTemplate} />
+      </Field>
+
+      <Field
+        label="Mostrar no card"
+        hint="Começa com o mínimo. Nada que você escreveu entra sem você ligar."
+      >
+        <ShareStudioVisibilityControls
+          eventType={event.type}
+          fields={fields}
+          onToggle={toggleField}
+        />
+      </Field>
+    </div>
+  )
+
+  const actions = (
+    <div className="flex flex-col gap-3">
+      {error ? <ErrorNote message={error} /> : null}
+
+      <p role="status" aria-live="polite" className="min-h-5 text-sm text-ink-muted">
+        {statusMessage(status)}
+      </p>
+
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Button className="flex-1" loading={busy} onClick={() => void handleShare()}>
+          <Icon name="jornada" className="size-4" />
+          Compartilhar
+        </Button>
+        <Button
+          variant="secondary"
+          className="flex-1"
+          disabled={busy}
+          onClick={() => void handleSave()}
+        >
+          <Icon name="arquivar" className="size-4" />
+          Salvar imagem
+        </Button>
+      </div>
+    </div>
+  )
+
+  if (compact) {
+    return (
+      <div className="flex flex-col gap-5">
+        {preview}
+        {options}
+        {actions}
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
+      {/* Preview colado no topo: ele continua visível enquanto a coluna da
+          direita rola, que é o ponto inteiro de existir duas colunas. */}
+      <div className="lg:sticky lg:top-0 lg:self-start">{preview}</div>
+
+      <div className="flex min-w-0 flex-col gap-6">
+        {options}
+        {actions}
+      </div>
+    </div>
+  )
+}
+
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  readonly label: string
+  readonly hint?: string
+  readonly children: React.ReactNode
+}) {
+  return (
+    <div className="flex flex-col gap-2.5">
+      <div>
+        <h3 className="text-sm font-semibold tracking-wide text-ink-muted uppercase">{label}</h3>
+        {hint ? <p className="mt-1 text-sm text-ink-faint">{hint}</p> : null}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function statusMessage(status: Status): string {
+  switch (status) {
+    case 'generating':
+      return 'Gerando a imagem…'
+    case 'shared':
+      return 'Compartilhado.'
+    case 'saved':
+      return 'Imagem salva. Agora é só postar.'
+    case 'cancelled':
+      return 'Compartilhamento cancelado. A imagem continua aqui.'
+    case 'idle':
+      return ''
+  }
+}
+
+/**
+ * Card sem número nenhum não é card.
+ *
+ * Acontece quando o evento não tem métrica e a pessoa desligou tudo. Em vez de
+ * exportar um retângulo com um título solto, a tela diz o que falta.
+ */
+function hasSomethingToShow(data: ShareCardData): boolean {
+  return (
+    Boolean(data.primaryMetric.value) ||
+    data.items.length > 0 ||
+    data.momentumAfter !== null ||
+    Boolean(data.secondaryMetric)
+  )
+}
+
+function messageOf(cause: unknown): string {
+  if (cause instanceof Error && cause.message) return cause.message
+  return 'Não consegui gerar a imagem agora. Tenta de novo em instantes.'
+}

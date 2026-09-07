@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Insight } from '@/domain/entities/insight'
 import { addDays } from '@/domain/entities/day'
@@ -27,6 +27,7 @@ import { useDashboard, type GoalInMotion } from '@/presentation/planner/use-dash
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { DayCompleteBanner } from '@/presentation/components/dashboard/DayCompleteBanner'
 import { MobileDashboard } from '@/presentation/components/mobile/MobileDashboard'
+import { ShareMomentsRow } from '@/presentation/share/ShareMomentsRow'
 import { useIsDesktop } from '@/presentation/hooks/use-media-query'
 
 /**
@@ -111,6 +112,41 @@ export function DashboardPage() {
     () => new Map(planner.planStages.map((stage) => [stage.id, stage.title])),
     [planner.planStages],
   )
+
+  /*
+    O dia fechado vira um momento da jornada.
+
+    O registro acontece aqui, e não no PlannerProvider, porque é o dashboard
+    que sabe quando o dia fecha: a conta mistura hábitos programados e ações
+    do dia, e o provider teria que refazer essa leitura inteira a cada clique
+    em hábito só pra descobrir se aquele foi o último.
+
+    A gravação é idempotente por (tipo, origem, dia), então desmarcar e
+    remarcar o último hábito atualiza a mesma linha em vez de empilhar. O
+    `useRef` evita a segunda chamada dentro da mesma sessão.
+  */
+  const recordedDay = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!view.dayComplete || recordedDay.current === planner.today) return
+    recordedDay.current = planner.today
+
+    void planner.recordJourneyEvent({
+      type: 'day_completed',
+      sourceType: 'day',
+      sourceId: planner.today,
+      title: 'Hoje',
+      completionPercentage: view.dayProgress.ratio,
+      durationMin: view.focusMinutesToday || null,
+      momentumAfter: view.momentum.value,
+      momentumBefore: view.momentum.value - view.momentum.delta,
+      metadata: {
+        tasksDone: view.dayProgress.done,
+        items: view.focus.all.map((item) => ({ label: item.title, done: item.done })),
+        ...(view.focusMinutesToday ? { focusMinutes: view.focusMinutesToday } : {}),
+      },
+    })
+  }, [view, planner])
 
   /** "Aplicar sugestão": o insight precisa mudar o dia, não só aconselhar. */
   const applyInsight = useCallback(
@@ -270,6 +306,8 @@ export function DashboardPage() {
         />
 
         {view.dayComplete ? <DayCompleteBanner win={view.todayWin} /> : null}
+
+        <ShareMomentsRow view={view} />
 
         <TodayFocusCard
           focus={view.focus}

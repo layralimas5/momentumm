@@ -16,6 +16,12 @@ import {
   type HabitIcon,
   type HabitLog,
 } from '@/domain/entities/habit'
+import {
+  JOURNEY_EVENT_SOURCES,
+  JOURNEY_EVENT_TYPES,
+  JOURNEY_VISIBILITIES,
+  type JourneyEvent,
+} from '@/domain/entities/journey-event'
 import { TASK_EFFORTS, TASK_STATUSES, type Task } from '@/domain/entities/task'
 import type { Win } from '@/domain/entities/win'
 import { parseDayKey } from '@/domain/entities/day'
@@ -430,5 +436,112 @@ export function toPlanStage(row: unknown): PlanStage {
     dueOn: parsed.due_on ? parseDayKey(parsed.due_on.slice(0, 10)) : null,
     completedAt: parsed.completed_at ? new Date(parsed.completed_at) : null,
     createdAt: new Date(parsed.created_at),
+  }
+}
+
+/*
+  Momentos da jornada. `numeric` volta como string do Postgres em alguns
+  drivers e como número em outros, então o schema aceita os dois e converte —
+  um card mostrando "NaN%" em tamanho gigante seria o pior lugar pra descobrir
+  isso.
+*/
+const ratioColumn = z.union([z.number(), z.string()]).nullish()
+
+/** `numeric` chega como string em alguns drivers e como número em outros. */
+function toRatio(value: string | number | null | undefined): number | null {
+  if (value === null || value === undefined) return null
+  const parsed = typeof value === 'string' ? Number(value) : value
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+const journeyItemSchema = z.object({ label: z.string(), done: z.boolean() })
+
+const journeyMetadataSchema = z
+  .object({
+    items: z.array(journeyItemSchema).nullish(),
+    axis: z.string().nullish(),
+    streakDays: z.number().nullish(),
+    daysAway: z.number().nullish(),
+    habitsDone: z.number().nullish(),
+    tasksDone: z.number().nullish(),
+    focusMinutes: z.number().nullish(),
+    gainPercentage: z.number().nullish(),
+    milestoneCount: z.number().nullish(),
+    milestoneUnit: z.string().nullish(),
+  })
+  .nullish()
+
+const journeyEventRowSchema = z.object({
+  id: z.string(),
+  user_id: z.string(),
+  type: z.enum(JOURNEY_EVENT_TYPES),
+  source_type: z.enum(JOURNEY_EVENT_SOURCES),
+  source_id: z.string().nullable(),
+  title: z.string(),
+  description: z.string().nullable(),
+  progress_before: ratioColumn,
+  progress_after: ratioColumn,
+  momentum_before: z.number().nullish(),
+  momentum_after: z.number().nullish(),
+  duration_min: z.number().nullish(),
+  completion_percentage: ratioColumn,
+  metadata: journeyMetadataSchema,
+  visibility: z.enum(JOURNEY_VISIBILITIES),
+  day: z.string(),
+  created_at: z.string(),
+  completed_at: z.string().nullable(),
+})
+
+export function toJourneyEvent(row: unknown): JourneyEvent {
+  const parsed = parseOrThrow(journeyEventRowSchema, row, 'momento da jornada')
+  const meta = parsed.metadata ?? {}
+
+  const momentumBefore = parsed.momentum_before ?? null
+  const momentumAfter = parsed.momentum_after ?? null
+
+  return {
+    id: parsed.id,
+    userId: parsed.user_id,
+    type: parsed.type,
+    sourceType: parsed.source_type,
+    sourceId: parsed.source_id,
+    title: parsed.title,
+    description: parsed.description,
+    progressBefore: toRatio(parsed.progress_before),
+    progressAfter: toRatio(parsed.progress_after),
+    momentumBefore,
+    momentumAfter,
+    momentumChange:
+      momentumBefore !== null && momentumAfter !== null ? momentumAfter - momentumBefore : null,
+    durationMin: parsed.duration_min ?? null,
+    completionPercentage: toRatio(parsed.completion_percentage),
+    metadata: {
+      ...(meta.items ? { items: meta.items } : {}),
+      ...(meta.axis ? { axis: meta.axis } : {}),
+      ...(meta.streakDays !== null && meta.streakDays !== undefined
+        ? { streakDays: meta.streakDays }
+        : {}),
+      ...(meta.daysAway !== null && meta.daysAway !== undefined ? { daysAway: meta.daysAway } : {}),
+      ...(meta.habitsDone !== null && meta.habitsDone !== undefined
+        ? { habitsDone: meta.habitsDone }
+        : {}),
+      ...(meta.tasksDone !== null && meta.tasksDone !== undefined
+        ? { tasksDone: meta.tasksDone }
+        : {}),
+      ...(meta.focusMinutes !== null && meta.focusMinutes !== undefined
+        ? { focusMinutes: meta.focusMinutes }
+        : {}),
+      ...(meta.gainPercentage !== null && meta.gainPercentage !== undefined
+        ? { gainPercentage: meta.gainPercentage }
+        : {}),
+      ...(meta.milestoneCount !== null && meta.milestoneCount !== undefined
+        ? { milestoneCount: meta.milestoneCount }
+        : {}),
+      ...(meta.milestoneUnit ? { milestoneUnit: meta.milestoneUnit } : {}),
+    },
+    visibility: parsed.visibility,
+    day: parseDayKey(parsed.day.slice(0, 10)),
+    createdAt: new Date(parsed.created_at),
+    completedAt: parsed.completed_at ? new Date(parsed.completed_at) : null,
   }
 }

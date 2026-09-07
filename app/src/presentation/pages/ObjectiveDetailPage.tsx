@@ -13,7 +13,11 @@ import { Panel, PanelHeader, ProgressBar, Tag } from '@/presentation/components/
 import { ObjectiveEditDialog } from '@/presentation/components/objective/ObjectiveEditDialog'
 import { ForecastPanel } from '@/presentation/components/plan/ForecastPanel'
 import { StagePanel } from '@/presentation/components/plan/StagePanel'
+import { goalCompletedEvent, goalProgressEvent } from '@/domain/share/journey-event-builders'
+import { useAuth } from '@/presentation/auth/use-auth'
+import { ShareButton } from '@/presentation/share/ShareButton'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
+import { useDashboard } from '@/presentation/planner/use-dashboard'
 import { useObjective } from '@/presentation/planner/use-objectives'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { PageHeader } from './PageHeader'
@@ -27,7 +31,12 @@ import { PageHeader } from './PageHeader'
  */
 export function ObjectiveDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const { user } = useAuth()
   const planner = usePlanner()
+  // O momentum entra no card do objetivo. Ler o dashboard aqui é o caminho de
+  // sempre: a conta é a mesma do `Hoje`, e refazê-la nesta tela criaria dois
+  // números com o mesmo nome.
+  const dashboard = useDashboard()
   const composer = useComposer()
   const navigate = useNavigate()
   const view = useObjective(id)
@@ -58,6 +67,40 @@ export function ObjectiveDetailPage() {
         description={objective.description ?? view.progress.summary}
         action={
           <div className="flex flex-wrap gap-2">
+            {user ? (
+              <ShareButton
+                label={done ? 'Compartilhar conquista' : 'Compartilhar progresso'}
+                icon={done ? 'trofeu' : 'jornada'}
+                variant={done ? 'primary' : 'secondary'}
+                build={() =>
+                  done
+                    ? goalCompletedEvent({
+                        userId: user.id,
+                        today: planner.today,
+                        objectiveId: objective.id,
+                        title: objective.title,
+                        axis: objective.axis,
+                        momentum: dashboard.momentum,
+                      })
+                    : goalProgressEvent({
+                        userId: user.id,
+                        today: planner.today,
+                        objectiveId: objective.id,
+                        title: objective.title,
+                        axis: objective.axis,
+                        ratio: view.ratio,
+                        // O ganho semanal só entra quando a previsão tem
+                        // história pra sustentar: mostrar "+0%" ou um número
+                        // chutado num card seria pior que não mostrar nada.
+                        gainPercentage:
+                          view.forecast.dailyRate > 0 && view.forecast.confidence !== 'baixa'
+                            ? view.forecast.dailyRate * 7 * 100
+                            : null,
+                        momentum: dashboard.momentum,
+                      })
+                }
+              />
+            ) : null}
             <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
               <Icon name="editar" className="size-4" />
               Editar

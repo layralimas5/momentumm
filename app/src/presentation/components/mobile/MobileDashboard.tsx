@@ -20,6 +20,7 @@ import { MobileMomentum } from './MobileMomentum'
 import { MobileObjectives } from './MobileObjectives'
 import { MobilePriority } from './MobilePriority'
 import { MobileWins } from './MobileWins'
+import { ShareMomentsRow } from '@/presentation/share/ShareMomentsRow'
 import { ProSheet } from './ProSheet'
 
 interface MobileDashboardProps {
@@ -109,6 +110,8 @@ export function MobileDashboard({
           </span>
         </p>
       ) : null}
+
+      <ShareMomentsRow view={view} />
 
       <TodayFocusCard
         focus={view.focus}

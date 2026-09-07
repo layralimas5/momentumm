@@ -5,6 +5,7 @@ import type { CheckIn, NewCheckInInput } from '@/domain/entities/checkin'
 import type { DayKey } from '@/domain/entities/day'
 import type { Goal, GoalProgress, NewGoalInput } from '@/domain/entities/goal'
 import type { Habit, HabitLog, HabitStatus, NewHabitInput } from '@/domain/entities/habit'
+import type { JourneyEvent, NewJourneyEventInput } from '@/domain/entities/journey-event'
 import type { WeeklyReview, WeeklyReviewDraft } from '@/domain/entities/weekly-review'
 import type {
   NewObjectiveInput,
@@ -54,6 +55,13 @@ export interface PlannerState {
   readonly checkIns: readonly CheckIn[]
   readonly wins: readonly Win[]
   readonly weeklyReviews: readonly WeeklyReview[]
+  /**
+   * Os momentos da jornada já gravados: dia fechado, objetivo concluído,
+   * semana revisada. É a camada que o Share Studio lê e que o feed, o perfil e
+   * a comunidade vão ler depois — nenhum deles conversa com hábito ou objetivo
+   * direto.
+   */
+  readonly journeyEvents: readonly JourneyEvent[]
   readonly streak: Streak
   readonly limits: PlanLimits
   readonly loading: boolean
@@ -124,6 +132,12 @@ export interface PlannerState {
   saveWin(input: Omit<NewWinInput, 'userId'>): Promise<void>
 
   saveWeeklyReview(weekStart: DayKey, draft: WeeklyReviewDraft): Promise<void>
+
+  /**
+   * Registra um momento notável. Idempotente por (tipo, origem, dia) e sem
+   * lançar: um evento perdido nunca pode derrubar a ação que o gerou.
+   */
+  recordJourneyEvent(input: Omit<NewJourneyEventInput, 'userId'>): Promise<void>
 
   reload(): Promise<void>
 }

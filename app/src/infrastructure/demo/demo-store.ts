@@ -15,6 +15,12 @@ import {
 } from '@/domain/entities/habit'
 import { createGoal, type Goal, type NewGoalInput } from '@/domain/entities/goal'
 import {
+  createJourneyEvent,
+  journeyEventKey,
+  type JourneyEvent,
+  type NewJourneyEventInput,
+} from '@/domain/entities/journey-event'
+import {
   createObjective,
   type NewObjectiveInput,
   type Objective,
@@ -49,7 +55,7 @@ import { DomainError } from '@/shared/errors'
  * `localStorage`. A versão do storage sobe junto com o formato — dado antigo
  * é descartado em silêncio em vez de quebrar a tela.
  */
-const STORAGE_KEY = 'momentumm.demo.v6'
+const STORAGE_KEY = 'momentumm.demo.v7'
 
 export const DEMO_USER = {
   id: 'demo-user',
@@ -69,6 +75,7 @@ interface DemoState {
   checkIns: CheckIn[]
   wins: Win[]
   weeklyReviews: WeeklyReview[]
+  journeyEvents: JourneyEvent[]
 }
 
 let state: DemoState | null = null
@@ -466,6 +473,10 @@ function seed(): DemoState {
     checkIns,
     wins,
     weeklyReviews: [],
+    // Sem momento de fábrica: evento é resultado do que a pessoa fez, e um
+    // "objetivo concluído" plantado no seed seria a primeira coisa que ela
+    // veria pronta pra compartilhar sem ter feito nada.
+    journeyEvents: [],
   }
 }
 
@@ -496,6 +507,12 @@ interface StoredState {
     Omit<WeeklyReview, 'createdAt' | 'updatedAt' | 'completedAt'> & {
       createdAt: string
       updatedAt: string
+      completedAt: string | null
+    }
+  >
+  journeyEvents?: Array<
+    Omit<JourneyEvent, 'createdAt' | 'completedAt'> & {
+      createdAt: string
       completedAt: string | null
     }
   >
@@ -554,6 +571,11 @@ function revive(raw: string): DemoState {
       ...item,
       createdAt: new Date(item.createdAt),
       updatedAt: new Date(item.updatedAt),
+      completedAt: item.completedAt ? new Date(item.completedAt) : null,
+    })),
+    journeyEvents: (parsed.journeyEvents ?? []).map((item) => ({
+      ...item,
+      createdAt: new Date(item.createdAt),
       completedAt: item.completedAt ? new Date(item.completedAt) : null,
     })),
   }
@@ -963,6 +985,39 @@ export const demoStore = {
     return win
   },
 
+  journeyEvents(): JourneyEvent[] {
+    return [...load().journeyEvents]
+  },
+
+  /**
+   * Grava o momento, deduplicado pela mesma chave do índice do Postgres: tipo,
+   * origem e dia. Sem isso, desmarcar e remarcar o último hábito do dia
+   * empilharia três "dia concluído" no histórico.
+   */
+  recordJourneyEvent(input: NewJourneyEventInput): JourneyEvent {
+    const current = load()
+    const event = createJourneyEvent(input, newId())
+    const key = journeyEventKey(event)
+
+    const index = current.journeyEvents.findIndex(
+      (item) => item.sourceId !== null && journeyEventKey(item) === key,
+    )
+
+    if (index >= 0) {
+      const previous = current.journeyEvents[index]
+      const updated = { ...event, id: previous?.id ?? event.id }
+      current.journeyEvents = current.journeyEvents.map((item, position) =>
+        position === index ? updated : item,
+      )
+      persist()
+      return updated
+    }
+
+    current.journeyEvents = [event, ...current.journeyEvents]
+    persist()
+    return event
+  },
+
   /** Zera tudo, sem seed: é o caminho pra testar o onboarding de conta nova. */
   clear(): void {
     const profile = load().profile
@@ -979,6 +1034,7 @@ export const demoStore = {
       checkIns: [],
       wins: [],
       weeklyReviews: [],
+      journeyEvents: [],
     }
     persist()
   },

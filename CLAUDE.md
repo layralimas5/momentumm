@@ -63,7 +63,7 @@ que existir base. Feed vazio afasta usuário.
 Fase 1 em pé, em `app/`. Roda em **modo demo** sem configurar nada (dados em
 `localStorage`) e vira contas reais ao preencher `.env.local` com o Supabase.
 
-Pronto: domínio completo com 173 testes, quatro migrations com RLS, repositórios demo e
+Pronto: domínio completo com 293 testes, quatro migrations com RLS, repositórios demo e
 Supabase, auth com rota protegida, registro rápido, cronômetro de sessão, streak
 dos últimos 7 dias, histórico com filtro por eixo, metas com progresso e perfil
 editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
@@ -147,6 +147,78 @@ isso; recalcular por tela traz o problema de volta.
 
 Migration `0007_plan_stages.sql`: aditiva, com RLS, trigger que recusa etapa de
 outro objetivo e trigger que carimba a data de conclusão.
+
+### Share Studio e a camada de momentos
+
+O produto ganhou a ponte entre progresso e conteúdo: transformar o que a pessoa
+fez em imagem compartilhável. A referência é o Strava, aplicada a rotina,
+objetivo, constância e Momentum.
+
+**A entidade nova NÃO se chama `Activity`.** `activity` já é a unidade do
+Momentumm — esforço registrado, "leu 32 páginas" — e é ela que alimenta streak,
+meta e histórico. O que o Share Studio precisa é de outra coisa: o EVENTO que
+vale contar. Reaproveitar o nome faria as duas tabelas discordarem sobre o que
+"atividade" significa, e o feed futuro leria a errada.
+
+- `journey-event` — o momento notável. Nove tipos (`day_completed`,
+  `routine_completed`, `goal_progress`, `goal_completed`, `milestone`,
+  `weekly_review`, `comeback`, `momentum_record`, `habit_completed`), com
+  `sourceType` + `sourceId`, progresso antes/depois, momentum antes/depois,
+  percentual, duração e metadata **tipada** (nada de `Record<string, unknown>`).
+  A variação do momentum é DERIVADA, nunca guardada
+- `visibility` já tem os quatro degraus (`privada`, `amigos`, `comunidade`,
+  `publica`), mas todo evento nasce **privado** e nenhuma tela escreve outra
+  coisa. Ela existe pra o feed não exigir migration destrutiva depois.
+  Compartilhar a imagem no Instagram **não** muda a visibilidade do dado
+- Migration `0008_journey_events.sql`: enums, RLS restritiva (ninguém lê o
+  momento de outra pessoa nesta versão, nem marcado `publica`), índice único
+  parcial de deduplicação por (user, tipo, origem, dia) e trigger de carimbo
+
+**Dois caminhos, um destino.** Transição gravada vira linha no banco
+(objetivo concluído no `PlannerProvider`, review concluído no `saveWeeklyReview`,
+dia fechado no `DashboardPage` — que é quem sabe quando o dia fecha). "Compartilhar
+meu dia às 15h de uma terça comum" não é fato, é uma FOTO do estado: sai de
+`domain/share/journey-event-builders`, é efêmero e não vai pro banco. O Share
+Studio não sabe de onde veio o evento — que é o desacoplamento que o feed vai
+precisar.
+
+**A cadeia é `JourneyEvent → ShareCardData → template → exportação`**, e cada
+elo só conhece o anterior. `share-card-adapter` é o único lugar que decide o que
+um evento vira dentro de uma imagem; nenhum template conhece hábito, objetivo ou
+etapa.
+
+**Privacidade por menor exposição.** Nome do objetivo, lista de hábitos e nome
+da pessoa começam **desligados** — são os três campos que carregam texto escrito
+por ela. Campo desligado não vira placeholder: ele some. Um card com "Objetivo
+oculto" denunciaria que havia algo escondido. Toggle que o tipo de evento não
+suporta não aparece: toggle que não muda nada ensina a desconfiar dos outros.
+
+**Renderização em canvas, não HTML fotografado.** As bibliotecas que fotografam
+DOM erram em `oklch` (o padrão do Tailwind v4) e `foreignObject` em SVG quebra
+no Safari do iPhone — o aparelho onde o Stories acontece. Existe UM renderizador
+(`render-share-card`) num espaço fixo de 1080 de largura; o preview é o mesmo
+desenho em escala menor. "O que você vê é o que sai" fica garantido por
+construção, não por disciplina.
+
+Os cinco templates (Dark, Light, Gradient, Minimal, Transparent) são **temas** —
+paleta, alinhamento, densidade e fundo — sobre o mesmo layout. Cinco funções de
+desenho independentes seriam cinco lugares pra corrigir, e quatro ficariam pra
+trás. Transparent exporta PNG com alpha real, pra ir sobre a foto da pessoa.
+
+Saída sempre em PNG (1080×1920 / 1080×1350 / 1080×1080). Compartilhamento pelo
+share sheet nativo (Web Share API com arquivo) e download como saída quando ele
+não existe — sem SDK de Instagram, TikTok ou WhatsApp. Analytics tem contrato e
+ponto único de saída (`share-analytics`), com payload FECHADO: tipo, template e
+formato, nunca conteúdo escrito pela pessoa.
+
+Botões em `Hoje` (dia, rotina, retomada, momentum, conforme o que o dia
+oferece), no detalhe do objetivo, no fim do review e nos insights. O estúdio mora
+acima das páginas (`ShareStudioProvider`): cinco telas abrindo o mesmo modal, em
+vez de cinco modais que divergem em dois meses.
+
+**Não implementado de propósito:** feed, amigos, curtidas, comentários,
+comunidade, ranking e perfil público. A arquitetura está pronta pra eles; o
+produto continua single-player.
 
 ### A jornada principal
 
@@ -253,6 +325,6 @@ Quando incomodar, trocar por import dinâmico dentro do `container`.
 cd app
 npm install
 npm run dev     # modo demo, sem configurar nada
-npm test        # 173 testes de domínio
+npm test        # 293 testes de domínio
 npm run build
 ```

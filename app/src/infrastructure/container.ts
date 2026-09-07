@@ -5,6 +5,7 @@ import type { ActivityTypeRepository } from '@/domain/repositories/activity-type
 import type { CheckInRepository } from '@/domain/repositories/checkin-repository'
 import type { GoalRepository } from '@/domain/repositories/goal-repository'
 import type { HabitRepository } from '@/domain/repositories/habit-repository'
+import type { JourneyEventRepository } from '@/domain/repositories/journey-event-repository'
 import type { ObjectiveRepository } from '@/domain/repositories/objective-repository'
 import type { PlanStageRepository } from '@/domain/repositories/plan-stage-repository'
 import type { ProfileRepository } from '@/domain/repositories/profile-repository'
@@ -20,6 +21,7 @@ import {
   DemoCheckInRepository,
   DemoGoalRepository,
   DemoHabitRepository,
+  DemoJourneyEventRepository,
   DemoObjectiveRepository,
   DemoPlanStageRepository,
   DemoProfileRepository,
@@ -34,6 +36,7 @@ import {
   SupabaseCheckInRepository,
   SupabaseGoalRepository,
   SupabaseHabitRepository,
+  SupabaseJourneyEventRepository,
   SupabaseObjectiveRepository,
   SupabasePlanStageRepository,
   SupabaseProfileRepository,
@@ -56,6 +59,12 @@ export interface Container {
   readonly checkIns: CheckInRepository
   readonly wins: WinRepository
   readonly weeklyReviews: WeeklyReviewRepository
+  /**
+   * Os momentos da jornada: dia fechado, rotina cumprida, objetivo concluído.
+   * É a camada que o Share Studio lê hoje e que o feed, o perfil e a comunidade
+   * vão ler depois — nenhum deles fala com hábito ou objetivo direto.
+   */
+  readonly journeyEvents: JourneyEventRepository
   /**
    * Momentumm AI. Hoje é sempre a implementação simulada: não existe endpoint
    * de IA ainda, e chave de LLM não pode viver no frontend. Quando o endpoint
@@ -80,6 +89,7 @@ export const container: Container = isDemoMode
       checkIns: new DemoCheckInRepository(),
       wins: new DemoWinRepository(),
       weeklyReviews: new DemoWeeklyReviewRepository(),
+      journeyEvents: new DemoJourneyEventRepository(),
       ai: new SimulatedAiService(),
       demo: true,
     }
@@ -96,6 +106,7 @@ export const container: Container = isDemoMode
       checkIns: new SupabaseCheckInRepository(),
       wins: new SupabaseWinRepository(),
       weeklyReviews: new SupabaseWeeklyReviewRepository(),
+      journeyEvents: new SupabaseJourneyEventRepository(),
       ai: new SimulatedAiService(),
       demo: false,
     }

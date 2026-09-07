@@ -16,6 +16,11 @@ import {
   type NewPlanStageInput,
   type PlanStage,
 } from '@/domain/entities/plan-stage'
+import {
+  createJourneyEvent,
+  type JourneyEvent,
+  type NewJourneyEventInput,
+} from '@/domain/entities/journey-event'
 import { createTask, type NewTaskInput, type Task } from '@/domain/entities/task'
 import { createWin, type NewWinInput, type Win } from '@/domain/entities/win'
 import type { WeeklyReview, WeeklyReviewDraft } from '@/domain/entities/weekly-review'
@@ -50,6 +55,7 @@ import type {
   TaskRepository,
   TaskUpdate,
 } from '@/domain/repositories/task-repository'
+import type { JourneyEventRepository } from '@/domain/repositories/journey-event-repository'
 import type { WeeklyReviewRepository } from '@/domain/repositories/weekly-review-repository'
 import type { WinRepository } from '@/domain/repositories/win-repository'
 import { DomainError, InfrastructureError } from '@/shared/errors'
@@ -57,6 +63,7 @@ import { supabase } from './client'
 import {
   toActivity,
   toCheckIn,
+  toJourneyEvent,
   toCustomAxis,
   toGoal,
   toHabit,
@@ -848,5 +855,61 @@ export class SupabaseWeeklyReviewRepository implements WeeklyReviewRepository {
 
     if (error) fail(error, 'salvar o review')
     return toWeeklyReview(data)
+  }
+}
+
+/**
+ * Momentos da jornada.
+ *
+ * A leitura é limitada aos mais recentes: a tabela cresce pra sempre e nenhuma
+ * tela do app precisa do histórico inteiro carregado de uma vez. Quando o feed
+ * existir, ele pagina — não é essa chamada que vira infinita.
+ */
+export class SupabaseJourneyEventRepository implements JourneyEventRepository {
+  async listByUser(userId: string): Promise<JourneyEvent[]> {
+    const { data, error } = await supabase()
+      .from('journey_events')
+      .select('*')
+      .eq('user_id', userId)
+      .order('day', { ascending: false })
+      .limit(120)
+
+    if (error) fail(error, 'carregar os momentos da jornada')
+    return (data ?? []).map(toJourneyEvent)
+  }
+
+  async record(input: NewJourneyEventInput): Promise<JourneyEvent> {
+    const draft = createJourneyEvent(input, crypto.randomUUID())
+
+    // Upsert pela chave de deduplicação, igual ao índice parcial da migration:
+    // remarcar o último hábito do dia atualiza a linha em vez de empilhar.
+    const { data, error } = await supabase()
+      .from('journey_events')
+      .upsert(
+        {
+          user_id: draft.userId,
+          type: draft.type,
+          source_type: draft.sourceType,
+          source_id: draft.sourceId,
+          title: draft.title,
+          description: draft.description,
+          progress_before: draft.progressBefore,
+          progress_after: draft.progressAfter,
+          momentum_before: draft.momentumBefore,
+          momentum_after: draft.momentumAfter,
+          duration_min: draft.durationMin,
+          completion_percentage: draft.completionPercentage,
+          metadata: draft.metadata,
+          visibility: draft.visibility,
+          day: draft.day,
+          completed_at: draft.completedAt?.toISOString() ?? null,
+        },
+        { onConflict: 'user_id,type,source_id,day' },
+      )
+      .select('*')
+      .single()
+
+    if (error) fail(error, 'salvar o momento da jornada')
+    return toJourneyEvent(data)
   }
 }

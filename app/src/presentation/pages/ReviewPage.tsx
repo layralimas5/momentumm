@@ -28,7 +28,11 @@ import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { EmptyState, ErrorNote } from '@/presentation/components/ui/States'
 import { Panel, PanelHeader, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
+import { weeklyReviewEvent } from '@/domain/share/journey-event-builders'
 import { useAi } from '@/presentation/ai/use-ai'
+import { useAuth } from '@/presentation/auth/use-auth'
+import { ShareButton } from '@/presentation/share/ShareButton'
+import { useDashboard } from '@/presentation/planner/use-dashboard'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 import { PageHeader } from './PageHeader'
@@ -45,7 +49,9 @@ import { PageHeader } from './PageHeader'
  * lê o dado antes de responder a pergunta que depende dele.
  */
 export function ReviewPage() {
+  const { user } = useAuth()
   const planner = usePlanner()
+  const dashboard = useDashboard()
 
   const weekStart = reviewWeekStart(planner.today)
 
@@ -221,10 +227,32 @@ export function ReviewPage() {
           </Button>
 
           {index === REVIEW_STEPS.length - 1 ? (
-            <Button onClick={() => void save({ completedAt: new Date() })}>
-              <Icon name="check" className="size-4" />
-              {done ? 'Salvar de novo' : 'Concluir review'}
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              {/* O card da semana só aparece depois que a semana foi fechada:
+                  compartilhar um resumo pela metade seria contar uma história
+                  que a pessoa ainda não terminou de ler. */}
+              {done && user ? (
+                <ShareButton
+                  label="Compartilhar semana"
+                  size="md"
+                  build={() =>
+                    weeklyReviewEvent({
+                      userId: user.id,
+                      weekStart,
+                      weekEnd: addDays(weekStart, 6),
+                      executionRate: computed.execution.rate,
+                      habitsDone: computed.execution.habitsDone,
+                      focusMinutes: computed.focusMinutes,
+                      momentum: dashboard.momentum,
+                    })
+                  }
+                />
+              ) : null}
+              <Button onClick={() => void save({ completedAt: new Date() })}>
+                <Icon name="check" className="size-4" />
+                {done ? 'Salvar de novo' : 'Concluir review'}
+              </Button>
+            </div>
           ) : (
             <Button
               onClick={() => {

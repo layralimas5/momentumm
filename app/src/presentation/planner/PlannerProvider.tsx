@@ -22,6 +22,11 @@ import {
   type NewObjectiveInput,
   type Objective,
 } from '@/domain/entities/objective'
+import {
+  sortEventsByRecent,
+  type JourneyEvent,
+  type NewJourneyEventInput,
+} from '@/domain/entities/journey-event'
 import { limitsOf } from '@/domain/entities/plan'
 import { planProgressOf } from '@/domain/entities/plan-progress'
 import {
@@ -57,6 +62,7 @@ interface Snapshot {
   readonly checkIns: CheckIn[]
   readonly wins: Win[]
   readonly weeklyReviews: WeeklyReview[]
+  readonly journeyEvents: JourneyEvent[]
 }
 
 const EMPTY: Snapshot = {
@@ -71,6 +77,7 @@ const EMPTY: Snapshot = {
   checkIns: [],
   wins: [],
   weeklyReviews: [],
+  journeyEvents: [],
 }
 
 /**
@@ -130,6 +137,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         checkIns,
         wins,
         weeklyReviews,
+        journeyEvents,
       ] = await Promise.all([
         container.activityTypes.listCustom(user.id),
         container.activities.listByUser(user.id),
@@ -142,6 +150,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         container.checkIns.listByUser(user.id),
         container.wins.listByUser(user.id),
         container.weeklyReviews.listByUser(user.id),
+        container.journeyEvents.listByUser(user.id),
       ])
 
       if (!mounted.current) return
@@ -162,6 +171,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         checkIns,
         wins,
         weeklyReviews,
+        journeyEvents: sortEventsByRecent(journeyEvents),
       })
       setError(null)
     } catch (cause) {
@@ -320,12 +330,55 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
    * ações canceladas ficam canceladas, porque ressuscitar tarefa antiga de
    * surpresa é a forma mais rápida de encher o dia de coisa que ninguém pediu.
    */
+  /**
+   * Grava um momento da jornada.
+   *
+   * Nunca derruba a ação que o disparou: se a gravação falhar, o objetivo
+   * continua concluído e o review continua salvo. O evento é um subproduto —
+   * perder um deles é aceitável, perder a conclusão do objetivo não é.
+   *
+   * A escrita é idempotente por (tipo, origem, dia), então repetir a mesma
+   * transição atualiza a linha em vez de empilhar.
+   */
+  const recordJourneyEvent = useCallback(
+    async (input: Omit<NewJourneyEventInput, 'userId'>): Promise<void> => {
+      if (!user) return
+      try {
+        const event = await container.journeyEvents.record({ ...input, userId: user.id })
+        setData((current) => ({
+          ...current,
+          journeyEvents: sortEventsByRecent([
+            event,
+            ...current.journeyEvents.filter((item) => item.id !== event.id),
+          ]),
+        }))
+      } catch {
+        // Silêncio de propósito: ver "falha ao salvar" depois de concluir um
+        // objetivo faria a pessoa achar que a conclusão não foi gravada.
+      }
+    },
+    [user],
+  )
+
   const completeObjective = useCallback(
     async (id: string, done: boolean) => {
       if (!user) return
 
       await updateObjective(id, { completedAt: done ? new Date() : null })
       if (!done) return
+
+      const objective = data.objectives.find((item) => item.id === id)
+      if (objective) {
+        void recordJourneyEvent({
+          type: 'goal_completed',
+          sourceType: 'objective',
+          sourceId: objective.id,
+          title: objective.title,
+          completionPercentage: 1,
+          progressAfter: 1,
+          metadata: { axis: objective.axis },
+        })
+      }
 
       const open = data.tasks.filter(
         (task) => task.objectiveId === id && (task.status === 'pendente' || task.status === 'em-andamento'),
@@ -348,7 +401,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         }))
       }
     },
-    [user, data.tasks, updateObjective],
+    [user, data.tasks, data.objectives, updateObjective, recordJourneyEvent],
   )
 
   /**
@@ -815,8 +868,19 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         ],
       }))
       setError(null)
+
+      // Só a CONCLUSÃO vira momento. O review salva a cada passo, e gravar em
+      // cada um deles encheria o histórico de nove versões da mesma semana.
+      if (draft.completedAt) {
+        void recordJourneyEvent({
+          type: 'weekly_review',
+          sourceType: 'week',
+          sourceId: weekStart,
+          title: 'Minha semana',
+        })
+      }
     },
-    [user],
+    [user, recordJourneyEvent],
   )
 
   /**
@@ -942,6 +1006,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       checkIns: data.checkIns,
       wins: data.wins,
       weeklyReviews: data.weeklyReviews,
+      journeyEvents: data.journeyEvents,
       streak,
       limits,
       loading,
@@ -951,6 +1016,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       logActivity,
       removeActivity,
       createAxis,
+      recordJourneyEvent,
       createObjective,
       updateObjective,
       archiveObjective,
@@ -996,6 +1062,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       logActivity,
       removeActivity,
       createAxis,
+      recordJourneyEvent,
       createObjective,
       updateObjective,
       archiveObjective,

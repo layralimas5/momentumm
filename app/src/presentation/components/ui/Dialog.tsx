@@ -10,7 +10,7 @@ interface DialogProps {
   readonly description?: string
   readonly onClose: () => void
   readonly children: ReactNode
-  readonly size?: 'md' | 'lg'
+  readonly size?: 'md' | 'lg' | 'xl'
   /** Sessão de foco: tela cheia, sem nada além do essencial. */
   readonly fullscreen?: boolean
 }
@@ -66,7 +66,9 @@ export function Dialog({
                 ? 'flex w-full flex-col bg-canvas'
                 : cn(
                     'surface-card max-h-[85dvh] w-full overflow-y-auto p-6',
-                    size === 'lg' ? 'max-w-2xl' : 'max-w-lg',
+                    // `xl` existe pro Share Studio: preview grande e controles
+                    // lado a lado não cabem em 2xl sem espremer os dois.
+                    size === 'xl' ? 'max-w-5xl' : size === 'lg' ? 'max-w-2xl' : 'max-w-lg',
                   ),
             )}
           >

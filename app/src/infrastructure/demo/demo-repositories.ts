@@ -4,6 +4,7 @@ import type { ActivityType } from '@/domain/entities/activity-type'
 import type { CheckIn, NewCheckInInput } from '@/domain/entities/checkin'
 import type { DayKey } from '@/domain/entities/day'
 import type { Habit, HabitLog, HabitStatus, NewHabitInput } from '@/domain/entities/habit'
+import type { JourneyEvent, NewJourneyEventInput } from '@/domain/entities/journey-event'
 import type { NewTaskInput, Task } from '@/domain/entities/task'
 import type { WeeklyReview, WeeklyReviewDraft } from '@/domain/entities/weekly-review'
 import type { NewWinInput, Win } from '@/domain/entities/win'
@@ -29,6 +30,7 @@ import type {
   TaskRepository,
   TaskUpdate,
 } from '@/domain/repositories/task-repository'
+import type { JourneyEventRepository } from '@/domain/repositories/journey-event-repository'
 import type { WeeklyReviewRepository } from '@/domain/repositories/weekly-review-repository'
 import type { WinRepository } from '@/domain/repositories/win-repository'
 import { isAuthBypass } from '@/infrastructure/config/env'
@@ -286,5 +288,15 @@ export class DemoWinRepository implements WinRepository {
 
   async save(input: NewWinInput): Promise<Win> {
     return demoStore.saveWin(input)
+  }
+}
+
+export class DemoJourneyEventRepository implements JourneyEventRepository {
+  async listByUser(): Promise<JourneyEvent[]> {
+    return demoStore.journeyEvents()
+  }
+
+  async record(input: NewJourneyEventInput): Promise<JourneyEvent> {
+    return demoStore.recordJourneyEvent(input)
   }
 }

@@ -5,6 +5,9 @@ import { EmptyState } from '@/presentation/components/ui/States'
 import { Panel, PanelHeader, Tag } from '@/presentation/components/ui/Surface'
 import { UpgradeHint } from '@/presentation/components/dashboard/UpgradeHint'
 import { WeeklyProgressCard } from '@/presentation/components/dashboard/WeeklyProgressCard'
+import { momentumEvent } from '@/domain/share/journey-event-builders'
+import { useAuth } from '@/presentation/auth/use-auth'
+import { ShareButton } from '@/presentation/share/ShareButton'
 import { useDashboard } from '@/presentation/planner/use-dashboard'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { PageHeader } from './PageHeader'
@@ -17,6 +20,7 @@ import { PageHeader } from './PageHeader'
  * não encontrou padrão, ela não escreve nada.
  */
 export function InsightsPage() {
+  const { user } = useAuth()
   const planner = usePlanner()
   const view = useDashboard()
 
@@ -45,6 +49,21 @@ export function InsightsPage() {
       <PageHeader
         title="Insights"
         description="O que os seus próprios registros mostram sobre o jeito que você avança e o jeito que você trava."
+        action={
+          user && view.hasHistory ? (
+            <ShareButton
+              label="Compartilhar Momentum"
+              build={() =>
+                momentumEvent({
+                  userId: user.id,
+                  today: planner.today,
+                  momentum: view.momentum,
+                  streakDays: planner.streak.current,
+                })
+              }
+            />
+          ) : undefined
+        }
       />
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_24rem] xl:items-start">

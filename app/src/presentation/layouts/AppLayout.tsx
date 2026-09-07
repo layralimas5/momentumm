@@ -11,6 +11,7 @@ import { FocusProvider } from '@/presentation/focus/FocusProvider'
 import { FocusSession } from '@/presentation/focus/FocusSession'
 import { ComposerProvider } from '@/presentation/planner/ComposerProvider'
 import { PlannerProvider } from '@/presentation/planner/PlannerProvider'
+import { ShareStudioProvider } from '@/presentation/share/ShareStudioProvider'
 import { useIsDesktop } from '@/presentation/hooks/use-media-query'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
@@ -32,8 +33,15 @@ export function AppLayout() {
     <PlannerProvider>
       <ComposerProvider>
         <FocusProvider>
-          <LayoutShell />
-          <FocusSession />
+          {/*
+            O Share Studio fica por último de propósito: ele lê o planner e o
+            perfil, e é aberto de dentro de qualquer tela. Um estúdio por página
+            seria o começo da divergência entre os cards.
+          */}
+          <ShareStudioProvider>
+            <LayoutShell />
+            <FocusSession />
+          </ShareStudioProvider>
         </FocusProvider>
       </ComposerProvider>
     </PlannerProvider>
