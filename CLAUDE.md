@@ -101,6 +101,53 @@ mesmo cronômetro. Rotas: `/app`, `/app/jornada`, `/app/habitos`, `/app/metas`,
 `/app/foco`, `/app/review`, `/app/insights`, `/app/configuracoes` (as antigas `/app/atividades`
 e `/app/perfil` redirecionam).
 
+**Atalho de dev:** `VITE_AUTH_BYPASS=true` no `.env.local` abre o app já
+autenticado na sessão demo, sem passar pelo login. Só vale em `vite dev` — em
+build de produção a flag é ignorada.
+
+### A hierarquia (o que amarra tudo)
+
+O produto deixou de ser módulos vizinhos e virou um ciclo só:
+
+**Objetivo → Plano (etapas) → Ações e hábitos → Execução do dia → Progresso →
+Insight → Ajuste.**
+
+- `plan-stage` — a **etapa**, o degrau que faltava. Tem peso (o quanto vale do
+  objetivo), ordem, situação e data prevista. Os pesos **somam 100 sempre**; o
+  domínio recusa um conjunto que não fecha, e criar ou apagar etapa
+  redistribui sozinho. `atrasada` é derivada de `due_on`, nunca guardada — a
+  mesma decisão de estado x status que `objective` já tinha
+- `plan-progress` — a **única** resposta pra "quanto do objetivo está feito".
+  A conta sobe pela hierarquia: ação (peso) → etapa (peso) → objetivo. Detecta
+  o **gargalo** e a **próxima ação**. Hábito NÃO entra: execução é execução.
+  Objetivo sem etapa cai no volume registrado, e a tela diz isso em voz alta
+- `forecast` — **previsão** pela velocidade das últimas duas semanas. Sem sete
+  dias de história, duas conclusões e avanço na janela, ela se cala. A frase é
+  sempre condicional ("mantendo esse ritmo")
+- Ação ganhou `stageId`, `weight` e `isRequired`; hábito ganhou `stageId`
+  (opcional: hábito que atravessa o plano não deve ser recriado a cada fase)
+- Ação sem objetivo é legítima e vira **caixa de entrada**: ela não empurra
+  progresso nenhum até ganhar destino, e o plano cobra isso
+- `momentum` ganhou três fatores — plano cumprido (atraso e adiamento),
+  revisões e avanço dos objetivos. Todos **neutros** quando não há o que
+  cobrar: conta nova não perde ponto por rotina que ainda não teve
+- `insight` ganhou oito regras que leem etapa, peso e previsão (gargalo, ritmo
+  contra prazo, ação que destrava a etapa seguinte, semana maior que a
+  capacidade, queda de constância, hábito que puxa execução, caixa de entrada,
+  retomada reconhecida)
+
+**Etapa concluída é decisão da pessoa.** O app sugere quando todas as ações
+obrigatórias saíram, e só. O único avanço automático é a etapa sair de "não
+iniciada" na primeira ação concluída.
+
+O plano de cada objetivo é calculado **uma vez** no `PlannerProvider` e lido por
+todas as telas (`plans`). Foi a divergência entre elas — o plano dividia ações
+concluídas pelo total, o detalhe mostrava volume sobre alvo — que motivou tudo
+isso; recalcular por tela traz o problema de volta.
+
+Migration `0007_plan_stages.sql`: aditiva, com RLS, trigger que recusa etapa de
+outro objetivo e trigger que carimba a data de conclusão.
+
 ### A jornada principal
 
 O produto é um ciclo de três telas, nessa ordem:
