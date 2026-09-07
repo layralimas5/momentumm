@@ -9,6 +9,7 @@ export type HabitUpdate = Partial<
     | 'icon'
     | 'axis'
     | 'objectiveId'
+    | 'stageId'
     | 'priority'
     | 'frequency'
     | 'dayPart'

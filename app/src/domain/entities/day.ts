@@ -75,3 +75,18 @@ export function formatDayLabel(key: DayKey, today: DayKey): string {
     ...(sameYear ? {} : { year: 'numeric' }),
   })
 }
+
+/**
+ * Data por extenso, sem o ano quando ele é o corrente. Serve à previsão: "18 de
+ * novembro" é uma data que a pessoa consegue segurar na cabeça, "18/11/2026"
+ * parece cláusula de contrato.
+ */
+export function formatDayLong(key: DayKey, today: DayKey = dayKeyOf(new Date())): string {
+  const date = dayKeyToDate(key)
+  const sameYear = date.getFullYear() === dayKeyToDate(today).getFullYear()
+  return date.toLocaleDateString('pt-BR', {
+    day: 'numeric',
+    month: 'long',
+    ...(sameYear ? {} : { year: 'numeric' }),
+  })
+}

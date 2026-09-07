@@ -6,6 +6,7 @@ import type { CheckInRepository } from '@/domain/repositories/checkin-repository
 import type { GoalRepository } from '@/domain/repositories/goal-repository'
 import type { HabitRepository } from '@/domain/repositories/habit-repository'
 import type { ObjectiveRepository } from '@/domain/repositories/objective-repository'
+import type { PlanStageRepository } from '@/domain/repositories/plan-stage-repository'
 import type { ProfileRepository } from '@/domain/repositories/profile-repository'
 import type { TaskRepository } from '@/domain/repositories/task-repository'
 import type { WeeklyReviewRepository } from '@/domain/repositories/weekly-review-repository'
@@ -20,6 +21,7 @@ import {
   DemoGoalRepository,
   DemoHabitRepository,
   DemoObjectiveRepository,
+  DemoPlanStageRepository,
   DemoProfileRepository,
   DemoTaskRepository,
   DemoWeeklyReviewRepository,
@@ -33,6 +35,7 @@ import {
   SupabaseGoalRepository,
   SupabaseHabitRepository,
   SupabaseObjectiveRepository,
+  SupabasePlanStageRepository,
   SupabaseProfileRepository,
   SupabaseTaskRepository,
   SupabaseWeeklyReviewRepository,
@@ -45,6 +48,8 @@ export interface Container {
   readonly activityTypes: ActivityTypeRepository
   readonly goals: GoalRepository
   readonly objectives: ObjectiveRepository
+  /** As etapas do plano: o degrau entre objetivo e ação. */
+  readonly planStages: PlanStageRepository
   readonly profiles: ProfileRepository
   readonly habits: HabitRepository
   readonly tasks: TaskRepository
@@ -68,6 +73,7 @@ export const container: Container = isDemoMode
       activityTypes: new DemoActivityTypeRepository(),
       goals: new DemoGoalRepository(),
       objectives: new DemoObjectiveRepository(),
+      planStages: new DemoPlanStageRepository(),
       profiles: new DemoProfileRepository(),
       habits: new DemoHabitRepository(),
       tasks: new DemoTaskRepository(),
@@ -83,6 +89,7 @@ export const container: Container = isDemoMode
       activityTypes: new SupabaseActivityTypeRepository(),
       goals: new SupabaseGoalRepository(),
       objectives: new SupabaseObjectiveRepository(),
+      planStages: new SupabasePlanStageRepository(),
       profiles: new SupabaseProfileRepository(),
       habits: new SupabaseHabitRepository(),
       tasks: new SupabaseTaskRepository(),

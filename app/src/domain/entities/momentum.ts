@@ -1,7 +1,7 @@
 import type { Activity } from './activity'
 import { totalMinutes } from './activity'
 import type { CapacityProfile } from './checkin'
-import { addDays, dayRange, type DayKey } from './day'
+import { addDays, dayRange, daysBetween, type DayKey } from './day'
 import {
   countsAsDone,
   isScheduledOn,
@@ -9,7 +9,8 @@ import {
   type Habit,
   type HabitLog,
 } from './habit'
-import type { Task } from './task'
+import { postponedBetween, isOverdue, type Task } from './task'
+import type { WeeklyReview } from './weekly-review'
 
 /**
  * Momentum: o ritmo da pessoa, não a nota dela.
@@ -61,14 +62,23 @@ export interface MomentumWeights {
   readonly priorities: number
   readonly volume: number
   readonly recovery: number
+  /** O quanto o plano combinado sobrevive ao período: pouco atraso, pouco adiamento. */
+  readonly reliability: number
+  /** Regularidade das revisões semanais. */
+  readonly reviews: number
+  /** Avanço real do plano dos objetivos na janela. */
+  readonly objectives: number
 }
 
 export const DEFAULT_MOMENTUM_WEIGHTS: MomentumWeights = {
-  consistency: 0.35,
-  habits: 0.22,
-  priorities: 0.18,
-  volume: 0.1,
-  recovery: 0.15,
+  consistency: 0.3,
+  habits: 0.19,
+  priorities: 0.15,
+  volume: 0.07,
+  recovery: 0.14,
+  reliability: 0.06,
+  reviews: 0.04,
+  objectives: 0.05,
 }
 
 export const MOMENTUM_PART_LABELS: Readonly<Record<keyof MomentumWeights, string>> = {
@@ -77,6 +87,9 @@ export const MOMENTUM_PART_LABELS: Readonly<Record<keyof MomentumWeights, string
   priorities: 'Ações',
   volume: 'Volume',
   recovery: 'Retomada',
+  reliability: 'Plano cumprido',
+  reviews: 'Revisões',
+  objectives: 'Objetivos',
 }
 
 export interface MomentumInput {
@@ -85,6 +98,21 @@ export interface MomentumInput {
   readonly habitLogs: readonly HabitLog[]
   readonly tasks: readonly Task[]
   readonly today: DayKey
+  /**
+   * Reviews escritos. Opcional: sem eles o fator de revisão fica neutro em vez
+   * de zerado — cobrar review de quem nunca teve uma semana fechada seria punir
+   * a conta nova pelo tempo que ela ainda não teve.
+   */
+  readonly weeklyReviews?: readonly WeeklyReview[]
+  /**
+   * Progresso de plano ganho na janela atual e na anterior, de 0 a 1.
+   *
+   * Vem de fora porque depende de etapas, e o momentum não conhece a
+   * hierarquia — ele recebe o número já apurado. Undefined mantém o fator
+   * neutro, então quem ainda não montou plano nenhum não perde pontos por isso.
+   */
+  readonly planGain?: number
+  readonly previousPlanGain?: number
 }
 
 export type MomentumParts = Readonly<Record<keyof MomentumWeights, number>>
@@ -105,9 +133,9 @@ export function calculateMomentum(
   input: MomentumInput,
   weights: MomentumWeights = DEFAULT_MOMENTUM_WEIGHTS,
 ): MomentumScore {
-  const current = windowScore(input, input.today, weights)
+  const current = windowScore(input, input.today, weights, input.planGain)
   const previousEnd = addDays(input.today, -MOMENTUM_WINDOW_DAYS)
-  const previous = windowScore(input, previousEnd, weights)
+  const previous = windowScore(input, previousEnd, weights, input.previousPlanGain)
 
   const value = Math.round(current.value)
   const delta = value - Math.round(previous.value)
@@ -133,6 +161,7 @@ function windowScore(
   input: MomentumInput,
   end: DayKey,
   weights: MomentumWeights,
+  gain: number | undefined,
 ): WindowScore {
   const start = addDays(end, -(MOMENTUM_WINDOW_DAYS - 1))
 
@@ -163,18 +192,114 @@ function windowScore(
   const volume = Math.min(1, totalMinutes(activities) / ceiling)
 
   const recovery = recoveryScore(input, start, end, consistency)
+  const reliability = reliabilityScore(input, start, end, consistency)
+  const reviews = reviewScore(input, end, consistency)
+  const objectives = objectiveScore(gain, consistency)
 
-  const parts: MomentumParts = { consistency, habits, priorities, volume, recovery }
+  const parts: MomentumParts = {
+    consistency,
+    habits,
+    priorities,
+    volume,
+    recovery,
+    reliability,
+    reviews,
+    objectives,
+  }
 
   const value =
     (consistency * weights.consistency +
       habits * weights.habits +
       priorities * weights.priorities +
       volume * weights.volume +
-      recovery * weights.recovery) *
+      recovery * weights.recovery +
+      reliability * weights.reliability +
+      reviews * weights.reviews +
+      objectives * weights.objectives) *
     100
 
   return { value, activeDays, parts }
+}
+
+/**
+ * O quanto o plano combinado sobreviveu ao período.
+ *
+ * Mede adiamento e atraso, e de propósito é generoso: a régua é o tamanho do
+ * plano, não um número fixo. Quem planejou três ações e adiou uma perde bem
+ * menos que quem planejou vinte e adiou dez — e ninguém zera esse fator por um
+ * dia ruim, porque zerar aqui ensinaria a pessoa a simplesmente não planejar.
+ */
+function reliabilityScore(
+  input: MomentumInput,
+  start: DayKey,
+  end: DayKey,
+  consistency: number,
+): number {
+  const counted = input.tasks.filter(
+    (task) => task.day >= start && task.day <= end && task.status !== 'cancelada',
+  )
+  // Sem plano no período não há plano cumprido nem descumprido: o fator herda a
+  // constância, como os outros neutros. Devolver 1 aqui daria pontos a quem não
+  // registrou absolutamente nada.
+  if (counted.length === 0) return consistency
+
+  const slipped =
+    postponedBetween(input.tasks, start, end) +
+    counted.filter((task) => isOverdue(task, input.today)).length
+
+  // O denominador tem piso: com uma ação só no período, uma escorregada não
+  // pode valer cem por cento de falha.
+  return Math.max(0, 1 - slipped / Math.max(3, counted.length))
+}
+
+/** Semanas fechadas que o app pode cobrar review. Quatro é o horizonte útil. */
+const REVIEW_WINDOW_WEEKS = 4
+
+/**
+ * Regularidade das revisões. Sem histórico suficiente pra cobrar, o fator herda
+ * a constância: conta nova não perde pontos por uma rotina que ela ainda não
+ * teve chance de ter.
+ */
+function reviewScore(input: MomentumInput, end: DayKey, consistency: number): number {
+  const reviews = input.weeklyReviews
+  if (!reviews) return consistency
+
+  const first = oldestDay(input)
+  if (!first) return consistency
+
+  const weeksLived = Math.floor(daysBetween(first, end) / 7)
+  const expected = Math.min(REVIEW_WINDOW_WEEKS, weeksLived)
+  if (expected <= 0) return consistency
+
+  const from = addDays(end, -(REVIEW_WINDOW_WEEKS * 7))
+  const done = reviews.filter(
+    (review) =>
+      review.completedAt !== null && review.weekStart >= from && review.weekStart <= end,
+  ).length
+
+  return Math.min(1, done / expected)
+}
+
+/**
+ * Avanço do plano na janela. Quinze por cento em sete dias já é ritmo de quem
+ * chega no prazo; o teto existe pra o score não virar corrida de quem fecha
+ * mais etapa, que é o oposto do que o produto defende.
+ */
+const PLAN_GAIN_CEILING = 0.15
+
+function objectiveScore(gain: number | undefined, consistency: number): number {
+  if (gain === undefined) return consistency
+  if (gain <= 0) return 0
+  return Math.min(1, gain / PLAN_GAIN_CEILING)
+}
+
+function oldestDay(input: MomentumInput): DayKey | null {
+  const days = [
+    ...input.activities.map((item) => item.day),
+    ...input.habitLogs.map((item) => item.day),
+    ...input.tasks.map((item) => item.day),
+  ].sort()
+  return days[0] ?? null
 }
 
 /** Dias parados a partir dos quais voltar conta como retomada de verdade. */

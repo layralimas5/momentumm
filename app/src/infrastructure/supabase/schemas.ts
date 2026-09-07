@@ -22,6 +22,7 @@ import { parseDayKey } from '@/domain/entities/day'
 import { GOAL_PERIODS, type Goal } from '@/domain/entities/goal'
 import type { Objective } from '@/domain/entities/objective'
 import { PLAN_TIERS } from '@/domain/entities/plan'
+import { STAGE_STATUSES, type PlanStage } from '@/domain/entities/plan-stage'
 import { PRIORITIES } from '@/domain/entities/priority'
 import type { Profile } from '@/domain/entities/profile'
 import { REVIEW_STEPS, type WeeklyReview } from '@/domain/entities/weekly-review'
@@ -219,6 +220,7 @@ const habitRowSchema = z.object({
   time_of_day: z.string().nullish(),
   times_per_week: z.number().int().min(1).max(7).nullish(),
   paused_at: z.string().nullish(),
+  stage_id: z.string().nullish(),
 })
 
 const habitLogRowSchema = z.object({
@@ -250,6 +252,26 @@ const taskRowSchema = z.object({
   time_of_day: z.string().nullish(),
   sort_order: z.number().int().nullish(),
   depends_on_id: z.string().nullish(),
+  // Colunas da hierarquia (migration 0007). `nullish` porque um banco que ainda
+  // não rodou a migration devolve a linha sem elas, e o plano inteiro não pode
+  // sumir da tela por causa disso.
+  stage_id: z.string().nullish(),
+  weight: z.number().int().nullish(),
+  is_required: z.boolean().nullish(),
+})
+
+const planStageRowSchema = z.object({
+  id: z.string(),
+  user_id: z.string(),
+  objective_id: z.string(),
+  title: z.string(),
+  description: z.string().nullable(),
+  sort_order: z.number().int(),
+  weight: z.number().int(),
+  status: z.enum(STAGE_STATUSES),
+  due_on: z.string().nullable(),
+  completed_at: z.string().nullable(),
+  created_at: z.string(),
 })
 
 const winRowSchema = z.object({
@@ -288,6 +310,7 @@ export function toHabit(row: unknown): Habit {
     icon: isHabitIcon(parsed.icon) ? parsed.icon : 'livro',
     axis: parsed.axis_slug,
     objectiveId: parsed.objective_id ?? null,
+    stageId: parsed.stage_id ?? null,
     priority: parsed.priority ?? 'media',
     // Hábito criado antes da frequência existir: dias marcados viram
     // "dias específicos", sem dias marcados vira diário. É a mesma inferência
@@ -326,6 +349,11 @@ export function toTask(row: unknown): Task {
     description: parsed.description ?? null,
     goalId: parsed.goal_id,
     objectiveId: parsed.objective_id ?? null,
+    stageId: parsed.stage_id ?? null,
+    // Linha anterior à 0007: peso 1 e obrigatória são exatamente o que ela já
+    // significava, então o default preserva o sentido em vez de inventar um novo.
+    weight: parsed.weight ?? 1,
+    isRequired: parsed.is_required ?? true,
     axis: parsed.axis_slug,
     estimatedMin: parsed.estimated_min,
     effort: parsed.effort,
@@ -385,5 +413,22 @@ export function toWeeklyReview(row: unknown): WeeklyReview {
     completedAt: parsed.completed_at ? new Date(parsed.completed_at) : null,
     createdAt: new Date(parsed.created_at),
     updatedAt: new Date(parsed.updated_at),
+  }
+}
+
+export function toPlanStage(row: unknown): PlanStage {
+  const parsed = parseOrThrow(planStageRowSchema, row, 'etapa do plano')
+  return {
+    id: parsed.id,
+    userId: parsed.user_id,
+    objectiveId: parsed.objective_id,
+    title: parsed.title,
+    description: parsed.description,
+    order: parsed.sort_order,
+    weight: parsed.weight,
+    status: parsed.status,
+    dueOn: parsed.due_on ? parseDayKey(parsed.due_on.slice(0, 10)) : null,
+    completedAt: parsed.completed_at ? new Date(parsed.completed_at) : null,
+    createdAt: new Date(parsed.created_at),
   }
 }

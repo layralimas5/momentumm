@@ -20,6 +20,12 @@ import {
   type Objective,
 } from '@/domain/entities/objective'
 import type { PlanTier } from '@/domain/entities/plan'
+import {
+  createPlanStage,
+  rebalanceWeights,
+  type NewPlanStageInput,
+  type PlanStage,
+} from '@/domain/entities/plan-stage'
 import type { Profile } from '@/domain/entities/profile'
 import { createTask, type NewTaskInput, type Task } from '@/domain/entities/task'
 import {
@@ -31,6 +37,10 @@ import {
 import { createWin, type NewWinInput, type Win } from '@/domain/entities/win'
 import type { HabitUpdate } from '@/domain/repositories/habit-repository'
 import type { ObjectiveUpdate } from '@/domain/repositories/objective-repository'
+import type {
+  PlanStageReweight,
+  PlanStageUpdate,
+} from '@/domain/repositories/plan-stage-repository'
 import type { TaskReorder, TaskUpdate } from '@/domain/repositories/task-repository'
 import { DomainError } from '@/shared/errors'
 
@@ -39,7 +49,7 @@ import { DomainError } from '@/shared/errors'
  * `localStorage`. A versão do storage sobe junto com o formato — dado antigo
  * é descartado em silêncio em vez de quebrar a tela.
  */
-const STORAGE_KEY = 'momentumm.demo.v5'
+const STORAGE_KEY = 'momentumm.demo.v6'
 
 export const DEMO_USER = {
   id: 'demo-user',
@@ -51,6 +61,7 @@ interface DemoState {
   customAxes: ActivityType[]
   activities: Activity[]
   objectives: Objective[]
+  planStages: PlanStage[]
   goals: Goal[]
   habits: Habit[]
   habitLogs: HabitLog[]
@@ -158,6 +169,50 @@ function seed(): DemoState {
     },
   ]
 
+  /*
+    Etapas dos dois objetivos em andamento.
+
+    Os pesos não são iguais de propósito: "ler os três primeiros" pesa mais que
+    "escolher os livros", e é isso que faz a barra do objetivo significar
+    alguma coisa. A demo precisa mostrar essa diferença, senão a primeira
+    impressão do produto é a de uma barra que anda sozinha.
+  */
+  const planStages: PlanStage[] = [
+    stageAt('demo-stage-1', 'demo-objective-1', 'Escolher os seis livros', 0, 10, 'concluida', -25),
+    stageAt('demo-stage-2', 'demo-objective-1', 'Ler os três primeiros', 1, 45, 'em-andamento', 20),
+    stageAt('demo-stage-3', 'demo-objective-1', 'Ler os três últimos', 2, 45, 'nao-iniciada', 60),
+    stageAt('demo-stage-4', 'demo-objective-2', 'Fundamentos', 0, 30, 'em-andamento', -2),
+    stageAt('demo-stage-5', 'demo-objective-2', 'Projeto prático', 1, 45, 'nao-iniciada', 40),
+    stageAt('demo-stage-6', 'demo-objective-2', 'Prova final', 2, 25, 'nao-iniciada', 70),
+  ]
+
+  function stageAt(
+    id: string,
+    objectiveId: string,
+    title: string,
+    order: number,
+    weight: number,
+    status: PlanStage['status'],
+    dueOffset: number,
+  ): PlanStage {
+    const stage = createPlanStage(
+      {
+        userId: DEMO_USER.id,
+        objectiveId,
+        title,
+        order,
+        weight,
+        status,
+        dueOn: addDays(today, dueOffset),
+      },
+      id,
+      dateAt(addDays(today, -30), 8),
+    )
+    return status === 'concluida'
+      ? { ...stage, completedAt: dateAt(addDays(today, dueOffset), 18) }
+      : stage
+  }
+
   const goals = [
     createGoal({ userId: DEMO_USER.id, type: 'leitura', target: 20, period: 'dia' }, 'demo-goal-1'),
     createGoal(
@@ -179,6 +234,7 @@ function seed(): DemoState {
         icon: 'livro',
         axis: 'leitura',
         objectiveId: 'demo-objective-1',
+        stageId: 'demo-stage-2',
         priority: 'alta',
         dayPart: 'noite',
         timeOfDay: '22:00',
@@ -263,6 +319,7 @@ function seed(): DemoState {
         title: 'Ler o capítulo 4',
         goalId: 'demo-goal-1',
         objectiveId: 'demo-objective-1',
+        stageId: 'demo-stage-2',
         axis: 'leitura',
         estimatedMin: 25,
         effort: 'leve',
@@ -279,6 +336,7 @@ function seed(): DemoState {
         title: 'Revisar o módulo de arquitetura',
         goalId: 'demo-goal-3',
         objectiveId: 'demo-objective-2',
+        stageId: 'demo-stage-4',
         axis: 'estudo',
         estimatedMin: 60,
         effort: 'medio',
@@ -293,6 +351,7 @@ function seed(): DemoState {
         userId: DEMO_USER.id,
         title: 'Fazer o exercício final do módulo',
         objectiveId: 'demo-objective-2',
+        stageId: 'demo-stage-4',
         axis: 'estudo',
         estimatedMin: 45,
         effort: 'pesado',
@@ -309,6 +368,7 @@ function seed(): DemoState {
         userId: DEMO_USER.id,
         title: 'Escolher o próximo livro',
         objectiveId: 'demo-objective-1',
+        stageId: 'demo-stage-2',
         axis: 'leitura',
         estimatedMin: 10,
         effort: 'leve',
@@ -352,6 +412,7 @@ function seed(): DemoState {
     customAxes: [],
     activities,
     objectives,
+    planStages,
     goals,
     habits,
     habitLogs,
@@ -371,6 +432,12 @@ interface StoredState {
       createdAt: string
       completedAt: string | null
       archivedAt: string | null
+    }
+  >
+  planStages?: Array<
+    Omit<PlanStage, 'createdAt' | 'completedAt'> & {
+      createdAt: string
+      completedAt: string | null
     }
   >
   goals: Array<Omit<Goal, 'createdAt' | 'archivedAt'> & { createdAt: string; archivedAt: string | null }>
@@ -407,6 +474,11 @@ function revive(raw: string): DemoState {
       createdAt: new Date(item.createdAt),
       completedAt: item.completedAt ? new Date(item.completedAt) : null,
       archivedAt: item.archivedAt ? new Date(item.archivedAt) : null,
+    })),
+    planStages: (parsed.planStages ?? []).map((item) => ({
+      ...item,
+      createdAt: new Date(item.createdAt),
+      completedAt: item.completedAt ? new Date(item.completedAt) : null,
     })),
     goals: parsed.goals.map((item) => ({
       ...item,
@@ -545,6 +617,96 @@ export const demoStore = {
     current.objectives = current.objectives.map((objective) =>
       objective.id === id ? { ...objective, archivedAt: new Date() } : objective,
     )
+
+    // As etapas somem com o objetivo arquivado, como o `on delete cascade` do
+    // banco faz. Elas não existem fora dele: uma etapa órfã não significa nada.
+    const orphans = new Set(
+      current.planStages.filter((stage) => stage.objectiveId === id).map((stage) => stage.id),
+    )
+    current.planStages = current.planStages.filter((stage) => stage.objectiveId !== id)
+    current.tasks = current.tasks.map((task) =>
+      task.stageId && orphans.has(task.stageId) ? { ...task, stageId: null } : task,
+    )
+    current.habits = current.habits.map((habit) =>
+      habit.stageId && orphans.has(habit.stageId) ? { ...habit, stageId: null } : habit,
+    )
+
+    persist()
+  },
+
+  planStages(): PlanStage[] {
+    return [...load().planStages]
+  },
+
+  addPlanStage(input: NewPlanStageInput): PlanStage {
+    const current = load()
+
+    const siblings = current.planStages.filter(
+      (stage) => stage.objectiveId === input.objectiveId,
+    )
+
+    const stage = createPlanStage(
+      { ...input, order: input.order ?? siblings.length },
+      newId(),
+    )
+
+    /*
+      Peso redistribuído quando não vem definido.
+
+      É o comportamento que mantém a promessa do domínio: os pesos somam 100 o
+      tempo todo, sem obrigar quem só quer escrever "MVP" a fazer conta. Quem
+      quiser mexer, mexe depois — e aí o peso informado é respeitado.
+    */
+    if (input.weight === undefined) {
+      const balanced = rebalanceWeights([...siblings, stage])
+      const byId = new Map(balanced.map((item) => [item.id, item]))
+      current.planStages = [
+        ...current.planStages.filter((item) => item.objectiveId !== input.objectiveId),
+        ...balanced,
+      ]
+      persist()
+      return byId.get(stage.id) ?? stage
+    }
+
+    current.planStages = [...current.planStages, stage]
+    persist()
+    return stage
+  },
+
+  updatePlanStage(id: string, changes: PlanStageUpdate): PlanStage {
+    const current = load()
+    const found = current.planStages.find((stage) => stage.id === id)
+    if (!found) throw new DomainError('Essa etapa não existe mais.')
+
+    const updated: PlanStage = { ...found, ...changes }
+    current.planStages = current.planStages.map((stage) => (stage.id === id ? updated : stage))
+    persist()
+    return updated
+  },
+
+  reweightPlanStages(items: readonly PlanStageReweight[]): void {
+    const current = load()
+    const byId = new Map(items.map((item) => [item.id, item]))
+    current.planStages = current.planStages.map((stage) => {
+      const change = byId.get(stage.id)
+      return change ? { ...stage, order: change.order, weight: change.weight } : stage
+    })
+    persist()
+  },
+
+  removePlanStage(id: string): void {
+    const current = load()
+    current.planStages = current.planStages.filter((stage) => stage.id !== id)
+
+    // O trabalho não some com a organização: ação e hábito voltam pro objetivo
+    // sem etapa, exatamente como o `on delete set null` do banco faz.
+    current.tasks = current.tasks.map((task) =>
+      task.stageId === id ? { ...task, stageId: null } : task,
+    )
+    current.habits = current.habits.map((habit) =>
+      habit.stageId === id ? { ...habit, stageId: null } : habit,
+    )
+
     persist()
   },
 
@@ -763,6 +925,7 @@ export const demoStore = {
       customAxes: [],
       activities: [],
       objectives: [],
+      planStages: [],
       goals: [],
       habits: [],
       habitLogs: [],

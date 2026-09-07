@@ -48,6 +48,11 @@ export const MAX_TASK_DESCRIPTION = 400
 export const MAX_MINIMAL_VERSION = 90
 export const MAX_ESTIMATED_MIN = 8 * 60
 
+/** Peso padrão. Com todas as ações em 1, a etapa se divide por igual. */
+export const DEFAULT_TASK_WEIGHT = 1
+/** Acima disso o peso deixa de ordenar e vira número mágico. */
+export const MAX_TASK_WEIGHT = 10
+
 export interface Task {
   readonly id: string
   readonly userId: string
@@ -60,6 +65,24 @@ export interface Task {
    * "pra que serve isso" em vez de mostrar uma lista de tarefas soltas.
    */
   readonly objectiveId: string | null
+  /**
+   * Etapa do plano em que essa ação vive. É o vínculo que faz a conclusão
+   * empurrar uma barra de progresso específica em vez de sumir numa lista.
+   * Null significa ação sem etapa — legítima quando o objetivo ainda não tem
+   * plano, e caixa de entrada quando nem objetivo tem.
+   */
+  readonly stageId: string | null
+  /**
+   * Quanto essa ação vale dentro da etapa. Ações de peso igual dividem a etapa
+   * por igual; peso 3 contra peso 1 diz que uma vale o triplo da outra.
+   */
+  readonly weight: number
+  /**
+   * Obrigatória pra etapa fechar. A opcional soma progresso quando sai, mas não
+   * segura a conclusão da etapa — senão toda melhoria "se der tempo" viraria um
+   * bloqueio permanente.
+   */
+  readonly isRequired: boolean
   readonly axis: ActivityTypeSlug | null
   readonly estimatedMin: number
   readonly effort: TaskEffort
@@ -87,6 +110,9 @@ export interface NewTaskInput {
   readonly day: DayKey
   readonly goalId?: string | null
   readonly objectiveId?: string | null
+  readonly stageId?: string | null
+  readonly weight?: number
+  readonly isRequired?: boolean
   readonly axis?: ActivityTypeSlug | null
   readonly estimatedMin?: number
   readonly effort?: TaskEffort
@@ -134,6 +160,9 @@ export function createTask(input: NewTaskInput, id: string, now = new Date()): T
     description,
     goalId: input.goalId ?? null,
     objectiveId: input.objectiveId ?? null,
+    stageId: input.stageId ?? null,
+    weight: normalizeWeight(input.weight ?? DEFAULT_TASK_WEIGHT),
+    isRequired: input.isRequired ?? true,
     axis: input.axis ?? null,
     estimatedMin,
     effort: input.effort ?? 'medio',
@@ -148,6 +177,17 @@ export function createTask(input: NewTaskInput, id: string, now = new Date()): T
     completedAt: null,
     createdAt: now,
   }
+}
+
+function normalizeWeight(value: number): number {
+  const rounded = Math.round(value)
+  if (!Number.isFinite(rounded) || rounded < 1) {
+    throw new DomainError('O peso da ação precisa ser pelo menos 1.')
+  }
+  if (rounded > MAX_TASK_WEIGHT) {
+    throw new DomainError(`O peso da ação vai de 1 a ${MAX_TASK_WEIGHT}.`)
+  }
+  return rounded
 }
 
 function normalizeEstimate(value: number): number {
@@ -379,4 +419,54 @@ export function nextTaskForGoal(tasks: readonly Task[], goalId: string): Task | 
 
 export function estimatedMinutesOf(tasks: readonly Task[]): number {
   return tasks.reduce((sum, task) => sum + task.estimatedMin, 0)
+}
+
+// ---------------------------------------------------------------------------
+// hierarquia: etapa e caixa de entrada
+// ---------------------------------------------------------------------------
+
+/** As ações de uma etapa, na ordem do plano. */
+export function tasksOfStage(tasks: readonly Task[], stageId: string): Task[] {
+  return tasks.filter((task) => task.stageId === stageId).sort(byPlanOrder)
+}
+
+/**
+ * Ação sem objetivo: a captura rápida.
+ *
+ * Ela é permitida de propósito — obrigar a escolher um objetivo pra anotar algo
+ * que acabou de surgir faz a pessoa anotar fora do app, e aí o app perde a
+ * informação. O que ela NÃO faz é influenciar progresso: fica na caixa de
+ * entrada até ganhar um destino.
+ */
+export function isInbox(task: Task): boolean {
+  return task.objectiveId === null
+}
+
+export function inboxTasks(tasks: readonly Task[]): Task[] {
+  return tasks.filter((task) => isInbox(task) && isPending(task)).sort(byPlanOrder)
+}
+
+/**
+ * Ação de um objetivo que ainda não foi colocada numa etapa. Diferente da caixa
+ * de entrada: aqui o destino existe, falta só o lugar dentro do caminho.
+ */
+export function unstagedTasks(tasks: readonly Task[], objectiveId: string): Task[] {
+  return tasks
+    .filter((task) => task.objectiveId === objectiveId && task.stageId === null)
+    .sort(byPlanOrder)
+}
+
+/** Ação em aberto cujo dia já passou. É a fila que a etapa usa pra dizer que travou. */
+export function isOverdue(task: Task, today: DayKey): boolean {
+  return isPending(task) && task.day < today
+}
+
+export function overdueTasks(tasks: readonly Task[], today: DayKey): Task[] {
+  return tasks.filter((task) => isOverdue(task, today))
+}
+
+/** Conta os adiamentos do período. Entra no momentum como sinal de plano grande demais. */
+export function postponedBetween(tasks: readonly Task[], from: DayKey, to: DayKey): number {
+  return tasks.filter((task) => task.status === 'adiada' && task.day >= from && task.day <= to)
+    .length
 }

@@ -32,6 +32,12 @@ import type {
 import type { WeeklyReviewRepository } from '@/domain/repositories/weekly-review-repository'
 import type { WinRepository } from '@/domain/repositories/win-repository'
 import { isAuthBypass } from '@/infrastructure/config/env'
+import type { NewPlanStageInput, PlanStage } from '@/domain/entities/plan-stage'
+import type {
+  PlanStageRepository,
+  PlanStageReweight,
+  PlanStageUpdate,
+} from '@/domain/repositories/plan-stage-repository'
 import { DEMO_USER, demoStore } from './demo-store'
 
 const SESSION_KEY = 'momentumm.demo.session'
@@ -149,6 +155,28 @@ export class DemoObjectiveRepository implements ObjectiveRepository {
 
   async archive(id: string): Promise<void> {
     demoStore.archiveObjective(id)
+  }
+}
+
+export class DemoPlanStageRepository implements PlanStageRepository {
+  async listByUser(): Promise<PlanStage[]> {
+    return demoStore.planStages()
+  }
+
+  async create(input: NewPlanStageInput): Promise<PlanStage> {
+    return demoStore.addPlanStage(input)
+  }
+
+  async update(id: string, _userId: string, changes: PlanStageUpdate): Promise<PlanStage> {
+    return demoStore.updatePlanStage(id, changes)
+  }
+
+  async reweight(_userId: string, items: readonly PlanStageReweight[]): Promise<void> {
+    demoStore.reweightPlanStages(items)
+  }
+
+  async remove(id: string): Promise<void> {
+    demoStore.removePlanStage(id)
   }
 }
 

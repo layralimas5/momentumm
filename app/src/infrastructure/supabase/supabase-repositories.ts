@@ -11,6 +11,11 @@ import {
   type HabitStatus,
   type NewHabitInput,
 } from '@/domain/entities/habit'
+import {
+  createPlanStage,
+  type NewPlanStageInput,
+  type PlanStage,
+} from '@/domain/entities/plan-stage'
 import { createTask, type NewTaskInput, type Task } from '@/domain/entities/task'
 import { createWin, type NewWinInput, type Win } from '@/domain/entities/win'
 import type { WeeklyReview, WeeklyReviewDraft } from '@/domain/entities/weekly-review'
@@ -36,6 +41,11 @@ import type { CheckInRepository } from '@/domain/repositories/checkin-repository
 import type { HabitRepository, HabitUpdate } from '@/domain/repositories/habit-repository'
 import type { ProfileRepository, ProfileUpdate } from '@/domain/repositories/profile-repository'
 import type {
+  PlanStageRepository,
+  PlanStageReweight,
+  PlanStageUpdate,
+} from '@/domain/repositories/plan-stage-repository'
+import type {
   TaskReorder,
   TaskRepository,
   TaskUpdate,
@@ -53,6 +63,7 @@ import {
   toObjective,
   toHabitLog,
   toProfile,
+  toPlanStage,
   toTask,
   toWeeklyReview,
   toWin,
@@ -438,6 +449,7 @@ export class SupabaseHabitRepository implements HabitRepository {
         icon: draft.icon,
         axis_slug: draft.axis,
         objective_id: draft.objectiveId,
+        stage_id: draft.stageId,
         priority: draft.priority,
         frequency: draft.frequency,
         day_part: draft.dayPart,
@@ -463,6 +475,7 @@ export class SupabaseHabitRepository implements HabitRepository {
         ...(changes.icon !== undefined ? { icon: changes.icon } : {}),
         ...(changes.axis !== undefined ? { axis_slug: changes.axis } : {}),
         ...(changes.objectiveId !== undefined ? { objective_id: changes.objectiveId } : {}),
+        ...(changes.stageId !== undefined ? { stage_id: changes.stageId } : {}),
         ...(changes.priority !== undefined ? { priority: changes.priority } : {}),
         ...(changes.frequency !== undefined ? { frequency: changes.frequency } : {}),
         ...(changes.dayPart !== undefined ? { day_part: changes.dayPart } : {}),
@@ -566,6 +579,9 @@ export class SupabaseTaskRepository implements TaskRepository {
         description: draft.description,
         goal_id: draft.goalId,
         objective_id: draft.objectiveId,
+        stage_id: draft.stageId,
+        weight: draft.weight,
+        is_required: draft.isRequired,
         axis_slug: draft.axis,
         estimated_min: draft.estimatedMin,
         effort: draft.effort,
@@ -596,6 +612,9 @@ export class SupabaseTaskRepository implements TaskRepository {
         ...(changes.description !== undefined ? { description: changes.description } : {}),
         ...(changes.goalId !== undefined ? { goal_id: changes.goalId } : {}),
         ...(changes.objectiveId !== undefined ? { objective_id: changes.objectiveId } : {}),
+        ...(changes.stageId !== undefined ? { stage_id: changes.stageId } : {}),
+        ...(changes.weight !== undefined ? { weight: changes.weight } : {}),
+        ...(changes.isRequired !== undefined ? { is_required: changes.isRequired } : {}),
         ...(changes.axis !== undefined ? { axis_slug: changes.axis } : {}),
         ...(changes.estimatedMin !== undefined ? { estimated_min: changes.estimatedMin } : {}),
         ...(changes.effort !== undefined ? { effort: changes.effort } : {}),
@@ -660,6 +679,96 @@ export class SupabaseTaskRepository implements TaskRepository {
 
     const { error } = exceptId ? await query.neq('id', exceptId) : await query
     if (error) fail(error, 'trocar a prioridade principal')
+  }
+}
+
+export class SupabasePlanStageRepository implements PlanStageRepository {
+  async listByUser(userId: string): Promise<PlanStage[]> {
+    const { data, error } = await supabase()
+      .from('plan_stages')
+      .select('*')
+      .eq('user_id', userId)
+      .order('sort_order', { ascending: true })
+
+    if (error) fail(error, 'carregar as etapas do plano')
+    return (data ?? []).map(toPlanStage)
+  }
+
+  async create(input: NewPlanStageInput): Promise<PlanStage> {
+    const draft = createPlanStage(input, crypto.randomUUID())
+
+    const { data, error } = await supabase()
+      .from('plan_stages')
+      .insert({
+        user_id: draft.userId,
+        objective_id: draft.objectiveId,
+        title: draft.title,
+        description: draft.description,
+        sort_order: draft.order,
+        weight: draft.weight,
+        status: draft.status,
+        due_on: draft.dueOn,
+      })
+      .select('*')
+      .single()
+
+    if (error) fail(error, 'criar a etapa')
+    return toPlanStage(data)
+  }
+
+  async update(id: string, userId: string, changes: PlanStageUpdate): Promise<PlanStage> {
+    const { data, error } = await supabase()
+      .from('plan_stages')
+      .update({
+        ...(changes.title !== undefined ? { title: changes.title } : {}),
+        ...(changes.description !== undefined ? { description: changes.description } : {}),
+        ...(changes.order !== undefined ? { sort_order: changes.order } : {}),
+        ...(changes.weight !== undefined ? { weight: changes.weight } : {}),
+        ...(changes.status !== undefined ? { status: changes.status } : {}),
+        ...(changes.dueOn !== undefined ? { due_on: changes.dueOn } : {}),
+        ...(changes.completedAt !== undefined
+          ? { completed_at: changes.completedAt?.toISOString() ?? null }
+          : {}),
+      })
+      .eq('id', id)
+      .eq('user_id', userId)
+      .select('*')
+      .single()
+
+    if (error) fail(error, 'atualizar a etapa')
+    return toPlanStage(data)
+  }
+
+  async reweight(userId: string, items: readonly PlanStageReweight[]): Promise<void> {
+    if (items.length === 0) return
+
+    // Em paralelo, como a reordenação de ações: o Postgrest não faz update em
+    // massa com valor diferente por linha. A soma 100 é garantida antes daqui,
+    // no domínio, e o conjunto chega inteiro ou não chega.
+    const results = await Promise.all(
+      items.map((item) =>
+        supabase()
+          .from('plan_stages')
+          .update({ sort_order: item.order, weight: item.weight })
+          .eq('id', item.id)
+          .eq('user_id', userId),
+      ),
+    )
+
+    const failed = results.find((result) => result.error)
+    if (failed?.error) fail(failed.error, 'salvar os pesos das etapas')
+  }
+
+  async remove(id: string, userId: string): Promise<void> {
+    const { error } = await supabase()
+      .from('plan_stages')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', userId)
+
+    // As ações da etapa não somem junto: a FK é `on delete set null`, então
+    // elas voltam pro objetivo sem etapa e a pessoa decide o destino.
+    if (error) fail(error, 'apagar a etapa')
   }
 }
 

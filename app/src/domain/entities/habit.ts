@@ -76,6 +76,12 @@ export interface Habit {
   readonly axis: ActivityTypeSlug
   /** Objetivo que esse hábito empurra. Null quando é um hábito solto. */
   readonly objectiveId: string | null
+  /**
+   * Etapa que esse hábito sustenta. Opcional de propósito: "desenvolver 1h por
+   * dia" atravessa o plano inteiro, e obrigá-lo a escolher uma etapa faria a
+   * pessoa recriar o mesmo hábito a cada fase.
+   */
+  readonly stageId: string | null
   readonly priority: Priority
   readonly frequency: HabitFrequency
   readonly dayPart: DayPart
@@ -115,6 +121,7 @@ export interface NewHabitInput {
   readonly minimalTarget?: number
   readonly description?: string | null
   readonly objectiveId?: string | null
+  readonly stageId?: string | null
   readonly priority?: Priority
   readonly frequency?: HabitFrequency
   readonly timeOfDay?: string | null
@@ -177,6 +184,7 @@ export function createHabit(input: NewHabitInput, id: string, now = new Date()):
     icon: input.icon,
     axis: input.axis,
     objectiveId: input.objectiveId ?? null,
+    stageId: input.stageId ?? null,
     priority: input.priority ?? 'media',
     frequency,
     dayPart: input.dayPart,
