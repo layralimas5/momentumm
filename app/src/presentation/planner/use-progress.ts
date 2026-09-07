@@ -124,6 +124,30 @@ export function useProgress(): ProgressView {
     }
 
     for (const view of objectives) {
+      /*
+        O gargalo antes do atraso genérico. "Está atrasado" a pessoa já sabe; o
+        que ela não sabe é QUAL pedaço está segurando — e é essa a informação
+        que muda o que ela faz amanhã de manhã.
+      */
+      if (view.plan.bottleneck && view.plan.bottleneck.overdueTasks.length > 0) {
+        const stage = view.plan.bottleneck
+        risks.push(
+          `A etapa "${stage.stage.title}" segura ${view.progress.objective.title}: ${stage.overdueTasks.length} ${stage.overdueTasks.length === 1 ? 'ação atrasada' : 'ações atrasadas'} em ${stage.stage.weight}% do objetivo.`,
+        )
+      }
+
+      if (view.forecast.kind === 'estimado' && view.forecast.daysLate > 0) {
+        risks.push(
+          `No ritmo atual, "${view.progress.objective.title}" fecha ${view.forecast.daysLate} ${view.forecast.daysLate === 1 ? 'dia' : 'dias'} depois do prazo.`,
+        )
+      }
+
+      if (view.forecast.kind === 'estimado' && view.forecast.daysLate < 0) {
+        gains.push(
+          `"${view.progress.objective.title}" está adiantado: no ritmo atual fecha ${Math.abs(view.forecast.daysLate)} ${Math.abs(view.forecast.daysLate) === 1 ? 'dia' : 'dias'} antes do prazo.`,
+        )
+      }
+
       if (view.progress.status === 'atrasado' && view.progress.state === 'em-andamento') {
         risks.push(
           `"${view.progress.objective.title}" está atrasado: ${Math.ceil(view.progress.dailyPace)} por dia pra fechar no prazo.`,

@@ -1,17 +1,17 @@
-import { activityType, formatUnit } from '@/domain/entities/activity-type'
+import { activityType } from '@/domain/entities/activity-type'
 import {
   deadlineLabelOf,
   OBJECTIVE_STATUS_LABELS,
-  type ObjectiveProgress,
   type ObjectiveStatus,
 } from '@/domain/entities/objective'
+import type { ObjectiveView } from '@/presentation/planner/use-objectives'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { ProgressBar, Tag } from '@/presentation/components/ui/Surface'
 import { MobileSection } from './MobileSection'
 
 interface MobileObjectivesProps {
-  readonly objectives: readonly ObjectiveProgress[]
+  readonly objectives: readonly ObjectiveView[]
   readonly onCreate: () => void
   readonly onOpenReview: () => void
 }
@@ -47,7 +47,8 @@ export function MobileObjectives({ objectives, onCreate, onOpenReview }: MobileO
       action={{ label: 'Ver a semana', onClick: onOpenReview }}
     >
       <ul className="flex flex-col gap-3">
-        {objectives.map((progress) => {
+        {objectives.map((view) => {
+          const progress = view.progress
           const type = activityType(progress.objective.axis)
           const elapsedPercent = Math.round(progress.elapsed * 100)
 
@@ -67,14 +68,16 @@ export function MobileObjectives({ objectives, onCreate, onOpenReview }: MobileO
               </div>
 
               <p className="mt-1 text-sm text-ink-faint">
-                {formatUnit(type, progress.done)} de {progress.objective.target} ·{' '}
+                {view.plan.currentStage
+                  ? `Etapa: ${view.plan.currentStage.stage.title} · `
+                  : ''}
                 {deadlineLabelOf(progress)}
               </p>
 
               <div className="mt-3 flex items-center gap-3">
                 <div className="relative flex-1">
                   <ProgressBar
-                    value={progress.ratio}
+                    value={view.ratio}
                     label={`Progresso de ${progress.objective.title}`}
                     color={
                       progress.status === 'concluido' ? 'var(--color-positive)' : type.colorToken
@@ -89,7 +92,7 @@ export function MobileObjectives({ objectives, onCreate, onOpenReview }: MobileO
                   ) : null}
                 </div>
                 <span className="tabular shrink-0 text-sm text-ink-muted">
-                  {Math.round(progress.ratio * 100)}%
+                  {Math.round(view.ratio * 100)}%
                 </span>
               </div>
 

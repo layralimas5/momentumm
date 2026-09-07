@@ -177,33 +177,107 @@ export function ProgressPage() {
             ) : null}
           </Panel>
 
+          {/*
+            Objetivo por objetivo, com etapa, previsão e gargalo.
+
+            Cada bloco responde as quatro perguntas da tela pro objetivo
+            específico: onde estou, o que está travando, quando isso fecha e
+            qual é o próximo passo. Uma barra sozinha responderia zero delas.
+          */}
           <Panel className="xl:col-span-2">
-            <PanelHeader title="Objetivos" icon="objetivo" hint="Onde cada um está." />
+            <PanelHeader
+              title="Objetivos"
+              icon="objetivo"
+              hint="Onde cada um está, o que está travando e quando fecha no ritmo atual."
+            />
             {progress.objectives.length === 0 ? (
               <p className="mt-4 text-sm text-ink-muted">Nenhum objetivo criado ainda.</p>
             ) : (
-              <ul className="mt-4 flex flex-col gap-4">
+              <ul className="mt-4 flex flex-col gap-5">
                 {progress.objectives.map((view) => {
                   const axis = activityType(view.progress.objective.axis)
+                  const objective = view.progress.objective
+
                   return (
-                    <li key={view.progress.objective.id} className="flex flex-col gap-1.5">
+                    <li
+                      key={objective.id}
+                      className="flex flex-col gap-2 rounded-xl border border-line bg-surface-hi/40 p-4"
+                    >
                       <div className="flex items-baseline justify-between gap-3">
                         <Link
-                          to={`/app/objetivos/${view.progress.objective.id}`}
-                          className="truncate text-sm text-ink transition-colors hover:text-brand-ink"
+                          to={`/app/objetivos/${objective.id}`}
+                          className="truncate text-sm font-medium text-ink transition-colors hover:text-brand-ink"
                         >
-                          {view.progress.objective.title}
+                          {objective.title}
                         </Link>
                         <span className="tabular shrink-0 text-sm text-ink-muted">
-                          {Math.round(view.progress.ratio * 100)}%
+                          {Math.round(view.ratio * 100)}%
                         </span>
                       </div>
+
                       <ProgressBar
-                        value={view.progress.ratio}
-                        label={`Progresso de ${view.progress.objective.title}`}
+                        value={view.ratio}
+                        label={`Progresso de ${objective.title}`}
                         color={axis.colorToken}
                       />
-                      <p className="text-xs text-ink-faint">{view.progress.summary}</p>
+
+                      {/* As etapas em miniatura: é a leitura que mostra ONDE o
+                          progresso está preso, e não só que ele está. */}
+                      {view.plan.hasPlan ? (
+                        <ul className="mt-1 flex flex-col gap-1.5">
+                          {view.plan.stages.map((stage) => (
+                            <li key={stage.stage.id} className="flex items-center gap-2.5">
+                              <span className="w-28 shrink-0 truncate text-xs text-ink-muted">
+                                {stage.stage.title}
+                              </span>
+                              <ProgressBar
+                                className="flex-1"
+                                value={stage.ratio}
+                                label={`Etapa ${stage.stage.title} de ${objective.title}`}
+                                color={
+                                  view.plan.bottleneck?.stage.id === stage.stage.id
+                                    ? 'var(--color-flame)'
+                                    : axis.colorToken
+                                }
+                              />
+                              <span className="tabular w-16 shrink-0 text-right text-xs text-ink-faint">
+                                {stage.stage.weight}% · {Math.round(stage.ratio * 100)}%
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-xs text-ink-faint">
+                          Sem etapas: a barra mede volume registrado, não execução.
+                        </p>
+                      )}
+
+                      <p className="text-xs text-ink-faint">{view.forecast.message}</p>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        {view.plan.bottleneck ? (
+                          <Tag tone="warn">Gargalo: {view.plan.bottleneck.stage.title}</Tag>
+                        ) : null}
+                        {view.plan.overdueCount > 0 ? (
+                          <Tag tone="warn">
+                            {view.plan.overdueCount}{' '}
+                            {view.plan.overdueCount === 1 ? 'ação atrasada' : 'ações atrasadas'}
+                          </Tag>
+                        ) : null}
+                        {view.plan.habits.length > 0 ? (
+                          <Tag>
+                            {view.plan.habits.length}{' '}
+                            {view.plan.habits.length === 1 ? 'hábito de apoio' : 'hábitos de apoio'}
+                          </Tag>
+                        ) : null}
+                      </div>
+
+                      {view.plan.nextTask ? (
+                        <p className="text-xs text-ink-muted">
+                          <span className="text-ink-faint">Próxima ação: </span>
+                          {view.plan.nextTask.title}
+                        </p>
+                      ) : null}
                     </li>
                   )
                 })}

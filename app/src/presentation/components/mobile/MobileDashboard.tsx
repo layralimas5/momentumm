@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Insight } from '@/domain/entities/insight'
 import type { Task } from '@/domain/entities/task'
@@ -61,6 +61,19 @@ export function MobileDashboard({
 
   const mainGoal = planner.goals.find((goal) => goal.id === view.mainPriority?.goalId) ?? null
 
+  // Os dois mapas de contexto do dia. Montados uma vez: cada linha da tela
+  // precisa dizer a que etapa e a que objetivo ela pertence, e uma busca por
+  // linha em cada render seria trabalho repetido à toa.
+  const stageTitles = useMemo(
+    () => new Map(planner.planStages.map((stage) => [stage.id, stage.title])),
+    [planner.planStages],
+  )
+
+  const objectiveTitles = useMemo(
+    () => new Map(planner.objectives.map((objective) => [objective.id, objective.title])),
+    [planner.objectives],
+  )
+
   return (
     <div className="flex flex-col gap-6">
       <div ref={checkInRef}>
@@ -86,6 +99,7 @@ export function MobileDashboard({
       <div ref={priorityRef}>
         <MobilePriority
           task={view.mainPriority}
+          stageTitle={stageTitles.get(view.mainPriority?.stageId ?? '') ?? null}
           goal={mainGoal}
           objective={planner.objectives.find(
             (item) => item.id === view.mainPriority?.objectiveId,
@@ -103,6 +117,7 @@ export function MobileDashboard({
 
       <MobileHabits
         states={view.habitStates}
+        objectiveTitles={objectiveTitles}
         progress={view.habitProgress}
         onSetStatus={planner.setHabitStatus}
         onSeeAll={() => navigate('/app/habitos')}
@@ -113,6 +128,7 @@ export function MobileDashboard({
         tasks={planner.tasks}
         goals={planner.goals}
         objectives={planner.objectives}
+        stageTitles={stageTitles}
         today={planner.today}
         excludeId={view.mainPriority?.id}
         onComplete={onCompleteTask}
@@ -142,7 +158,7 @@ export function MobileDashboard({
       </div>
 
       <MobileObjectives
-        objectives={planner.objectiveProgress}
+        objectives={view.objectives}
         onCreate={() => composer.open('objetivo')}
         onOpenReview={() => navigate('/app/review')}
       />

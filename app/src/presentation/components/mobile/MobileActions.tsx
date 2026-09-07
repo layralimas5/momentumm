@@ -19,6 +19,7 @@ interface MobileActionsProps {
   readonly tasks: readonly Task[]
   readonly goals: readonly Goal[]
   readonly objectives: readonly Objective[]
+  readonly stageTitles: ReadonlyMap<string, string>
   readonly today: DayKey
   readonly excludeId?: string | undefined
   readonly onComplete: (task: Task) => Promise<void>
@@ -34,6 +35,7 @@ export function MobileActions({
   tasks,
   goals,
   objectives,
+  stageTitles,
   today,
   excludeId,
   onComplete,
@@ -80,6 +82,7 @@ export function MobileActions({
                   task={task}
                   goal={goals.find((goal) => goal.id === task.goalId) ?? null}
                   objective={objectives.find((item) => item.id === task.objectiveId)}
+                  stageTitle={task.stageId ? (stageTitles.get(task.stageId) ?? null) : null}
                   today={today}
                   first={index === 0}
                   onComplete={() => {
@@ -175,6 +178,7 @@ function ActionRow({
   task,
   goal,
   objective,
+  stageTitle,
   today,
   first,
   onComplete,
@@ -184,6 +188,7 @@ function ActionRow({
   task: Task
   goal: Goal | null
   objective: Objective | undefined
+  stageTitle: string | null
   today: DayKey
   first: boolean
   onComplete: () => void
@@ -290,6 +295,16 @@ function ActionRow({
             </span>
             {overdue ? <span className="shrink-0 text-flame">· atrasada</span> : null}
           </span>
+          {/*
+            A etapa fica numa linha própria e só quando existe. No celular a
+            largura é o recurso escasso: espremer "Etapa: MVP" na mesma linha
+            do objetivo faria as duas informações virarem reticências.
+          */}
+          {stageTitle ? (
+            <span className="mt-0.5 block truncate text-xs text-ink-faint">
+              Etapa: {stageTitle}
+            </span>
+          ) : null}
         </button>
 
         <button

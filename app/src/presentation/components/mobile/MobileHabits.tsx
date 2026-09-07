@@ -19,6 +19,7 @@ import { MobileSection } from './MobileSection'
 
 interface MobileHabitsProps {
   readonly states: readonly HabitDayState[]
+  readonly objectiveTitles: ReadonlyMap<string, string>
   readonly progress: HabitDayProgress
   readonly onSetStatus: (habitId: string, status: HabitStatus) => Promise<void>
   readonly onSeeAll: () => void
@@ -34,6 +35,7 @@ interface MobileHabitsProps {
  */
 export function MobileHabits({
   states,
+  objectiveTitles,
   progress,
   onSetStatus,
   onSeeAll,
@@ -81,6 +83,11 @@ export function MobileHabits({
               <HabitRow
                 key={state.habit.id}
                 state={state}
+                objectiveTitle={
+                  state.habit.objectiveId
+                    ? (objectiveTitles.get(state.habit.objectiveId) ?? null)
+                    : null
+                }
                 onToggle={() => {
                   tapFeedback()
                   void onSetStatus(
@@ -175,10 +182,12 @@ export function MobileHabits({
 
 function HabitRow({
   state,
+  objectiveTitle,
   onToggle,
   onOpen,
 }: {
   state: HabitDayState
+  objectiveTitle: string | null
   onToggle: () => void
   onOpen: () => void
 }) {
@@ -228,6 +237,15 @@ function HabitRow({
                     ? 'Adiado'
                     : DAY_PART_LABELS[habit.dayPart]}
             </span>
+            {/* O objetivo apoiado, quando existe: no celular ele é o único
+                contexto que cabe, e é o que impede o hábito de virar caixinha
+                de marcar. */}
+            {objectiveTitle ? (
+              <>
+                <span aria-hidden="true">·</span>
+                <span className="truncate">{objectiveTitle}</span>
+              </>
+            ) : null}
             {streak > 0 ? (
               <>
                 <span aria-hidden="true">·</span>
