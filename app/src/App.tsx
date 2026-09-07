@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { isAuthBypass } from '@/infrastructure/config/env'
 import { AuthProvider } from '@/presentation/auth/AuthProvider'
 import { ProtectedRoute } from '@/presentation/auth/ProtectedRoute'
 import { AppLayout } from '@/presentation/layouts/AppLayout'
@@ -62,7 +63,10 @@ export function App() {
         <Suspense fallback={<RouteFallback />}>
           <Routes>
             <Route path="/" element={<LandingPage />} />
-            <Route path="/entrar" element={<AuthPage />} />
+            <Route
+              path="/entrar"
+              element={isAuthBypass ? <Navigate to="/app" replace /> : <AuthPage />}
+            />
             <Route path="/ferramentas" element={<ToolsPage />} />
 
             <Route

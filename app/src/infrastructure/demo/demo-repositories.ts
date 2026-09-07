@@ -31,6 +31,7 @@ import type {
 } from '@/domain/repositories/task-repository'
 import type { WeeklyReviewRepository } from '@/domain/repositories/weekly-review-repository'
 import type { WinRepository } from '@/domain/repositories/win-repository'
+import { isAuthBypass } from '@/infrastructure/config/env'
 import { DEMO_USER, demoStore } from './demo-store'
 
 const SESSION_KEY = 'momentumm.demo.session'
@@ -39,6 +40,8 @@ export class DemoAuthService implements AuthService {
   private listeners = new Set<(user: AuthUser | null) => void>()
 
   async currentUser(): Promise<AuthUser | null> {
+    // Com o bypass ligado a sessão existe por definição: é o que dispensa o login.
+    if (isAuthBypass) return this.readSession() ?? this.startSession(DEMO_USER.email)
     return this.readSession()
   }
 
