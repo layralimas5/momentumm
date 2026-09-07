@@ -95,9 +95,20 @@ create index journey_events_user_day_idx
 -- Deduplicação: o último hábito do dia pode ser desmarcado e remarcado várias
 -- vezes, e cada clique tentaria gravar "dia concluído" de novo. O índice torna
 -- a segunda gravação um UPDATE em vez de uma linha nova.
+--
+-- O índice é TOTAL, não parcial (`where source_id is not null`), por dois
+-- motivos. O primeiro é comportamental e vem de graça: no Postgres, NULLs são
+-- distintos entre si por padrão, então evento sem origem continua nunca
+-- colidindo com outro — que é exatamente o que um índice parcial daria.
+--
+-- O segundo é o que obriga: `ON CONFLICT (colunas)` só consegue inferir um
+-- índice PARCIAL se a instrução repetir o predicado dele, e o `upsert` do
+-- supabase-js manda apenas a lista de colunas. Com o índice parcial, toda
+-- gravação de momento morreria com "there is no unique or exclusion constraint
+-- matching the ON CONFLICT specification" — e só contra o Supabase de verdade,
+-- porque o modo demo deduplica em JavaScript e nunca veria o erro.
 create unique index journey_events_dedupe_idx
-  on public.journey_events (user_id, type, source_id, day)
-  where source_id is not null;
+  on public.journey_events (user_id, type, source_id, day);
 
 alter table public.journey_events enable row level security;
 
