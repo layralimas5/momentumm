@@ -12,6 +12,7 @@ import { GoalsInMotionCard } from '@/presentation/components/dashboard/GoalsInMo
 import { HabitsCard } from '@/presentation/components/dashboard/HabitsCard'
 import { InsightCard } from '@/presentation/components/dashboard/InsightCard'
 import { MomentumCard } from '@/presentation/components/dashboard/MomentumCard'
+import { NextUpCard } from '@/presentation/components/dashboard/NextUpCard'
 import { ObjectivesCard } from '@/presentation/components/dashboard/ObjectivesCard'
 import { NextActionsCard } from '@/presentation/components/dashboard/NextActionsCard'
 import { Onboarding } from '@/presentation/components/dashboard/Onboarding'
@@ -259,6 +260,12 @@ export function DashboardPage() {
       />
 
       {view.dayComplete ? <DayCompleteBanner win={view.todayWin} /> : null}
+
+      <NextUpCard
+        nextUp={view.nextUp}
+        mainPriority={view.mainPriority}
+        onStartFocus={startFocus}
+      />
 
       <PriorityCard
         task={view.mainPriority}

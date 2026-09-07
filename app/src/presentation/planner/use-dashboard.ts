@@ -4,6 +4,7 @@ import { addDays, dayKeyOf, type DayKey } from '@/domain/entities/day'
 import { capacityOf, checkInOfDay, type CapacityProfile, type CheckIn } from '@/domain/entities/checkin'
 import { paceOf, type GoalPace, type GoalProgress } from '@/domain/entities/goal'
 import { habitDayProgress, habitDayStates, type HabitDayProgress, type HabitDayState } from '@/domain/entities/habit'
+import { isRunning } from '@/domain/entities/objective'
 import {
   primaryInsight,
   type Insight,
@@ -215,13 +216,29 @@ export function useDashboard(): DashboardView {
    * e diz por quê, porque uma sugestão sem motivo é indistinguível de um chute.
    */
   const nextUp = useMemo<NextUp | null>(() => {
-    const candidates = objectives.filter((view) => view.plan.nextTask !== null)
+    /*
+      A ação que a pessoa já escolheu pra hoje sai da disputa.
+
+      Repetir a prioridade principal aqui não acrescenta nada — ela já é o
+      maior elemento da tela. O valor deste bloco é justamente mostrar o que o
+      plano está pedindo QUANDO isso não é o que ela escolheu fazer.
+
+      Objetivo pausado também sai: pausar é dizer "para de me cobrar", e um
+      card sugerindo a próxima ação dele seria exatamente a cobrança.
+    */
+    const candidates = objectives.filter(
+      (view) =>
+        view.plan.nextTask !== null &&
+        view.plan.nextTask.id !== mainPriority?.id &&
+        isRunning(view.progress.objective),
+    )
     if (candidates.length === 0) return null
 
+    // Gargalo primeiro; sem gargalo, o prazo mais apertado. É a ordem que
+    // responde "o que trava" antes de "o que vence".
     const chosen =
-      candidates.find((view) => view.plan.nextTask?.id === mainPriority?.id) ??
       candidates.find((view) => view.plan.bottleneck !== null) ??
-      candidates[0]
+      [...candidates].sort((a, b) => a.progress.daysLeft - b.progress.daysLeft)[0]
 
     const task = chosen?.plan.nextTask
     if (!chosen || !task) return null

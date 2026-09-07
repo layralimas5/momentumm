@@ -13,6 +13,7 @@ import { MobileCheckIn } from './MobileCheckIn'
 import { MobileFocus } from './MobileFocus'
 import { MobileGoals } from './MobileGoals'
 import { MobileHabits } from './MobileHabits'
+import { NextUpCard } from '@/presentation/components/dashboard/NextUpCard'
 import { MobileInsight } from './MobileInsight'
 import { MobileMomentum } from './MobileMomentum'
 import { MobileObjectives } from './MobileObjectives'
@@ -114,6 +115,17 @@ export function MobileDashboard({
           onCreate={() => composer.open('acao')}
         />
       </div>
+
+      {/*
+        No celular ele entra DEPOIS da prioridade e antes dos hábitos: é onde a
+        pessoa ainda está decidindo o dia. Mais pra baixo viraria mais um card
+        na rolagem, e a decisão já teria sido tomada.
+      */}
+      <NextUpCard
+        nextUp={view.nextUp}
+        mainPriority={view.mainPriority}
+        onStartFocus={onStartFocus}
+      />
 
       <MobileHabits
         states={view.habitStates}
