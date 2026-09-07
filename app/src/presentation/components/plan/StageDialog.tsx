@@ -78,7 +78,17 @@ export function StageDialog({
     onClose()
   })
 
-  const valid = title.trim().length >= 2
+  /*
+    O peso só pode sair daqui fechando 100%.
+
+    A tela avisa e o botão trava, em vez de deixar salvar e falhar no domínio
+    depois: um formulário que promete uma regra e aceita a violação ensina a
+    pessoa a ignorar o aviso. Sem peso digitado o valor atual é mantido, então
+    editar só o nome nunca esbarra nisso.
+  */
+  const weightTouched = weight.trim().length > 0
+  const weightFits = !weightTouched || total === TOTAL_WEIGHT
+  const valid = title.trim().length >= 2 && weightFits
 
   return (
     <Dialog
@@ -142,9 +152,11 @@ export function StageDialog({
             <Field
               label="Peso no objetivo"
               hint={
-                total === TOTAL_WEIGHT
-                  ? 'As etapas somam 100%.'
-                  : `As etapas somam ${total}%. Precisa fechar 100% pra salvar.`
+                !weightTouched
+                  ? `As outras etapas somam ${others}%. Deixa em branco pra manter o peso atual.`
+                  : total === TOTAL_WEIGHT
+                    ? 'As etapas somam 100%.'
+                    : `As etapas somam ${total}%. Precisa fechar 100% pra salvar.`
               }
             >
               {(id, describedBy) => (

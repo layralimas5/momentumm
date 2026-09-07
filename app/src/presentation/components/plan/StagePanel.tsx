@@ -264,10 +264,18 @@ function StageBlock({
 
             <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-faint">
               <span className="tabular text-ink-muted">{Math.round(progress.ratio * 100)}%</span>
-              <span>
-                {progress.doneTasks} de {progress.totalTasks}{' '}
-                {progress.totalTasks === 1 ? 'ação' : 'ações'}
-              </span>
+              {/* Etapa vazia não anuncia "0 de 0": um contador zerado não
+                  informa nada e ainda dá a impressão de erro. */}
+              {progress.totalTasks > 0 ? (
+                <span>
+                  {progress.doneTasks} de {progress.totalTasks}{' '}
+                  {progress.totalTasks === 1 ? 'ação' : 'ações'}
+                </span>
+              ) : done ? (
+                <span>Concluída sem ações no app</span>
+              ) : (
+                <span>Sem ações ainda</span>
+              )}
               {progress.overdueTasks.length > 0 ? (
                 <span className="text-flame">
                   {progress.overdueTasks.length} atrasada

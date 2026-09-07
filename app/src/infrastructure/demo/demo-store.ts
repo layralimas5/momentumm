@@ -330,6 +330,52 @@ function seed(): DemoState {
       },
       'demo-task-2',
     ),
+    /*
+      Duas ações já concluídas, com data.
+
+      Existem pra a demo mostrar o ciclo INTEIRO: sem conclusão carimbada não
+      há velocidade, e sem velocidade a previsão responde "sem dados" — que é o
+      comportamento correto, mas deixa metade do produto invisível na primeira
+      visita.
+    */
+    {
+      ...createTask(
+        {
+          userId: DEMO_USER.id,
+          title: 'Terminar o primeiro livro',
+          goalId: 'demo-goal-1',
+          objectiveId: 'demo-objective-1',
+          stageId: 'demo-stage-2',
+          axis: 'leitura',
+          estimatedMin: 40,
+          effort: 'medio',
+          day: addDays(today, -11),
+          order: 0,
+        },
+        'demo-task-6',
+      ),
+      status: 'feita' as const,
+      completedAt: dateAt(addDays(today, -11), 21),
+    },
+    {
+      ...createTask(
+        {
+          userId: DEMO_USER.id,
+          title: 'Ler os capítulos 1 a 3',
+          goalId: 'demo-goal-1',
+          objectiveId: 'demo-objective-1',
+          stageId: 'demo-stage-2',
+          axis: 'leitura',
+          estimatedMin: 35,
+          effort: 'leve',
+          day: addDays(today, -4),
+          order: 1,
+        },
+        'demo-task-7',
+      ),
+      status: 'feita' as const,
+      completedAt: dateAt(addDays(today, -4), 22),
+    },
     createTask(
       {
         userId: DEMO_USER.id,
