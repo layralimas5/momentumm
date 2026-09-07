@@ -333,6 +333,14 @@ consultaria a RLS da outra, o que custa caro e abre porta pra recursão.
 `comunidade` e `publica` seguem sem leitor nenhum — alcance que ninguém
 consegue conferir na interface é alcance que não deveria existir no banco.
 
+Migration `0010_are_friends_anon.sql`: o Supabase mantém DEFAULT PRIVILEGES
+concedendo EXECUTE em toda função nova do schema `public` pros papéis `anon` e
+`authenticated`, direto ao papel — então o `revoke ... from public` da 0009 não
+alcançava. `are_friends` nasceu chamável sem login. Como `profiles` é legível
+por qualquer um desde a 0001, dava pra listar os ids de todo mundo e perguntar,
+par a par, quem é amigo de quem. **Toda função `security definer` neste projeto
+precisa de um revoke explícito ao `anon`.**
+
 No modo demo existem três pessoas de fábrica (dois amigos aceitos e um pedido
 esperando resposta): o Círculo só dá pra conferir com os olhos se houver com
 quem tê-lo.
