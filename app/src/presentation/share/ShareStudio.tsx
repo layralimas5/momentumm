@@ -217,35 +217,70 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
     </div>
   )
 
+  /*
+    O bloco de ação.
+
+    Ele é separado do resto por uma linha e por um respiro maior: acima moram
+    escolhas reversíveis (formato, template, o que aparece), aqui mora a que
+    publica. Colado nos toggles, o "Compartilhar" virava mais uma linha da
+    lista de opções.
+
+    Botões grandes porque é um app de celular: `lg` dá 52px de altura, que é o
+    alvo confortável pro polegar. O retorno ("Imagem salva") fica ABAIXO dos
+    botões de propósito — acima, ele empurraria os dois pra baixo bem no
+    instante em que a pessoa acabou de mirar neles.
+  */
   const actions = (
-    <div className="flex flex-col gap-3">
-      {error ? <ErrorNote message={error} /> : null}
+    <div className="flex flex-col gap-4 border-t border-line pt-6">
+      {/*
+        `sm:flex-1`, nunca `flex-1` solto.
 
-      <p role="status" aria-live="polite" className="min-h-5 text-sm text-ink-muted">
-        {statusMessage(status)}
-      </p>
-
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <Button className="flex-1" loading={busy} onClick={() => void handleShare()}>
-          <Icon name="jornada" className="size-4" />
+        Empilhados, o container é uma COLUNA, e ali o eixo principal do flex é o
+        vertical: `flex-1` traz `flex-basis: 0%`, que atropela a altura da classe
+        e faz o botão encolher até o tamanho do texto. Era esse o motivo de eles
+        parecerem espremidos — 24px em vez dos 52px do tamanho `lg`. Lado a lado,
+        a partir do `sm`, o eixo vira horizontal e aí `flex-1` faz o que se
+        espera: divide a largura em partes iguais.
+      */}
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:gap-3">
+        <Button
+          size="lg"
+          className="w-full sm:w-auto sm:flex-1"
+          loading={busy}
+          onClick={() => void handleShare()}
+        >
+          <Icon name="jornada" className="size-4.5" />
           Compartilhar
         </Button>
         <Button
+          size="lg"
           variant="secondary"
-          className="flex-1"
+          className="w-full sm:w-auto sm:flex-1"
           disabled={busy}
           onClick={() => void handleSave()}
         >
-          <Icon name="arquivar" className="size-4" />
+          <Icon name="arquivar" className="size-4.5" />
           Salvar imagem
         </Button>
       </div>
+
+      {error ? <ErrorNote message={error} /> : null}
+
+      <p
+        role="status"
+        aria-live="polite"
+        className="min-h-5 text-center text-sm text-ink-muted sm:text-left"
+      >
+        {statusMessage(status)}
+      </p>
     </div>
   )
 
   if (compact) {
+    // `pb-2` soma ao respiro do próprio sheet: sem ele, o último botão encosta
+    // no risco de gestos do aparelho.
     return (
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6 pb-2">
         {preview}
         {options}
         {actions}
