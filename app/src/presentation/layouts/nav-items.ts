@@ -97,6 +97,14 @@ export const APP_NAV: readonly AppNavItem[] = [
     secondary: true,
   },
   {
+    to: '/app/perfil',
+    label: 'Perfil',
+    end: false,
+    icon: 'trofeu',
+    description: 'Tua evolução: momentum, constância, objetivos e conquistas',
+    secondary: true,
+  },
+  {
     to: '/app/configuracoes',
     label: 'Configurações',
     end: false,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { initialsOf } from '@/domain/entities/profile'
+import { Avatar } from '@/presentation/components/ui/Avatar'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { LogoMark, Wordmark } from '@/presentation/components/brand/Logo'
@@ -149,20 +149,37 @@ function SidebarContent({
       {profile ? (
         <div className={cn('mt-4 border-t border-line pt-4', collapsed && 'flex justify-center')}>
           <div className={cn('flex items-center gap-3', collapsed && 'flex-col gap-2')}>
-            <span
-              aria-hidden="true"
-              className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-dim text-sm font-semibold text-brand-hi"
+            {/*
+              O bloco do perfil é a porta pro painel de evolução no desktop.
+              "Perfil" não entra na navegação principal — ela é o ciclo do
+              produto — mas a foto e o nome no rodapé são o lugar onde qualquer
+              pessoa procura pelo próprio perfil.
+            */}
+            <NavLink
+              to="/app/perfil"
+              className={cn(
+                'flex min-w-0 items-center gap-3 rounded-lg transition-colors hover:text-brand-ink',
+                collapsed ? 'flex-col gap-2' : 'flex-1',
+              )}
             >
-              {initialsOf(profile.name)}
-            </span>
-            {collapsed ? null : (
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-ink">{profile.name}</p>
-                <p className="truncate text-xs text-ink-faint">
-                  {user?.email ?? `@${profile.handle}`}
-                </p>
-              </div>
-            )}
+              <Avatar
+                name={profile.name}
+                src={profile.avatarUrl}
+                className="size-9"
+                textClassName="text-sm"
+              />
+              {collapsed ? null : (
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-ink">
+                    {profile.name}
+                  </span>
+                  <span className="block truncate text-xs text-ink-faint">
+                    {user?.email ?? `@${profile.handle}`}
+                  </span>
+                </span>
+              )}
+              <span className="sr-only">Abrir teu perfil</span>
+            </NavLink>
             <button
               type="button"
               onClick={() => void signOut()}

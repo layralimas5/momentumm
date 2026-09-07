@@ -96,7 +96,7 @@ export function useShareMoments(view: DashboardView): readonly ShareMoment[] {
       })
     }
 
-    const daysAway = trailingGap(view)
+    const daysAway = view.daysAway
     if (daysAway >= GAP_FOR_COMEBACK && view.dayProgress.done > 0) {
       moments.push({
         id: 'retomada',
@@ -122,23 +122,4 @@ function labelForRoutine(dayPart: DayPart): string {
   return dayPart === 'qualquer'
     ? 'Compartilhar rotina'
     : `Compartilhar ${routineTitle(dayPart).toLowerCase()}`
-}
-
-/**
- * Quantos dias sem movimento vieram antes de hoje.
- *
- * Lê a série da semana de trás pra frente, pulando o próprio dia. Zero quando
- * ontem também teve movimento — e aí não houve retomada nenhuma pra contar.
- */
-function trailingGap(view: DashboardView): number {
-  const series = view.week.series
-  let gap = 0
-
-  for (let index = series.length - 2; index >= 0; index -= 1) {
-    const day = series[index]
-    if (!day || day.intensity > 0) break
-    gap += 1
-  }
-
-  return gap
 }

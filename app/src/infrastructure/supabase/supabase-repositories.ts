@@ -376,6 +376,7 @@ export class SupabaseProfileRepository implements ProfileRepository {
         ...(changes.name !== undefined ? { name: changes.name.trim() } : {}),
         ...(changes.handle !== undefined ? { handle: changes.handle } : {}),
         ...(changes.bio !== undefined ? { bio: changes.bio?.trim() || null } : {}),
+        ...(changes.avatarUrl !== undefined ? { avatar_url: changes.avatarUrl } : {}),
         ...(changes.defaultVisibility !== undefined
           ? { default_visibility: changes.defaultVisibility }
           : {}),

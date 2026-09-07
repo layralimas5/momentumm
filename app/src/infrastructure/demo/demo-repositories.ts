@@ -196,6 +196,7 @@ export class DemoProfileRepository implements ProfileRepository {
       ...(changes.name !== undefined ? { name: changes.name.trim() } : {}),
       ...(changes.handle !== undefined ? { handle: changes.handle } : {}),
       ...(changes.bio !== undefined ? { bio: changes.bio?.trim() || null } : {}),
+      ...(changes.avatarUrl !== undefined ? { avatarUrl: changes.avatarUrl } : {}),
       ...(changes.defaultVisibility !== undefined
         ? { defaultVisibility: changes.defaultVisibility }
         : {}),

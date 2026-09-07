@@ -1,0 +1,336 @@
+import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { activityType } from '@/domain/entities/activity-type'
+import { countsAsDone } from '@/domain/entities/habit'
+import { formatDayLabel, startOfWeek } from '@/domain/entities/day'
+import {
+  JOURNEY_EVENT_TYPE_LABELS,
+  type JourneyEvent,
+} from '@/domain/entities/journey-event'
+import { MOMENTUM_LEVEL_LABELS, MOMENTUM_WINDOW_DAYS } from '@/domain/entities/momentum'
+import { nextMilestones, type MilestoneTotals } from '@/domain/entities/milestone'
+import { totalMinutes } from '@/domain/entities/activity'
+import { milestoneEvent } from '@/domain/share/journey-event-builders'
+import { useAuth } from '@/presentation/auth/use-auth'
+import { Avatar } from '@/presentation/components/ui/Avatar'
+import { Button } from '@/presentation/components/ui/Button'
+import { Icon } from '@/presentation/components/ui/Icon'
+import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
+import { Panel, PanelHeader, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
+import { Stat, StatGrid } from '@/presentation/components/ui/Stat'
+import { ProfileEditor } from '@/presentation/profile/ProfileEditor'
+import { ShareButton } from '@/presentation/share/ShareButton'
+import { useDashboard } from '@/presentation/planner/use-dashboard'
+import { usePlanner } from '@/presentation/planner/use-planner'
+import { PageHeader } from './PageHeader'
+
+/**
+ * Perfil.
+ *
+ * É um painel da evolução pessoal, não uma página de rede social. A diferença
+ * é o que ele responde: não "quem me segue", mas "o quanto eu mudei desde que
+ * comecei". Por isso ele funciona inteiro com uma pessoa só usando o app —
+ * momentum, constância, semanas de progresso, objetivos e conquistas são todos
+ * dados que a própria pessoa gerou.
+ *
+ * Tudo aqui é leitura de coisas que já existem: o momentum vem do mesmo cálculo
+ * do dashboard, os objetivos vêm do mesmo `useObjectives`, e as conquistas vêm
+ * da camada de momentos da jornada. Nenhum número novo é inventado nesta tela,
+ * porque dois lugares calculando "constância" com contas diferentes é como um
+ * app começa a discordar de si mesmo.
+ */
+export function PersonalProfilePage() {
+  const { profile, loading, refreshProfile } = useAuth()
+  const planner = usePlanner()
+  const view = useDashboard()
+  const [editing, setEditing] = useState(false)
+
+  const { activities, habitLogs, journeyEvents, streak } = planner
+
+  /** Semanas em que alguma coisa se moveu. É a régua longa da constância. */
+  const weeksOfProgress = useMemo(() => {
+    const weeks = new Set<string>()
+    for (const activity of activities) weeks.add(startOfWeek(activity.day))
+    for (const log of habitLogs) if (countsAsDone(log.status)) weeks.add(startOfWeek(log.day))
+    return weeks.size
+  }, [activities, habitLogs])
+
+  const totals = useMemo<MilestoneTotals>(
+    () => ({
+      habitsDone: habitLogs.filter((log) => countsAsDone(log.status)).length,
+      activeDays: new Set(activities.map((activity) => activity.day)).size,
+      streakRecord: Math.max(streak.record, streak.current),
+      objectivesDone: planner.objectives.filter((item) => item.completedAt !== null).length,
+      focusMinutes: totalMinutes(activities),
+    }),
+    [habitLogs, activities, streak, planner.objectives],
+  )
+
+  const achievements = useMemo(
+    () => journeyEvents.filter((event) => event.type === 'milestone'),
+    [journeyEvents],
+  )
+
+  const recent = useMemo(
+    () => journeyEvents.filter((event) => event.type !== 'milestone').slice(0, 6),
+    [journeyEvents],
+  )
+
+  const running = view.objectives.filter((item) => item.progress.state === 'em-andamento')
+  const nextGoal = nextMilestones(totals)[0] ?? null
+
+  if (loading) return <LoadingBlock label="Carregando teu perfil" />
+  if (!profile) return <ErrorNote message="Não consegui carregar teu perfil. Recarrega a página." />
+
+  return (
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 lg:gap-6">
+      <PageHeader
+        title="Perfil"
+        description="O retrato da tua evolução: onde você está, o que já construiu e o que vem em seguida."
+        action={
+          editing ? undefined : (
+            <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
+              <Icon name="editar" className="size-4" />
+              Editar perfil
+            </Button>
+          )
+        }
+      />
+
+      <Panel>
+        {editing ? (
+          <ProfileEditor
+            profile={profile}
+            onCancel={() => setEditing(false)}
+            onSaved={async () => {
+              await refreshProfile()
+              setEditing(false)
+            }}
+          />
+        ) : (
+          <div className="flex items-center gap-4">
+            <Avatar
+              name={profile.name}
+              src={profile.avatarUrl}
+              className="size-16 sm:size-20"
+              textClassName="text-lg sm:text-xl"
+            />
+            <div className="min-w-0">
+              <h2 className="truncate text-xl font-semibold tracking-tight text-ink sm:text-2xl">
+                {profile.name}
+              </h2>
+              <p className="truncate text-sm text-ink-faint">@{profile.handle}</p>
+              {profile.bio ? (
+                <p className="mt-1.5 text-sm text-pretty text-ink-muted">{profile.bio}</p>
+              ) : null}
+            </div>
+          </div>
+        )}
+      </Panel>
+
+      {/*
+        Os quatro números que respondem "como eu venho indo". Momentum é o
+        ritmo de agora; os outros três são a régua longa, que é justamente a que
+        o dashboard não mostra — lá tudo é sobre hoje.
+      */}
+      <StatGrid>
+        <Stat
+          label="Momentum"
+          value={`${view.momentum.value}`}
+          hint={MOMENTUM_LEVEL_LABELS[view.momentum.level]}
+          accent="var(--color-brand)"
+        />
+        <Stat
+          label="Constância"
+          value={`${view.momentum.activeDays}/${MOMENTUM_WINDOW_DAYS}`}
+          hint="dias com movimento"
+        />
+        <Stat
+          label="Semanas de progresso"
+          value={`${weeksOfProgress}`}
+          hint={weeksOfProgress === 1 ? 'a primeira' : 'com registro'}
+        />
+        <Stat
+          label="Sequência"
+          value={`${streak.current}`}
+          hint={`recorde de ${Math.max(streak.record, streak.current)}`}
+          accent="var(--color-flame)"
+        />
+      </StatGrid>
+
+      <div className="grid gap-5 lg:grid-cols-2 lg:items-start lg:gap-6">
+        <Panel>
+          <PanelHeader
+            title="Objetivos ativos"
+            icon="objetivo"
+            action={
+              <Link
+                to="/app/objetivos"
+                className="rounded-md text-sm font-medium text-brand-hi transition-colors hover:text-brand-ink"
+              >
+                Ver todos
+              </Link>
+            }
+          />
+
+          {running.length === 0 ? (
+            <p className="mt-4 text-sm text-ink-muted">
+              Nenhum objetivo em andamento agora. É o que dá direção ao dia.
+            </p>
+          ) : (
+            <ul className="mt-4 flex flex-col gap-4">
+              {running.map((item) => {
+                const objective = item.progress.objective
+                const axis = activityType(objective.axis)
+                return (
+                  <li key={objective.id}>
+                    <Link to={`/app/objetivos/${objective.id}`} className="group block">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <span className="min-w-0 truncate text-sm font-medium text-ink group-hover:text-brand-ink">
+                          {objective.title}
+                        </span>
+                        <span className="tabular shrink-0 text-sm text-ink-muted">
+                          {Math.round(item.ratio * 100)}%
+                        </span>
+                      </div>
+                      <ProgressBar
+                        className="mt-2"
+                        value={item.ratio}
+                        label={`Progresso de ${objective.title}`}
+                        color={axis.colorToken}
+                      />
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </Panel>
+
+        <Panel>
+          <PanelHeader title="Conquistas" icon="trofeu" />
+
+          {achievements.length === 0 ? (
+            <p className="mt-4 text-sm text-ink-muted">
+              As conquistas aparecem sozinhas conforme os números crescem. A primeira está a
+              caminho.
+            </p>
+          ) : (
+            <ul className="mt-4 flex flex-col gap-2">
+              {achievements.map((event) => (
+                <li
+                  key={event.id}
+                  className="flex items-center gap-3 rounded-xl border border-line bg-surface-hi/40 px-3.5 py-2.5"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="grid size-9 shrink-0 place-items-center rounded-lg border border-brand/30 bg-brand-dim/40 text-brand-hi"
+                  >
+                    <Icon name="trofeu" className="size-4.5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-ink">
+                      {event.title}
+                    </span>
+                    <span className="block text-xs text-ink-faint">
+                      {formatDayLabel(event.day, planner.today)}
+                    </span>
+                  </span>
+                  <ShareButton
+                    label="Compartilhar"
+                    variant="ghost"
+                    icon="jornada"
+                    build={() =>
+                      milestoneEvent({
+                        userId: profile.id,
+                        today: planner.today,
+                        count: event.metadata.milestoneCount ?? 0,
+                        unit: event.metadata.milestoneUnit ?? '',
+                        momentum: view.momentum,
+                      })
+                    }
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {nextGoal ? (
+            <div className="mt-4 border-t border-line pt-4">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-sm text-ink-muted">Próxima: {nextGoal.label}</span>
+                <span className="tabular shrink-0 text-sm text-ink-faint">
+                  faltam {nextGoal.remaining}
+                </span>
+              </div>
+              <ProgressBar
+                className="mt-2"
+                value={nextGoal.ratio}
+                label={`Progresso até ${nextGoal.label}`}
+              />
+            </div>
+          ) : null}
+        </Panel>
+      </div>
+
+      <Panel>
+        <PanelHeader
+          title="Progresso recente"
+          icon="jornada"
+          hint="Os momentos que o app registrou sozinho conforme você avançou."
+        />
+
+        {recent.length === 0 ? (
+          <div className="mt-4">
+            <EmptyState
+              title="Ainda não há momentos registrados"
+              description="Conclua um hábito, feche o dia ou avance um objetivo. O que valer a pena guardar aparece aqui."
+            />
+          </div>
+        ) : (
+          <ul className="mt-4 flex flex-col divide-y divide-line">
+            {recent.map((event) => (
+              <li key={event.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm text-ink">{event.title}</span>
+                  <span className="mt-0.5 flex flex-wrap items-center gap-2">
+                    <Tag>{JOURNEY_EVENT_TYPE_LABELS[event.type]}</Tag>
+                    <span className="text-xs text-ink-faint">
+                      {formatDayLabel(event.day, planner.today)}
+                    </span>
+                  </span>
+                </span>
+                <MomentumDelta event={event} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
+
+      {/*
+        O aviso de privacidade fecha a página de propósito. Enquanto o produto
+        for de uma pessoa só, é importante deixar explícito que nada disso está
+        exposto — e que compartilhar gera uma imagem, não uma publicação.
+      */}
+      <p className="flex items-start gap-2.5 text-sm text-ink-faint">
+        <Icon name="cadeado" className="mt-0.5 size-4 shrink-0" />
+        <span>
+          Tudo neste perfil é só seu. Nada aqui é público, e compartilhar cria uma imagem no teu
+          aparelho — não uma publicação.
+        </span>
+      </p>
+    </div>
+  )
+}
+
+/** A variação do momentum no momento do registro. Some quando não houve. */
+function MomentumDelta({ event }: { readonly event: JourneyEvent }) {
+  if (event.momentumChange === null || event.momentumChange === 0) return null
+
+  return (
+    <Tag tone={event.momentumChange > 0 ? 'positive' : 'neutral'}>
+      {event.momentumChange > 0 ? '+' : '−'}
+      {Math.abs(event.momentumChange)}
+    </Tag>
+  )
+}

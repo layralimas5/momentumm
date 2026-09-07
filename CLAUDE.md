@@ -63,7 +63,7 @@ que existir base. Feed vazio afasta usuário.
 Fase 1 em pé, em `app/`. Roda em **modo demo** sem configurar nada (dados em
 `localStorage`) e vira contas reais ao preencher `.env.local` com o Supabase.
 
-Pronto: domínio completo com 294 testes, quatro migrations com RLS, repositórios demo e
+Pronto: domínio completo com 316 testes, quatro migrations com RLS, repositórios demo e
 Supabase, auth com rota protegida, registro rápido, cronômetro de sessão, streak
 dos últimos 7 dias, histórico com filtro por eixo, metas com progresso e perfil
 editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
@@ -243,6 +243,52 @@ vez de cinco modais que divergem em dois meses.
 comunidade, ranking e perfil público. A arquitetura está pronta pra eles; o
 produto continua single-player.
 
+### O gravador de momentos e o Perfil
+
+A camada de momentos deixou de depender de alguém lembrar de gravar. Quem
+decide o que vira registro é `journey-recorder`, uma função **pura**: recebe o
+estado do dia mais os eventos já gravados e devolve só o que falta. Rodar de
+novo não duplica nada, e dá pra provar isso em teste sem banco — que é o
+oposto de espalhar `record(...)` por sete componentes.
+
+Ele cobre hábito concluído, rotina fechada, dia cumprido, retomada, recorde de
+momentum, objetivo cruzando uma faixa e marco alcançado. Objetivo concluído e
+review fechado continuam gravados no `PlannerProvider`, no clique: são
+transições com hora marcada, e adiá-las pro próximo carregamento do dashboard
+carimbaria o horário errado no que um dia vai ser o feed.
+
+**Duas chaves de repetição, e a diferença importa.** Evento de DIA (hábito,
+rotina, dia, retomada, momentum) repete a cada dia novo: a chave inclui a data.
+Evento de VIDA (marco, objetivo cruzando 25/50/75%) acontece uma vez só: a
+chave ignora a data, senão "100 hábitos concluídos" seria gravado de novo toda
+vez que a pessoa abrisse o app no dia seguinte.
+
+`milestone` guarda as regras dos marcos — faixas poucas e espaçadas de
+propósito, porque marco a cada dez vira ruído, e ruído é o oposto de conquista.
+A sequência usa o RECORDE e não a atual: conquista que some quando a pessoa
+perde um dia é conquista que o app tira de volta.
+
+**O Perfil (`/app/perfil`)** é um painel da evolução pessoal, não uma página de
+rede social. Ele responde "o quanto eu mudei desde que comecei", não "quem me
+segue", e funciona inteiro com uma pessoa só usando o app: momentum,
+constância, semanas de progresso, sequência, objetivos ativos, conquistas com o
+próximo marco e o progresso recente. Nenhum número é calculado aqui — todos vêm
+de onde já eram calculados, porque duas telas contando "constância" com contas
+diferentes é como um app começa a discordar de si mesmo.
+
+Nome, foto e bio se editam ali; @ e visibilidade padrão continuam em
+Configurações, que é onde moram os ajustes de conta.
+
+**A foto vive na coluna `avatar_url`**, reduzida a 256px e codificada como data
+URL (~20KB) antes de sair do aparelho. Evita um bucket de Storage inteiro —
+políticas, URL assinada, limpeza de órfão — por um arquivo que cada conta tem
+UM. Quando existir foto de capa ou álbum, a migração é trocar o conteúdo da
+coluna por um caminho, e nada acima muda.
+
+Ainda **não existe** feed, amigos, seguidores, curtida, comentário, ranking nem
+comunidade, e o perfil termina dizendo isso em voz alta: nada ali é público, e
+compartilhar gera uma imagem no aparelho, não uma publicação.
+
 ### A jornada principal
 
 O produto é um ciclo de três telas, nessa ordem:
@@ -348,6 +394,6 @@ Quando incomodar, trocar por import dinâmico dentro do `container`.
 cd app
 npm install
 npm run dev     # modo demo, sem configurar nada
-npm test        # 294 testes de domínio
+npm test        # 316 testes de domínio
 npm run build
 ```

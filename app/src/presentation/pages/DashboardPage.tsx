@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Insight } from '@/domain/entities/insight'
 import { addDays } from '@/domain/entities/day'
@@ -24,6 +24,7 @@ import { ErrorNote } from '@/presentation/components/ui/States'
 import { useFocus } from '@/presentation/focus/use-focus'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
 import { useDashboard, type GoalInMotion } from '@/presentation/planner/use-dashboard'
+import { useJourneyRecorder } from '@/presentation/planner/use-journey-recorder'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { DayCompleteBanner } from '@/presentation/components/dashboard/DayCompleteBanner'
 import { MobileDashboard } from '@/presentation/components/mobile/MobileDashboard'
@@ -58,6 +59,17 @@ export function DashboardPage() {
   const composer = useComposer()
   const navigate = useNavigate()
   const isDesktop = useIsDesktop()
+
+  /*
+    O dia de hoje virando registro: hábito concluído, rotina fechada, dia
+    cumprido, retomada, recorde de momentum, objetivo cruzando uma faixa e
+    marco alcançado.
+
+    Mora no dashboard porque é a tela que a pessoa abre todo dia. A decisão do
+    QUE gravar é uma função pura (`eventsToRecord`) — aqui não há regra, só a
+    chamada.
+  */
+  useJourneyRecorder(view)
 
   const startFocus = useCallback(
     (task: Task) => {
@@ -112,41 +124,6 @@ export function DashboardPage() {
     () => new Map(planner.planStages.map((stage) => [stage.id, stage.title])),
     [planner.planStages],
   )
-
-  /*
-    O dia fechado vira um momento da jornada.
-
-    O registro acontece aqui, e não no PlannerProvider, porque é o dashboard
-    que sabe quando o dia fecha: a conta mistura hábitos programados e ações
-    do dia, e o provider teria que refazer essa leitura inteira a cada clique
-    em hábito só pra descobrir se aquele foi o último.
-
-    A gravação é idempotente por (tipo, origem, dia), então desmarcar e
-    remarcar o último hábito atualiza a mesma linha em vez de empilhar. O
-    `useRef` evita a segunda chamada dentro da mesma sessão.
-  */
-  const recordedDay = useRef<string | null>(null)
-
-  useEffect(() => {
-    if (!view.dayComplete || recordedDay.current === planner.today) return
-    recordedDay.current = planner.today
-
-    void planner.recordJourneyEvent({
-      type: 'day_completed',
-      sourceType: 'day',
-      sourceId: planner.today,
-      title: 'Hoje',
-      completionPercentage: view.dayProgress.ratio,
-      durationMin: view.focusMinutesToday || null,
-      momentumAfter: view.momentum.value,
-      momentumBefore: view.momentum.value - view.momentum.delta,
-      metadata: {
-        tasksDone: view.dayProgress.done,
-        items: view.focus.all.map((item) => ({ label: item.title, done: item.done })),
-        ...(view.focusMinutesToday ? { focusMinutes: view.focusMinutesToday } : {}),
-      },
-    })
-  }, [view, planner])
 
   /** "Aplicar sugestão": o insight precisa mudar o dia, não só aconselhar. */
   const applyInsight = useCallback(

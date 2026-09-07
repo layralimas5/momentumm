@@ -142,6 +142,13 @@ export interface DashboardView {
   readonly habitStates: readonly HabitDayState[]
   readonly habitProgress: HabitDayProgress
   readonly week: WeeklySummary
+  /**
+   * Dias parados imediatamente antes de hoje. Zero quando ontem teve
+   * movimento. É o que separa uma retomada de um dia comum, e mora aqui porque
+   * o gravador de momentos e o Share Studio precisam da MESMA contagem — duas
+   * cópias da regra dariam dois números com o mesmo nome.
+   */
+  readonly daysAway: number
   readonly goalsInMotion: readonly GoalInMotion[]
   readonly insight: Insight | null
   readonly todayWin: Win | null
@@ -224,6 +231,18 @@ export function useDashboard(): DashboardView {
 
   const momentum = useMemo(() => calculateMomentum(momentumInput), [momentumInput])
   const week = useMemo(() => summarizeWeek(momentumInput), [momentumInput])
+
+  // Lê a série de trás pra frente, pulando o próprio dia: o buraco que
+  // interessa é o que veio ANTES de hoje.
+  const daysAway = useMemo(() => {
+    let gap = 0
+    for (let index = week.series.length - 2; index >= 0; index -= 1) {
+      const day = week.series[index]
+      if (!day || day.intensity > 0) break
+      gap += 1
+    }
+    return gap
+  }, [week.series])
 
   const habitStates = useMemo(
     () => habitDayStates(habits, habitLogs, today),
@@ -503,6 +522,7 @@ export function useDashboard(): DashboardView {
     habitStates,
     habitProgress,
     week,
+    daysAway,
     goalsInMotion,
     insight,
     todayWin: winOfDay(wins, today),

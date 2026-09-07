@@ -22,7 +22,7 @@ import { cn } from '@/shared/lib/cn'
  * e é por isso que a lista se deriva da navegação em vez de ser escrita à mão:
  * tela nova aparece no atalho sem ninguém lembrar de vir aqui.
  */
-const MOBILE_TAB_ROUTES = ['/app', '/app/objetivos', '/app/plano', '/app/configuracoes']
+const MOBILE_TAB_ROUTES = ['/app', '/app/objetivos', '/app/plano', '/app/perfil']
 const MOBILE_SHORTCUTS = APP_NAV.filter((item) => !MOBILE_TAB_ROUTES.includes(item.to))
 
 export function ProfilePage() {

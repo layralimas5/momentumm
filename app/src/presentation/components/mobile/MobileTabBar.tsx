@@ -19,7 +19,7 @@ const LEFT: readonly TabItem[] = [
 
 const RIGHT: readonly TabItem[] = [
   { to: '/app/plano', label: 'Plano', icon: 'plano', end: false },
-  { to: '/app/configuracoes', label: 'Perfil', icon: 'config', end: false },
+  { to: '/app/perfil', label: 'Perfil', icon: 'trofeu', end: false },
 ]
 
 /**

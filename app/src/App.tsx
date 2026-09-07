@@ -37,6 +37,11 @@ const GoalsPage = lazy(() =>
 const ProfilePage = lazy(() =>
   import('@/presentation/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })),
 )
+const PersonalProfilePage = lazy(() =>
+  import('@/presentation/pages/PersonalProfilePage').then((m) => ({
+    default: m.PersonalProfilePage,
+  })),
+)
 const ObjectivesPage = lazy(() =>
   import('@/presentation/pages/ObjectivesPage').then((m) => ({ default: m.ObjectivesPage })),
 )
@@ -90,11 +95,11 @@ export function App() {
               <Route path="metas" element={<GoalsPage />} />
               <Route path="foco" element={<FocusPage />} />
               <Route path="insights" element={<InsightsPage />} />
+              <Route path="perfil" element={<PersonalProfilePage />} />
               <Route path="configuracoes" element={<ProfilePage />} />
 
               {/* Rotas antigas continuam válidas: link salvo não pode virar 404. */}
               <Route path="atividades" element={<Navigate to="/app/jornada" replace />} />
-              <Route path="perfil" element={<Navigate to="/app/configuracoes" replace />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

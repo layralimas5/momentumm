@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { activityType } from '@/domain/entities/activity-type'
 import { countsAsDone, habitsScheduledOn, statusOf } from '@/domain/entities/habit'
-import { initialsOf } from '@/domain/entities/profile'
+import { Avatar } from '@/presentation/components/ui/Avatar'
 import { isPending } from '@/domain/entities/task'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { BottomSheet } from '@/presentation/components/ui/BottomSheet'
@@ -57,15 +57,15 @@ export function MobileTopBar() {
 
           <button
             type="button"
-            onClick={() => navigate('/app/configuracoes')}
+            onClick={() => navigate('/app/perfil')}
             className="grid size-11 shrink-0 place-items-center rounded-full transition-colors active:bg-surface"
           >
-            <span
-              aria-hidden="true"
-              className="grid size-9 place-items-center rounded-full bg-brand-dim text-sm font-semibold text-brand-hi"
-            >
-              {profile ? initialsOf(profile.name) : '—'}
-            </span>
+            <Avatar
+              name={profile?.name ?? '—'}
+              src={profile?.avatarUrl ?? null}
+              className="size-9"
+              textClassName="text-sm"
+            />
             <span className="sr-only">Abrir perfil</span>
           </button>
         </div>

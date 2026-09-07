@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { activityType } from '@/domain/entities/activity-type'
 import { countsAsDone, habitsScheduledOn, statusOf } from '@/domain/entities/habit'
-import { initialsOf } from '@/domain/entities/profile'
+import { Avatar } from '@/presentation/components/ui/Avatar'
 import { isPending } from '@/domain/entities/task'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
@@ -95,12 +95,14 @@ export function AppHeader() {
 
           <AddMenu />
 
-          <span
-            aria-hidden="true"
-            className="hidden size-9 shrink-0 place-items-center rounded-full bg-brand-dim text-sm font-semibold text-brand-hi sm:grid"
-          >
-            {profile ? initialsOf(profile.name) : '—'}
-          </span>
+          {profile ? (
+            <Avatar
+              name={profile.name}
+              src={profile.avatarUrl}
+              className="hidden size-9 sm:block"
+              textClassName="text-sm"
+            />
+          ) : null}
         </div>
       </header>
 
