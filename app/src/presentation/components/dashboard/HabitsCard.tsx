@@ -20,6 +20,14 @@ import { cn } from '@/shared/lib/cn'
 
 interface HabitsCardProps {
   readonly states: readonly HabitDayState[]
+  /**
+   * Hábitos que já apareceram no foco de hoje. Eles saem da lista mas
+   * continuam contando no resumo: repetir o mesmo hábito em dois blocos da
+   * mesma tela é o que faz o dashboard parecer maior do que o dia.
+   */
+  readonly hideIds?: ReadonlySet<string>
+  /** Sem moldura de card: o dashboard já agrupa isso numa seção. */
+  readonly bare?: boolean
   /** Objetivos ativos: o hábito precisa dizer o que ele sustenta. */
   readonly objectives: readonly Objective[]
   /** Título de cada etapa por id, pra linha de contexto. */
@@ -41,29 +49,19 @@ export function HabitsCard({
   states,
   objectives,
   stageTitles,
+  hideIds,
+  bare = false,
   progress,
   onSetStatus,
   onSeeAll,
   onCreate,
 }: HabitsCardProps) {
-  return (
-    <Panel aria-labelledby="habitos-titulo">
-      <PanelHeader
-        id="habitos-titulo"
-        title="Hábitos de hoje"
-        icon="habitos"
-        action={
-          states.length > 0 ? (
-            <Button variant="ghost" size="sm" onClick={onSeeAll}>
-              Ver todos
-              <Icon name="seta" className="size-3.5" />
-            </Button>
-          ) : null
-        }
-      />
+  const visible = hideIds ? states.filter((state) => !hideIds.has(state.habit.id)) : states
 
+  const body = (
+    <>
       {states.length === 0 ? (
-        <div className="mt-4">
+        <div className={bare ? '' : 'mt-4'}>
           <EmptyState
             title="Nenhum hábito pra hoje"
             description="Um hábito simples e diário sustenta mais evolução do que três difíceis. Começa por um."
@@ -77,7 +75,7 @@ export function HabitsCard({
         </div>
       ) : (
         <>
-          <div className="mt-4 flex items-center gap-3">
+          <div className={bare ? 'flex items-center gap-3' : 'mt-4 flex items-center gap-3'}>
             <ProgressBar
               className="flex-1"
               value={progress.ratio}
@@ -95,8 +93,12 @@ export function HabitsCard({
             </p>
           ) : null}
 
+          {/*
+            O que já está no foco não aparece de novo aqui: ele continua no
+            resumo acima, que é onde a contagem do dia mora.
+          */}
           <ul className="mt-4 flex flex-col gap-2">
-            {states.map((state) => (
+            {visible.map((state) => (
               <HabitRow
                 key={state.habit.id}
                 state={state}
@@ -110,6 +112,27 @@ export function HabitsCard({
           </ul>
         </>
       )}
+    </>
+  )
+
+  if (bare) return body
+
+  return (
+    <Panel aria-labelledby="habitos-titulo">
+      <PanelHeader
+        id="habitos-titulo"
+        title="Hábitos de hoje"
+        icon="habitos"
+        action={
+          states.length > 0 ? (
+            <Button variant="ghost" size="sm" onClick={onSeeAll}>
+              Ver todos
+              <Icon name="seta" className="size-3.5" />
+            </Button>
+          ) : null
+        }
+      />
+      {body}
     </Panel>
   )
 }

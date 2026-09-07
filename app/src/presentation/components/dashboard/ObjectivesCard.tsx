@@ -14,6 +14,13 @@ interface ObjectivesCardProps {
   readonly objectives: readonly ObjectiveView[]
   readonly onCreate: () => void
   readonly onOpenReview: () => void
+  /**
+   * Quantos objetivos entram. O dashboard mostra dois ou três: a lista
+   * completa é outra tela, e cinco barras de progresso seguidas viram parede.
+   */
+  readonly limit?: number
+  /** Sem moldura de card: o dashboard já agrupa isso numa seção. */
+  readonly bare?: boolean
 }
 
 /**
@@ -27,7 +34,42 @@ interface ObjectivesCardProps {
  * quanto do prazo já passou. Progresso sem prazo consola; prazo sem progresso
  * assusta. Só os dois juntos fazem decidir.
  */
-export function ObjectivesCard({ objectives, onCreate, onOpenReview }: ObjectivesCardProps) {
+export function ObjectivesCard({
+  objectives,
+  onCreate,
+  onOpenReview,
+  limit,
+  bare = false,
+}: ObjectivesCardProps) {
+  const shown = limit ? objectives.slice(0, limit) : objectives
+
+  const body = (
+    <>
+      {objectives.length === 0 ? (
+        <div className="mt-4">
+          <EmptyState
+            title="Nenhum objetivo com prazo"
+            description="Objetivo é o que dá direção pro hábito. Sem data pra fechar, tudo vira rotina sem destino."
+            action={
+              <Button size="sm" onClick={onCreate}>
+                <Icon name="mais" className="size-4" />
+                Definir objetivo
+              </Button>
+            }
+          />
+        </div>
+      ) : (
+        <ul className={bare ? 'flex flex-col gap-3' : 'mt-4 flex flex-col gap-3'}>
+          {shown.map((view) => (
+            <ObjectiveRow key={view.progress.objective.id} view={view} />
+          ))}
+        </ul>
+      )}
+    </>
+  )
+
+  if (bare) return body
+
   return (
     <Panel aria-labelledby="objetivos-titulo">
       <PanelHeader
@@ -43,27 +85,7 @@ export function ObjectivesCard({ objectives, onCreate, onOpenReview }: Objective
           ) : null
         }
       />
-
-      {objectives.length === 0 ? (
-        <div className="mt-4">
-          <EmptyState
-            title="Nenhum objetivo com prazo"
-            description="Objetivo é o que dá direção pro hábito. Sem data pra fechar, tudo vira rotina sem destino."
-            action={
-              <Button size="sm" onClick={onCreate}>
-                <Icon name="mais" className="size-4" />
-                Definir objetivo
-              </Button>
-            }
-          />
-        </div>
-      ) : (
-        <ul className="mt-4 flex flex-col gap-3">
-          {objectives.map((view) => (
-            <ObjectiveRow key={view.progress.objective.id} view={view} />
-          ))}
-        </ul>
-      )}
+      {body}
     </Panel>
   )
 }
@@ -116,6 +138,17 @@ export function ObjectiveRow({ view }: { readonly view: ObjectiveView }) {
       </div>
 
       <p className="mt-2.5 text-xs text-pretty text-ink-muted">{progress.summary}</p>
+
+      {/*
+        A próxima ação fecha a linha. Uma barra de progresso sozinha informa que
+        falta, nunca o que fazer — e é o "o que fazer" que traz a pessoa de volta.
+      */}
+      {plan.nextTask ? (
+        <p className="mt-2 truncate text-xs text-ink-muted">
+          <span className="text-ink-faint">Próxima ação: </span>
+          {plan.nextTask.title}
+        </p>
+      ) : null}
 
       {objective.motive ? (
         <p className="mt-2 border-l-2 border-line-hi pl-2.5 text-xs text-pretty text-ink-faint italic">

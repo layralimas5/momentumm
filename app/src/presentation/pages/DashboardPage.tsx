@@ -11,13 +11,14 @@ import { FocusCard } from '@/presentation/components/dashboard/FocusCard'
 import { GoalsInMotionCard } from '@/presentation/components/dashboard/GoalsInMotionCard'
 import { HabitsCard } from '@/presentation/components/dashboard/HabitsCard'
 import { InsightCard } from '@/presentation/components/dashboard/InsightCard'
-import { MomentumCard } from '@/presentation/components/dashboard/MomentumCard'
+import { MomentumStrip } from '@/presentation/components/dashboard/MomentumStrip'
 import { NextUpCard } from '@/presentation/components/dashboard/NextUpCard'
 import { ObjectivesCard } from '@/presentation/components/dashboard/ObjectivesCard'
-import { NextActionsCard } from '@/presentation/components/dashboard/NextActionsCard'
 import { Onboarding } from '@/presentation/components/dashboard/Onboarding'
 import { PriorityCard } from '@/presentation/components/dashboard/PriorityCard'
 import { WeeklyProgressCard } from '@/presentation/components/dashboard/WeeklyProgressCard'
+import { Section } from '@/presentation/components/dashboard/Section'
+import { TodayFocusCard } from '@/presentation/components/dashboard/TodayFocusCard'
 import { WinsCard } from '@/presentation/components/dashboard/WinsCard'
 import { ErrorNote } from '@/presentation/components/ui/States'
 import { useFocus } from '@/presentation/focus/use-focus'
@@ -31,10 +32,22 @@ import { useIsDesktop } from '@/presentation/hooks/use-media-query'
 /**
  * "Hoje" — o dashboard.
  *
- * A ordem das seções responde, de cima pra baixo, as quatro perguntas do
- * produto: como estou hoje (check-in e momentum), o que importa agora
- * (prioridade), qual é a próxima ação (hábitos e ações) e se estou avançando
- * de verdade (semana, metas, insight).
+ * A tela tem TRÊS níveis de atenção, e a diferença entre eles é deliberada:
+ *
+ *   1. Saudação, Momentum e **Seu foco de hoje** — a primeira dobra. Responde
+ *      "como estou" e "o que faço agora", que é o motivo de a pessoa abrir o app.
+ *   2. Objetivos, hábitos e insight — responde "estou avançando".
+ *   3. Semana, check-in, foco cronometrado, metas e vitórias — consulta.
+ *
+ * O que mudou em relação à versão anterior, e por quê: eram doze cards com o
+ * mesmo peso visual, e uma tela onde tudo grita é uma tela onde nada é lido. Só
+ * o foco de hoje continua sendo card de destaque, porque é o único bloco em que
+ * a pessoa ATUA. O resto virou seção — título, espaçamento e uma saída pra tela
+ * completa do assunto.
+ *
+ * A largura é limitada mesmo sobrando tela. Em 1920px o conteúdo chegava a
+ * 1648px de largura: linha de texto longa demais pra ler e barra de progresso
+ * atravessando o monitor.
  */
 export function DashboardPage() {
   const { profile } = useAuth()
@@ -199,8 +212,10 @@ export function DashboardPage() {
           compact
           name={profile?.name.split(' ')[0] ?? null}
           today={planner.today}
-          progress={view.dayProgress}
+          headline={view.headline}
           resumeNote={view.resumeNote}
+          overdue={view.overdueCount}
+          onReviewOverdue={() => navigate('/app/plano')}
         />
         <MobileDashboard
           view={view}
@@ -220,111 +235,169 @@ export function DashboardPage() {
 
   const firstName = profile?.name.split(' ')[0] ?? null
 
+  // O que já apareceu no foco não se repete nos hábitos: o mesmo item em dois
+  // blocos da mesma tela faz o dia parecer maior do que ele é.
+  const focusedHabitIds = new Set(
+    view.focus.items.filter((item) => item.kind === 'habito').map((item) => item.id),
+  )
+
   return (
-    <div className="flex flex-col gap-5">
+    /*
+      Container centralizado com teto de largura. `max-w-5xl` mantém a linha de
+      texto na faixa legível e impede que a tela vire uma régua de ponta a ponta
+      no monitor grande.
+    */
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
       {planner.error ? <ErrorNote message={planner.error} /> : null}
 
-      <DayHeader
-        name={firstName}
-        today={planner.today}
-        progress={view.dayProgress}
-        resumeNote={view.resumeNote}
-      />
-
-      {/*
-        Linha de contexto: como estou hoje. O check-in vem primeiro porque é ele
-        que calibra tudo que aparece abaixo.
-      */}
-      <div className="grid gap-5 xl:grid-cols-2 xl:items-start">
-        <CheckInCard
-          checkIn={view.checkIn}
-          capacity={view.capacity}
-          onSave={(input) => planner.saveCheckIn({ ...input, day: planner.today })}
+      {/* ------------------------------------------------------------------
+          Primeiro nível: como estou e o que faço agora.
+         ------------------------------------------------------------------ */}
+      <div className="flex flex-col gap-4">
+        <DayHeader
+          name={firstName}
+          today={planner.today}
+          headline={view.headline}
+          resumeNote={view.resumeNote}
+          overdue={view.overdueCount}
+          onReviewOverdue={() => navigate('/app/plano')}
         />
-        <MomentumCard
+
+        <MomentumStrip
           momentum={view.momentum}
-          recommendation={view.recommendation}
           streak={planner.streak}
+          hasHistory={view.hasHistory}
+        />
+
+        {view.dayComplete ? <DayCompleteBanner win={view.todayWin} /> : null}
+
+        <TodayFocusCard
+          focus={view.focus}
+          onStartFocus={startFocus}
+          onSeeAll={() => navigate('/app/plano')}
+          onPlanDay={() => composer.open('acao')}
+        />
+
+        {/* A prioridade principal só ganha bloco próprio quando ela existe e
+            ainda está aberta: concluída, ela já aparece riscada no foco. */}
+        {view.mainPriority && view.mainPriority.status !== 'feita' ? (
+          <PriorityCard
+            task={view.mainPriority}
+            stageTitle={stageTitles.get(view.mainPriority?.stageId ?? '') ?? null}
+            goal={mainGoal}
+            objective={planner.objectives.find(
+              (item) => item.id === view.mainPriority?.objectiveId,
+            )}
+            capacity={view.capacity}
+            dayComplete={view.dayComplete}
+            onStartFocus={startFocus}
+            onComplete={completeTask}
+            onShrink={shrinkTask}
+            onReorganize={() =>
+              view.mainPriority
+                ? composer.open('acao', { editing: view.mainPriority })
+                : composer.open('acao')
+            }
+            onCreate={() => composer.open('acao')}
+          />
+        ) : null}
+
+        <NextUpCard
+          nextUp={view.nextUp}
+          mainPriority={view.mainPriority}
+          onStartFocus={startFocus}
         />
       </div>
 
-      {/*
-        O destino antes da rotina. Vem logo depois do momentum porque é ele que
-        dá sentido a tudo que aparece abaixo: sem objetivo na frente, a pessoa
-        cumpre a lista do dia e nunca chega em lugar nenhum.
-      */}
-      <ObjectivesCard
-        objectives={view.objectives}
-        onCreate={() => composer.open('objetivo')}
-        onOpenReview={() => navigate('/app/review')}
-      />
+      {/* ------------------------------------------------------------------
+          Segundo nível: estou avançando?
 
-      {view.dayComplete ? <DayCompleteBanner win={view.todayWin} /> : null}
+          Duas colunas com proporção controlada — execução à esquerda, contexto
+          à direita. Nada de sticky: coluna que acompanha a rolagem compete com
+          o conteúdo principal durante a tela inteira.
+         ------------------------------------------------------------------ */}
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-start">
+        <Section
+          title="Objetivos em andamento"
+          hint="Onde cada um está e qual é o próximo passo."
+          to="/app/objetivos"
+          toLabel="Ver todos"
+        >
+          <ObjectivesCard
+            bare
+            limit={3}
+            objectives={view.objectives.filter(
+              (item) => item.progress.state === 'em-andamento' || item.progress.state === 'nao-iniciado',
+            )}
+            onCreate={() => composer.open('objetivo')}
+            onOpenReview={() => navigate('/app/review')}
+          />
+        </Section>
 
-      <NextUpCard
-        nextUp={view.nextUp}
-        mainPriority={view.mainPriority}
-        onStartFocus={startFocus}
-      />
+        <Section
+          title="Hábitos de hoje"
+          hint={
+            view.habitProgress.total === 0
+              ? undefined
+              : `${view.habitProgress.done} de ${view.habitProgress.total} concluídos`
+          }
+          to="/app/habitos"
+        >
+          <HabitsCard
+            bare
+            states={view.habitStates}
+            hideIds={focusedHabitIds}
+            objectives={planner.objectives}
+            stageTitles={stageTitles}
+            progress={view.habitProgress}
+            onSetStatus={planner.setHabitStatus}
+            onSeeAll={() => navigate('/app/habitos')}
+            onCreate={() => composer.open('habito')}
+          />
+        </Section>
+      </div>
 
-      <PriorityCard
-        task={view.mainPriority}
-        stageTitle={stageTitles.get(view.mainPriority?.stageId ?? '') ?? null}
-        goal={mainGoal}
-        objective={planner.objectives.find(
-          (item) => item.id === view.mainPriority?.objectiveId,
-        )}
-        capacity={view.capacity}
-        dayComplete={view.dayComplete}
-        onStartFocus={startFocus}
-        onComplete={completeTask}
-        onShrink={shrinkTask}
-        onReorganize={() =>
-          view.mainPriority ? composer.open('acao', { editing: view.mainPriority }) : composer.open('acao')
-        }
-        onCreate={() => composer.open('acao')}
-      />
+      {view.insight ? (
+        <Section title="Seu Momentum" hint="O que os teus registros estão mostrando.">
+          <InsightCard
+            insight={view.insight}
+            limits={planner.limits}
+            onApply={applyInsight}
+            onDismiss={view.dismissInsight}
+          />
+        </Section>
+      ) : null}
 
-      {/*
-        Corpo do dashboard: execução à esquerda, acompanhamento na coluna
-        contextual à direita — que só aparece quando existe largura pra ela.
-
-        A distribuição é proposital: metas dividem a linha com o progresso
-        semanal em vez de empilhar na lateral. Coluna lateral muito mais alta
-        que a principal deixa um buraco no canto inferior esquerdo da tela.
-      */}
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start 2xl:grid-cols-[minmax(0,1fr)_25rem]">
-        <div className="flex min-w-0 flex-col gap-5">
-          <div className="grid gap-5 2xl:grid-cols-2 2xl:items-start">
-            <HabitsCard
-              states={view.habitStates}
-              objectives={planner.objectives}
-              stageTitles={stageTitles}
-              progress={view.habitProgress}
-              onSetStatus={planner.setHabitStatus}
-              onSeeAll={() => navigate('/app/habitos')}
-              onCreate={() => composer.open('habito')}
-            />
-            <NextActionsCard
-              tasks={planner.tasks}
-              goals={planner.goals}
-              objectives={planner.objectives}
-              stageTitles={stageTitles}
-              today={planner.today}
-              excludeId={view.mainPriority?.id}
-              onComplete={completeTask}
-              onPostpone={postponeTask}
-              onShrink={shrinkTask}
-              onStartFocus={startFocus}
-              onEdit={(task) => composer.open('acao', { editing: task })}
-              onCreate={() => composer.open('acao')}
-              onSeeAll={() => navigate('/app/plano')}
-            />
-          </div>
-
-          <div className="grid gap-5 2xl:grid-cols-2 2xl:items-start">
+      {/* ------------------------------------------------------------------
+          Terceiro nível: consulta. Vem depois e com título menor de propósito —
+          gráfico e histórico não podem disputar com o dia.
+         ------------------------------------------------------------------ */}
+      <div className="flex flex-col gap-6 border-t border-line pt-8">
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+          <Section title="Sua semana" level={3} to="/app/progresso" toLabel="Ver progresso">
             <WeeklyProgressCard week={view.week} limits={planner.limits} />
+          </Section>
 
+          <Section title="Como você chegou hoje" level={3}>
+            <CheckInCard
+              checkIn={view.checkIn}
+              capacity={view.capacity}
+              onSave={(input) => planner.saveCheckIn({ ...input, day: planner.today })}
+            />
+          </Section>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+          <Section title="Sessão de foco" level={3} to="/app/foco" toLabel="Abrir">
+            <FocusCard
+              task={view.mainPriority}
+              capacity={view.capacity}
+              minutesToday={view.focusMinutesToday}
+              limits={planner.limits}
+            />
+          </Section>
+
+          <Section title="Metas em movimento" level={3} to="/app/metas">
             <GoalsInMotionCard
               goals={view.goalsInMotion}
               onContinue={continueGoal}
@@ -334,31 +407,17 @@ export function DashboardPage() {
               onManage={() => navigate('/app/metas')}
               onCreateGoal={() => composer.open('meta')}
             />
-          </div>
+          </Section>
         </div>
 
-        <aside className="flex min-w-0 flex-col gap-5 xl:sticky xl:top-24">
-          <FocusCard
-            task={view.mainPriority}
-            capacity={view.capacity}
-            minutesToday={view.focusMinutesToday}
-            limits={planner.limits}
-          />
-
-          <InsightCard
-            insight={view.insight}
-            limits={planner.limits}
-            onApply={applyInsight}
-            onDismiss={view.dismissInsight}
-          />
-
+        <Section title="Vitória do dia" level={3}>
           <WinsCard
             wins={planner.wins}
             todayWin={view.todayWin}
             today={planner.today}
             onSave={(text) => planner.saveWin({ day: planner.today, text })}
           />
-        </aside>
+        </Section>
       </div>
     </div>
   )

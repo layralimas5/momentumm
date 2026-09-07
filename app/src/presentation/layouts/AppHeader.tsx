@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { activityType } from '@/domain/entities/activity-type'
 import { countsAsDone, habitsScheduledOn, statusOf } from '@/domain/entities/habit'
 import { initialsOf } from '@/domain/entities/profile'
@@ -11,17 +11,29 @@ import { useComposer } from '@/presentation/planner/ComposerProvider'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 import { CommandPalette } from './CommandPalette'
+import { APP_NAV } from './nav-items'
+
+/** O nome da tela atual, pra barra dizer onde a pessoa está. */
+function titleOf(pathname: string): string {
+  const matches = APP_NAV.filter((item) =>
+    item.end ? pathname === item.to : pathname.startsWith(item.to),
+  )
+  // A rota mais específica ganha: /app/objetivos/123 é "Objetivos", não "Hoje".
+  const best = matches.sort((a, b) => b.to.length - a.to.length)[0]
+  return best?.label ?? 'Momentumm'
+}
 
 /**
- * Header do app. Saudação, data e as três ações que a pessoa realmente usa:
- * buscar, ver o que precisa de atenção e adicionar. Nada de métrica aqui —
- * número no topo compete com a prioridade principal e sempre perde.
+ * Header do app: onde você está, a data e as três ações que a pessoa realmente
+ * usa — buscar, ver o que precisa de atenção e adicionar. Nada de métrica
+ * aqui: número no topo compete com a prioridade do dia e sempre perde.
  */
 export function AppHeader() {
+  const { pathname } = useLocation()
+  const pageTitle = titleOf(pathname)
   const { profile } = useAuth()
   const [paletteOpen, setPaletteOpen] = useState(false)
 
-  const firstName = profile?.name.split(' ')[0] ?? null
   const now = new Date()
 
   useEffect(() => {
@@ -39,14 +51,18 @@ export function AppHeader() {
     <>
       <header className="sticky top-0 z-30 border-b border-line bg-canvas/85 backdrop-blur-md">
         <div className="flex w-full items-center gap-4 px-4 py-3.5 sm:px-6 lg:px-8 2xl:px-10">
+          {/*
+            A barra diz ONDE você está, não "bom dia".
+
+            A saudação vive no topo do dashboard, com o nome e a frase de
+            contexto do dia. Ter as duas na mesma dobra era literalmente a mesma
+            frase duas vezes antes de qualquer conteúdo — e num header que
+            acompanha todas as telas, "bom dia" não orienta ninguém.
+          */}
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-lg font-semibold tracking-tight text-ink">
-              {greeting(now)}
-              {firstName ? `, ${firstName}` : ''}.
+              {pageTitle}
             </h1>
-            <p className="mt-0.5 hidden truncate text-sm text-ink-muted sm:block">
-              Vamos transformar intenção em movimento.
-            </p>
           </div>
 
           <p className="hidden shrink-0 items-center gap-2 text-sm text-ink-faint lg:flex">
@@ -280,13 +296,6 @@ function MenuItem({
   )
 }
 
-function greeting(now: Date): string {
-  const hour = now.getHours()
-  if (hour < 6) return 'Boa madrugada'
-  if (hour < 12) return 'Bom dia'
-  if (hour < 18) return 'Boa tarde'
-  return 'Boa noite'
-}
 
 function formatToday(now: Date): string {
   return now.toLocaleDateString('pt-BR', {

@@ -3,7 +3,17 @@ import { totalMinutes } from '@/domain/entities/activity'
 import { addDays, dayKeyOf, type DayKey } from '@/domain/entities/day'
 import { capacityOf, checkInOfDay, type CapacityProfile, type CheckIn } from '@/domain/entities/checkin'
 import { paceOf, type GoalPace, type GoalProgress } from '@/domain/entities/goal'
-import { habitDayProgress, habitDayStates, type HabitDayProgress, type HabitDayState } from '@/domain/entities/habit'
+import {
+  countsAsDone,
+  habitDayProgress,
+  habitDayStates,
+  habitTargetLabel,
+  type HabitDayProgress,
+  type HabitDayState,
+} from '@/domain/entities/habit'
+import { activityType } from '@/domain/entities/activity-type'
+import type { Objective } from '@/domain/entities/objective'
+import type { Priority } from '@/domain/entities/priority'
 import { isRunning } from '@/domain/entities/objective'
 import {
   primaryInsight,
@@ -27,10 +37,57 @@ import { useObjectives, type ObjectiveView } from './use-objectives'
 
 const DISMISSED_KEY = 'momentumm.insights.dismissed.v1'
 
+/**
+ * Quantos itens do dia aparecem no foco.
+ *
+ * Três é o limite da decisão, não do espaço: a partir do quarto item a pessoa
+ * para de escolher e passa a varrer a lista. O que sobra continua acessível em
+ * "ver tudo do dia" — o dashboard não esconde trabalho, ele ordena.
+ */
+export const MAX_FOCUS_ITEMS = 3
+
 export interface GoalInMotion {
   readonly progress: GoalProgress
   readonly pace: GoalPace
   readonly nextTask: Task | null
+}
+
+/**
+ * Um item do foco de hoje — ação ou hábito, na mesma lista.
+ *
+ * O dia é vivido misturado: às nove da manhã não existe "aba de hábitos" e
+ * "aba de ações", existe o que precisa sair. Duas listas separadas obrigam a
+ * pessoa a somar de cabeça pra responder "o que falta hoje", que é a única
+ * pergunta que ela tem ao abrir o app.
+ *
+ * O item NÃO é uma cópia: ele aponta pro registro original (`task` ou
+ * `habitState`), e concluir por aqui escreve lá. Não existe segunda lista.
+ */
+export interface FocusItem {
+  readonly kind: 'acao' | 'habito'
+  readonly id: string
+  readonly title: string
+  readonly done: boolean
+  /** Duração estimada. Null quando o eixo não é medido em minutos. */
+  readonly minutes: number | null
+  readonly objective: Objective | undefined
+  readonly stageTitle: string | null
+  readonly priority: Priority
+  /** Rótulo curto do papel: "Prioridade principal", "Hábito". */
+  readonly role: string
+  readonly task: Task | null
+  readonly habitState: HabitDayState | null
+}
+
+export interface TodayFocus {
+  /** Até três itens: é o que cabe numa decisão. */
+  readonly items: readonly FocusItem[]
+  /** Tudo do dia, pra tela dizer quantos ficaram de fora. */
+  readonly all: readonly FocusItem[]
+  readonly done: number
+  readonly total: number
+  /** Soma estimada dos itens em aberto, em minutos. Null sem nenhuma estimativa. */
+  readonly minutes: number | null
 }
 
 /** Uma ação com o caminho dela: objetivo, etapa e por que ela importa hoje. */
@@ -56,6 +113,18 @@ export interface DashboardView {
    * de um sistema de progresso.
    */
   readonly objectives: readonly ObjectiveView[]
+  /** O foco de hoje: ações e hábitos numa lista só, na ordem da decisão. */
+  readonly focus: TodayFocus
+  /** A frase de contexto abaixo da saudação. Muda com o estado real do dia. */
+  readonly headline: string
+  /**
+   * Existe semana anterior pra comparar? Sem isso o Momentum mostra o número
+   * sem variação, em vez de comparar com o vazio e inflar o primeiro dado que
+   * a pessoa vê.
+   */
+  readonly hasHistory: boolean
+  /** Ações em aberto com o dia já vencido. Vira um aviso curto no topo. */
+  readonly overdueCount: number
   /** A próxima ação recomendada, com o contexto dela. Null quando não há. */
   readonly nextUp: NextUp | null
   /** Quanto do dia já saiu, contando hábitos e ações juntos. */
@@ -162,6 +231,16 @@ export function useDashboard(): DashboardView {
   )
   const habitProgress = useMemo(() => habitDayProgress(habitStates), [habitStates])
 
+  const objectiveOf = useCallback(
+    (id: string | null) => planner.objectives.find((item) => item.id === id),
+    [planner.objectives],
+  )
+
+  const stageTitleOf = useCallback(
+    (id: string | null) => planner.planStages.find((item) => item.id === id)?.title ?? null,
+    [planner.planStages],
+  )
+
   const mainPriority = useMemo(() => mainPriorityOf(tasks, today), [tasks, today])
   const supportingTasks = useMemo(() => supportingTasksOf(tasks, today), [tasks, today])
 
@@ -207,6 +286,70 @@ export function useDashboard(): DashboardView {
     objectiveInput,
     dismissed,
   ])
+
+  /**
+   * O foco de hoje.
+   *
+   * A ordem é a da decisão, não a do banco: prioridade principal, depois o que
+   * ainda está aberto por prioridade, e por último o que já saiu — o concluído
+   * fica pra dar a sensação de avanço, nunca pra ocupar o topo.
+   */
+  const focus = useMemo<TodayFocus>(() => {
+    const dayTasks = tasks.filter(
+      (task) => task.day === today && task.status !== 'cancelada',
+    )
+
+    const fromTasks: FocusItem[] = dayTasks.map((task) => ({
+      kind: 'acao',
+      id: task.id,
+      title: task.title,
+      done: task.status === 'feita',
+      minutes: task.estimatedMin,
+      objective: objectiveOf(task.objectiveId),
+      stageTitle: stageTitleOf(task.stageId),
+      priority: task.priority,
+      role: task.isMainPriority ? 'Prioridade principal' : 'Ação',
+      task,
+      habitState: null,
+    }))
+
+    const fromHabits: FocusItem[] = habitStates.map((state) => ({
+      kind: 'habito',
+      id: state.habit.id,
+      title: state.habit.name,
+      done: countsAsDone(state.status),
+      // Eixo medido em páginas não vira minutos por chute: a estimativa fica
+      // nula e some da soma, em vez de inventar um tempo que ninguém deu.
+      minutes:
+        activityType(state.habit.axis).unit === 'minutos' ? state.habit.target : null,
+      objective: objectiveOf(state.habit.objectiveId),
+      stageTitle: stageTitleOf(state.habit.stageId),
+      priority: state.habit.priority,
+      role: `Hábito · ${habitTargetLabel(state.habit)}`,
+      task: null,
+      habitState: state,
+    }))
+
+    const rank = (item: FocusItem) => {
+      if (item.done) return 3
+      if (item.role === 'Prioridade principal') return 0
+      return item.priority === 'alta' ? 1 : 2
+    }
+
+    const all = [...fromTasks, ...fromHabits].sort((a, b) => rank(a) - rank(b))
+    const items = all.slice(0, MAX_FOCUS_ITEMS)
+
+    const open = items.filter((item) => !item.done)
+    const estimated = open.reduce((sum, item) => sum + (item.minutes ?? 0), 0)
+
+    return {
+      items,
+      all,
+      done: all.filter((item) => item.done).length,
+      total: all.length,
+      minutes: open.some((item) => item.minutes !== null) ? estimated : null,
+    }
+  }, [tasks, today, habitStates, objectiveOf, stageTitleOf])
 
   /**
    * A próxima ação, com o motivo dela.
@@ -305,9 +448,50 @@ export function useDashboard(): DashboardView {
     return `Ontem ficaram ${parts.join(' e ')} sem sair. Não precisa compensar: escolhe o que ainda faz sentido hoje e segue daqui.`
   }, [tasks, habits, habitLogs, today])
 
+  /*
+    A frase abaixo da saudação.
+
+    Ela descreve o estado real do dia e nada além disso. "Você consegue!" não
+    entra: uma frase que serviria pra qualquer pessoa em qualquer dia é a mesma
+    coisa que nenhuma frase, e ainda gasta a linha mais lida da tela.
+  */
+  const headline = useMemo(() => {
+    if (planner.isNewUser) return 'Vamos transformar o que você quer mudar em um plano.'
+    if (focus.total === 0) return 'Seu dia ainda não tem atividades planejadas.'
+    if (focus.done === focus.total) return 'Você concluiu tudo que planejou pra hoje.'
+    if (mainPriority === null && focus.done > 0) {
+      return 'Você já concluiu a principal prioridade do dia.'
+    }
+    if (resumeNote) return 'Hoje é um bom dia pra retomar.'
+    if (focus.done > 0) return 'Continue de onde você parou.'
+    return 'Seu plano de hoje está pronto.'
+  }, [planner.isNewUser, focus, mainPriority, resumeNote])
+
+  /*
+    Há registro anterior à janela do momentum? É o que separa "subiu 6 pontos"
+    de "essa é a primeira semana".
+  */
+  const hasHistory = useMemo(() => {
+    const cutoff = addDays(today, -MOMENTUM_WINDOW_DAYS)
+    return (
+      activities.some((item) => item.day < cutoff) ||
+      habitLogs.some((item) => item.day < cutoff) ||
+      tasks.some((item) => item.completedAt !== null && item.day < cutoff)
+    )
+  }, [activities, habitLogs, tasks, today])
+
+  const overdueCount = useMemo(
+    () => tasks.filter((task) => isPending(task) && task.day < today).length,
+    [tasks, today],
+  )
+
   return {
     checkIn,
     objectives,
+    focus,
+    headline,
+    hasHistory,
+    overdueCount,
     nextUp,
     dayProgress,
     resumeNote,

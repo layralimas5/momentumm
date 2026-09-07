@@ -20,6 +20,8 @@ import { MobileSection } from './MobileSection'
 interface MobileHabitsProps {
   readonly states: readonly HabitDayState[]
   readonly objectiveTitles: ReadonlyMap<string, string>
+  /** Hábitos que já apareceram no foco de hoje: não se repetem aqui. */
+  readonly hideIds?: ReadonlySet<string>
   readonly progress: HabitDayProgress
   readonly onSetStatus: (habitId: string, status: HabitStatus) => Promise<void>
   readonly onSeeAll: () => void
@@ -36,11 +38,13 @@ interface MobileHabitsProps {
 export function MobileHabits({
   states,
   objectiveTitles,
+  hideIds,
   progress,
   onSetStatus,
   onSeeAll,
   onCreate,
 }: MobileHabitsProps) {
+  const visible = hideIds ? states.filter((state) => !hideIds.has(state.habit.id)) : states
   const [openHabitId, setOpenHabitId] = useState<string | null>(null)
   const active = states.find((state) => state.habit.id === openHabitId) ?? null
 
@@ -79,7 +83,7 @@ export function MobileHabits({
           </div>
 
           <ul>
-            {states.map((state) => (
+            {visible.map((state) => (
               <HabitRow
                 key={state.habit.id}
                 state={state}

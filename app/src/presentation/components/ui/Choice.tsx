@@ -68,7 +68,10 @@ export function ChoiceGroup<T extends string | number>({
             className={cn(
               'rounded-xl border font-medium transition-all duration-150',
               size === 'sm' ? 'px-3 py-1.5 text-xs' : 'px-3.5 py-2 text-sm',
-              fill && 'flex-1 px-1 text-center',
+              // `min-w-0` junto do `flex-1`: sem ele o botão nunca encolhe
+              // abaixo do próprio texto, e a linha inteira empurra o container
+              // pra fora da tela num espaço estreito.
+              fill && 'min-w-0 flex-1 truncate px-1 text-center',
               selected
                 ? 'border-brand bg-brand-dim/60 text-ink shadow-[0_0_0_1px_var(--color-brand)]'
                 : 'border-line bg-surface-hi/60 text-ink-muted hover:border-line-hi hover:text-ink active:bg-surface-top',

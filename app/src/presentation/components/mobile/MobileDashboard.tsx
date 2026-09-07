@@ -8,12 +8,13 @@ import { useComposer } from '@/presentation/planner/ComposerProvider'
 import type { DashboardView, GoalInMotion } from '@/presentation/planner/use-dashboard'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { ContextualFab } from './ContextualFab'
-import { MobileActions } from './MobileActions'
 import { MobileCheckIn } from './MobileCheckIn'
 import { MobileFocus } from './MobileFocus'
 import { MobileGoals } from './MobileGoals'
 import { MobileHabits } from './MobileHabits'
+import { MomentumStrip } from '@/presentation/components/dashboard/MomentumStrip'
 import { NextUpCard } from '@/presentation/components/dashboard/NextUpCard'
+import { TodayFocusCard } from '@/presentation/components/dashboard/TodayFocusCard'
 import { MobileInsight } from './MobileInsight'
 import { MobileMomentum } from './MobileMomentum'
 import { MobileObjectives } from './MobileObjectives'
@@ -75,15 +76,27 @@ export function MobileDashboard({
     [planner.objectives],
   )
 
+  // O que já apareceu no foco não se repete na lista de hábitos.
+  const focusedHabitIds = new Set(
+    view.focus.items.filter((item) => item.kind === 'habito').map((item) => item.id),
+  )
+
+  /*
+    A ordem do celular é uma narrativa vertical, não o desktop espremido.
+
+    Momentum, foco de hoje, objetivos, hábitos, insight, semana — e a análise
+    depois. A pessoa desce a tela e vai encontrando as coisas na ordem em que
+    elas mudam a decisão do dia. O check-in desceu do topo: ele calibra o dia,
+    mas quem abre o app às sete da manhã quer ver o que precisa sair, não
+    responder um formulário antes de qualquer coisa.
+  */
   return (
-    <div className="flex flex-col gap-6">
-      <div ref={checkInRef}>
-        <MobileCheckIn
-          checkIn={view.checkIn}
-          capacity={view.capacity}
-          onSave={(input) => planner.saveCheckIn({ ...input, day: planner.today })}
-        />
-      </div>
+    <div className="flex flex-col gap-7">
+      <MomentumStrip
+        momentum={view.momentum}
+        streak={planner.streak}
+        hasHistory={view.hasHistory}
+      />
 
       {view.dayComplete ? (
         <p
@@ -97,38 +110,51 @@ export function MobileDashboard({
         </p>
       ) : null}
 
-      <div ref={priorityRef}>
-        <MobilePriority
-          task={view.mainPriority}
-          stageTitle={stageTitles.get(view.mainPriority?.stageId ?? '') ?? null}
-          goal={mainGoal}
-          objective={planner.objectives.find(
-            (item) => item.id === view.mainPriority?.objectiveId,
-          )}
-          capacity={view.capacity}
-          dayComplete={view.dayComplete}
-          onStartFocus={onStartFocus}
-          onComplete={onCompleteTask}
-          onShrink={onShrinkTask}
-          onPostpone={onPostponeTask}
-          onEdit={(task) => composer.open('acao', { editing: task })}
-          onCreate={() => composer.open('acao')}
-        />
-      </div>
+      <TodayFocusCard
+        focus={view.focus}
+        onStartFocus={onStartFocus}
+        onSeeAll={() => navigate('/app/plano')}
+        onPlanDay={() => composer.open('acao')}
+      />
 
-      {/*
-        No celular ele entra DEPOIS da prioridade e antes dos hábitos: é onde a
-        pessoa ainda está decidindo o dia. Mais pra baixo viraria mais um card
-        na rolagem, e a decisão já teria sido tomada.
-      */}
+      {/* A prioridade só ganha bloco próprio enquanto está aberta: concluída,
+          ela já aparece riscada no foco logo acima. */}
+      {view.mainPriority && view.mainPriority.status !== 'feita' ? (
+        <div ref={priorityRef}>
+          <MobilePriority
+            task={view.mainPriority}
+            stageTitle={stageTitles.get(view.mainPriority?.stageId ?? '') ?? null}
+            goal={mainGoal}
+            objective={planner.objectives.find(
+              (item) => item.id === view.mainPriority?.objectiveId,
+            )}
+            capacity={view.capacity}
+            dayComplete={view.dayComplete}
+            onStartFocus={onStartFocus}
+            onComplete={onCompleteTask}
+            onShrink={onShrinkTask}
+            onPostpone={onPostponeTask}
+            onEdit={(task) => composer.open('acao', { editing: task })}
+            onCreate={() => composer.open('acao')}
+          />
+        </div>
+      ) : null}
+
       <NextUpCard
         nextUp={view.nextUp}
         mainPriority={view.mainPriority}
         onStartFocus={onStartFocus}
       />
 
+      <MobileObjectives
+        objectives={view.objectives}
+        onCreate={() => composer.open('objetivo')}
+        onOpenReview={() => navigate('/app/review')}
+      />
+
       <MobileHabits
         states={view.habitStates}
+        hideIds={focusedHabitIds}
         objectiveTitles={objectiveTitles}
         progress={view.habitProgress}
         onSetStatus={planner.setHabitStatus}
@@ -136,20 +162,10 @@ export function MobileDashboard({
         onCreate={() => composer.open('habito')}
       />
 
-      <MobileActions
-        tasks={planner.tasks}
-        goals={planner.goals}
-        objectives={planner.objectives}
-        stageTitles={stageTitles}
-        today={planner.today}
-        excludeId={view.mainPriority?.id}
-        onComplete={onCompleteTask}
-        onPostpone={onPostponeTask}
-        onShrink={onShrinkTask}
-        onStartFocus={onStartFocus}
-        onEdit={(task) => composer.open('acao', { editing: task })}
-        onCreate={() => composer.open('acao')}
-        onSeeAll={() => navigate('/app/jornada')}
+      <MobileInsight
+        insight={view.insight}
+        onApply={onApplyInsight}
+        onDismiss={view.dismissInsight}
       />
 
       <MobileMomentum
@@ -158,6 +174,15 @@ export function MobileDashboard({
         streak={planner.streak}
         onOpen={() => navigate('/app/insights')}
       />
+
+      {/* Daqui pra baixo é consulta e registro do fim do dia. */}
+      <div ref={checkInRef}>
+        <MobileCheckIn
+          checkIn={view.checkIn}
+          capacity={view.capacity}
+          onSave={(input) => planner.saveCheckIn({ ...input, day: planner.today })}
+        />
+      </div>
 
       <div ref={focusRef}>
         <MobileFocus
@@ -169,24 +194,12 @@ export function MobileDashboard({
         />
       </div>
 
-      <MobileObjectives
-        objectives={view.objectives}
-        onCreate={() => composer.open('objetivo')}
-        onOpenReview={() => navigate('/app/review')}
-      />
-
       <MobileGoals
         goals={view.goalsInMotion}
         onContinue={onContinueGoal}
         onCreateTask={(goal) => composer.open('acao', { presetGoalId: goal.progress.goal.id })}
         onManage={() => navigate('/app/metas')}
         onCreateGoal={() => composer.open('meta')}
-      />
-
-      <MobileInsight
-        insight={view.insight}
-        onApply={onApplyInsight}
-        onDismiss={view.dismissInsight}
       />
 
       <MobileWins

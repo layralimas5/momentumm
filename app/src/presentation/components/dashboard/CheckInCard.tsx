@@ -158,8 +158,14 @@ function CheckInForm({
         </div>
       </fieldset>
 
+      {/*
+        `min-w-0` nos dois campos: item de grid tem largura mínima automática, e
+        os botões de energia e foco não quebram linha. Sem isso, num container
+        estreito eles empurram a coluna pra fora da tela e a página inteira
+        ganha rolagem horizontal.
+      */}
       <div className="mt-5 grid gap-5 sm:grid-cols-2">
-        <fieldset>
+        <fieldset className="min-w-0">
           <legend className="text-xs font-medium tracking-wide text-ink-faint uppercase">
             Energia
           </legend>
@@ -173,7 +179,7 @@ function CheckInForm({
           />
         </fieldset>
 
-        <fieldset>
+        <fieldset className="min-w-0">
           <legend className="text-xs font-medium tracking-wide text-ink-faint uppercase">
             Foco
           </legend>

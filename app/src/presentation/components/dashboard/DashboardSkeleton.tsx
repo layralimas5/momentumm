@@ -14,30 +14,33 @@ export function DashboardSkeleton({ mobile = false }: { mobile?: boolean }) {
     return (
       <div role="status" aria-live="polite" className="flex flex-col gap-6">
         <span className="sr-only">Carregando seu dia</span>
-        <Block className="h-28" />
-        <Block className="h-64" />
+        <Block className="h-12" />
+        <Block className="h-14" />
+        <Block className="h-72" />
         <Block className="h-44" />
-        <Block className="h-40" />
       </div>
     )
   }
 
   return (
-    <div role="status" aria-live="polite" className="flex flex-col gap-5">
+    /*
+      A mesma malha da tela pronta: container centralizado com o mesmo teto de
+      largura, cabeçalho, faixa do momentum, o bloco do foco e as duas colunas
+      do segundo nível. Esqueleto com outra forma é um salto de layout
+      disfarçado de carregamento.
+    */
+    <div role="status" aria-live="polite" className="mx-auto flex w-full max-w-5xl flex-col gap-8">
       <span className="sr-only">Carregando seu dashboard</span>
 
-      <Block className="h-24" />
-      <Block className="h-44" />
+      <div className="flex flex-col gap-4">
+        <Block className="h-20" />
+        <Block className="h-14" />
+        <Block className="h-72" />
+      </div>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="flex flex-col gap-5">
-          <Block className="h-64" />
-          <Block className="h-72" />
-        </div>
-        <div className="flex flex-col gap-5">
-          <Block className="h-56" />
-          <Block className="h-64" />
-        </div>
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+        <Block className="h-56" />
+        <Block className="h-56" />
       </div>
     </div>
   )
