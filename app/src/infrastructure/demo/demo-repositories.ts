@@ -4,7 +4,17 @@ import type { ActivityType } from '@/domain/entities/activity-type'
 import type { CheckIn, NewCheckInInput } from '@/domain/entities/checkin'
 import type { DayKey } from '@/domain/entities/day'
 import type { Habit, HabitLog, HabitStatus, NewHabitInput } from '@/domain/entities/habit'
-import type { JourneyEvent, NewJourneyEventInput } from '@/domain/entities/journey-event'
+import type { CircleAuthor, CircleFeedItem } from '@/domain/entities/circle-feed'
+import {
+  friendIdsOf,
+  type Friendship,
+  type NewFriendshipInput,
+} from '@/domain/entities/friendship'
+import type {
+  JourneyEvent,
+  JourneyVisibility,
+  NewJourneyEventInput,
+} from '@/domain/entities/journey-event'
 import type { NewTaskInput, Task } from '@/domain/entities/task'
 import type { WeeklyReview, WeeklyReviewDraft } from '@/domain/entities/weekly-review'
 import type { NewWinInput, Win } from '@/domain/entities/win'
@@ -30,6 +40,7 @@ import type {
   TaskRepository,
   TaskUpdate,
 } from '@/domain/repositories/task-repository'
+import type { FriendshipRepository } from '@/domain/repositories/friendship-repository'
 import type { JourneyEventRepository } from '@/domain/repositories/journey-event-repository'
 import type { WeeklyReviewRepository } from '@/domain/repositories/weekly-review-repository'
 import type { WinRepository } from '@/domain/repositories/win-repository'
@@ -293,11 +304,93 @@ export class DemoWinRepository implements WinRepository {
 }
 
 export class DemoJourneyEventRepository implements JourneyEventRepository {
-  async listByUser(): Promise<JourneyEvent[]> {
-    return demoStore.journeyEvents()
+  // Filtra por autor: desde que o modo demo ganhou amigos, a lista guarda os
+  // momentos deles junto com os seus.
+  async listByUser(userId: string): Promise<JourneyEvent[]> {
+    return demoStore.journeyEvents().filter((event) => event.userId === userId)
+  }
+
+  async listCircleFeed(userId: string): Promise<CircleFeedItem[]> {
+    const friends = new Set(friendIdsOf(demoStore.friendships(), userId))
+    const events = demoStore
+      .journeyEvents()
+      .filter((event) => friends.has(event.userId) && event.visibility === 'amigos')
+
+    return toFeedItems(events, userId)
+  }
+
+  async listByAuthor(userId: string, authorId: string): Promise<CircleFeedItem[]> {
+    const friends = new Set(friendIdsOf(demoStore.friendships(), userId))
+    if (!friends.has(authorId)) return []
+
+    const events = demoStore
+      .journeyEvents()
+      .filter((event) => event.userId === authorId && event.visibility === 'amigos')
+
+    return toFeedItems(events, userId)
+  }
+
+  async setVisibility(
+    id: string,
+    userId: string,
+    visibility: JourneyVisibility,
+  ): Promise<JourneyEvent> {
+    return demoStore.setEventVisibility(id, userId, visibility)
+  }
+
+  async support(eventId: string, userId: string, supported: boolean): Promise<void> {
+    demoStore.setSupport(eventId, userId, supported)
   }
 
   async record(input: NewJourneyEventInput): Promise<JourneyEvent> {
     return demoStore.recordJourneyEvent(input)
+  }
+}
+
+/** Junta evento, autor e apoio — o mesmo formato que a consulta do Supabase devolve. */
+function toFeedItems(events: readonly JourneyEvent[], userId: string): CircleFeedItem[] {
+  const people = new Map(
+    demoStore.people(events.map((event) => event.userId)).map((person) => [person.id, person]),
+  )
+
+  return events.flatMap((event) => {
+    const author = people.get(event.userId)
+    if (!author) return []
+
+    const supports = demoStore.supportsOf(event.id)
+    return [
+      {
+        event,
+        author,
+        supports: supports.length,
+        supportedByMe: supports.includes(userId),
+      },
+    ]
+  })
+}
+
+export class DemoFriendshipRepository implements FriendshipRepository {
+  async listByUser(): Promise<Friendship[]> {
+    return demoStore.friendships()
+  }
+
+  async listPeople(ids: readonly string[]): Promise<CircleAuthor[]> {
+    return demoStore.people(ids)
+  }
+
+  async search(userId: string, term: string): Promise<CircleAuthor[]> {
+    return demoStore.searchPeople(userId, term)
+  }
+
+  async request(input: NewFriendshipInput): Promise<Friendship> {
+    return demoStore.addFriendship(input)
+  }
+
+  async respond(id: string, userId: string, accept: boolean): Promise<Friendship> {
+    return demoStore.respondFriendship(id, userId, accept)
+  }
+
+  async remove(id: string, userId: string): Promise<void> {
+    demoStore.removeFriendship(id, userId)
   }
 }

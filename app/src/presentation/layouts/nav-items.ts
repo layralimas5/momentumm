@@ -69,6 +69,20 @@ export const APP_NAV: readonly AppNavItem[] = [
     icon: 'ia',
     description: 'Transformar objetivo em plano e ler o teu progresso',
   },
+  /*
+    Círculo fecha a navegação principal, e não entra no meio do ciclo, porque
+    ele não faz parte dele: o ciclo é objetivo → plano → dia → progresso →
+    review. O Círculo é o que existe DEPOIS de o ciclo estar rodando, e vem
+    por último de propósito — a pessoa abre o app pra cuidar da própria
+    rotina, não pra ver a dos outros.
+  */
+  {
+    to: '/app/circulo',
+    label: 'Círculo',
+    end: false,
+    icon: 'jornada',
+    description: 'Os amigos que você acompanha e o que eles compartilharam',
+  },
 
   // Fora da barra principal. Continuam existindo e continuam achaveis pela
   // busca — o que sai da navegação é o peso visual, não a funcionalidade.

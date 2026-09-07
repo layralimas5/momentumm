@@ -37,6 +37,14 @@ const GoalsPage = lazy(() =>
 const ProfilePage = lazy(() =>
   import('@/presentation/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })),
 )
+const CirclePage = lazy(() =>
+  import('@/presentation/pages/CirclePage').then((m) => ({ default: m.CirclePage })),
+)
+const FriendProfilePage = lazy(() =>
+  import('@/presentation/pages/FriendProfilePage').then((m) => ({
+    default: m.FriendProfilePage,
+  })),
+)
 const PersonalProfilePage = lazy(() =>
   import('@/presentation/pages/PersonalProfilePage').then((m) => ({
     default: m.PersonalProfilePage,
@@ -96,6 +104,8 @@ export function App() {
               <Route path="foco" element={<FocusPage />} />
               <Route path="insights" element={<InsightsPage />} />
               <Route path="perfil" element={<PersonalProfilePage />} />
+              <Route path="circulo" element={<CirclePage />} />
+              <Route path="circulo/:id" element={<FriendProfilePage />} />
               <Route path="configuracoes" element={<ProfilePage />} />
 
               {/* Rotas antigas continuam válidas: link salvo não pode virar 404. */}

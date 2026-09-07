@@ -14,10 +14,17 @@ import {
   type NewHabitInput,
 } from '@/domain/entities/habit'
 import { createGoal, type Goal, type NewGoalInput } from '@/domain/entities/goal'
+import type { CircleAuthor } from '@/domain/entities/circle-feed'
+import {
+  createFriendship,
+  type Friendship,
+  type NewFriendshipInput,
+} from '@/domain/entities/friendship'
 import {
   createJourneyEvent,
   journeyEventKey,
   type JourneyEvent,
+  type JourneyVisibility,
   type NewJourneyEventInput,
 } from '@/domain/entities/journey-event'
 import {
@@ -55,12 +62,26 @@ import { DomainError } from '@/shared/errors'
  * `localStorage`. A versão do storage sobe junto com o formato — dado antigo
  * é descartado em silêncio em vez de quebrar a tela.
  */
-const STORAGE_KEY = 'momentumm.demo.v7'
+const STORAGE_KEY = 'momentumm.demo.v8'
 
 export const DEMO_USER = {
   id: 'demo-user',
   email: 'demo@momentumm.app',
 } as const
+
+/**
+ * Gente no modo demo.
+ *
+ * O Círculo só existe se houver com quem tê-lo, e o modo demo não tem banco pra
+ * consultar. São três: dois amigos já aceitos e uma pessoa que mandou pedido e
+ * está esperando resposta — o que deixa os três estados da tela visíveis sem
+ * ninguém precisar criar uma segunda conta.
+ */
+export const DEMO_PEOPLE: readonly CircleAuthor[] = [
+  { id: 'demo-amiga-1', name: 'Marina Alves', handle: 'marina', avatarUrl: null },
+  { id: 'demo-amigo-2', name: 'Rafa Nunes', handle: 'rafa', avatarUrl: null },
+  { id: 'demo-pedido-3', name: 'Bia Costa', handle: 'biacosta', avatarUrl: null },
+]
 
 interface DemoState {
   profile: Profile
@@ -76,6 +97,9 @@ interface DemoState {
   wins: Win[]
   weeklyReviews: WeeklyReview[]
   journeyEvents: JourneyEvent[]
+  friendships: Friendship[]
+  /** Apoios dados e recebidos, no formato `eventId::userId`. */
+  supports: string[]
 }
 
 let state: DemoState | null = null
@@ -473,11 +497,131 @@ function seed(): DemoState {
     checkIns,
     wins,
     weeklyReviews: [],
-    // Sem momento de fábrica: evento é resultado do que a pessoa fez, e um
-    // "objetivo concluído" plantado no seed seria a primeira coisa que ela
-    // veria pronta pra compartilhar sem ter feito nada.
-    journeyEvents: [],
+    /*
+      Nenhum momento SEU vem de fábrica: evento é resultado do que a pessoa
+      fez, e um "objetivo concluído" plantado no seed seria a primeira coisa
+      que ela veria pronta pra compartilhar sem ter feito nada.
+
+      Os momentos dos amigos são outra história — eles existem pra o feed do
+      Círculo ter o que mostrar sem exigir uma segunda conta.
+    */
+    journeyEvents: friendMoments(today),
+    friendships: seedFriendships(),
+    supports: [],
   }
+}
+
+/** As três relações da tela: dois amigos aceitos e um pedido esperando resposta. */
+function seedFriendships(): Friendship[] {
+  const [marina, rafa, bia] = DEMO_PEOPLE as readonly CircleAuthor[]
+
+  return [
+    {
+      id: 'demo-amizade-1',
+      requesterId: DEMO_USER.id,
+      addresseeId: marina?.id ?? '',
+      status: 'aceita',
+      createdAt: new Date(),
+      respondedAt: new Date(),
+    },
+    {
+      id: 'demo-amizade-2',
+      requesterId: rafa?.id ?? '',
+      addresseeId: DEMO_USER.id,
+      status: 'aceita',
+      createdAt: new Date(),
+      respondedAt: new Date(),
+    },
+    {
+      id: 'demo-amizade-3',
+      requesterId: bia?.id ?? '',
+      addresseeId: DEMO_USER.id,
+      status: 'pendente',
+      createdAt: new Date(),
+      respondedAt: null,
+    },
+  ]
+}
+
+/**
+ * O que os amigos compartilharam.
+ *
+ * Só tipos que o feed aceita e todos com `visibility: 'amigos'` — é
+ * exatamente o que uma conta real produziria depois de a pessoa marcar cada
+ * momento. Nenhum deles carrega objetivo com nome comprido nem nota privada:
+ * o seed serve de exemplo do que o produto considera compartilhável.
+ */
+function friendMoments(today: DayKey): JourneyEvent[] {
+  const [marina, rafa] = DEMO_PEOPLE as readonly CircleAuthor[]
+
+  const moments: Array<[string, number, NewJourneyEventInput]> = [
+    [
+      'demo-momento-1',
+      0,
+      {
+        userId: marina?.id ?? '',
+        type: 'routine_completed',
+        sourceType: 'routine',
+        sourceId: `${today}:manha`,
+        title: 'Rotina da manhã',
+        completionPercentage: 1,
+        visibility: 'amigos',
+        momentumBefore: 64,
+        momentumAfter: 71,
+        metadata: { habitsDone: 4 },
+      },
+    ],
+    [
+      'demo-momento-2',
+      -1,
+      {
+        userId: rafa?.id ?? '',
+        type: 'milestone',
+        sourceType: 'streak',
+        sourceId: 'sequencia:30',
+        title: '30 dias seguidos',
+        visibility: 'amigos',
+        momentumBefore: 70,
+        momentumAfter: 74,
+        metadata: { milestoneCount: 30, milestoneUnit: 'dias seguidos' },
+      },
+    ],
+    [
+      'demo-momento-3',
+      -2,
+      {
+        userId: marina?.id ?? '',
+        type: 'comeback',
+        sourceType: 'streak',
+        sourceId: addDays(today, -2),
+        title: 'Voltei hoje',
+        visibility: 'amigos',
+        momentumBefore: 38,
+        momentumAfter: 46,
+        metadata: { daysAway: 5 },
+      },
+    ],
+    [
+      'demo-momento-4',
+      -3,
+      {
+        userId: rafa?.id ?? '',
+        type: 'weekly_review',
+        sourceType: 'week',
+        sourceId: addDays(today, -3),
+        title: 'Minha semana',
+        completionPercentage: 0.78,
+        visibility: 'amigos',
+        momentumBefore: 66,
+        momentumAfter: 70,
+        metadata: { habitsDone: 16, focusMinutes: 520 },
+      },
+    ],
+  ]
+
+  return moments.map(([id, offset, input]) =>
+    createJourneyEvent({ ...input, occurredAt: dateAt(addDays(today, offset), 9) }, id),
+  )
 }
 
 interface StoredState {
@@ -516,6 +660,13 @@ interface StoredState {
       completedAt: string | null
     }
   >
+  friendships?: Array<
+    Omit<Friendship, 'createdAt' | 'respondedAt'> & {
+      createdAt: string
+      respondedAt: string | null
+    }
+  >
+  supports?: string[]
 }
 
 function revive(raw: string): DemoState {
@@ -578,6 +729,12 @@ function revive(raw: string): DemoState {
       createdAt: new Date(item.createdAt),
       completedAt: item.completedAt ? new Date(item.completedAt) : null,
     })),
+    friendships: (parsed.friendships ?? []).map((item) => ({
+      ...item,
+      createdAt: new Date(item.createdAt),
+      respondedAt: item.respondedAt ? new Date(item.respondedAt) : null,
+    })),
+    supports: parsed.supports ?? [],
   }
 }
 
@@ -1018,6 +1175,101 @@ export const demoStore = {
     return event
   },
 
+  friendships(): Friendship[] {
+    return [...load().friendships]
+  },
+
+  addFriendship(input: NewFriendshipInput): Friendship {
+    const current = load()
+    const existing = current.friendships.find(
+      (item) =>
+        (item.requesterId === input.requesterId && item.addresseeId === input.addresseeId) ||
+        (item.requesterId === input.addresseeId && item.addresseeId === input.requesterId),
+    )
+    if (existing) {
+      throw new DomainError('Vocês já têm um pedido em aberto ou uma amizade.')
+    }
+
+    const friendship = createFriendship(input, newId())
+    current.friendships = [...current.friendships, friendship]
+    persist()
+    return friendship
+  },
+
+  respondFriendship(id: string, userId: string, accept: boolean): Friendship {
+    const current = load()
+    const found = current.friendships.find((item) => item.id === id)
+
+    if (!found) throw new DomainError('Esse pedido não existe mais.')
+    // A mesma regra da RLS: só quem recebeu responde. Quem pediu aprovando o
+    // próprio pedido seria a forma mais óbvia de furar o consentimento.
+    if (found.addresseeId !== userId) throw new DomainError('Só quem recebeu o pedido pode responder.')
+
+    const updated: Friendship = {
+      ...found,
+      status: accept ? 'aceita' : 'recusada',
+      respondedAt: new Date(),
+    }
+    current.friendships = current.friendships.map((item) => (item.id === id ? updated : item))
+    persist()
+    return updated
+  },
+
+  removeFriendship(id: string, userId: string): void {
+    const current = load()
+    const found = current.friendships.find((item) => item.id === id)
+    if (!found) return
+    if (found.requesterId !== userId && found.addresseeId !== userId) {
+      throw new DomainError('Essa amizade não é sua.')
+    }
+    current.friendships = current.friendships.filter((item) => item.id !== id)
+    persist()
+  },
+
+  people(ids: readonly string[]): CircleAuthor[] {
+    const wanted = new Set(ids)
+    return DEMO_PEOPLE.filter((person) => wanted.has(person.id))
+  },
+
+  searchPeople(userId: string, term: string): CircleAuthor[] {
+    const needle = term.trim().toLowerCase()
+    if (needle.length < 2) return []
+    return DEMO_PEOPLE.filter(
+      (person) =>
+        person.id !== userId &&
+        (person.name.toLowerCase().includes(needle) ||
+          person.handle.toLowerCase().includes(needle)),
+    )
+  },
+
+  setEventVisibility(id: string, userId: string, visibility: JourneyVisibility): JourneyEvent {
+    const current = load()
+    const found = current.journeyEvents.find((item) => item.id === id)
+
+    if (!found) throw new DomainError('Esse momento não existe mais.')
+    if (found.userId !== userId) throw new DomainError('Esse momento não é seu.')
+
+    const updated: JourneyEvent = { ...found, visibility }
+    current.journeyEvents = current.journeyEvents.map((item) => (item.id === id ? updated : item))
+    persist()
+    return updated
+  },
+
+  setSupport(eventId: string, userId: string, supported: boolean): void {
+    const current = load()
+    const key = `${eventId}::${userId}`
+    current.supports = supported
+      ? [...new Set([...current.supports, key])]
+      : current.supports.filter((item) => item !== key)
+    persist()
+  },
+
+  supportsOf(eventId: string): string[] {
+    return load()
+      .supports.filter((item) => item.startsWith(`${eventId}::`))
+      .map((item) => item.slice(eventId.length + 2))
+  },
+
   /** Zera tudo, sem seed: é o caminho pra testar o onboarding de conta nova. */
   clear(): void {
     const profile = load().profile
@@ -1034,7 +1286,11 @@ export const demoStore = {
       checkIns: [],
       wins: [],
       weeklyReviews: [],
-      journeyEvents: [],
+      // O Círculo sobrevive ao "recomeçar do zero": ele zera o SEU progresso,
+      // não a lista de gente que você conhece.
+      journeyEvents: friendMoments(dayKeyOf(new Date())),
+      friendships: seedFriendships(),
+      supports: [],
     }
     persist()
   },

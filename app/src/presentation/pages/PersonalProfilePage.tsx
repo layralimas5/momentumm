@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { activityType } from '@/domain/entities/activity-type'
+import { belongsInCircle } from '@/domain/entities/circle-feed'
 import { countsAsDone } from '@/domain/entities/habit'
 import { formatDayLabel, startOfWeek } from '@/domain/entities/day'
 import {
   JOURNEY_EVENT_TYPE_LABELS,
   type JourneyEvent,
+  type JourneyVisibility,
 } from '@/domain/entities/journey-event'
 import { MOMENTUM_LEVEL_LABELS, MOMENTUM_WINDOW_DAYS } from '@/domain/entities/momentum'
 import { nextMilestones, type MilestoneTotals } from '@/domain/entities/milestone'
@@ -18,10 +20,12 @@ import { Icon } from '@/presentation/components/ui/Icon'
 import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { Panel, PanelHeader, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
 import { Stat, StatGrid } from '@/presentation/components/ui/Stat'
+import { MobileShortcuts } from '@/presentation/components/mobile/MobileShortcuts'
 import { ProfileEditor } from '@/presentation/profile/ProfileEditor'
 import { ShareButton } from '@/presentation/share/ShareButton'
 import { useDashboard } from '@/presentation/planner/use-dashboard'
 import { usePlanner } from '@/presentation/planner/use-planner'
+import { cn } from '@/shared/lib/cn'
 import { PageHeader } from './PageHeader'
 
 /**
@@ -277,7 +281,7 @@ export function PersonalProfilePage() {
         <PanelHeader
           title="Progresso recente"
           icon="jornada"
-          hint="Os momentos que o app registrou sozinho conforme você avançou."
+          hint="Registrados sozinhos conforme você avançou. Tudo privado até você escolher mostrar."
         />
 
         {recent.length === 0 ? (
@@ -290,7 +294,7 @@ export function PersonalProfilePage() {
         ) : (
           <ul className="mt-4 flex flex-col divide-y divide-line">
             {recent.map((event) => (
-              <li key={event.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+              <li key={event.id} className="flex flex-wrap items-center gap-3 py-3 first:pt-0 last:pb-0">
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm text-ink">{event.title}</span>
                   <span className="mt-0.5 flex flex-wrap items-center gap-2">
@@ -301,11 +305,14 @@ export function PersonalProfilePage() {
                   </span>
                 </span>
                 <MomentumDelta event={event} />
+                <CircleToggle event={event} onChange={planner.setEventVisibility} />
               </li>
             ))}
           </ul>
         )}
       </Panel>
+
+      <MobileShortcuts />
 
       {/*
         O aviso de privacidade fecha a página de propósito. Enquanto o produto
@@ -320,6 +327,47 @@ export function PersonalProfilePage() {
         </span>
       </p>
     </div>
+  )
+}
+
+/**
+ * Mostrar (ou não) esse momento pro círculo.
+ *
+ * É AQUI que um momento deixa de ser privado, e em nenhum outro lugar: não
+ * existe compartilhamento automático, nem "compartilhar tudo", nem uma
+ * preferência que decide por antecipação. Cada momento é uma escolha.
+ *
+ * O botão só aparece nos tipos que o feed aceita. Oferecer "mostrar no círculo"
+ * num hábito solto faria a pessoa marcar, não ver aparecer e concluir que
+ * quebrou — quando na verdade o produto decidiu que hábito avulso não é assunto
+ * de feed.
+ */
+function CircleToggle({
+  event,
+  onChange,
+}: {
+  readonly event: JourneyEvent
+  readonly onChange: (id: string, visibility: JourneyVisibility) => Promise<void>
+}) {
+  if (!belongsInCircle(event.type)) return null
+
+  const shared = event.visibility === 'amigos'
+
+  return (
+    <button
+      type="button"
+      aria-pressed={shared}
+      onClick={() => void onChange(event.id, shared ? 'privada' : 'amigos')}
+      className={cn(
+        'inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors',
+        shared
+          ? 'border-brand/40 bg-brand-dim/40 text-brand-ink'
+          : 'border-line text-ink-faint hover:border-line-hi hover:text-ink-muted',
+      )}
+    >
+      <Icon name={shared ? 'jornada' : 'cadeado'} className="size-3.5" />
+      {shared ? 'No círculo' : 'Só eu'}
+    </button>
   )
 }
 

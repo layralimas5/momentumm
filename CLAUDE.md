@@ -63,7 +63,7 @@ que existir base. Feed vazio afasta usuário.
 Fase 1 em pé, em `app/`. Roda em **modo demo** sem configurar nada (dados em
 `localStorage`) e vira contas reais ao preencher `.env.local` com o Supabase.
 
-Pronto: domínio completo com 316 testes, quatro migrations com RLS, repositórios demo e
+Pronto: domínio completo com 328 testes, quatro migrations com RLS, repositórios demo e
 Supabase, auth com rota protegida, registro rápido, cronômetro de sessão, streak
 dos últimos 7 dias, histórico com filtro por eixo, metas com progresso e perfil
 editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
@@ -289,6 +289,57 @@ Ainda **não existe** feed, amigos, seguidores, curtida, comentário, ranking ne
 comunidade, e o perfil termina dizendo isso em voz alta: nada ali é público, e
 compartilhar gera uma imagem no aparelho, não uma publicação.
 
+### Círculo de amigos
+
+A primeira camada social, e ela entra com o freio puxado.
+
+**Amizade, não seguidor.** Uma linha por par, combinada dos dois lados. Duas
+linhas espelhadas exigiriam escrever nas duas pra aceitar, e uma falha no meio
+deixaria o par em desacordo consigo mesmo — A achando que são amigos e B não.
+Seguidor traria junto o que o produto não quer: audiência, alcance e a pergunta
+"quantos me seguem".
+
+**Nada vaza por padrão.** Momento nasce `privada` e só sai daí por um toque em
+"Só eu / No círculo", na lista de momentos do próprio perfil. Não existe
+compartilhamento automático, nem "compartilhar tudo", nem preferência que decide
+por antecipação. `setEventVisibility` é a única porta, e ela só é chamada por
+esse botão.
+
+**O feed é curado por regra, não por algoritmo.** `circle-feed` define os cinco
+tipos que viram assunto entre amigos: rotina, objetivo (avanço e conclusão),
+marco, review e retomada. Hábito e dia ficam de fora — cinco hábitos por dia
+vezes dez amigos são cinquenta linhas diárias, e feed que enche é feed que
+ninguém lê. A mesma lista decide o que PODE ser compartilhado: momento que não
+apareceria no feed não oferece o botão.
+
+**Momentum aparece como variação, nunca como pontuação.** "+7" no card, jamais
+"84". O score é a comparação da pessoa com ela mesma; exibi-lo absoluto num feed
+monta a tabela de classificação que o produto recusa, mesmo sem nunca chamar de
+tabela. Pelo mesmo motivo o perfil do amigo mostra só os momentos que ele
+compartilhou — sem objetivos, hábitos, notas, constância ou score.
+
+**Um gesto só: apoio.** Curtida com seis emojis vira métrica de popularidade, e
+popularidade entre pessoas tentando mudar de vida é o começo do ranking. Uma
+reação, sem notificação e sem contagem em perfil.
+
+Migration `0009_circle.sql`: `friendships` com índice único por par
+(least/greatest, senão A→B e B→A seriam duas amizades entre as mesmas duas
+pessoas), RLS que só deixa o destinatário aceitar, `journey_event_supports`, e
+uma política ADICIONAL de leitura em `journey_events` pra `visibility = 'amigos'`
+com amizade aceita. A checagem passa por `are_friends`, uma função
+`security definer` com `search_path` fixo: sem ela, a política de uma tabela
+consultaria a RLS da outra, o que custa caro e abre porta pra recursão.
+
+`comunidade` e `publica` seguem sem leitor nenhum — alcance que ninguém
+consegue conferir na interface é alcance que não deveria existir no banco.
+
+No modo demo existem três pessoas de fábrica (dois amigos aceitos e um pedido
+esperando resposta): o Círculo só dá pra conferir com os olhos se houver com
+quem tê-lo.
+
+**Não implementado:** comentário, seguidor, comunidade pública, grupo, chat,
+desafio e ranking.
+
 ### A jornada principal
 
 O produto é um ciclo de três telas, nessa ordem:
@@ -394,6 +445,6 @@ Quando incomodar, trocar por import dinâmico dentro do `container`.
 cd app
 npm install
 npm run dev     # modo demo, sem configurar nada
-npm test        # 316 testes de domínio
+npm test        # 328 testes de domínio
 npm run build
 ```

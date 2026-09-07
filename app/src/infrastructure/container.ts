@@ -4,6 +4,7 @@ import type { ActivityRepository } from '@/domain/repositories/activity-reposito
 import type { ActivityTypeRepository } from '@/domain/repositories/activity-type-repository'
 import type { CheckInRepository } from '@/domain/repositories/checkin-repository'
 import type { GoalRepository } from '@/domain/repositories/goal-repository'
+import type { FriendshipRepository } from '@/domain/repositories/friendship-repository'
 import type { HabitRepository } from '@/domain/repositories/habit-repository'
 import type { JourneyEventRepository } from '@/domain/repositories/journey-event-repository'
 import type { ObjectiveRepository } from '@/domain/repositories/objective-repository'
@@ -20,6 +21,7 @@ import {
   DemoAuthService,
   DemoCheckInRepository,
   DemoGoalRepository,
+  DemoFriendshipRepository,
   DemoHabitRepository,
   DemoJourneyEventRepository,
   DemoObjectiveRepository,
@@ -35,6 +37,7 @@ import {
   SupabaseAuthService,
   SupabaseCheckInRepository,
   SupabaseGoalRepository,
+  SupabaseFriendshipRepository,
   SupabaseHabitRepository,
   SupabaseJourneyEventRepository,
   SupabaseObjectiveRepository,
@@ -65,6 +68,8 @@ export interface Container {
    * vão ler depois — nenhum deles fala com hábito ou objetivo direto.
    */
   readonly journeyEvents: JourneyEventRepository
+  /** O Círculo: amizades e a busca por gente. */
+  readonly friendships: FriendshipRepository
   /**
    * Momentumm AI. Hoje é sempre a implementação simulada: não existe endpoint
    * de IA ainda, e chave de LLM não pode viver no frontend. Quando o endpoint
@@ -90,6 +95,7 @@ export const container: Container = isDemoMode
       wins: new DemoWinRepository(),
       weeklyReviews: new DemoWeeklyReviewRepository(),
       journeyEvents: new DemoJourneyEventRepository(),
+      friendships: new DemoFriendshipRepository(),
       ai: new SimulatedAiService(),
       demo: true,
     }
@@ -107,6 +113,7 @@ export const container: Container = isDemoMode
       wins: new SupabaseWinRepository(),
       weeklyReviews: new SupabaseWeeklyReviewRepository(),
       journeyEvents: new SupabaseJourneyEventRepository(),
+      friendships: new SupabaseFriendshipRepository(),
       ai: new SimulatedAiService(),
       demo: false,
     }

@@ -5,7 +5,11 @@ import type { CheckIn, NewCheckInInput } from '@/domain/entities/checkin'
 import type { DayKey } from '@/domain/entities/day'
 import type { Goal, GoalProgress, NewGoalInput } from '@/domain/entities/goal'
 import type { Habit, HabitLog, HabitStatus, NewHabitInput } from '@/domain/entities/habit'
-import type { JourneyEvent, NewJourneyEventInput } from '@/domain/entities/journey-event'
+import type {
+  JourneyEvent,
+  JourneyVisibility,
+  NewJourneyEventInput,
+} from '@/domain/entities/journey-event'
 import type { WeeklyReview, WeeklyReviewDraft } from '@/domain/entities/weekly-review'
 import type {
   NewObjectiveInput,
@@ -138,6 +142,12 @@ export interface PlannerState {
    * lançar: um evento perdido nunca pode derrubar a ação que o gerou.
    */
   recordJourneyEvent(input: Omit<NewJourneyEventInput, 'userId'>): Promise<void>
+
+  /**
+   * Muda quem vê um momento. Única porta pra sair do privado, e ela só é
+   * chamada por um toque da pessoa.
+   */
+  setEventVisibility(id: string, visibility: JourneyVisibility): Promise<void>
 
   reload(): Promise<void>
 }

@@ -16,9 +16,16 @@ import {
   type NewPlanStageInput,
   type PlanStage,
 } from '@/domain/entities/plan-stage'
+import type { CircleAuthor, CircleFeedItem } from '@/domain/entities/circle-feed'
+import {
+  createFriendship,
+  type Friendship,
+  type NewFriendshipInput,
+} from '@/domain/entities/friendship'
 import {
   createJourneyEvent,
   type JourneyEvent,
+  type JourneyVisibility,
   type NewJourneyEventInput,
 } from '@/domain/entities/journey-event'
 import { createTask, type NewTaskInput, type Task } from '@/domain/entities/task'
@@ -55,6 +62,7 @@ import type {
   TaskRepository,
   TaskUpdate,
 } from '@/domain/repositories/task-repository'
+import type { FriendshipRepository } from '@/domain/repositories/friendship-repository'
 import type { JourneyEventRepository } from '@/domain/repositories/journey-event-repository'
 import type { WeeklyReviewRepository } from '@/domain/repositories/weekly-review-repository'
 import type { WinRepository } from '@/domain/repositories/win-repository'
@@ -63,6 +71,8 @@ import { supabase } from './client'
 import {
   toActivity,
   toCheckIn,
+  toCircleAuthor,
+  toFriendship,
   toJourneyEvent,
   toCustomAxis,
   toGoal,
@@ -879,6 +889,121 @@ export class SupabaseJourneyEventRepository implements JourneyEventRepository {
     return (data ?? []).map(toJourneyEvent)
   }
 
+  /**
+   * O feed do Círculo.
+   *
+   * Nenhum filtro de amizade na consulta: quem decide o que esta pessoa pode
+   * ler é a RLS da migration 0009. Repetir a regra aqui criaria dois lugares
+   * onde ela pode divergir, e o que valeria de verdade seria sempre o do banco.
+   * O filtro daqui existe só pra não trazer os próprios momentos de volta.
+   */
+  async listCircleFeed(userId: string): Promise<CircleFeedItem[]> {
+    const { data, error } = await supabase()
+      .from('journey_events')
+      .select('*')
+      .eq('visibility', 'amigos')
+      .neq('user_id', userId)
+      .order('completed_at', { ascending: false })
+      .limit(60)
+
+    if (error) fail(error, 'carregar o círculo')
+    return this.decorate((data ?? []).map(toJourneyEvent), userId)
+  }
+
+  async listByAuthor(userId: string, authorId: string): Promise<CircleFeedItem[]> {
+    const { data, error } = await supabase()
+      .from('journey_events')
+      .select('*')
+      .eq('user_id', authorId)
+      .eq('visibility', 'amigos')
+      .order('completed_at', { ascending: false })
+      .limit(40)
+
+    if (error) fail(error, 'carregar os momentos dessa pessoa')
+    return this.decorate((data ?? []).map(toJourneyEvent), userId)
+  }
+
+  /**
+   * Junta autor e apoio aos eventos.
+   *
+   * Duas consultas pro lote inteiro, não duas por linha: um feed de sessenta
+   * momentos faria cento e vinte viagens ao banco se cada card fosse buscar o
+   * próprio autor.
+   */
+  private async decorate(
+    events: readonly JourneyEvent[],
+    userId: string,
+  ): Promise<CircleFeedItem[]> {
+    if (events.length === 0) return []
+
+    const authorIds = [...new Set(events.map((event) => event.userId))]
+    const eventIds = events.map((event) => event.id)
+
+    const [people, supports] = await Promise.all([
+      supabase().from('profiles').select('id, name, handle, avatar_url').in('id', authorIds),
+      supabase()
+        .from('journey_event_supports')
+        .select('event_id, user_id')
+        .in('event_id', eventIds),
+    ])
+
+    if (people.error) fail(people.error, 'carregar quem publicou')
+    if (supports.error) fail(supports.error, 'carregar os apoios')
+
+    const byId = new Map(
+      (people.data ?? []).map((row) => {
+        const author = toCircleAuthor(row)
+        return [author.id, author] as const
+      }),
+    )
+
+    const rows = supports.data ?? []
+
+    return events.flatMap((event) => {
+      const author = byId.get(event.userId)
+      // Autor que a RLS não deixa ler é autor que não deveria estar no feed:
+      // some da lista em vez de virar um card sem nome.
+      if (!author) return []
+
+      const mine = rows.filter((row) => row.event_id === event.id)
+      return [
+        {
+          event,
+          author,
+          supports: mine.length,
+          supportedByMe: mine.some((row) => row.user_id === userId),
+        },
+      ]
+    })
+  }
+
+  async setVisibility(
+    id: string,
+    userId: string,
+    visibility: JourneyVisibility,
+  ): Promise<JourneyEvent> {
+    const { data, error } = await supabase()
+      .from('journey_events')
+      .update({ visibility })
+      .eq('id', id)
+      .eq('user_id', userId)
+      .select('*')
+      .single()
+
+    if (error) fail(error, 'mudar quem vê esse momento')
+    return toJourneyEvent(data)
+  }
+
+  async support(eventId: string, userId: string, supported: boolean): Promise<void> {
+    const table = supabase().from('journey_event_supports')
+
+    const { error } = supported
+      ? await table.upsert({ event_id: eventId, user_id: userId })
+      : await table.delete().eq('event_id', eventId).eq('user_id', userId)
+
+    if (error) fail(error, 'registrar o apoio')
+  }
+
   async record(input: NewJourneyEventInput): Promise<JourneyEvent> {
     const draft = createJourneyEvent(input, crypto.randomUUID())
 
@@ -912,5 +1037,111 @@ export class SupabaseJourneyEventRepository implements JourneyEventRepository {
 
     if (error) fail(error, 'salvar o momento da jornada')
     return toJourneyEvent(data)
+  }
+}
+
+/**
+ * Amizades.
+ *
+ * A leitura traz TODAS as linhas em que a pessoa aparece — aceitas, pendentes
+ * e recusadas — porque as três importam na tela: amigo na lista, pedido
+ * esperando resposta, e recusado pra a busca não oferecer de novo quem já
+ * disse não.
+ */
+export class SupabaseFriendshipRepository implements FriendshipRepository {
+  async listByUser(userId: string): Promise<Friendship[]> {
+    const { data, error } = await supabase()
+      .from('friendships')
+      .select('*')
+      .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
+      .order('created_at', { ascending: false })
+
+    if (error) fail(error, 'carregar teu círculo')
+    return (data ?? []).map(toFriendship)
+  }
+
+  async listPeople(ids: readonly string[]): Promise<CircleAuthor[]> {
+    if (ids.length === 0) return []
+
+    const { data, error } = await supabase()
+      .from('profiles')
+      .select('id, name, handle, avatar_url')
+      .in('id', [...ids])
+
+    if (error) fail(error, 'carregar as pessoas do círculo')
+    return (data ?? []).map(toCircleAuthor)
+  }
+
+  async search(userId: string, term: string): Promise<CircleAuthor[]> {
+    const needle = term.trim()
+    // Duas letras é o piso: com uma, a busca devolveria metade da base e não
+    // ajudaria ninguém a achar quem procura.
+    if (needle.length < 2) return []
+
+    /*
+      O filtro do PostgREST é uma STRING, com vírgula e parêntese como
+      separadores. Deixar passar o que a pessoa digitou não seria injeção de
+      SQL, mas seria uma consulta que ela controla — e o `%` transformaria
+      qualquer busca num "traz todo mundo".
+    */
+    const escaped = needle.replace(/[%_,().*]/g, '')
+    if (escaped.length < 2) return []
+
+    const { data, error } = await supabase()
+      .from('profiles')
+      .select('id, name, handle, avatar_url')
+      .or(`name.ilike.%${escaped}%,handle.ilike.%${escaped}%`)
+      .neq('id', userId)
+      .limit(20)
+
+    if (error) fail(error, 'buscar pessoas')
+    return (data ?? []).map(toCircleAuthor)
+  }
+
+  async request(input: NewFriendshipInput): Promise<Friendship> {
+    const draft = createFriendship(input, crypto.randomUUID())
+
+    const { data, error } = await supabase()
+      .from('friendships')
+      .insert({
+        requester_id: draft.requesterId,
+        addressee_id: draft.addresseeId,
+        status: draft.status,
+      })
+      .select('*')
+      .single()
+
+    if (error) {
+      if (error.code === UNIQUE_VIOLATION) {
+        throw new DomainError('Vocês já têm um pedido em aberto ou uma amizade.')
+      }
+      fail(error, 'enviar o pedido')
+    }
+    return toFriendship(data)
+  }
+
+  async respond(id: string, userId: string, accept: boolean): Promise<Friendship> {
+    // O filtro pelo destinatário é redundante com a RLS de propósito: a
+    // política é quem garante, e o filtro é quem deixa o erro compreensível.
+    const { data, error } = await supabase()
+      .from('friendships')
+      .update({ status: accept ? 'aceita' : 'recusada', responded_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('addressee_id', userId)
+      .select('*')
+      .single()
+
+    if (error) fail(error, 'responder o pedido')
+    return toFriendship(data)
+  }
+
+  async remove(id: string, userId: string): Promise<void> {
+    const { error } = await supabase()
+      .from('friendships')
+      .delete()
+      .eq('id', id)
+      .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
+
+    if (error) fail(error, 'desfazer a amizade')
   }
 }

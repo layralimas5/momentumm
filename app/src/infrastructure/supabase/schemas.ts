@@ -16,6 +16,8 @@ import {
   type HabitIcon,
   type HabitLog,
 } from '@/domain/entities/habit'
+import type { CircleAuthor } from '@/domain/entities/circle-feed'
+import { FRIENDSHIP_STATUSES, type Friendship } from '@/domain/entities/friendship'
 import {
   JOURNEY_EVENT_SOURCES,
   JOURNEY_EVENT_TYPES,
@@ -543,5 +545,48 @@ export function toJourneyEvent(row: unknown): JourneyEvent {
     day: parseDayKey(parsed.day.slice(0, 10)),
     createdAt: new Date(parsed.created_at),
     completedAt: parsed.completed_at ? new Date(parsed.completed_at) : null,
+  }
+}
+
+const friendshipRowSchema = z.object({
+  id: z.string(),
+  requester_id: z.string(),
+  addressee_id: z.string(),
+  status: z.enum(FRIENDSHIP_STATUSES),
+  created_at: z.string(),
+  responded_at: z.string().nullable(),
+})
+
+export function toFriendship(row: unknown): Friendship {
+  const parsed = parseOrThrow(friendshipRowSchema, row, 'amizade')
+  return {
+    id: parsed.id,
+    requesterId: parsed.requester_id,
+    addresseeId: parsed.addressee_id,
+    status: parsed.status,
+    createdAt: new Date(parsed.created_at),
+    respondedAt: parsed.responded_at ? new Date(parsed.responded_at) : null,
+  }
+}
+
+/*
+  O cartão de visita de quem aparece no Círculo. É o perfil recortado de
+  propósito: buscar alguém pra adicionar não precisa trazer visibilidade
+  padrão, plano da conta nem data de criação.
+*/
+const circleAuthorRowSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  handle: z.string(),
+  avatar_url: z.string().nullable(),
+})
+
+export function toCircleAuthor(row: unknown): CircleAuthor {
+  const parsed = parseOrThrow(circleAuthorRowSchema, row, 'pessoa do círculo')
+  return {
+    id: parsed.id,
+    name: parsed.name,
+    handle: parsed.handle,
+    avatarUrl: parsed.avatar_url,
   }
 }

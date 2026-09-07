@@ -25,6 +25,7 @@ import {
 import {
   sortEventsByRecent,
   type JourneyEvent,
+  type JourneyVisibility,
   type NewJourneyEventInput,
 } from '@/domain/entities/journey-event'
 import { limitsOf } from '@/domain/entities/plan'
@@ -358,6 +359,32 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       }
     },
     [user],
+  )
+
+  /**
+   * Muda quem vê um momento.
+   *
+   * É a ÚNICA porta pra um evento deixar de ser privado, e ela só é chamada
+   * onde a pessoa toca. Nenhuma regra do app promove visibilidade sozinha —
+   * nem o gravador, nem o Share Studio, nem aceitar uma amizade.
+   */
+  const setEventVisibility = useCallback(
+    async (id: string, visibility: JourneyVisibility) => {
+      if (!user) return
+
+      await mutate(
+        (current) => ({
+          ...current,
+          journeyEvents: current.journeyEvents.map((event) =>
+            event.id === id ? { ...event, visibility } : event,
+          ),
+        }),
+        async () => {
+          await container.journeyEvents.setVisibility(id, user.id, visibility)
+        },
+      )
+    },
+    [user, mutate],
   )
 
   const completeObjective = useCallback(
@@ -1017,6 +1044,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       removeActivity,
       createAxis,
       recordJourneyEvent,
+      setEventVisibility,
       createObjective,
       updateObjective,
       archiveObjective,
@@ -1063,6 +1091,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       removeActivity,
       createAxis,
       recordJourneyEvent,
+      setEventVisibility,
       createObjective,
       updateObjective,
       archiveObjective,
