@@ -86,7 +86,7 @@ Entidades novas (`app/src/domain/entities/`):
 - `task` — a ação que liga meta a movimento. Uma única **prioridade principal**
   por dia, com versão mínima pra dia ruim
 - `momentum` — pontuação de 0 a 100 com classificação, comparação com os 7 dias
-  anteriores, explicação e recomendação. Constância pesa mais que volume
+  anteriores, explicação e recomendação. Quatro fatores (ver abaixo)
 - `week` — série de sete dias mais a conclusão escrita
 - `insight` — regras determinísticas sobre os dados reais. Sem padrão detectado
   não há insight: nada de frase motivacional genérica
@@ -128,9 +128,9 @@ Insight → Ajuste.**
   (opcional: hábito que atravessa o plano não deve ser recriado a cada fase)
 - Ação sem objetivo é legítima e vira **caixa de entrada**: ela não empurra
   progresso nenhum até ganhar destino, e o plano cobra isso
-- `momentum` ganhou três fatores — plano cumprido (atraso e adiamento),
-  revisões e avanço dos objetivos. Todos **neutros** quando não há o que
-  cobrar: conta nova não perde ponto por rotina que ainda não teve
+- `momentum` lê o plano: o avanço dos objetivos é um dos quatro fatores do
+  score, e ele fica **neutro** quando não há plano montado — conta nova não
+  perde ponto por uma etapa que ela ainda não criou
 - `insight` ganhou oito regras que leem etapa, peso e previsão (gargalo, ritmo
   contra prazo, ação que destrava a etapa seguinte, semana maior que a
   capacidade, queda de constância, hábito que puxa execução, caixa de entrada,
@@ -191,6 +191,66 @@ isso; recalcular por tela traz o problema de volta.
 
 Migration `0007_plan_stages.sql`: aditiva, com RLS, trigger que recusa etapa de
 outro objetivo e trigger que carimba a data de conclusão.
+
+### O Momentum Score
+
+Quatro fatores, cada um normalizado de 0 a 100 antes de entrar na média:
+**consistência recente (35%)**, **execução das prioridades (30%)**, **progresso
+nos objetivos (20%)** e **capacidade de retomada (15%)**. Os pesos vivem em
+`DEFAULT_MOMENTUM_WEIGHTS` e são a única coisa a mexer numa recalibragem.
+
+**A janela é de 28 dias, com cada um dos últimos 7 valendo o triplo dos
+anteriores.** Sete dias sozinhos fazem o número virar termômetro de humor — uma
+gripe apaga um mês de trabalho. Vinte e oito sozinhos fazem o contrário: a
+pessoa muda hoje e o número não reage, então ele deixa de servir pra decidir
+alguma coisa. Com o peso, a semana atual responde por metade do score.
+
+**O que conta é impacto, não quantidade** (`momentum-impact`). Cada item vale 1,
+2 ou 3: prioridade principal e ação de alta dentro de um objetivo valem 3,
+ação de objetivo vale 2, tarefa comum vale 1. Hábito tem **teto em 2** — são
+cinco marcações por dia contra uma, e repetição não pode competir com a ação que
+destrava a etapa. Além disso, hábitos e tarefas comuns rendem no máximo 2 pontos
+por dia cada, e o dia inteiro satura em 4: sem esses tetos, criar hábitos fáceis
+vira a maneira mais rápida de subir o número, que é o comportamento oposto ao
+que o produto defende.
+
+**O crédito de um dia é meio presença, meio tamanho.** Aparecer vale 0,5; o
+impacto do que saiu vale os outros 0,5. Só o impacto faria um dia de leitura
+curta valer um quarto de um dia normal — e a mensagem do produto é que
+constância ganha de volume. Só a presença faria marcar um hábito de dois minutos
+valer o mesmo que fechar a etapa.
+
+**Falhar um dia custa pouco e nunca zera**: com 28 dias na conta, o pior dia
+possível tira poucos pontos. E a retomada mede o TEMPO até o retorno — voltar em
+até dois dias devolve nota cheia, quatro dias devolve 0,6, mais de dez devolve
+0,1. Quem não parou não ganha nota cheia de graça: sem pausa não há retomada pra
+medir, e o fator herda a consistência.
+
+**A janela nunca começa antes do primeiro registro da conta, e nunca é menor que
+sete dias.** O primeiro corte impede medir uma conta de duas semanas contra 14
+dias em que ela não existia; o piso impede que "registrei hoje" empate com
+"registrei a semana toda" — e é no começo que a constância mais precisa
+significar alguma coisa. Abaixo de sete dias de história, `hasEnoughData` é
+falso e a tela diz que o número ainda está se formando, em vez de vender
+precisão que não existe.
+
+**Fator sem base herda a consistência em vez de zerar**, e `basis` diz quais
+foram medidos de verdade — o detalhamento avisa em voz alta. Zerar o fator de
+objetivos de quem não montou plano seria cobrar uma etapa que não existe.
+
+O dashboard mostra número, classificação, variação contra a semana anterior,
+curva dos últimos 14 dias, o que subiu e o que caiu (em pontos DO SCORE, já
+ponderados) e uma frase curta que cita o fator que mais mexeu. "Entender meu
+score" abre o mesmo diálogo no desktop e no celular (`MomentumDialog`), com os
+quatro fatores, o peso de cada um e o que cada um mede.
+
+Os pontos por fator são repartidos pra somar exatamente o score
+(`distributePoints`): um detalhamento que soma 47 embaixo de um número 46 ensina
+que a conta da tela não é confiável.
+
+`momentumHistory` recalcula o score REAL de cada dia pela mesma função, em vez
+de guardar uma série à parte — histórico separado é como a curva começa a
+discordar do número grande no dia seguinte a qualquer ajuste de peso.
 
 ### Share Studio e a camada de momentos
 

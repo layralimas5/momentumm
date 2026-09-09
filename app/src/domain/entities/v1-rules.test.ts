@@ -314,29 +314,62 @@ describe('fator de retomada', () => {
     }
   }
 
-  it('quem parou e voltou pontua na retomada', () => {
-    // Move, para três dias, e volta nos dois últimos.
+  /*
+    A retomada mede TEMPO de volta, não o fato de ter voltado. Voltar no dia
+    seguinte devolve tudo; voltar depois de uma semana devolve pouco. É a
+    diferença entre premiar quem não deixou a rotina morrer e premiar qualquer
+    um que reabriu o app.
+  */
+  it('voltar rápido devolve a nota cheia', () => {
+    // Move, para dois dias, e volta.
     const activities = [
-      activityOn(addDays(TODAY, -6), 'a1'),
-      activityOn(addDays(TODAY, -1), 'a2'),
-      activityOn(TODAY, 'a3'),
+      activityOn(addDays(TODAY, -3), 'a1'),
+      activityOn(TODAY, 'a2'),
     ]
     const score = calculateMomentum({ ...base, activities })
     expect(score.parts.recovery).toBe(1)
   })
 
-  it('quem parou e não voltou não pontua', () => {
-    const activities = [activityOn(addDays(TODAY, -6), 'a1')]
-    const score = calculateMomentum({ ...base, activities })
-    expect(score.parts.recovery).toBe(0)
+  it('quanto maior a pausa, menor a nota do retorno', () => {
+    const curta = calculateMomentum({
+      ...base,
+      activities: [activityOn(addDays(TODAY, -4), 'a1'), activityOn(TODAY, 'a2')],
+    })
+    const longa = calculateMomentum({
+      ...base,
+      activities: [activityOn(addDays(TODAY, -12), 'a1'), activityOn(TODAY, 'a2')],
+    })
+
+    expect(curta.parts.recovery).toBeGreaterThan(longa.parts.recovery)
   })
 
-  it('um único dia perdido não zera a retomada', () => {
+  it('quem parou e não voltou fica no piso, sem zerar', () => {
+    const activities = [activityOn(addDays(TODAY, -6), 'a1')]
+    const score = calculateMomentum({ ...base, activities })
+
+    expect(score.parts.recovery).toBeLessThanOrEqual(0.3)
+    // Zerar aqui ensinaria que sumir uma semana torna o retorno inútil, que é
+    // exatamente a leitura que faz alguém não voltar.
+    expect(score.parts.recovery).toBeGreaterThan(0)
+  })
+
+  it('um único dia perdido não conta como pausa', () => {
     const activities = [0, 1, 3, 4, 5, 6].map((offset) =>
       activityOn(addDays(TODAY, -offset), `a${offset}`),
     )
-    const score = calculateMomentum({ ...base, activities })
-    expect(score.parts.recovery).toBeGreaterThan(0.8)
+    const semFalha = [0, 1, 2, 3, 4, 5, 6].map((offset) =>
+      activityOn(addDays(TODAY, -offset), `b${offset}`),
+    )
+
+    const comFalha = calculateMomentum({ ...base, activities })
+    const cheio = calculateMomentum({ ...base, activities: semFalha })
+
+    // Um dia só não abre pausa: sem pausa não há retomada a medir, e o fator
+    // herda a consistência nos dois casos. A diferença entre eles aparece na
+    // consistência, e é pequena.
+    expect(comFalha.parts.recovery).toBe(comFalha.parts.consistency)
+    expect(cheio.parts.recovery).toBe(cheio.parts.consistency)
+    expect(cheio.value - comFalha.value).toBeLessThan(15)
   })
 
   it('pesos somam 100 pontos', () => {

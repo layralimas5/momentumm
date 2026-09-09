@@ -3,6 +3,7 @@ import { generateInsights, type InsightInput } from '@/domain/entities/insight'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { EmptyState } from '@/presentation/components/ui/States'
 import { Panel, PanelHeader, Tag } from '@/presentation/components/ui/Surface'
+import { MomentumBreakdown } from '@/presentation/components/dashboard/MomentumBreakdown'
 import { UpgradeHint } from '@/presentation/components/dashboard/UpgradeHint'
 import { WeeklyProgressCard } from '@/presentation/components/dashboard/WeeklyProgressCard'
 import { momentumEvent } from '@/domain/share/journey-event-builders'
@@ -107,36 +108,13 @@ export function InsightsPage() {
               id="composicao-titulo"
               title="Como seu momentum é formado"
               icon="insights"
-              hint="Constância pesa mais que volume: sete dias de dez minutos valem mais que um dia de duas horas."
+              hint="Quatro fatores sobre os últimos 28 dias, com a última semana pesando o triplo."
             />
 
-            <dl className="mt-4 flex flex-col gap-3">
-              <Part label="Constância" value={view.momentum.parts.consistency} />
-              <Part label="Hábitos" value={view.momentum.parts.habits} />
-              <Part label="Prioridades" value={view.momentum.parts.priorities} />
-              <Part label="Volume" value={view.momentum.parts.volume} />
-            </dl>
+            <MomentumBreakdown momentum={view.momentum} className="mt-4" />
           </Panel>
         </div>
       </div>
-    </div>
-  )
-}
-
-function Part({ label, value }: { label: string; value: number }) {
-  const percent = Math.round(value * 100)
-  return (
-    <div className="flex items-center gap-3">
-      <dt className="w-28 shrink-0 text-sm text-ink-muted">{label}</dt>
-      <dd className="flex flex-1 items-center gap-3">
-        <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-top">
-          <span
-            className="block h-full rounded-full bg-brand transition-[width] duration-500"
-            style={{ width: `${percent}%` }}
-          />
-        </span>
-        <span className="tabular w-10 shrink-0 text-right text-sm text-ink-faint">{percent}%</span>
-      </dd>
     </div>
   )
 }

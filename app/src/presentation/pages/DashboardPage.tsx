@@ -293,8 +293,10 @@ export function DashboardPage() {
 
         <MomentumStrip
           momentum={view.momentum}
+          history={view.momentumSeries}
+          today={planner.today}
           streak={planner.streak}
-          hasHistory={view.hasHistory}
+          recommendation={view.recommendation}
         />
 
         {view.dayComplete ? <DayCompleteBanner win={view.todayWin} /> : null}

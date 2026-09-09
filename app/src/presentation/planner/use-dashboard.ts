@@ -22,11 +22,12 @@ import {
   type ObjectiveInsightInput,
 } from '@/domain/entities/insight'
 import { planRatioAt } from '@/domain/entities/plan-progress'
-import { MOMENTUM_WINDOW_DAYS } from '@/domain/entities/momentum'
+import { MOMENTUM_HORIZON_DAYS, MOMENTUM_WINDOW_DAYS, momentumHistory } from '@/domain/entities/momentum'
 import {
   calculateMomentum,
   recommendationFor,
   type MomentumInput,
+  type MomentumPoint,
   type MomentumScore,
 } from '@/domain/entities/momentum'
 import { isPending, mainPriorityOf, nextTaskForGoal, supportingTasksOf, type Task } from '@/domain/entities/task'
@@ -136,6 +137,8 @@ export interface DashboardView {
   readonly resumeNote: string | null
   readonly capacity: CapacityProfile
   readonly momentum: MomentumScore
+  /** A evolução do score, um ponto por dia, pros últimos 14 dias. */
+  readonly momentumSeries: readonly MomentumPoint[]
   readonly recommendation: string
   readonly mainPriority: Task | null
   readonly supportingTasks: readonly Task[]
@@ -198,8 +201,11 @@ export function useDashboard(): DashboardView {
     // neutro no momentum em vez de valer zero.
     if (running.length === 0) return {}
 
+    // A janela é a do score (28 dias), não a semana: medir o avanço numa
+    // janela e pontuá-lo em outra faria o fator de objetivos discordar do
+    // período que o próprio detalhamento diz estar olhando.
     const gainSince = (end: DayKey) => {
-      const start = addDays(end, -(MOMENTUM_WINDOW_DAYS - 1))
+      const start = addDays(end, -(MOMENTUM_HORIZON_DAYS - 1))
       const total = running.reduce(
         (sum, view) =>
           sum +
@@ -230,6 +236,13 @@ export function useDashboard(): DashboardView {
   )
 
   const momentum = useMemo(() => calculateMomentum(momentumInput), [momentumInput])
+
+  /*
+    A curva dos últimos 14 dias, calculada pela MESMA função do número grande.
+    Guardar um histórico à parte deixaria a linha discordar do score no dia
+    seguinte a qualquer ajuste de peso.
+  */
+  const momentumSeries = useMemo(() => momentumHistory(momentumInput), [momentumInput])
   const week = useMemo(() => summarizeWeek(momentumInput), [momentumInput])
 
   // Lê a série de trás pra frente, pulando o próprio dia: o buraco que
@@ -516,6 +529,7 @@ export function useDashboard(): DashboardView {
     resumeNote,
     capacity,
     momentum,
+    momentumSeries,
     recommendation: recommendationFor(momentum, capacity),
     mainPriority,
     supportingTasks,

@@ -97,8 +97,10 @@ export function MobileDashboard({
     <div className="flex flex-col gap-7">
       <MomentumStrip
         momentum={view.momentum}
+        history={view.momentumSeries}
+        today={planner.today}
         streak={planner.streak}
-        hasHistory={view.hasHistory}
+        recommendation={view.recommendation}
       />
 
       {view.dayComplete ? (
@@ -177,9 +179,10 @@ export function MobileDashboard({
 
       <MobileMomentum
         momentum={view.momentum}
-        series={view.week.series}
+        history={view.momentumSeries}
+        today={planner.today}
         streak={planner.streak}
-        onOpen={() => navigate('/app/insights')}
+        recommendation={view.recommendation}
       />
 
       {/* Daqui pra baixo é consulta e registro do fim do dia. */}
