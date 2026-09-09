@@ -28,6 +28,7 @@ interface MobileDashboardProps {
   readonly onStartFocus: (task: Task) => void
   readonly onCompleteTask: (task: Task) => Promise<void>
   readonly onPostponeTask: (task: Task) => Promise<void>
+  readonly onBringToToday: (task: Task) => Promise<void>
   readonly onShrinkTask: (task: Task) => Promise<void>
   readonly onApplyInsight: (insight: Insight) => Promise<void>
   readonly onContinueGoal: (goal: GoalInMotion) => void
@@ -45,6 +46,7 @@ interface MobileDashboardProps {
 export function MobileDashboard({
   view,
   onStartFocus,
+  onBringToToday,
   onCompleteTask,
   onPostponeTask,
   onShrinkTask,
@@ -146,7 +148,9 @@ export function MobileDashboard({
       <NextUpCard
         nextUp={view.nextUp}
         mainPriority={view.mainPriority}
+        today={planner.today}
         onStartFocus={onStartFocus}
+        onBringToToday={(task) => void onBringToToday(task)}
       />
 
       <MobileObjectives

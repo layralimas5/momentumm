@@ -242,6 +242,11 @@ export function ReviewPage() {
                       weekEnd: addDays(weekStart, 6),
                       executionRate: computed.execution.rate,
                       habitsDone: computed.execution.habitsDone,
+                      // A semana também tem o que foi feito: ações fechadas e
+                      // dias com movimento. Eram números que a tela mostrava e
+                      // o card resumia a um percentual.
+                      tasksDone: computed.execution.tasksDone,
+                      activeDays: computed.activeDays,
                       focusMinutes: computed.focusMinutes,
                       momentum: dashboard.momentum,
                     })

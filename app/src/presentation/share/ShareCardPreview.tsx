@@ -3,6 +3,7 @@ import {
   SHARE_FORMAT_SPECS,
   SHARE_TEMPLATE_SPECS,
   type ShareCardData,
+  type ShareCompositionId,
   type ShareFormat,
   type ShareTemplateId,
 } from '@/domain/share/share-card'
@@ -12,6 +13,7 @@ import { cn } from '@/shared/lib/cn'
 interface ShareCardPreviewProps {
   readonly data: ShareCardData
   readonly template: ShareTemplateId
+  readonly composition: ShareCompositionId
   readonly format: ShareFormat
   readonly photo?: SharePhoto | null
   readonly className?: string
@@ -33,6 +35,7 @@ interface ShareCardPreviewProps {
 export function ShareCardPreview({
   data,
   template,
+  composition,
   format,
   photo = null,
   className,
@@ -79,8 +82,8 @@ export function ShareCardPreview({
     ctx.setTransform(1, 0, 0, 1, 0, 0)
     const scale = (width * dpr) / spec.width
     ctx.scale(scale, scale)
-    renderShareCard(ctx, data, { template, format, photo })
-  }, [data, template, format, photo, width, spec.height, spec.width])
+    renderShareCard(ctx, data, { template, composition, format, photo })
+  }, [data, template, composition, format, photo, width, spec.height, spec.width])
 
   return (
     /*

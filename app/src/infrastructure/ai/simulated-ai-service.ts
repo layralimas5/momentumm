@@ -183,6 +183,7 @@ function buildTasks(request: AiPlanRequest, steps: readonly string[]): AiTaskSug
     priority: index === 0 ? 'alta' : 'media',
     minimalVersion: null,
     order: index,
+    stepIndex: index,
   }))
 }
 

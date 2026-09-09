@@ -257,6 +257,22 @@ function PlanPreview({
 
     if (!objective) return
 
+    /*
+      As etapas da prévia viram etapas de verdade ANTES das ações: é o vínculo
+      que faz o objetivo nascer com plano em vez de com uma lista. Sem peso
+      declarado, o provider redistribui pra somar 100 — a mesma regra do plano
+      montado na mão.
+    */
+    const stageIds: (string | null)[] = []
+    for (const [index, step] of suggestion.steps.entries()) {
+      const stage = await planner.createStage({
+        objectiveId: objective.id,
+        title: step,
+        order: index,
+      })
+      stageIds.push(stage?.id ?? null)
+    }
+
     if (keepHabits) {
       for (const habit of suggestion.habits) {
         await planner.createHabit({
@@ -280,6 +296,7 @@ function PlanPreview({
         title: task.title,
         description: task.description,
         objectiveId: objective.id,
+        stageId: task.stepIndex === null ? null : (stageIds[task.stepIndex] ?? null),
         axis: draft.axis,
         estimatedMin: task.estimatedMin,
         effort: task.effort,
@@ -313,6 +330,10 @@ function PlanPreview({
 
       <section className="mt-5">
         <h3 className="text-sm font-semibold tracking-wide text-ink-muted uppercase">Etapas</h3>
+        <p className="mt-1 text-xs text-ink-faint">
+          Viram as etapas do plano ao salvar, com peso distribuído igualmente. Cada ação abaixo
+          já nasce dentro da sua.
+        </p>
         <ol className="mt-2 flex flex-col gap-1.5">
           {suggestion.steps.map((step, index) => (
             <li key={step} className="flex gap-2.5 text-sm text-ink-muted">
@@ -371,8 +392,11 @@ function PlanPreview({
                   }
                   className="w-full rounded-md bg-transparent text-sm text-ink transition-colors hover:bg-surface-hi focus:bg-surface-hi"
                 />
-                <p className="mt-0.5 text-xs text-ink-faint">
+                <p className="mt-0.5 truncate text-xs text-ink-faint">
                   {formatDayLabel(task.day, planner.today)} · {task.estimatedMin} min
+                  {task.stepIndex !== null && suggestion.steps[task.stepIndex]
+                    ? ` · Etapa: ${suggestion.steps[task.stepIndex]}`
+                    : ''}
                 </p>
               </div>
 
@@ -418,6 +442,9 @@ function PlanPreview({
                 priority: 'media',
                 minimalVersion: null,
                 order: current.length,
+                // Entra na última etapa: ação escrita no fim da prévia é o
+                // fecho do caminho, e ação sem etapa não empurraria nada.
+                stepIndex: suggestion.steps.length > 0 ? suggestion.steps.length - 1 : null,
               },
             ])
           }

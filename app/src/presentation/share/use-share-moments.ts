@@ -65,6 +65,9 @@ export function useShareMoments(view: DashboardView): readonly ShareMoment[] {
             items: dayItems,
             focusMinutes: view.focusMinutesToday,
             momentum: view.momentum,
+            streakDays: streak.current,
+            habitsDone: view.habitProgress.done,
+            activeDays: view.week.current.activeDays,
           }),
       })
     }
@@ -92,6 +95,7 @@ export function useShareMoments(view: DashboardView): readonly ShareMoment[] {
             items,
             focusMinutes: view.focusMinutesToday,
             momentum: view.momentum,
+            streakDays: streak.current,
           }),
       })
     }

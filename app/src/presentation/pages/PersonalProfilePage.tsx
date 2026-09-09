@@ -10,7 +10,13 @@ import {
   type JourneyVisibility,
 } from '@/domain/entities/journey-event'
 import { MOMENTUM_LEVEL_LABELS, MOMENTUM_WINDOW_DAYS } from '@/domain/entities/momentum'
-import { nextMilestones, type MilestoneTotals } from '@/domain/entities/milestone'
+import {
+  milestoneKindOf,
+  nextMilestones,
+  type MilestoneKind,
+  type MilestoneTotals,
+} from '@/domain/entities/milestone'
+import { membershipLabel, PROFILE_VISIBILITY_LABELS } from '@/domain/entities/profile'
 import { totalMinutes } from '@/domain/entities/activity'
 import { milestoneEvent } from '@/domain/share/journey-event-builders'
 import { useAuth } from '@/presentation/auth/use-auth'
@@ -22,6 +28,7 @@ import { Panel, PanelHeader, ProgressBar, Tag } from '@/presentation/components/
 import { Stat, StatGrid } from '@/presentation/components/ui/Stat'
 import { MobileShortcuts } from '@/presentation/components/mobile/MobileShortcuts'
 import { ProfileEditor } from '@/presentation/profile/ProfileEditor'
+import { ProfileVisibilityPanel } from '@/presentation/profile/ProfileVisibilityPanel'
 import { ShareButton } from '@/presentation/share/ShareButton'
 import { useDashboard } from '@/presentation/planner/use-dashboard'
 import { usePlanner } from '@/presentation/planner/use-planner'
@@ -83,6 +90,16 @@ export function PersonalProfilePage() {
   const running = view.objectives.filter((item) => item.progress.state === 'em-andamento')
   const nextGoal = nextMilestones(totals)[0] ?? null
 
+  /*
+    A consistência em PORCENTAGEM, e não em "5/7".
+
+    A fração é a leitura do dashboard, onde a semana é o assunto e cada dia
+    ainda dá pra recuperar. Aqui a pergunta é outra — "o quanto eu venho
+    sustentando isso" — e a porcentagem é o que responde numa linha só, junto
+    com objetivos ativos e tempo de casa.
+  */
+  const consistency = Math.round((view.momentum.activeDays / MOMENTUM_WINDOW_DAYS) * 100)
+
   if (loading) return <LoadingBlock label="Carregando teu perfil" />
   if (!profile) return <ErrorNote message="Não consegui carregar teu perfil. Recarrega a página." />
 
@@ -127,6 +144,27 @@ export function PersonalProfilePage() {
               {profile.bio ? (
                 <p className="mt-1.5 text-sm text-pretty text-ink-muted">{profile.bio}</p>
               ) : null}
+
+              {/*
+                A linha que resume a pessoa em números, do jeito que ela seria
+                lida em voz alta: momentum, objetivos, consistência e tempo de
+                casa. Os mesmos dados aparecem abertos logo abaixo — aqui eles
+                existem pra caber num olhar, e é por isso que a linha é uma só.
+              */}
+              <p className="mt-2 text-sm text-ink-muted">
+                <span className="font-medium text-ink">Momentum {view.momentum.value}</span>
+                <span className="text-ink-faint"> · </span>
+                {running.length} {running.length === 1 ? 'objetivo ativo' : 'objetivos ativos'}
+                <span className="text-ink-faint"> · </span>
+                {consistency}% de consistência
+                <span className="text-ink-faint"> · </span>
+                {membershipLabel(profile.createdAt, new Date())}
+              </p>
+
+              <p className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-ink-faint">
+                <Icon name="cadeado" className="size-3.5" />
+                {PROFILE_VISIBILITY_LABELS[profile.visibility]}
+              </p>
             </div>
           </div>
         )}
@@ -145,9 +183,9 @@ export function PersonalProfilePage() {
           accent="var(--color-brand)"
         />
         <Stat
-          label="Constância"
-          value={`${view.momentum.activeDays}/${MOMENTUM_WINDOW_DAYS}`}
-          hint="dias com movimento"
+          label="Consistência"
+          value={`${consistency}%`}
+          hint={`${view.momentum.activeDays} de ${MOMENTUM_WINDOW_DAYS} dias com movimento`}
         />
         <Stat
           label="Semanas de progresso"
@@ -230,7 +268,10 @@ export function PersonalProfilePage() {
                     aria-hidden="true"
                     className="grid size-9 shrink-0 place-items-center rounded-lg border border-brand/30 bg-brand-dim/40 text-brand-hi"
                   >
-                    <Icon name="trofeu" className="size-4.5" />
+                    <Icon
+                      name={MILESTONE_ICONS[milestoneKindOf(event.sourceId ?? '')]}
+                      className="size-4.5"
+                    />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium text-ink">
@@ -312,6 +353,8 @@ export function PersonalProfilePage() {
         )}
       </Panel>
 
+      <ProfileVisibilityPanel profile={profile} onSaved={refreshProfile} />
+
       <MobileShortcuts />
 
       {/*
@@ -381,4 +424,20 @@ function MomentumDelta({ event }: { readonly event: JourneyEvent }) {
       {Math.abs(event.momentumChange)}
     </Tag>
   )
+}
+
+/**
+ * Um ícone por espécie de marco.
+ *
+ * O troféu repetido em toda linha achatava conquistas diferentes numa coisa só.
+ * Sequência é fogo, objetivo é alvo, foco é relógio — os mesmos símbolos que
+ * essas ideias já têm no resto do app, e é isso que faz a lista ser lida sem
+ * legenda.
+ */
+const MILESTONE_ICONS: Readonly<Record<MilestoneKind, 'habitos' | 'calendario' | 'fogo' | 'objetivo' | 'relogio'>> = {
+  habitos: 'habitos',
+  dias: 'calendario',
+  sequencia: 'fogo',
+  objetivos: 'objetivo',
+  foco: 'relogio',
 }

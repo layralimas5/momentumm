@@ -1,7 +1,7 @@
-import type { JourneyEventType } from '@/domain/entities/journey-event'
+import type { JourneyEvent } from '@/domain/entities/journey-event'
 import {
   SHARE_FIELD_SPECS,
-  availableFieldsFor,
+  availableFieldsForEvent,
   type ShareField,
   type ShareFieldSet,
 } from '@/domain/share/share-card'
@@ -9,7 +9,7 @@ import { Icon } from '@/presentation/components/ui/Icon'
 import { cn } from '@/shared/lib/cn'
 
 interface VisibilityControlsProps {
-  readonly eventType: JourneyEventType
+  readonly event: JourneyEvent
   readonly fields: ShareFieldSet
   readonly onToggle: (field: ShareField, value: boolean) => void
 }
@@ -22,15 +22,17 @@ interface VisibilityControlsProps {
  * texto escrito por ela. Aqui cada um desses vem com o aviso do que aparece se
  * ligar — a decisão é dela, mas informada.
  *
- * Só aparecem os campos que o tipo de evento suporta. Um toggle que não muda
+ * Só aparecem os campos que ESTE evento consegue mostrar — não os que o tipo
+ * dele suporta em tese. Hábito marcado sem cronômetro não oferece "Duração", e
+ * dia sem sequência não oferece "Sequência de dias": um toggle que não muda
  * nada ensina a pessoa a desconfiar dos outros.
  */
 export function ShareStudioVisibilityControls({
-  eventType,
+  event,
   fields,
   onToggle,
 }: VisibilityControlsProps) {
-  const available = availableFieldsFor(eventType)
+  const available = availableFieldsForEvent(event)
 
   return (
     <ul className="flex flex-col divide-y divide-line rounded-xl border border-line bg-surface-hi/40">

@@ -54,6 +54,15 @@ export interface AiTaskSuggestion {
   readonly priority: Priority
   readonly minimalVersion: string | null
   readonly order: number
+  /**
+   * A etapa a que a ação pertence, pela posição em `steps`. Null é ação sem
+   * etapa: legítima, mas ela não empurra progresso nenhum até ganhar destino.
+   *
+   * É esse índice que faz a etapa da prévia virar etapa de verdade no banco —
+   * sem ele o plano da IA nasceria como lista de tarefas, que é exatamente o
+   * que a hierarquia existe pra evitar.
+   */
+  readonly stepIndex: number | null
 }
 
 export interface AiPlanSuggestion {

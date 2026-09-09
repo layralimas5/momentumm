@@ -52,6 +52,22 @@ export function ObjectiveDetailPage() {
   const paused = view.progress.state === 'pausado'
   const done = view.progress.state === 'concluido'
 
+  /*
+    Os números que esta tela já mostra, indo junto pro card.
+
+    Volume, etapas e prazo são o que responde "o que foi feito" — a
+    porcentagem sozinha diz que o objetivo andou, e não o quanto. Eles saem da
+    MESMA leitura que a página usa, então card e tela nunca discordam.
+  */
+  const objectiveNumbers = {
+    doneValue: view.progress.done,
+    targetValue: objective.target,
+    unitLabel: axis.unitLabel.many,
+    daysLeft: view.progress.daysLeft,
+    stagesDone: view.plan.stages.filter((item) => item.stage.status === 'concluida').length,
+    stagesTotal: view.plan.stages.length,
+  }
+
   return (
     <div className="flex flex-col gap-5">
       <Link
@@ -75,6 +91,7 @@ export function ObjectiveDetailPage() {
                 build={() =>
                   done
                     ? goalCompletedEvent({
+                        ...objectiveNumbers,
                         userId: user.id,
                         today: planner.today,
                         objectiveId: objective.id,
@@ -83,6 +100,7 @@ export function ObjectiveDetailPage() {
                         momentum: dashboard.momentum,
                       })
                     : goalProgressEvent({
+                        ...objectiveNumbers,
                         userId: user.id,
                         today: planner.today,
                         objectiveId: objective.id,
@@ -202,6 +220,18 @@ export function ObjectiveDetailPage() {
               title="Hábitos"
               icon="habitos"
               hint="A repetição que sustenta esse objetivo."
+              action={
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() =>
+                    composer.open('habito', { presetObjectiveId: objective.id })
+                  }
+                >
+                  <Icon name="mais" className="size-4" />
+                  Novo hábito
+                </Button>
+              }
             />
 
             {view.habits.length === 0 ? (

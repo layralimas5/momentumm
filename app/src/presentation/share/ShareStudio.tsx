@@ -3,10 +3,12 @@ import type { DayKey } from '@/domain/entities/day'
 import type { JourneyEvent } from '@/domain/entities/journey-event'
 import { toShareCardData } from '@/domain/share/share-card-adapter'
 import {
+  DEFAULT_SHARE_COMPOSITION,
   DEFAULT_SHARE_FORMAT,
   DEFAULT_SHARE_TEMPLATE,
   defaultFieldsFor,
   type ShareCardData,
+  type ShareCompositionId,
   type ShareField,
   type ShareFieldSet,
   type ShareFormat,
@@ -16,9 +18,8 @@ import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { EmptyState, ErrorNote } from '@/presentation/components/ui/States'
 import { cn } from '@/shared/lib/cn'
-import { ShareCardPreview } from './ShareCardPreview'
+import { ShareCompositionCarousel } from './ShareCompositionCarousel'
 import { ShareStudioControls } from './ShareStudioControls'
-import { ShareStudioFormatSelector } from './ShareStudioFormatSelector'
 import { ShareStudioPhotoPicker } from './ShareStudioPhotoPicker'
 import { ShareStudioVisibilityControls } from './ShareStudioVisibilityControls'
 import { useSharePhoto } from './use-share-photo'
@@ -48,13 +49,17 @@ type Status = 'idle' | 'generating' | 'shared' | 'saved' | 'cancelled'
  * dentro do app, o caminho de "concluí minha rotina" até "postei" deixa de
  * caber em poucos segundos, que é a única métrica que importa aqui.
  *
- * No celular a ordem é preview, formato, templates, privacidade, ações. No
+ * No celular a ordem é preview, fundo, templates, privacidade, ações. No
  * desktop vira duas colunas com o preview fixo à esquerda: personalizar sem ver
  * o resultado é escolher no escuro.
+ *
+ * Não existe escolha de formato: o card é feito pro Story, e um seletor com uma
+ * opção só é uma pergunta que já tem resposta.
  */
 export function ShareStudio({ event, displayName, today, compact }: ShareStudioProps) {
-  const [format, setFormat] = useState<ShareFormat>(DEFAULT_SHARE_FORMAT)
+  const format: ShareFormat = DEFAULT_SHARE_FORMAT
   const [template, setTemplate] = useState<ShareTemplateId>(DEFAULT_SHARE_TEMPLATE)
+  const [composition, setComposition] = useState<ShareCompositionId>(DEFAULT_SHARE_COMPOSITION)
   const [fields, setFields] = useState<ShareFieldSet>(() => defaultFieldsFor(event.type))
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState<string | null>(null)
@@ -75,12 +80,12 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
   )
 
   const analytics = useMemo(
-    () => ({ activity_type: event.type, template, format }),
-    [event.type, template, format],
+    () => ({ activity_type: event.type, template, format, composition }),
+    [event.type, template, format, composition],
   )
 
   useEffect(() => {
-    trackShare('share_studio_opened', { activity_type: event.type, template, format })
+    trackShare('share_studio_opened', { activity_type: event.type, template, composition, format })
     // A dependência é só o momento: incluir template e formato transformaria
     // cada troca de opção numa nova "abertura" e inflaria a métrica.
   }, [event.id])
@@ -99,27 +104,33 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
     [analytics],
   )
 
-  const chooseFormat = useCallback(
-    (next: ShareFormat) => {
-      setFormat(next)
+  const chooseComposition = useCallback(
+    (next: ShareCompositionId) => {
+      setComposition(next)
       setStatus('idle')
-      trackShare('share_format_selected', { ...analytics, format: next })
+      trackShare('share_composition_selected', { ...analytics, composition: next })
     },
     [analytics],
   )
 
   const generate = useCallback(async () => {
-    const blob = await renderToBlob({ data, template, format, photo: background.photo })
+    const blob = await renderToBlob({
+      data,
+      template,
+      composition,
+      format,
+      photo: background.photo,
+    })
     trackShare('share_generated', analytics)
     return blob
-  }, [data, template, format, background.photo, analytics])
+  }, [data, template, composition, format, background.photo, analytics])
 
   const handleShare = useCallback(async () => {
     setStatus('generating')
     setError(null)
     try {
       const blob = await generate()
-      const name = fileNameFor({ data, template, format }, event.day)
+      const name = fileNameFor({ data, template, composition, format }, event.day)
 
 
       // Sem share nativo (desktop, quase sempre), o botão principal salva em
@@ -150,7 +161,7 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
     setError(null)
     try {
       const blob = await generate()
-      downloadImage(blob, fileNameFor({ data, template, format }, event.day))
+      downloadImage(blob, fileNameFor({ data, template, composition, format }, event.day))
       trackShare('share_saved', analytics)
       setStatus('saved')
     } catch (cause) {
@@ -171,34 +182,27 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
   const busy = status === 'generating'
 
   const preview = (
-    <ShareCardPreview
+    <ShareCompositionCarousel
       data={data}
       template={template}
       format={format}
+      value={composition}
       photo={background.photo}
-      /*
-        O preview é limitado pela altura nos dois layouts. No celular, um 9:16
-        com a largura da tela empurra formato, template e ações pra fora da
-        primeira dobra; no desktop, ele afastaria os botões do fim da coluna.
-      */
-      className={cn('mx-auto', compact ? 'max-h-[40dvh]' : 'max-h-[58dvh]')}
+      onChange={chooseComposition}
+      className={cn('mx-auto w-full', compact ? '' : 'max-w-md')}
     />
   )
 
   const options = (
     <div className="flex flex-col gap-5">
-      <Field label="Formato">
-        <ShareStudioFormatSelector value={format} onChange={chooseFormat} />
-      </Field>
-
       <Field label="Fundo">
         <ShareStudioPhotoPicker state={background} />
       </Field>
 
       <Field
-        label="Template"
+        label="Cor"
         {...(background.photo
-          ? { hint: 'Com foto, o template decide só o alinhamento do texto.' }
+          ? { hint: 'Com foto, a cor sai de cena: o texto vira branco com sombra.' }
           : {})}
       >
         <ShareStudioControls value={template} onChange={chooseTemplate} />
@@ -209,7 +213,7 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
         hint="Começa com o mínimo. Nada que você escreveu entra sem você ligar."
       >
         <ShareStudioVisibilityControls
-          eventType={event.type}
+          event={event}
           fields={fields}
           onToggle={toggleField}
         />

@@ -457,6 +457,47 @@ describe('insights da hierarquia', () => {
     expect(bottleneck?.focus?.stageId).toBe('s2')
   })
 
+  it('cobra plano do objetivo que virou lista de ações sem etapa', () => {
+    const tasks = [
+      task('t1', null, { objectiveId: 'obj-1' }),
+      task('t2', null, { objectiveId: 'obj-1' }),
+      task('t3', null, { objectiveId: 'obj-1' }),
+    ]
+
+    const plan = planProgressOf(objective(), [], tasks, [], TODAY)
+    expect(plan.hasPlan).toBe(false)
+
+    const insights = generateInsights(
+      insightInput({
+        tasks,
+        objectives: [
+          { plan, forecast: forecastOf({ plan, habits: [], habitLogs: [], today: TODAY }) },
+        ],
+      }),
+    )
+
+    const found = insights.find((item) => item.id === 'objetivo-sem-plano-obj-1')
+    expect(found).toBeDefined()
+    expect(found?.focus?.objectiveId).toBe('obj-1')
+    expect(found?.action).toBe('abrir-objetivo')
+  })
+
+  it('não cobra plano de objetivo com poucas ações soltas', () => {
+    const tasks = [task('t1', null, { objectiveId: 'obj-1' })]
+    const plan = planProgressOf(objective(), [], tasks, [], TODAY)
+
+    const insights = generateInsights(
+      insightInput({
+        tasks,
+        objectives: [
+          { plan, forecast: forecastOf({ plan, habits: [], habitLogs: [], today: TODAY }) },
+        ],
+      }),
+    )
+
+    expect(insights.some((item) => item.id.startsWith('objetivo-sem-plano'))).toBe(false)
+  })
+
   it('avisa quando o ritmo joga a conclusão pra depois do prazo', () => {
     const stages = [stage('s1', 'MVP', 0, 100)]
     const tasks = [

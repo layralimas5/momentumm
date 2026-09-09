@@ -130,6 +130,19 @@ export interface JourneyEventMetadata {
   readonly challengeRequiredDays?: number
   /** Quantas pessoas estão dentro do desafio. Nunca quem são. */
   readonly challengePeople?: number
+  /** Volume registrado e alvo do objetivo, na unidade do eixo: 1240 de 1800. */
+  readonly doneValue?: number
+  readonly targetValue?: number
+  /** Plural da unidade já resolvido: "páginas", "minutos". */
+  readonly unitLabel?: string
+  /** Dias que faltam pro prazo do objetivo. Negativo não entra. */
+  readonly daysLeft?: number
+  /** Etapas concluídas e total do plano. */
+  readonly stagesDone?: number
+  readonly stagesTotal?: number
+  /** Dias com movimento na janela, e o tamanho dela. */
+  readonly activeDays?: number
+  readonly windowDays?: number
 }
 
 export interface JourneyEvent {

@@ -11,22 +11,22 @@ interface TemplateControlsProps {
 }
 
 /**
- * Seletor de template.
+ * Seletor de COR.
  *
- * A amostra é uma miniatura do FUNDO de cada tema, não um preview do card
- * inteiro: cinco previews completos rodando junto com o principal seriam seis
- * desenhos por tecla apertada, e o que a pessoa procura aqui é "claro, escuro
- * ou sem fundo", que a amostra responde de longe.
+ * Quatro: preto, neon, branco e o PNG sem fundo. Como o arranjo virou uma
+ * escolha própria — o carrossel do preview —, aqui sobrou só a pergunta que a
+ * amostra responde de longe: claro, escuro, aceso ou sem fundo.
  *
- * Rola na horizontal no celular e quebra em grade no desktop — sem passar de
- * cinco opções: template demais transforma a escolha em trabalho.
+ * A amostra é o fundo de cada cor, não um preview do card: quatro previews
+ * completos rodando junto com os seis do carrossel seriam dez desenhos por
+ * toque, e nenhum deles responderia melhor que o quadradinho.
  */
 export function ShareStudioControls({ value, onChange }: TemplateControlsProps) {
   return (
     <div
       role="radiogroup"
-      aria-label="Template do card"
-      className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:grid lg:grid-cols-3 lg:overflow-visible"
+      aria-label="Cor do card"
+      className="grid grid-cols-4 gap-2"
     >
       {SHARE_TEMPLATES.map((template) => {
         const spec = SHARE_TEMPLATE_SPECS[template]
@@ -40,7 +40,7 @@ export function ShareStudioControls({ value, onChange }: TemplateControlsProps) 
             aria-checked={selected}
             onClick={() => onChange(template)}
             className={cn(
-              'flex w-28 shrink-0 flex-col gap-2 rounded-xl border p-2 text-left transition-all duration-150 lg:w-auto',
+              'flex flex-col gap-2 rounded-xl border p-2 text-left transition-all duration-150',
               selected
                 ? 'border-brand bg-brand-dim/40 shadow-[0_0_0_1px_var(--color-brand)]'
                 : 'border-line bg-surface-hi/50 hover:border-line-hi active:bg-surface-top',
@@ -67,14 +67,13 @@ export function ShareStudioControls({ value, onChange }: TemplateControlsProps) 
 
 const SWATCHES: Readonly<Record<ShareTemplateId, string>> = {
   dark: 'bg-[#0a0a0b]',
+  neon: 'bg-[#0a0a0b] ring-1 ring-inset ring-brand',
   light: 'bg-[#fafafa]',
-  gradient: 'bg-[linear-gradient(150deg,#2a2450_0%,#16142b_55%,#0a0a0b_100%)]',
-  minimal: 'bg-[#0a0a0b]',
   transparent:
     'bg-[length:12px_12px] bg-[linear-gradient(45deg,#26262c_25%,transparent_25%),linear-gradient(-45deg,#26262c_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#26262c_75%),linear-gradient(-45deg,transparent_75%,#26262c_75%)] bg-[position:0_0,0_6px,6px_-6px,-6px_0]',
 }
 
-/** Miniatura 9:16 do fundo, com um traço no lugar onde o número apareceria. */
+/** Miniatura 9:16 do fundo, com dois traços no lugar do texto. */
 function Swatch({ template }: { readonly template: ShareTemplateId }) {
   const light = template === 'light'
 
@@ -82,14 +81,11 @@ function Swatch({ template }: { readonly template: ShareTemplateId }) {
     <span
       aria-hidden="true"
       className={cn(
-        'flex h-16 w-full flex-col justify-center gap-1 rounded-lg border border-line px-2',
-        template === 'minimal' && 'items-center',
+        'flex h-14 w-full flex-col justify-center gap-1 rounded-lg border border-line px-2',
         SWATCHES[template],
       )}
     >
-      <span
-        className={cn('h-2.5 w-8 rounded-full', light ? 'bg-[#0a0a0b]' : 'bg-white/90')}
-      />
+      <span className={cn('h-2.5 w-8 rounded-full', light ? 'bg-[#0a0a0b]' : 'bg-white/90')} />
       <span className={cn('h-1 w-10 rounded-full', light ? 'bg-black/25' : 'bg-white/30')} />
     </span>
   )

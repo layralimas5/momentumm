@@ -2,6 +2,7 @@ import {
   SHARE_FORMAT_SPECS,
   SHARE_TEMPLATE_SPECS,
   type ShareCardData,
+  type ShareCompositionId,
   type ShareFormat,
   type ShareTemplateId,
 } from '@/domain/share/share-card'
@@ -19,6 +20,7 @@ import { renderShareCard, type SharePhoto } from './render-share-card'
 export interface ExportRequest {
   readonly data: ShareCardData
   readonly template: ShareTemplateId
+  readonly composition: ShareCompositionId
   readonly format: ShareFormat
   /** A foto de fundo, quando existe. Ela é desenhada no PNG, nunca enviada. */
   readonly photo?: SharePhoto | null
@@ -48,6 +50,7 @@ export async function renderToBlob(request: ExportRequest): Promise<Blob> {
   }
 
   renderShareCard(ctx, request.data, {
+    composition: request.composition,
     template: request.template,
     format: request.format,
     photo: request.photo ?? null,

@@ -5,6 +5,7 @@ import {
   sanitizeFields,
   type ShareCardData,
   type ShareCardItem,
+  type ShareCardStat,
   type ShareFieldSet,
   type ShareMetric,
 } from './share-card'
@@ -35,6 +36,7 @@ export function toShareCardData(event: JourneyEvent, options: ShareCardOptions):
     : 'var(--color-brand)'
 
   const showsTitle = titleIsSensitive(event.type) ? fields.objective : true
+  const stats = statsOf(event, fields)
 
   return {
     eventType: event.type,
@@ -42,12 +44,13 @@ export function toShareCardData(event: JourneyEvent, options: ShareCardOptions):
     title: titleOf(event, showsTitle),
     subtitle: subtitleOf(event),
     primaryMetric: primaryMetricOf(event, fields),
-    secondaryMetric: secondaryMetricOf(event, fields),
+    secondaryMetric: secondaryMetricOf(event, fields, stats),
     momentumBefore: fields.momentum ? event.momentumBefore : null,
     momentumAfter: fields.momentum ? event.momentumAfter : null,
     momentumChange: fields.momentum ? event.momentumChange : null,
     completionPercentage: fields.completion ? event.completionPercentage : null,
     items: fields.items ? itemsOf(event) : [],
+    stats,
     date: fields.date ? formatDayLong(event.day, options.today) : null,
     username: fields.username ? (options.displayName?.trim() || null) : null,
     branding: fields.branding,
@@ -244,7 +247,11 @@ function labelForPercent(type: JourneyEventType): string {
   }
 }
 
-function secondaryMetricOf(event: JourneyEvent, fields: ShareFieldSet): ShareMetric | null {
+function secondaryMetricOf(
+  event: JourneyEvent,
+  fields: ShareFieldSet,
+  stats: readonly ShareCardStat[],
+): ShareMetric | null {
   switch (event.type) {
     case 'day_completed': {
       const items = event.metadata.items ?? []
@@ -263,6 +270,10 @@ function secondaryMetricOf(event: JourneyEvent, fields: ShareFieldSet): ShareMet
     }
 
     case 'goal_progress': {
+      // Com o avanco ligado, a linha de apoio ja mostra "42% -> 58%". Um
+      // "+16% nesta semana" logo acima seria a mesma noticia em dois tamanhos.
+      if (stats.some((stat) => stat.label === 'nesta semana')) return null
+
       const gain = event.metadata.gainPercentage
       if (!fields.completion || !gain || gain <= 0) return null
       return { value: `+${Math.round(gain)}%`, label: 'nesta semana' }
@@ -306,6 +317,110 @@ function subtitleOf(event: JourneyEvent): string | null {
   if (event.type !== 'comeback') return null
   const away = event.metadata.daysAway
   return away ? `Depois de ${away} ${away === 1 ? 'dia' : 'dias'} parada, voltei hoje.` : null
+}
+
+/**
+ * A linha de apoio.
+ *
+ * Sao as informacoes que o evento carrega e que nao cabem na estrela do card:
+ * sequencia, area, avanco do objetivo e as contagens do dia. Cada uma sai de um
+ * toggle proprio, e nenhuma e inventada: campo sem dado no evento nao vira
+ * texto neutro, ele simplesmente nao entra na lista.
+ *
+ * A ordem e a da forca do dado. Sequencia primeiro porque e a que sustenta um
+ * card sozinha; area por ultimo porque e contexto, nao conquista.
+ */
+function statsOf(event: JourneyEvent, fields: ShareFieldSet): readonly ShareCardStat[] {
+  const stats: ShareCardStat[] = []
+
+  const streak = event.metadata.streakDays ?? 0
+  if (fields.streak && streak > 0) {
+    stats.push({ value: `${streak}`, label: streak === 1 ? 'dia seguido' : 'dias seguidos' })
+  }
+
+  /*
+    O avanco mostra os DOIS lados.
+
+    "58%" e uma nota; "42% -> 58%" e movimento, que e a unica coisa que este
+    produto mede. Sem diferenca entre os lados a linha nao entra: uma seta entre
+    dois numeros iguais anuncia um avanco que nao houve.
+  */
+  if (fields.progress && event.progressBefore !== null && event.progressAfter !== null) {
+    const before = Math.round(event.progressBefore * 100)
+    const after = Math.round(event.progressAfter * 100)
+    if (before !== after) stats.push({ value: `${before}% → ${after}%`, label: 'nesta semana' })
+  }
+
+  /*
+    O volume é o "quanto de verdade" do objetivo: a porcentagem diz que ele
+    andou, o volume diz o que foi feito pra ele andar. Sem alvo a linha não
+    entra — "1240 páginas" sozinho não responde nada.
+  */
+  const done = event.metadata.doneValue
+  const target = event.metadata.targetValue
+  if (fields.volume && target && done !== undefined) {
+    const unit = event.metadata.unitLabel ? ` ${event.metadata.unitLabel}` : ''
+    stats.push({ value: `${formatNumber(done)} de ${formatNumber(target)}`, label: unit.trim() || null })
+  }
+
+  const stagesTotal = event.metadata.stagesTotal
+  if (fields.stages && stagesTotal) {
+    const stagesDone = event.metadata.stagesDone ?? 0
+    stats.push({
+      value: `${stagesDone} de ${stagesTotal}`,
+      label: stagesTotal === 1 ? 'etapa' : 'etapas',
+    })
+  }
+
+  const activeDays = event.metadata.activeDays
+  const windowDays = event.metadata.windowDays ?? 7
+  if (fields.activeDays && activeDays !== undefined) {
+    stats.push({ value: `${activeDays} de ${windowDays}`, label: 'dias ativos' })
+  }
+
+  if (fields.counts) {
+    const habits = event.metadata.habitsDone ?? 0
+    const tasks = event.metadata.tasksDone ?? 0
+    if (habits > 0) {
+      stats.push({ value: `${habits}`, label: habits === 1 ? 'hábito' : 'hábitos' })
+    }
+    if (tasks > 0) {
+      stats.push({ value: `${tasks}`, label: tasks === 1 ? 'ação' : 'ações' })
+    }
+  }
+
+  /*
+    A duracao ja pode estar na estrela ou na metrica secundaria. Ela entra aqui
+    so quando nenhuma das duas a mostrou, senao o mesmo "45 min" apareceria em
+    dois tamanhos no mesmo card.
+  */
+  /*
+    A duração já pode estar na estrela ou na métrica secundária. Ela entra aqui
+    só quando nenhuma das duas a mostrou, senão o mesmo "45 min" apareceria em
+    dois tamanhos no mesmo card.
+  */
+  const focus = event.metadata.focusMinutes ?? 0
+  if (fields.duration && focus > 0 && (event.type === 'day_completed' || event.type === 'routine_completed')) {
+    stats.push({ value: formatMinutes(focus), label: 'de foco' })
+  }
+
+  /*
+    O prazo vem por último entre os números: ele é o que sobra do caminho, não
+    o que foi feito, e um card que abre pelo que falta é um card que cobra.
+  */
+  const daysLeft = event.metadata.daysLeft
+  if (fields.deadline && daysLeft !== undefined) {
+    stats.push({
+      value: daysLeft === 0 ? 'Último dia' : `${daysLeft}`,
+      label: daysLeft === 0 ? null : daysLeft === 1 ? 'dia restante' : 'dias restantes',
+    })
+  }
+
+  if (fields.axis && event.metadata.axis) {
+    stats.push({ value: activityType(event.metadata.axis).label, label: null })
+  }
+
+  return stats
 }
 
 function itemsOf(event: JourneyEvent): readonly ShareCardItem[] {
@@ -355,6 +470,11 @@ function noteOf(event: JourneyEvent): string | null {
 function percentOf(ratio: number | null): string | null {
   if (ratio === null) return null
   return `${Math.round(ratio * 100)}%`
+}
+
+/** Milhar com ponto: "1.240". É como a tela do objetivo já escreve. */
+function formatNumber(value: number): string {
+  return Math.round(value).toLocaleString('pt-BR')
 }
 
 export function formatMinutes(minutes: number): string {

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import type { DayKey } from '@/domain/entities/day'
 import type { Task } from '@/domain/entities/task'
 import type { NextUp } from '@/presentation/planner/use-dashboard'
 import { Button } from '@/presentation/components/ui/Button'
@@ -21,11 +22,16 @@ import { Panel, Tag } from '@/presentation/components/ui/Surface'
 export function NextUpCard({
   nextUp,
   mainPriority,
+  today,
   onStartFocus,
+  onBringToToday,
 }: {
   readonly nextUp: NextUp | null
   readonly mainPriority: Task | null
+  readonly today: DayKey
   readonly onStartFocus: (task: Task) => void
+  /** Traz a ação do plano pro dia de hoje, sem passar pelo editor. */
+  readonly onBringToToday: (task: Task) => void
 }) {
   if (!nextUp || nextUp.task.id === mainPriority?.id) return null
 
@@ -63,7 +69,19 @@ export function NextUpCard({
         </Link>
       </div>
 
-      <div className="flex shrink-0 gap-2">
+      {/*
+        Duas saídas, e elas são diferentes: começar agora abre o cronômetro,
+        trazer pra hoje coloca a ação no dia. Sem a segunda, executar uma ação
+        marcada pra semana que vem deixava o plano e o dia contando histórias
+        diferentes sobre o mesmo trabalho.
+      */}
+      <div className="flex shrink-0 flex-wrap gap-2">
+        {task.day === today ? null : (
+          <Button variant="ghost" onClick={() => onBringToToday(task)}>
+            <Icon name="calendario" className="size-4" />
+            Trazer pra hoje
+          </Button>
+        )}
         <Button variant="secondary" onClick={() => onStartFocus(task)}>
           <Icon name="play" className="size-4" />
           Começar essa

@@ -2,6 +2,37 @@ import { DomainError } from '@/shared/errors'
 import type { ActivityVisibility } from './activity'
 import type { PlanTier } from './plan'
 
+/**
+ * Quem enxerga o teu perfil.
+ *
+ * Três degraus, e o padrão é o mais fechado. A escolha é sobre o PERFIL — os
+ * números da evolução, as conquistas, os objetivos ativos —, não sobre cada
+ * momento: momento continua tendo a visibilidade dele, e um perfil público não
+ * torna público nada que a pessoa não marcou.
+ *
+ * `privado` e `amigos` continuam achaveis pelo @ EXATO. É o que o Instagram
+ * faz com conta fechada, e por um motivo prático: sem isso, ninguém consegue
+ * mandar pedido de amizade pra quem nasceu privado — que é todo mundo — e o
+ * Círculo viraria uma tela que nunca sai do zero. Quem busca pelo @ exato vê
+ * nome, @ e foto; o resto do perfil continua fechado.
+ */
+export const PROFILE_VISIBILITIES = ['privado', 'amigos', 'publico'] as const
+export type ProfileVisibility = (typeof PROFILE_VISIBILITIES)[number]
+
+export const PROFILE_VISIBILITY_LABELS: Readonly<Record<ProfileVisibility, string>> = {
+  privado: 'Perfil privado',
+  amigos: 'Somente amigos',
+  publico: 'Público',
+}
+
+export const PROFILE_VISIBILITY_HINTS: Readonly<Record<ProfileVisibility, string>> = {
+  privado: 'Só você vê teus números e conquistas. Quem tem teu @ ainda consegue te encontrar pra te adicionar.',
+  amigos: 'Quem já está no teu círculo vê teu perfil completo. As outras pessoas veem só nome, @ e foto.',
+  publico: 'Qualquer pessoa do Momentumm pode encontrar e ver teu perfil. Nada do que você não compartilhou aparece.',
+}
+
+export const DEFAULT_PROFILE_VISIBILITY: ProfileVisibility = 'privado'
+
 export interface Profile {
   readonly id: string
   /** Identificador público, usado na URL do perfil. */
@@ -10,9 +41,29 @@ export interface Profile {
   readonly bio: string | null
   readonly avatarUrl: string | null
   readonly defaultVisibility: ActivityVisibility
+  /** Quem vê o perfil. Nasce `privado` e só muda por escolha explícita. */
+  readonly visibility: ProfileVisibility
   /** Plano da conta. Decide limites, nunca acesso às telas. */
   readonly plan: PlanTier
   readonly createdAt: Date
+}
+
+/**
+ * Há quanto tempo a pessoa está no Momentumm, em semanas.
+ *
+ * Semanas, e não dias: "12 semanas" conta uma história de constância que "84
+ * dias" não conta, e a primeira semana já vale 1 — quem entrou ontem não está
+ * há "zero semanas" no app.
+ */
+export function weeksSince(createdAt: Date, now = new Date()): number {
+  const days = Math.floor((now.getTime() - createdAt.getTime()) / 86_400_000)
+  return Math.max(1, Math.floor(days / 7) + 1)
+}
+
+/** "12 semanas no Momentumm", já no plural certo. */
+export function membershipLabel(createdAt: Date, now = new Date()): string {
+  const weeks = weeksSince(createdAt, now)
+  return `${weeks} ${weeks === 1 ? 'semana' : 'semanas'} no Momentumm`
 }
 
 const HANDLE_PATTERN = /^[a-z0-9_]{3,20}$/

@@ -171,7 +171,13 @@ describe('objetivo e marco: acontecem uma vez na vida', () => {
 
   it('não regrava um marco já conquistado, mesmo em outro dia', () => {
     const milestones = [
-      { id: 'habitos:10', count: 10, unit: 'hábitos concluídos', label: '10 hábitos concluídos' },
+      {
+        id: 'habitos:10',
+        kind: 'habitos' as const,
+        count: 10,
+        unit: 'hábitos concluídos',
+        label: '10 hábitos concluídos',
+      },
     ]
     const fresh = eventsToRecord(input({ milestones }))
     expect(types(fresh)).toContain('milestone')

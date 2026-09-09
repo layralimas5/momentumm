@@ -15,6 +15,8 @@ export interface ProfileUpdate {
    */
   readonly avatarUrl?: string | null
   readonly defaultVisibility?: Profile['defaultVisibility']
+  /** Quem vê o perfil: privado, somente amigos ou público. */
+  readonly visibility?: Profile['visibility']
   /**
    * Só o modo demo aplica. Em produção quem manda no plano é a assinatura, não
    * a tela de perfil — o repositório do Supabase ignora esse campo de propósito.

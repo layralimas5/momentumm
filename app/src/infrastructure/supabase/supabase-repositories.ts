@@ -99,6 +99,12 @@ import {
 } from './schemas'
 
 const UNIQUE_VIOLATION = '23505'
+/*
+  Função ausente: base que ainda não rodou a 0012. A busca cai na parcial em
+  vez de estourar — pior que não achar pelo @ exato é a tela do Círculo inteira
+  quebrar num ambiente que só está desatualizado.
+*/
+const FUNCTION_MISSING = 'PGRST202'
 
 function fail(error: PostgrestError, action: string): never {
   if (error.code === UNIQUE_VIOLATION) {
@@ -401,6 +407,9 @@ export class SupabaseProfileRepository implements ProfileRepository {
         ...(changes.avatarUrl !== undefined ? { avatar_url: changes.avatarUrl } : {}),
         ...(changes.defaultVisibility !== undefined
           ? { default_visibility: changes.defaultVisibility }
+          : {}),
+        ...(changes.visibility !== undefined
+          ? { profile_visibility: changes.visibility }
           : {}),
       })
       .eq('id', id)
@@ -1099,6 +1108,21 @@ export class SupabaseFriendshipRepository implements FriendshipRepository {
     const escaped = needle.replace(/[%_,().*]/g, '')
     if (escaped.length < 2) return []
 
+    /*
+      Duas buscas somadas, e a diferença entre elas é a política de privacidade
+      inteira.
+
+      A parcial roda pelo SELECT normal e, desde a 0012, só enxerga quem
+      escolheu `publico` — é o que "público" significa. A exata passa por uma
+      função `security definer` de retorno estreito e encontra qualquer pessoa
+      pelo @ completo, inclusive quem é privado: sem isso ninguém conseguiria
+      adicionar ninguém, já que todo perfil nasce fechado.
+    */
+    const exact = await supabase().rpc('find_profile_by_handle', { target_handle: needle })
+    if (exact.error && exact.error.code !== FUNCTION_MISSING) {
+      fail(exact.error, 'buscar pelo @')
+    }
+
     const { data, error } = await supabase()
       .from('profiles')
       .select('id, name, handle, avatar_url')
@@ -1107,7 +1131,15 @@ export class SupabaseFriendshipRepository implements FriendshipRepository {
       .limit(20)
 
     if (error) fail(error, 'buscar pessoas')
-    return (data ?? []).map(toCircleAuthor)
+
+    // O @ exato primeiro: quem digitou o endereço inteiro está procurando uma
+    // pessoa específica, não navegando uma lista.
+    const found = (exact.data ?? []) as unknown[]
+    const merged = [...found, ...(data ?? [])].map(toCircleAuthor)
+    const unique = new Map(merged.map((person) => [person.id, person]))
+    unique.delete(userId)
+
+    return [...unique.values()]
   }
 
   async request(input: NewFriendshipInput): Promise<Friendship> {

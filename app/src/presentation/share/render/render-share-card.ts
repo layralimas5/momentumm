@@ -1,19 +1,28 @@
 import {
   SHARE_FORMAT_SPECS,
   type ShareCardData,
+  type ShareCompositionId,
   type ShareFormat,
   type ShareTemplateId,
 } from '@/domain/share/share-card'
 import {
   drawCheckDot,
   drawLine,
+  drawProgressTrack,
+  withAlpha,
   lineHeightOf,
   measureText,
   resolveColor,
   wrapLines,
   type TextStyle,
 } from './canvas-kit'
-import { SHARE_THEMES, overPhoto, type ShareTheme } from './share-templates'
+import {
+  SHARE_COMPOSITIONS_BY_ID,
+  SHARE_THEMES,
+  overPhoto,
+  type ShareComposition,
+  type ShareTheme,
+} from './share-templates'
 
 /**
  * O renderizador único do Share Studio.
@@ -45,7 +54,10 @@ export interface SharePhoto {
 }
 
 export interface RenderOptions {
+  /** A cor: preto, neon, branco ou PNG. */
   readonly template: ShareTemplateId
+  /** O arranjo: destaque, cartaz, editorial, tópicos, gráfico ou mapa. */
+  readonly composition?: ShareCompositionId
   readonly format: ShareFormat
   /** Nula quando a pessoa não escolheu foto: o template pinta o próprio fundo. */
   readonly photo?: SharePhoto | null
@@ -56,6 +68,17 @@ interface Block {
   readonly height: number
   /** Espaço acima deste bloco. O primeiro bloco ignora o próprio. */
   readonly gap: number
+  /**
+   * Ordem de sacrifício quando a pilha não cabe: quanto MAIOR, mais cedo o
+   * bloco sai. Zero (o padrão) é o que nunca sai — kicker, título e número são
+   * o card; sem eles não sobra o que postar.
+   *
+   * Existe porque o conteúdo agora é escolhido pela pessoa, e uma semana com
+   * dez hábitos, volume, etapas, prazo e dias ativos pode pedir mais altura do
+   * que 1920px têm. Sem isso o excesso simplesmente vazava pra fora da imagem,
+   * em silêncio.
+   */
+  readonly drop?: number
   draw(y: number): void
 }
 
@@ -68,17 +91,16 @@ interface Metrics {
   readonly maxItems: number
 }
 
-function metricsFor(format: ShareFormat, width: number, theme: ShareTheme): Metrics {
-  const pad = format === 'stories' ? 104 : format === 'post' ? 92 : 88
+function metricsFor(width: number, composition: ShareComposition): Metrics {
+  const pad = 104
   return {
     pad,
     contentWidth: width - pad * 2,
-    x: theme.align === 'center' ? width / 2 : pad,
-    titleSize: format === 'stories' ? 68 : format === 'post' ? 62 : 58,
-    metricSize: format === 'stories' ? 300 : format === 'post' ? 250 : 230,
-    // O quadrado é o formato mais apertado: seis linhas de lista nele
-    // espremeriam o número, que é justamente o que precisa dominar.
-    maxItems: format === 'stories' ? 6 : format === 'post' ? 5 : 4,
+    x: composition.align === 'center' ? width / 2 : pad,
+    // No editorial a frase é o assunto, então o título cresce e o número recua.
+    titleSize: composition.id === 'editorial' ? 84 : 68,
+    metricSize: 300 * composition.metricScale,
+    maxItems: composition.maxItems ?? 6,
   }
 }
 
@@ -90,9 +112,10 @@ export function renderShareCard(
   const spec = SHARE_FORMAT_SPECS[options.format]
   const photo = options.photo ?? null
   const theme = photo ? overPhoto(SHARE_THEMES[options.template]) : SHARE_THEMES[options.template]
+  const composition = SHARE_COMPOSITIONS_BY_ID[options.composition ?? 'destaque']
   const { width, height } = spec
   const accent = resolveColor(data.accent)
-  const m = metricsFor(options.format, width, theme)
+  const m = metricsFor(width, composition)
 
   ctx.clearRect(0, 0, width, height)
 
@@ -111,10 +134,11 @@ export function renderShareCard(
     ctx.shadowOffsetY = 4
   }
 
-  const headerBottom = drawHeader(ctx, data, theme, m)
-  const footerTop = drawFooter(ctx, data, theme, m, height)
+  const headerBottom = drawHeader(ctx, data, theme, composition, m)
+  const footerTop = drawFooter(ctx, data, theme, composition, m, height)
 
-  const blocks = buildBody(ctx, data, theme, m, accent)
+  const available0 = footerTop - headerBottom
+  const blocks = fitBlocks(buildBody(ctx, data, theme, composition, m, accent), available0)
   const total = blocks.reduce(
     (sum, block, index) => sum + block.height + (index === 0 ? 0 : block.gap),
     0,
@@ -129,8 +153,9 @@ export function renderShareCard(
     faixa que o véu mais escurece. Centralizado, o número aterrissaria no meio
     da foto e cobriria o que ela tem de melhor.
   */
-  const available = footerTop - headerBottom
-  const offset = photo ? Math.max(0, available - total) : Math.max(0, (available - total) / 2)
+  const available = available0
+  const anchorBottom = photo !== null || composition.anchor === 'bottom'
+  const offset = anchorBottom ? Math.max(0, available - total) : Math.max(0, (available - total) / 2)
   let cursor = headerBottom + offset
 
   blocks.forEach((block, index) => {
@@ -142,6 +167,48 @@ export function renderShareCard(
   ctx.shadowColor = 'transparent'
   ctx.shadowBlur = 0
   ctx.shadowOffsetY = 0
+
+  // Moldura e outros traços de borda vêm por último: eles emolduram o card
+  // inteiro, texto incluído, e desenhá-los antes deixaria o número por cima.
+  theme.paintForeground?.(ctx, width, height, accent)
+}
+
+/**
+ * A pilha cabendo na altura disponível.
+ *
+ * Enquanto não couber, sai o bloco de maior `drop` — a lista antes da linha de
+ * apoio, a linha de apoio antes do momentum, o momentum antes do subtítulo.
+ * Cortar é melhor que encolher: reduzir a fonte faria a densidade do card
+ * variar conforme o que a pessoa ligou, e dois cards do mesmo dia sairiam com
+ * tipografias diferentes.
+ *
+ * Nunca corta abaixo de um bloco: um card vazio não é uma saída.
+ */
+function fitBlocks(blocks: readonly Block[], available: number): Block[] {
+  const kept = [...blocks]
+
+  const heightOf = (list: readonly Block[]) =>
+    list.reduce((sum, block, index) => sum + block.height + (index === 0 ? 0 : block.gap), 0)
+
+  while (kept.length > 1 && heightOf(kept) > available) {
+    let worst = -1
+    let worstDrop = 0
+
+    kept.forEach((block, index) => {
+      const drop = block.drop ?? 0
+      if (drop > worstDrop) {
+        worstDrop = drop
+        worst = index
+      }
+    })
+
+    // Sobrou só o que não pode sair: melhor um card apertado do que um card
+    // sem o número que ele existe pra mostrar.
+    if (worst < 0) break
+    kept.splice(worst, 1)
+  }
+
+  return kept
 }
 
 /**
@@ -208,12 +275,13 @@ function drawHeader(
   ctx: CanvasRenderingContext2D,
   data: ShareCardData,
   theme: ShareTheme,
+  composition: ShareComposition,
   m: Metrics,
 ): number {
   if (!data.date) return m.pad
 
   const style: TextStyle = { size: 30, weight: 500, color: theme.inkFaint }
-  drawLine(ctx, data.date, m.x, m.pad + style.size, style, theme.align)
+  drawLine(ctx, data.date, m.x, m.pad + style.size, style, composition.align)
   return m.pad + style.size + 28
 }
 
@@ -222,6 +290,7 @@ function drawFooter(
   ctx: CanvasRenderingContext2D,
   data: ShareCardData,
   theme: ShareTheme,
+  composition: ShareComposition,
   m: Metrics,
   height: number,
 ): number {
@@ -238,7 +307,7 @@ function drawFooter(
     }
     const nameStyle: TextStyle = { size: 28, weight: 500, color: theme.inkFaint }
 
-    if (theme.align === 'center') {
+    if (composition.align === 'center') {
       if (data.branding) drawBrandMark(ctx, m.x, baseline, theme, brandStyle, 'center')
       if (data.username) {
         drawLine(ctx, data.username, m.x, baseline - (data.branding ? 46 : 0), nameStyle, 'center')
@@ -259,7 +328,7 @@ function drawFooter(
   if (data.note) {
     const noteStyle: TextStyle = { size: 34, weight: 500, color: theme.inkMuted }
     baseline = top - 22
-    drawLine(ctx, data.note, m.x, baseline, noteStyle, theme.align)
+    drawLine(ctx, data.note, m.x, baseline, noteStyle, composition.align)
     top = baseline - noteStyle.size
   }
 
@@ -304,43 +373,121 @@ function buildBody(
   ctx: CanvasRenderingContext2D,
   data: ShareCardData,
   theme: ShareTheme,
+  composition: ShareComposition,
   m: Metrics,
   accent: string,
 ): Block[] {
   const blocks: Block[] = []
-  const full = theme.density === 'full'
+  const full = composition.density === 'full'
+  const showsMomentum = data.momentumAfter !== null && data.eventType !== 'momentum_record'
 
-  if (data.kicker) blocks.push(kickerBlock(ctx, data.kicker, theme, m, accent))
-  if (data.title) blocks.push(titleBlock(ctx, data.title, theme, m))
-  if (data.subtitle) blocks.push(subtitleBlock(ctx, data.subtitle, theme, m))
-  if (data.primaryMetric.value) blocks.push(metricBlock(ctx, data, theme, m))
+  const kicker = () => (data.kicker ? kickerBlock(ctx, data.kicker, theme, composition, m, accent) : null)
+  const title = () => (data.title ? titleBlock(ctx, data.title, theme, composition, m) : null)
+  const subtitle = () =>
+    data.subtitle ? subtitleBlock(ctx, data.subtitle, theme, composition, m) : null
+  const metric = () =>
+    data.primaryMetric.value ? metricBlock(ctx, data, theme, composition, m) : null
+  const secondary = () =>
+    data.secondaryMetric
+      ? secondaryBlock(ctx, data.secondaryMetric.value, data.secondaryMetric.label, theme, composition, m)
+      : null
+  const stats = () =>
+    data.stats.length > 0 ? statsBlock(ctx, data, theme, composition, m, accent) : null
+  const items = () =>
+    full && data.items.length > 0 ? itemsBlock(ctx, data, theme, composition, m, accent) : null
+  const momentum = () =>
+    showsMomentum ? momentumBlock(ctx, data, theme, composition, m, accent) : null
 
-  // A métrica secundária sobrevive à densidade mínima: é uma linha só, e é ela
-  // que dá movimento ao número ("+6 nesta semana"). O que o Minimal corta é a
-  // lista e a barra, que são o que enche o card.
-  if (data.secondaryMetric) {
-    blocks.push(secondaryBlock(ctx, data.secondaryMetric.value, data.secondaryMetric.label, theme, m))
+  const push = (...candidates: readonly (Block | null)[]) => {
+    for (const block of candidates) if (block) blocks.push(block)
   }
-
-  if (full && data.items.length > 0) blocks.push(itemsBlock(ctx, data, theme, m, accent))
 
   /*
-    O selo do momentum não entra no card DO momentum: lá o score já é o número
-    gigante do meio, e repetir "MOMENTUM 78 → 84" logo abaixo dele seria dizer
-    a mesma coisa duas vezes em tamanhos diferentes. A variação continua
-    aparecendo, pela métrica secundária.
-  */
-  if (data.momentumAfter !== null && data.eventType !== 'momentum_record') {
-    blocks.push(momentumBlock(ctx, data, theme, m, accent))
-  }
+    Cada composição é uma ORDEM de blocos, e é só isso.
 
-  return blocks
+    Nenhuma delas tem função de desenho própria: gráfico e mapa acrescentam um
+    bloco novo, e o resto é a mesma pilha em sequências diferentes. Foi assim
+    que quatro cores e seis arranjos couberam num renderizador só — e é por isso
+    que uma correção no bloco do momentum vale pros vinte e quatro cards.
+  */
+  switch (composition.id) {
+    case 'cartaz':
+      push(kicker(), metric(), stats(), title(), subtitle(), secondary(), momentum())
+      return blocks
+
+    case 'editorial':
+      push(
+        kicker(),
+        title(),
+        ruleBlock(ctx, theme, composition, m, accent),
+        metric(),
+        stats(),
+        subtitle(),
+        secondary(),
+        items(),
+        momentum(),
+      )
+      return blocks
+
+    case 'topicos':
+      push(
+        kicker(),
+        title(),
+        bulletsBlock(ctx, data, theme, m, accent),
+        items(),
+        momentum(),
+      )
+      return blocks
+
+    case 'grafico':
+      push(
+        kicker(),
+        title(),
+        ringBlock(ctx, data, theme, m, accent),
+        barsBlock(ctx, data, theme, m, accent),
+        stats(),
+        items(),
+        momentum(),
+      )
+      return blocks
+
+    case 'mapa':
+      push(kicker(), mapBlock(ctx, data, theme, m, accent), subtitle(), momentum())
+      return blocks
+
+    case 'destaque':
+      push(kicker(), title(), subtitle(), metric(), secondary(), stats(), items(), momentum())
+      return blocks
+  }
+}
+
+/** A régua do editorial: um traço curto na cor do eixo, e nada mais. */
+function ruleBlock(
+  ctx: CanvasRenderingContext2D,
+  theme: ShareTheme,
+  composition: ShareComposition,
+  m: Metrics,
+  accent: string,
+): Block {
+  const width = 140
+  const thickness = 5
+
+  return {
+    gap: 34,
+    height: thickness,
+    draw(y) {
+      ctx.fillStyle = theme.shadow ? theme.ink : accent
+      const startX = composition.align === 'center' ? m.x - width / 2 : m.x
+      ctx.fillRect(startX, y, width, thickness)
+    },
+  }
 }
 
 function kickerBlock(
   ctx: CanvasRenderingContext2D,
   text: string,
   theme: ShareTheme,
+  composition: ShareComposition,
   m: Metrics,
   accent: string,
 ): Block {
@@ -362,7 +509,7 @@ function kickerBlock(
     height: lines.length * lineHeight,
     draw(y) {
       lines.forEach((line, index) => {
-        drawLine(ctx, line, m.x, y + lineHeight * (index + 0.78), style, theme.align)
+        drawLine(ctx, line, m.x, y + lineHeight * (index + 0.78), style, composition.align)
       })
     },
   }
@@ -372,6 +519,7 @@ function titleBlock(
   ctx: CanvasRenderingContext2D,
   text: string,
   theme: ShareTheme,
+  composition: ShareComposition,
   m: Metrics,
 ): Block {
   const style: TextStyle = { size: m.titleSize, weight: 600, color: theme.ink, leading: 1.16 }
@@ -383,7 +531,7 @@ function titleBlock(
     height: lines.length * lineHeight,
     draw(y) {
       lines.forEach((line, index) => {
-        drawLine(ctx, line, m.x, y + lineHeight * (index + 0.78), style, theme.align)
+        drawLine(ctx, line, m.x, y + lineHeight * (index + 0.78), style, composition.align)
       })
     },
   }
@@ -393,6 +541,7 @@ function subtitleBlock(
   ctx: CanvasRenderingContext2D,
   text: string,
   theme: ShareTheme,
+  composition: ShareComposition,
   m: Metrics,
 ): Block {
   const style: TextStyle = { size: 38, weight: 400, color: theme.inkMuted, leading: 1.34 }
@@ -401,10 +550,11 @@ function subtitleBlock(
 
   return {
     gap: 20,
+    drop: 20,
     height: lines.length * lineHeight,
     draw(y) {
       lines.forEach((line, index) => {
-        drawLine(ctx, line, m.x, y + lineHeight * (index + 0.78), style, theme.align)
+        drawLine(ctx, line, m.x, y + lineHeight * (index + 0.78), style, composition.align)
       })
     },
   }
@@ -421,6 +571,7 @@ function metricBlock(
   ctx: CanvasRenderingContext2D,
   data: ShareCardData,
   theme: ShareTheme,
+  composition: ShareComposition,
   m: Metrics,
 ): Block {
   const base: TextStyle = {
@@ -441,7 +592,7 @@ function metricBlock(
     gap: 40,
     height: style.size * 0.78 + (hasLabel ? labelGap + labelStyle.size : 0),
     draw(y) {
-      drawLine(ctx, data.primaryMetric.value, m.x, y + style.size * 0.74, style, theme.align)
+      drawLine(ctx, data.primaryMetric.value, m.x, y + style.size * 0.74, style, composition.align)
       if (data.primaryMetric.label) {
         drawLine(
           ctx,
@@ -449,7 +600,7 @@ function metricBlock(
           m.x,
           y + style.size * 0.78 + labelGap + labelStyle.size * 0.8,
           labelStyle,
-          theme.align,
+          composition.align,
         )
       }
     },
@@ -461,6 +612,7 @@ function secondaryBlock(
   value: string,
   label: string | null,
   theme: ShareTheme,
+  composition: ShareComposition,
   m: Metrics,
 ): Block {
   const style: TextStyle = { size: 38, weight: 500, color: theme.inkMuted, leading: 1.3 }
@@ -470,11 +622,428 @@ function secondaryBlock(
 
   return {
     gap: 26,
+    drop: 30,
     height: lines.length * lineHeight,
     draw(y) {
       lines.forEach((line, index) => {
-        drawLine(ctx, line, m.x, y + lineHeight * (index + 0.78), style, theme.align)
+        drawLine(ctx, line, m.x, y + lineHeight * (index + 0.78), style, composition.align)
       })
+    },
+  }
+}
+
+/**
+ * A linha de apoio: sequencia, avanco, contagens e area.
+ *
+ * Uma linha so, com o valor em peso maior que o rotulo e um ponto separando as
+ * informacoes. Sem caixa, sem chip e sem icone: a moldura desenhada por cima de
+ * um Story e o que denuncia que a imagem saiu de um app, e essa linha existe
+ * justamente pra dar densidade ao card sem custar essa impressao.
+ *
+ * Quebra em duas linhas quando nao cabe, e a segunda continua no mesmo ritmo.
+ * Encolher a fonte pra forcar tudo numa linha faria a densidade do card variar
+ * conforme o que a pessoa ligou.
+ */
+function statsBlock(
+  ctx: CanvasRenderingContext2D,
+  data: ShareCardData,
+  theme: ShareTheme,
+  composition: ShareComposition,
+  m: Metrics,
+  accent: string,
+): Block {
+  const valueStyle: TextStyle = { size: 34, weight: 700, color: theme.ink }
+  const labelStyle: TextStyle = { size: 34, weight: 400, color: theme.inkMuted }
+  const separatorStyle: TextStyle = { size: 34, weight: 400, color: theme.inkFaint }
+
+  const gapAfterValue = 10
+  const separator = '·'
+  const separatorSpace = 18
+  const lineHeight = 50
+
+  // Cada estatistica vira uma peca medida: valor em negrito, rotulo ao lado.
+  const parts = data.stats.map((stat) => {
+    const valueWidth = measureText(ctx, stat.value, valueStyle)
+    const labelWidth = stat.label ? measureText(ctx, stat.label, labelStyle) : 0
+    return {
+      stat,
+      width: valueWidth + (stat.label ? gapAfterValue + labelWidth : 0),
+      valueWidth,
+    }
+  })
+
+  const separatorWidth = measureText(ctx, separator, separatorStyle) + separatorSpace * 2
+
+  // A quebra e por largura acumulada, do mesmo jeito que o texto quebra: e o
+  // que mantem a linha alinhada com a margem em vez de vazar pela direita.
+  const lines: (typeof parts)[] = []
+  let current: typeof parts = []
+  let width = 0
+
+  for (const part of parts) {
+    const extra = current.length === 0 ? part.width : separatorWidth + part.width
+    if (current.length > 0 && width + extra > m.contentWidth) {
+      lines.push(current)
+      current = [part]
+      width = part.width
+      continue
+    }
+    current.push(part)
+    width += extra
+  }
+  if (current.length > 0) lines.push(current)
+
+  return {
+    gap: 30,
+    drop: 50,
+    height: lines.length * lineHeight,
+    draw(y) {
+      lines.forEach((line, index) => {
+        const lineWidth = line.reduce(
+          (sum, part, position) => sum + part.width + (position === 0 ? 0 : separatorWidth),
+          0,
+        )
+        let cursor = composition.align === 'center' ? m.x - lineWidth / 2 : m.x
+        const baseline = y + lineHeight * index + valueStyle.size * 0.82
+
+        line.forEach((part, position) => {
+          if (position > 0) {
+            drawLine(ctx, separator, cursor + separatorSpace, baseline, separatorStyle, 'left')
+            cursor += separatorWidth
+          }
+
+          drawLine(
+            ctx,
+            part.stat.value,
+            cursor,
+            baseline,
+            // O valor puxa a cor do eixo quando ela existe: e o que faz a linha
+            // ler como dado do app e nao como legenda esquecida.
+            { ...valueStyle, color: theme.shadow ? theme.ink : accent },
+            'left',
+          )
+          cursor += part.valueWidth
+
+          if (part.stat.label) {
+            cursor += gapAfterValue
+            drawLine(ctx, part.stat.label, cursor, baseline, labelStyle, 'left')
+            cursor += measureText(ctx, part.stat.label, labelStyle)
+          }
+        })
+      })
+    },
+  }
+}
+
+/**
+ * Tópicos — cada informação numa linha, com marcador.
+ *
+ * O marcador é um traço curto na cor do eixo, e não um ponto: o ponto some no
+ * meio do texto em corpo grande, e um ícone por linha viraria decoração. As
+ * informações vêm da linha de apoio e das métricas — as MESMAS de sempre, só
+ * que empilhadas em vez de escaladas por importância. É a composição pra quando
+ * o card tem várias coisas a dizer e nenhuma é maior que as outras.
+ */
+function bulletsBlock(
+  ctx: CanvasRenderingContext2D,
+  data: ShareCardData,
+  theme: ShareTheme,
+  m: Metrics,
+  accent: string,
+): Block {
+  const style: TextStyle = { size: 40, weight: 500, color: theme.ink, leading: 1.25 }
+  const dash = 46
+  const gapAfterDash = 24
+  const rowGap = 26
+  const textWidth = m.contentWidth - dash - gapAfterDash
+
+  const lines: string[] = []
+
+  if (data.primaryMetric.value) {
+    lines.push(
+      data.primaryMetric.label
+        ? `${data.primaryMetric.value} ${data.primaryMetric.label}`
+        : data.primaryMetric.value,
+    )
+  }
+  if (data.secondaryMetric) {
+    lines.push(
+      data.secondaryMetric.label
+        ? `${data.secondaryMetric.value} ${data.secondaryMetric.label}`
+        : data.secondaryMetric.value,
+    )
+  }
+  for (const stat of data.stats) {
+    lines.push(stat.label ? `${stat.value} ${stat.label}` : stat.value)
+  }
+
+  const rows = lines.map((text) => wrapLines(ctx, text, style, textWidth, 2))
+  const lineHeight = lineHeightOf(style)
+  const height = rows.reduce((sum, row) => sum + row.length * lineHeight + rowGap, 0)
+
+  return {
+    gap: 34,
+    drop: 55,
+    height: Math.max(0, height - rowGap),
+    draw(y) {
+      let cursor = y
+      for (const row of rows) {
+        ctx.fillStyle = accent
+        ctx.fillRect(m.x, cursor + lineHeight * 0.42, dash, 4)
+
+        row.forEach((line, index) => {
+          drawLine(
+            ctx,
+            line,
+            m.x + dash + gapAfterDash,
+            cursor + lineHeight * (index + 0.75),
+            style,
+            'left',
+          )
+        })
+
+        cursor += row.length * lineHeight + rowGap
+      }
+    },
+  }
+}
+
+/**
+ * O anel de progresso, com o número dentro.
+ *
+ * Um anel diz o que um número solto não diz: QUANTO FALTA. É por isso que ele
+ * substitui o número gigante em vez de acompanhá-lo — os dois juntos seriam a
+ * mesma informação em duas linguagens, e o card ficaria com dois centros.
+ *
+ * Sem percentual (marco, retomada, entrada em desafio) o anel não é desenhado:
+ * um círculo cheio pela metade sem número é decoração, e decoração que parece
+ * dado é pior que dado nenhum.
+ */
+function ringBlock(
+  ctx: CanvasRenderingContext2D,
+  data: ShareCardData,
+  theme: ShareTheme,
+  m: Metrics,
+  accent: string,
+): Block | null {
+  const ratio = data.completionPercentage
+  if (ratio === null) return null
+
+  const size = Math.min(m.contentWidth, 520)
+  const thickness = 30
+  const radius = (size - thickness) / 2
+
+  const valueStyle: TextStyle = { size: 150, weight: 700, color: theme.ink, tracking: -4 }
+  const labelStyle: TextStyle = { size: 32, weight: 500, color: theme.inkMuted }
+
+  return {
+    gap: 44,
+    height: size,
+    draw(y) {
+      const cx = m.x
+      const cy = y + size / 2
+
+      ctx.save()
+      ctx.lineWidth = thickness
+      ctx.lineCap = 'round'
+
+      // O trilho inteiro primeiro: é ele que mostra o tamanho do caminho.
+      ctx.strokeStyle = theme.line
+      ctx.beginPath()
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2)
+      ctx.stroke()
+
+      // O preenchimento começa no topo e anda no sentido do relógio, como
+      // qualquer mostrador que a pessoa já viu na vida.
+      const start = -Math.PI / 2
+      ctx.strokeStyle = accent
+      ctx.beginPath()
+      ctx.arc(cx, cy, radius, start, start + Math.PI * 2 * Math.min(1, Math.max(0, ratio)))
+      ctx.stroke()
+      ctx.restore()
+
+      drawLine(ctx, `${Math.round(ratio * 100)}%`, cx, cy + valueStyle.size * 0.28, valueStyle, 'center')
+
+      if (data.primaryMetric.label) {
+        drawLine(ctx, data.primaryMetric.label, cx, cy + valueStyle.size * 0.28 + 52, labelStyle, 'center')
+      }
+    },
+  }
+}
+
+/**
+ * As barras do que tem dois lados.
+ *
+ * Momentum antes e depois, e o avanço do objetivo. Duas barras no máximo: a
+ * terceira transformaria o card num relatório, e relatório é o que a pessoa
+ * abre no app, não o que ela posta.
+ */
+function barsBlock(
+  ctx: CanvasRenderingContext2D,
+  data: ShareCardData,
+  theme: ShareTheme,
+  m: Metrics,
+  accent: string,
+): Block | null {
+  const bars: { label: string; ratio: number; value: string }[] = []
+
+  if (data.momentumBefore !== null && data.momentumAfter !== null) {
+    bars.push({
+      label: 'Momentum antes',
+      ratio: data.momentumBefore / 100,
+      value: `${data.momentumBefore}`,
+    })
+    bars.push({
+      label: 'Momentum agora',
+      ratio: data.momentumAfter / 100,
+      value: `${data.momentumAfter}`,
+    })
+  }
+
+  if (bars.length === 0) return null
+
+  const labelStyle: TextStyle = { size: 28, weight: 500, color: theme.inkMuted }
+  const valueStyle: TextStyle = { size: 28, weight: 700, color: theme.ink }
+  const thickness = 16
+  const rowHeight = 78
+
+  return {
+    gap: 40,
+    drop: 45,
+    height: bars.length * rowHeight,
+    draw(y) {
+      bars.forEach((bar, index) => {
+        const rowY = y + index * rowHeight
+        const left = m.x - m.contentWidth / 2
+
+        drawLine(ctx, bar.label, left, rowY + labelStyle.size, labelStyle, 'left')
+        const valueWidth = measureText(ctx, bar.value, valueStyle)
+        drawLine(ctx, bar.value, left + m.contentWidth - valueWidth, rowY + valueStyle.size, valueStyle, 'left')
+
+        drawProgressTrack(
+          ctx,
+          left,
+          rowY + labelStyle.size + 20,
+          m.contentWidth,
+          bar.ratio,
+          theme.line,
+          // A barra "antes" é a mesma cor com menos força: comparação entre
+          // duas cores diferentes viraria disputa em vez de percurso.
+          index === bars.length - 1 ? accent : withAlpha(accent, 0.42),
+          thickness,
+        )
+      })
+    },
+  }
+}
+
+/**
+ * O mapa: o assunto no centro e o que sai dele em volta.
+ *
+ * Cada informação vira um nó ligado ao centro por um traço curvo. É a leitura
+ * que mostra PERTENCIMENTO — as partes só fazem sentido porque saem da mesma
+ * coisa —, e é por isso que o número do meio é o do card e os nós são a linha
+ * de apoio, nunca o contrário.
+ *
+ * No máximo quatro nós, dois de cada lado. Seis viram teia, e teia não se lê
+ * num Story que dura cinco segundos.
+ */
+function mapBlock(
+  ctx: CanvasRenderingContext2D,
+  data: ShareCardData,
+  theme: ShareTheme,
+  m: Metrics,
+  accent: string,
+): Block | null {
+  const nodes = [
+    ...data.stats.map((stat) => (stat.label ? `${stat.value} ${stat.label}` : stat.value)),
+    ...(data.secondaryMetric
+      ? [
+          data.secondaryMetric.label
+            ? `${data.secondaryMetric.value} ${data.secondaryMetric.label}`
+            : data.secondaryMetric.value,
+        ]
+      : []),
+    ...data.items.filter((item) => item.done).map((item) => item.label),
+  ].slice(0, 4)
+
+  if (nodes.length === 0) return null
+
+  const centerStyle: TextStyle = { size: 120, weight: 700, color: theme.ink, tracking: -3 }
+  const centerLabelStyle: TextStyle = { size: 30, weight: 500, color: theme.inkMuted }
+  const nodeStyle: TextStyle = { size: 32, weight: 500, color: theme.ink, leading: 1.2 }
+
+  const centerRadius = 150
+  const rowGap = 118
+  const height = centerRadius * 2 + Math.ceil(nodes.length / 2) * rowGap
+
+  return {
+    gap: 40,
+    height,
+    draw(y) {
+      const cx = m.x
+      const cy = y + centerRadius
+
+      ctx.save()
+      ctx.strokeStyle = theme.line
+      ctx.lineWidth = 2
+
+      nodes.forEach((node, index) => {
+        const side = index % 2 === 0 ? -1 : 1
+        const row = Math.floor(index / 2)
+        const nodeY = cy + centerRadius + 40 + row * rowGap
+        const nodeX = cx + side * (m.contentWidth / 2 - 40)
+
+        // O traço sai do centro e curva até o nó: reta ligando dois pontos em
+        // diagonal cruzaria o número quando o nó fica logo abaixo dele.
+        ctx.beginPath()
+        ctx.moveTo(cx, cy + centerRadius - 10)
+        ctx.quadraticCurveTo(cx, nodeY, nodeX - side * 40, nodeY)
+        ctx.stroke()
+
+        const lines = wrapLines(ctx, node, nodeStyle, m.contentWidth / 2 - 60, 2)
+        lines.forEach((line, position) => {
+          drawLine(
+            ctx,
+            line,
+            nodeX,
+            nodeY + lineHeightOf(nodeStyle) * position,
+            nodeStyle,
+            side === -1 ? 'left' : 'left',
+          )
+        })
+      })
+
+      ctx.restore()
+
+      // O centro por último: ele passa por cima dos traços que chegam nele.
+      ctx.fillStyle = withAlpha(accent, 0.16)
+      ctx.beginPath()
+      ctx.arc(cx, cy, centerRadius, 0, Math.PI * 2)
+      ctx.fill()
+
+      ctx.save()
+      ctx.strokeStyle = withAlpha(accent, 0.6)
+      ctx.lineWidth = 3
+      ctx.beginPath()
+      ctx.arc(cx, cy, centerRadius, 0, Math.PI * 2)
+      ctx.stroke()
+      ctx.restore()
+
+      const value = data.primaryMetric.value || `${data.momentumAfter ?? ''}`
+      const scale = value.length > 4 ? 4 / value.length : 1
+      drawLine(
+        ctx,
+        value,
+        cx,
+        cy + centerStyle.size * scale * 0.24,
+        { ...centerStyle, size: centerStyle.size * scale },
+        'center',
+      )
+
+      if (data.primaryMetric.label) {
+        drawLine(ctx, data.primaryMetric.label, cx, cy + centerRadius * 0.62, centerLabelStyle, 'center')
+      }
     },
   }
 }
@@ -483,6 +1052,7 @@ function itemsBlock(
   ctx: CanvasRenderingContext2D,
   data: ShareCardData,
   theme: ShareTheme,
+  composition: ShareComposition,
   m: Metrics,
   accent: string,
 ): Block {
@@ -498,13 +1068,14 @@ function itemsBlock(
 
   return {
     gap: 36,
+    drop: 60,
     height,
     draw(y) {
       shown.forEach((item, index) => {
         const rowY = y + index * rowHeight
         const labelWidth = measureText(ctx, item.label, style)
         const rowWidth = dot + gapAfterDot + labelWidth
-        const startX = theme.align === 'center' ? m.x - rowWidth / 2 : m.x
+        const startX = composition.align === 'center' ? m.x - rowWidth / 2 : m.x
 
         drawCheckDot(ctx, startX, rowY + 4, dot, item.done, accent, theme.line)
         drawLine(
@@ -524,7 +1095,7 @@ function itemsBlock(
           m.x,
           y + shown.length * rowHeight + 28,
           overflowStyle,
-          theme.align,
+          composition.align,
         )
       }
     },
@@ -547,6 +1118,7 @@ function momentumBlock(
   ctx: CanvasRenderingContext2D,
   data: ShareCardData,
   theme: ShareTheme,
+  composition: ShareComposition,
   m: Metrics,
   accent: string,
 ): Block {
@@ -570,9 +1142,10 @@ function momentumBlock(
 
   return {
     gap: 34,
+    drop: 40,
     height: valueStyle.size,
     draw(y) {
-      const startX = theme.align === 'center' ? m.x - total / 2 : m.x
+      const startX = composition.align === 'center' ? m.x - total / 2 : m.x
       const baseline = y + valueStyle.size * 0.78
 
       drawLine(ctx, 'Momentum', startX, baseline - 2, labelStyle, 'left')

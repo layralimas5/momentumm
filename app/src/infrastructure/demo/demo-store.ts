@@ -133,8 +133,14 @@ function seed(): DemoState {
     bio: 'Explorando o Momentumm em modo demo.',
     avatarUrl: null,
     defaultVisibility: 'publica',
+    // O perfil da demo nasce privado como o de qualquer conta nova: é a
+    // primeira coisa que a pessoa vê ao abrir a tela, e vê-lo aberto ensinaria
+    // o contrário do que o produto faz.
+    visibility: 'privado',
     plan: 'free',
-    createdAt: new Date(),
+    // Doze semanas atrás: a demo precisa ter história pra "12 semanas no
+    // Momentumm" significar alguma coisa na tela.
+    createdAt: dateAt(addDays(today, -84), 9),
   }
 
   // Histórico com furo de propósito: sequência viva, mas não perfeita. Uma
@@ -923,8 +929,14 @@ export const demoStore = {
     return axis
   },
 
+  /*
+    Arquivado não volta na listagem — é o mesmo contrato do repositório do
+    Supabase, que filtra `archived_at is null` na consulta. Devolver aqui o que
+    lá não vem faria o modo demo mostrar objetivo arquivado na tela e o modo
+    real não: dois produtos diferentes saindo do mesmo código.
+  */
   objectives(): Objective[] {
-    return [...load().objectives]
+    return load().objectives.filter((objective) => objective.archivedAt === null)
   },
 
   addObjective(input: NewObjectiveInput): Objective {
@@ -1036,7 +1048,25 @@ export const demoStore = {
 
   removePlanStage(id: string): void {
     const current = load()
+    const removed = current.planStages.find((stage) => stage.id === id)
     current.planStages = current.planStages.filter((stage) => stage.id !== id)
+
+    /*
+      O peso é propriedade do conjunto: tirar a etapa que valia 50% deixaria o
+      objetivo somando 50 e uma barra que nunca chega a 100. Criar já
+      redistribuía — apagar não, e a regra ficava dependendo de quem chama
+      lembrar de reequilibrar depois.
+    */
+    if (removed) {
+      const siblings = current.planStages.filter(
+        (stage) => stage.objectiveId === removed.objectiveId,
+      )
+      if (siblings.length > 0) {
+        const balanced = rebalanceWeights(siblings)
+        const byId = new Map(balanced.map((stage) => [stage.id, stage]))
+        current.planStages = current.planStages.map((stage) => byId.get(stage.id) ?? stage)
+      }
+    }
 
     // O trabalho não some com a organização: ação e hábito voltam pro objetivo
     // sem etapa, exatamente como o `on delete set null` do banco faz.
@@ -1051,7 +1081,7 @@ export const demoStore = {
   },
 
   goals(): Goal[] {
-    return [...load().goals]
+    return load().goals.filter((goal) => goal.archivedAt === null)
   },
 
   addGoal(input: NewGoalInput): Goal {
@@ -1078,7 +1108,7 @@ export const demoStore = {
   },
 
   habits(): Habit[] {
-    return [...load().habits]
+    return load().habits.filter((habit) => habit.archivedAt === null)
   },
 
   addHabit(input: NewHabitInput): Habit {

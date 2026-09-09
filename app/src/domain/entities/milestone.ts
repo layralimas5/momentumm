@@ -22,9 +22,21 @@ export interface MilestoneTotals {
   readonly focusMinutes: number
 }
 
+/**
+ * A espécie do marco.
+ *
+ * Existe pra a tela poder dar um ícone a cada um sem ler o id por dentro:
+ * "100 hábitos" merece um símbolo diferente de "30 dias seguidos", e uma lista
+ * de conquistas com o mesmo troféu repetido seis vezes não é uma lista de
+ * conquistas — é uma lista.
+ */
+export const MILESTONE_KINDS = ['habitos', 'dias', 'sequencia', 'objetivos', 'foco'] as const
+export type MilestoneKind = (typeof MILESTONE_KINDS)[number]
+
 export interface Milestone {
   /** Estável e único: é a chave que impede o mesmo marco de ser gravado duas vezes. */
   readonly id: string
+  readonly kind: MilestoneKind
   readonly count: number
   /** O plural que acompanha o número no card: "hábitos concluídos". */
   readonly unit: string
@@ -33,7 +45,7 @@ export interface Milestone {
 }
 
 interface MilestoneRule {
-  readonly kind: string
+  readonly kind: MilestoneKind
   readonly unit: string
   readonly thresholds: readonly number[]
   value(totals: MilestoneTotals): number
@@ -74,6 +86,21 @@ const RULES: readonly MilestoneRule[] = [
   },
 ]
 
+/**
+ * A espécie a partir do id do marco ("sequencia:30").
+ *
+ * O evento gravado guarda o id, não o objeto — então a tela que lê o histórico
+ * precisa deste caminho de volta. Id de uma versão futura, com espécie que não
+ * existe mais, cai em `habitos`: um ícone genérico é melhor que uma conquista
+ * que some da lista.
+ */
+export function milestoneKindOf(id: string): MilestoneKind {
+  const kind = id.split(':')[0] ?? ''
+  return (MILESTONE_KINDS as readonly string[]).includes(kind)
+    ? (kind as MilestoneKind)
+    : 'habitos'
+}
+
 /** Todos os marcos que os totais atuais já sustentam, do menor pro maior. */
 export function reachedMilestones(totals: MilestoneTotals): Milestone[] {
   const reached: Milestone[] = []
@@ -84,6 +111,7 @@ export function reachedMilestones(totals: MilestoneTotals): Milestone[] {
       if (value < threshold) break
       reached.push({
         id: `${rule.kind}:${threshold}`,
+        kind: rule.kind,
         count: threshold,
         unit: rule.unit,
         label: `${threshold} ${rule.unit}`,
@@ -119,6 +147,7 @@ export function nextMilestones(totals: MilestoneTotals): NextMilestone[] {
 
     next.push({
       id: `${rule.kind}:${threshold}`,
+      kind: rule.kind,
       count: threshold,
       unit: rule.unit,
       label: `${threshold} ${rule.unit}`,

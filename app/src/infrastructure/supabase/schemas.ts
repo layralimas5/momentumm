@@ -38,7 +38,7 @@ import type { Objective } from '@/domain/entities/objective'
 import { PLAN_TIERS } from '@/domain/entities/plan'
 import { STAGE_STATUSES, type PlanStage } from '@/domain/entities/plan-stage'
 import { PRIORITIES } from '@/domain/entities/priority'
-import type { Profile } from '@/domain/entities/profile'
+import { PROFILE_VISIBILITIES, type Profile } from '@/domain/entities/profile'
 import { REVIEW_STEPS, type WeeklyReview } from '@/domain/entities/weekly-review'
 import { ParseError } from '@/shared/errors'
 
@@ -97,6 +97,9 @@ const profileRowSchema = z.object({
   bio: z.string().nullable(),
   avatar_url: z.string().nullable(),
   default_visibility: z.enum(ACTIVITY_VISIBILITIES),
+  // Conta criada antes da 0012 não tem a coluna: o mapeamento cai no degrau
+  // mais fechado em vez de assumir que o perfil estava aberto.
+  profile_visibility: z.enum(PROFILE_VISIBILITIES).nullish(),
   // Conta criada antes da migration de planos não tem a coluna preenchida.
   plan: z.enum(PLAN_TIERS).nullish(),
   created_at: z.string(),
@@ -198,6 +201,12 @@ export function toProfile(row: unknown): Profile {
     bio: parsed.bio,
     avatarUrl: parsed.avatar_url,
     defaultVisibility: parsed.default_visibility,
+    /*
+      Coluna nova: uma base criada antes da 0012 responde `undefined` aqui, e o
+      degrau mais fechado é a única resposta segura pra uma linha que ainda não
+      escolheu. Cair em 'publico' por omissão abriria perfis que ninguém abriu.
+    */
+    visibility: parsed.profile_visibility ?? 'privado',
     plan: parsed.plan ?? 'free',
     createdAt: new Date(parsed.created_at),
   }

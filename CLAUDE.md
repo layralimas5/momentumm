@@ -136,6 +136,28 @@ Insight → Ajuste.**
   capacidade, queda de constância, hábito que puxa execução, caixa de entrada,
   retomada reconhecida)
 
+O **Momentumm AI** grava as etapas que mostra: cada linha de `steps` vira uma
+`plan_stage` de verdade e cada ação nasce dentro da sua (`stepIndex` no contrato
+da sugestão). Antes disso a prévia prometia um caminho e salvava uma lista, e o
+objetivo criado por ali nascia sem plano — logo sem gargalo, sem previsão e fora
+de todas as regras de insight de etapa.
+
+O insight `objetivo-sem-plano` fecha o elo que faltava: objetivo com três ou
+mais ações e nenhuma etapa é cobrado, porque ali a barra mede volume e ninguém
+consegue ver o que está travando. Abaixo desse número ele se cala — objetivo
+recém-criado ainda não tem o que quebrar em etapas.
+
+A ponte entre o plano e o dia é o botão **Trazer pra hoje**, na linha de ação
+(plano, etapa e caixa de entrada) e no card da próxima ação do dashboard. Antes
+dele a ação atrasada ou marcada pra frente só entrava no dia pelo editor, e o
+passo que o plano apontava como próximo não tinha caminho até `Hoje`.
+
+O modo demo devolve as mesmas listas que o Supabase: objetivo, meta e hábito
+arquivados ficam fora de `listByUser`, e apagar etapa redistribui os pesos como
+criar já fazia. Divergência entre os dois repositórios do mesmo contrato é o
+começo de dois produtos saindo do mesmo código. `demo-flow.test.ts` cobre o
+ciclo inteiro por esses repositórios.
+
 **Etapa concluída é decisão da pessoa.** O app sugere quando todas as ações
 obrigatórias saíram, e só. O único avanço automático é a etapa sair de "não
 iniciada" na primeira ação concluída.
@@ -189,6 +211,31 @@ elo só conhece o anterior. `share-card-adapter` é o único lugar que decide o 
 um evento vira dentro de uma imagem; nenhum template conhece hábito, objetivo ou
 etapa.
 
+**O card nasce cheio do que a pessoa fez.** Tudo que é NÚMERO começa ligado:
+percentual, momentum, duração, sequência, contagens de hábitos e ações, dias
+ativos, volume registrado contra o alvo ("1.240 de 1.800 páginas"), etapas
+fechadas, prazo restante e a lista do que saiu. Continuam desligados só os três
+que carregam TEXTO escrito por ela — título do objetivo, área que ela criou e o
+próprio nome — mais a frase do app.
+
+Com o conteúdo escolhido pela pessoa, a pilha passou a poder estourar 1920px.
+Cada bloco declara uma ordem de sacrifício (`drop`) e o renderizador corta o de
+maior ordem até caber: lista antes da linha de apoio, linha de apoio antes do
+momentum. Cortar é melhor que encolher — reduzir a fonte faria dois cards do
+mesmo dia saírem com tipografias diferentes.
+
+**Mais informação dentro do card, por escolha.** Além do número e da lista, o
+card tem uma LINHA DE APOIO com sequência, área, avanço do objetivo
+("42% → 58%") e as contagens de hábitos e ações. Ela é uma lista (`stats`), não
+campos soltos: um dado novo passa a aparecer sem que nenhum template saiba o
+que ele é, pelo mesmo motivo de `items` ser uma lista. Só a sequência nasce
+ligada — é o dado que faz o card ser postado; o resto entra num toque.
+
+E o painel passou a oferecer o que ESTE evento tem, não o que o tipo dele
+suporta em tese (`availableFieldsForEvent`): hábito marcado sem cronômetro não
+mostra "Duração", dia sem sequência não mostra "Sequência". Toggle que não muda
+nada ensina a desconfiar dos outros.
+
 **Privacidade por menor exposição.** Nome do objetivo, lista de hábitos e nome
 da pessoa começam **desligados** — são os três campos que carregam texto escrito
 por ela. Campo desligado não vira placeholder: ele some. Um card com "Objetivo
@@ -202,23 +249,33 @@ no Safari do iPhone — o aparelho onde o Stories acontece. Existe UM renderizad
 desenho em escala menor. "O que você vê é o que sai" fica garantido por
 construção, não por disciplina.
 
-Os cinco templates (Dark, Light, Gradient, Minimal, Transparent) são **temas** —
-paleta, alinhamento, densidade e fundo — sobre o mesmo layout. Cinco funções de
-desenho independentes seriam cinco lugares pra corrigir, e quatro ficariam pra
-trás. Transparent exporta PNG com alpha real, pra ir sobre a foto da pessoa.
+**O card é do Story, e só.** Post 4:5 e quadrado saíram: feed é publicação
+permanente, e card gerado por app no meio do perfil de alguém é o que ninguém
+posta duas vezes. Com um formato só, o desenho é afinado pra ele em vez de
+servir aos três pela metade — e o seletor de formato sumiu junto, porque
+pergunta com uma resposta só não é escolha.
 
-**Foto de fundo, no modelo do Strava.** A pessoa escolhe uma foto do aparelho e
-ela vira o fundo do card. Três decisões sustentam isso:
+**Cor e arranjo são dimensões separadas.**
 
-- A foto **nunca sai do aparelho**. É lida pelo navegador, desenhada no canvas e
-  vira parte do PNG. Não existe upload, bucket nem servidor sabendo dela
-- Com foto, o conteúdo **desce e encosta no rodapé** em vez de ficar centrado.
-  Os dois terços de cima da foto ficam limpos — o rosto, o lugar, o treino — e o
-  texto cai sobre a faixa que o véu escurece. Centralizado, o número cobriria
-  justamente o que a foto tem de melhor
-- Com foto, o template decide só **alinhamento e densidade**: a paleta vira
-  branco com sombra. Não existe resposta certa pra texto preto sobre uma foto
-  que pode ser noturna
+A COR são quatro: Preto, Neon (moldura acesa), Branco e PNG (sem fundo, alpha
+real, pra ir sobre a foto da pessoa). O ARRANJO são seis: Destaque (número no
+meio), Cartaz (número primeiro, texto no rodapé), Editorial (a frase manda e o
+dado apoia), Tópicos (tudo em lista), Gráfico (anel de progresso e barras do
+momentum) e Mapa (o assunto no centro, o resto em volta ligado por traços).
+
+Separá-las foi o que evitou vinte e quatro templates: "cartaz claro" e "cartaz
+escuro" seriam duas cópias que divergiriam na primeira correção. O tema descreve
+só tinta, fundo e moldura; a composição descreve ordem dos blocos, alinhamento,
+âncora, tamanho do número e se existe gráfico ou mapa. Nenhuma das duas é função
+de desenho própria — o renderizador continua um só, e gráfico e mapa apenas
+acrescentam um bloco à mesma pilha.
+
+**A escolha do arranjo acontece no próprio card.** O preview é um carrossel:
+arrasta pro lado e a mesma informação se reorganiza, em tamanho real, com o
+desenho que vai sair no PNG. Os pontos abaixo são botões de verdade — deslizar
+não funciona por teclado nem por leitor de tela, e um seletor que só existe no
+gesto deixa de fora justamente quem mais precisa de alternativa. Sobre foto, a
+cor sai de cena (branco com sombra) e o arranjo continua valendo inteiro.
 
 O card também emagreceu. Saiu a barra de progresso (o "87%" já é a informação),
 o selo do momentum virou uma linha sem caixa — moldura desenhada por cima da
@@ -230,7 +287,7 @@ parecer dela, não o print de um dashboard.
 afinado; o desktop tem o layout de duas colunas e funciona, mas não recebe
 investimento novo.
 
-Saída sempre em PNG (1080×1920 / 1080×1350 / 1080×1080). Compartilhamento pelo
+Saída sempre em PNG 1080×1920. Compartilhamento pelo
 share sheet nativo (Web Share API com arquivo) e download como saída quando ele
 não existe — sem SDK de Instagram, TikTok ou WhatsApp. Analytics tem contrato e
 ponto único de saída (`share-analytics`), com payload FECHADO: tipo, template e
@@ -240,6 +297,14 @@ Botões em `Hoje` (dia, rotina, retomada, momentum, conforme o que o dia
 oferece), no detalhe do objetivo, no fim do review e nos insights. O estúdio mora
 acima das páginas (`ShareStudioProvider`): cinco telas abrindo o mesmo modal, em
 vez de cinco modais que divergem em dois meses.
+
+As garantias dessa camada estão travadas em teste (`journey-invariants.test.ts`),
+não só em comentário: todo tipo nasce privado, o gravador nem informa
+visibilidade (quem decide é o default do domínio e o do banco), rodar de novo
+não duplica, e todo tipo que o feed do círculo mostra é um tipo que alguém
+grava. O custo de errar aqui não aparece hoje — aparece no dia em que mil
+linhas gravadas com a visibilidade errada ficam visíveis pra outra pessoa, e aí
+não há correção que desfaça o que já foi visto.
 
 **Não implementado de propósito:** feed, amigos, curtidas, comentários,
 comunidade, ranking e perfil público. A arquitetura está pronta pra eles; o
@@ -278,8 +343,30 @@ próximo marco e o progresso recente. Nenhum número é calculado aqui — todos
 de onde já eram calculados, porque duas telas contando "constância" com contas
 diferentes é como um app começa a discordar de si mesmo.
 
-Nome, foto e bio se editam ali; @ e visibilidade padrão continuam em
-Configurações, que é onde moram os ajustes de conta.
+Nome, foto e bio se editam ali; @ e visibilidade padrão da ATIVIDADE continuam
+em Configurações, que é onde moram os ajustes de conta.
+
+A tela abre com a linha que resume a pessoa em números — momentum, objetivos
+ativos, consistência em porcentagem e tempo de casa ("12 semanas no Momentumm")
+—, e as conquistas têm um ícone por espécie: fogo pra sequência, alvo pra
+objetivo, relógio pra foco. O mesmo troféu repetido seis vezes achatava
+conquistas diferentes numa coisa só.
+
+**Visibilidade do perfil (migration `0012`).** Três degraus — `privado`
+(padrão), `amigos`, `publico` — e eles valem pro PERFIL, nunca pros momentos:
+perfil público não torna público nada que a pessoa não marcou. A política
+`using (true)` de `profiles`, que vinha da 0001 e deixava qualquer conta ler
+nome, @, bio e foto de toda a base, foi substituída por dono + amigo aceito +
+público + quem tem vínculo de amizade (aceito ou pendente — sem isso o pedido
+chega como "alguém quer te adicionar", impossível de responder).
+
+**A busca pelo @ EXATO continua achando todo mundo**, e isso é deliberado:
+perfil nasce privado, e uma busca que respeitasse a visibilidade sem exceção
+deixaria todo mundo invisível pra todo mundo — o Círculo nunca sairia do zero.
+`find_profile_by_handle` é `security definer`, devolve só o cartão de visita
+(id, nome, @, foto), compara por igualdade (nunca `like`) e tem revoke
+explícito ao `anon`, pela lição da 0010. Busca PARCIAL, por nome, continua no
+SELECT normal e enxerga só quem escolheu `publico`.
 
 **A foto vive na coluna `avatar_url`**, reduzida a 256px e codificada como data
 URL (~20KB) antes de sair do aparelho. Evita um bucket de Storage inteiro —

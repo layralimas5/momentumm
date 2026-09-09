@@ -121,11 +121,24 @@ export function TaskRow({
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1 self-end sm:self-start">
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-1 self-end sm:self-start">
         <PriorityTag priority={task.priority} />
 
         {isPending(task) ? (
           <>
+            {/*
+              A ponte entre o plano e o dia. Sem ela a ação atrasada só podia
+              ser adiada mais um dia ou editada num diálogo — e o passo que o
+              plano acabou de mostrar como próximo não tinha caminho até `Hoje`,
+              que é a única tela onde ele vira execução.
+            */}
+            {task.day === planner.today ? null : (
+              <IconButton
+                icon="calendario"
+                label={`Trazer ${task.title} pra hoje`}
+                onClick={() => void planner.updateTask(task.id, { day: planner.today })}
+              />
+            )}
             <IconButton
               icon="subir"
               label={`Subir ${task.title}`}

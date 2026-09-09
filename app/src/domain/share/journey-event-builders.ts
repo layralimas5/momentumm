@@ -52,6 +52,14 @@ export interface DayEventInput {
   readonly items: readonly JourneyItem[]
   readonly focusMinutes: number
   readonly momentum: MomentumScore | null
+  /** Dias seguidos com movimento. Vira a linha de apoio do card. */
+  readonly streakDays?: number
+  /** Hábitos cumpridos hoje. Separado das ações porque o card os separa. */
+  readonly habitsDone?: number
+  /** Dias com movimento nos últimos sete. Constância, não sequência. */
+  readonly activeDays?: number
+  /** Minutos de foco acumulados na semana, pra o dia poder mostrar contexto. */
+  readonly weekFocusMinutes?: number
 }
 
 export function dayCompletedEvent(input: DayEventInput): JourneyEvent {
@@ -69,6 +77,11 @@ export function dayCompletedEvent(input: DayEventInput): JourneyEvent {
       metadata: {
         items: input.items,
         tasksDone: input.done,
+        ...(input.habitsDone ? { habitsDone: input.habitsDone } : {}),
+        ...(input.streakDays ? { streakDays: input.streakDays } : {}),
+        ...(input.activeDays !== undefined
+          ? { activeDays: input.activeDays, windowDays: 7 }
+          : {}),
         ...(input.focusMinutes > 0 ? { focusMinutes: input.focusMinutes } : {}),
       },
       ...momentumPair(input.momentum),
@@ -88,6 +101,7 @@ export interface RoutineEventInput {
   readonly items: readonly JourneyItem[]
   readonly focusMinutes: number
   readonly momentum: MomentumScore | null
+  readonly streakDays?: number
 }
 
 /** A rotina é o bloco do dia: os hábitos da manhã, os da noite. */
@@ -104,7 +118,11 @@ export function routineCompletedEvent(input: RoutineEventInput): JourneyEvent {
       title: routineTitle(input.dayPart),
       completionPercentage: ratio,
       durationMin: input.focusMinutes || null,
-      metadata: { items: input.items, habitsDone: done },
+      metadata: {
+        items: input.items,
+        habitsDone: done,
+        ...(input.streakDays ? { streakDays: input.streakDays } : {}),
+      },
       ...momentumPair(input.momentum),
     },
     `rotina:${input.today}:${input.dayPart}`,
@@ -130,6 +148,30 @@ export interface ObjectiveEventInput {
   /** Avanço em pontos percentuais na última semana. */
   readonly gainPercentage: number | null
   readonly momentum: MomentumScore | null
+  /*
+    O que o objetivo já tem além da porcentagem: o volume registrado contra o
+    alvo, as etapas fechadas e o prazo. São os números que a tela do objetivo
+    mostra ao lado da barra — e não havia motivo pra o card ser mais pobre que
+    a tela de onde ele sai.
+  */
+  readonly doneValue?: number
+  readonly targetValue?: number
+  readonly unitLabel?: string
+  readonly daysLeft?: number
+  readonly stagesDone?: number
+  readonly stagesTotal?: number
+}
+
+/** Os números do objetivo, no formato do metadata e sem os que não existem. */
+function objectiveNumbers(input: ObjectiveEventInput) {
+  return {
+    ...(input.doneValue !== undefined ? { doneValue: input.doneValue } : {}),
+    ...(input.targetValue !== undefined ? { targetValue: input.targetValue } : {}),
+    ...(input.unitLabel ? { unitLabel: input.unitLabel } : {}),
+    // Prazo estourado não vira "faltam -4 dias": ele simplesmente não entra.
+    ...(input.daysLeft !== undefined && input.daysLeft >= 0 ? { daysLeft: input.daysLeft } : {}),
+    ...(input.stagesTotal ? { stagesDone: input.stagesDone ?? 0, stagesTotal: input.stagesTotal } : {}),
+  }
 }
 
 export function goalProgressEvent(input: ObjectiveEventInput): JourneyEvent {
@@ -142,9 +184,19 @@ export function goalProgressEvent(input: ObjectiveEventInput): JourneyEvent {
       title: input.title,
       completionPercentage: input.ratio,
       progressAfter: input.ratio,
+      /*
+        O lado de ANTES sai do avanco da semana: onde o objetivo estava sete
+        dias atras. Sem ele o card so consegue dizer "58%", que e uma nota;
+        com ele diz "42% -> 58%", que e movimento, a unica coisa que este
+        produto mede.
+      */
+      ...(input.gainPercentage !== null && input.gainPercentage > 0
+        ? { progressBefore: Math.max(0, input.ratio - input.gainPercentage / 100) }
+        : {}),
       metadata: {
         axis: input.axis,
         ...(input.gainPercentage !== null ? { gainPercentage: input.gainPercentage } : {}),
+        ...objectiveNumbers(input),
       },
       ...momentumPair(input.momentum),
     },
@@ -164,7 +216,10 @@ export function goalCompletedEvent(
       title: input.title,
       completionPercentage: 1,
       progressAfter: 1,
-      metadata: { axis: input.axis },
+      metadata: {
+        axis: input.axis,
+        ...objectiveNumbers({ ...input, ratio: 1, gainPercentage: null }),
+      },
       ...momentumPair(input.momentum),
     },
     `objetivo-concluido:${input.objectiveId}`,
@@ -184,6 +239,12 @@ export interface WeekEventInput {
   readonly habitsDone: number
   readonly focusMinutes: number
   readonly momentum: MomentumScore | null
+  /** Ações concluídas na semana. */
+  readonly tasksDone?: number
+  /** Dias com movimento, de sete. É a leitura de constância da semana. */
+  readonly activeDays?: number
+  /** O que foi cumprido na semana, pra o card poder listar. */
+  readonly items?: readonly JourneyItem[]
 }
 
 export function weeklyReviewEvent(input: WeekEventInput): JourneyEvent {
@@ -198,6 +259,11 @@ export function weeklyReviewEvent(input: WeekEventInput): JourneyEvent {
       durationMin: input.focusMinutes || null,
       metadata: {
         habitsDone: input.habitsDone,
+        ...(input.tasksDone ? { tasksDone: input.tasksDone } : {}),
+        ...(input.activeDays !== undefined
+          ? { activeDays: input.activeDays, windowDays: 7 }
+          : {}),
+        ...(input.items && input.items.length > 0 ? { items: input.items } : {}),
         ...(input.focusMinutes > 0 ? { focusMinutes: input.focusMinutes } : {}),
       },
       ...momentumPair(input.momentum),

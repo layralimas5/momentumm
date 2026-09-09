@@ -1,5 +1,9 @@
 import type { JourneyEventType } from '@/domain/entities/journey-event'
-import type { ShareFormat, ShareTemplateId } from '@/domain/share/share-card'
+import type {
+  ShareCompositionId,
+  ShareFormat,
+  ShareTemplateId,
+} from '@/domain/share/share-card'
 
 /**
  * Eventos internos do Share Studio.
@@ -20,7 +24,7 @@ import type { ShareFormat, ShareTemplateId } from '@/domain/share/share-card'
 export const SHARE_ANALYTICS_EVENTS = [
   'share_studio_opened',
   'share_template_selected',
-  'share_format_selected',
+  'share_composition_selected',
   'share_generated',
   'share_saved',
   'share_shared',
@@ -31,6 +35,7 @@ export type ShareAnalyticsEvent = (typeof SHARE_ANALYTICS_EVENTS)[number]
 export interface ShareAnalyticsPayload {
   readonly activity_type: JourneyEventType
   readonly template: ShareTemplateId
+  readonly composition: ShareCompositionId
   readonly format: ShareFormat
 }
 

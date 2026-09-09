@@ -4,6 +4,7 @@ import { createJourneyEvent, type NewJourneyEventInput } from '@/domain/entities
 import { toShareCardData } from './share-card-adapter'
 import {
   availableFieldsFor,
+  availableFieldsForEvent,
   defaultFieldsFor,
   sanitizeFields,
   supportsField,
@@ -38,11 +39,25 @@ function card(
 }
 
 describe('privacidade por padrão', () => {
-  it('começa sem nome do objetivo, sem lista e sem nome da pessoa', () => {
-    const fields = defaultFieldsFor('routine_completed')
+  /*
+    A regra mudou de "menos coisa na tela" para "tudo que é NÚMERO aparece, o
+    que é TEXTO ESCRITO pela pessoa não". O card conta o que ela fez; quem ela
+    é e como ela chamou aquilo continua sendo escolha dela.
+  */
+  it('começa sem nome do objetivo, sem área criada por ela e sem o nome dela', () => {
+    const fields = defaultFieldsFor('goal_progress')
     expect(fields.objective).toBe(false)
-    expect(fields.items).toBe(false)
+    expect(fields.axis).toBe(false)
     expect(fields.username).toBe(false)
+    expect(fields.note).toBe(false)
+  })
+
+  it('começa mostrando o que foi feito: lista, contagens e métricas', () => {
+    const fields = defaultFieldsFor('day_completed')
+    expect(fields.items).toBe(true)
+    expect(fields.counts).toBe(true)
+    expect(fields.streak).toBe(true)
+    expect(fields.activeDays).toBe(true)
   })
 
   it('começa com número e percentual ligados: é o motivo do card existir', () => {
@@ -257,5 +272,171 @@ describe('o card do desafio', () => {
 
     expect(data.primaryMetric.value).toBe('Topei')
     expect(data.primaryMetric.value).not.toContain('0')
+  })
+})
+
+
+// ---------------------------------------------------------------------------
+// a linha de apoio
+// ---------------------------------------------------------------------------
+
+describe('informações da linha de apoio', () => {
+  it('mostra a sequência por padrão, com o plural certo', () => {
+    const one = card({ type: 'day_completed', metadata: { streakDays: 1 } })
+    const many = card({ type: 'day_completed', metadata: { streakDays: 12 } })
+
+    expect(one.stats).toContainEqual({ value: '1', label: 'dia seguido' })
+    expect(many.stats).toContainEqual({ value: '12', label: 'dias seguidos' })
+  })
+
+  it('as contagens aparecem por padrão e saem por toggle', () => {
+    const open = card({ type: 'day_completed', metadata: { habitsDone: 5, tasksDone: 3 } })
+    expect(open.stats).toContainEqual({ value: '5', label: 'hábitos' })
+    expect(open.stats).toContainEqual({ value: '3', label: 'ações' })
+
+    const closed = card(
+      { type: 'day_completed', metadata: { habitsDone: 5, tasksDone: 3 } },
+      { counts: false },
+    )
+    expect(closed.stats.some((stat) => stat.label === 'hábitos')).toBe(false)
+  })
+
+  it('o objetivo mostra volume, etapas e prazo', () => {
+    const goal = card({
+      type: 'goal_progress',
+      sourceType: 'objective',
+      progressAfter: 0.58,
+      completionPercentage: 0.58,
+      metadata: {
+        axis: 'leitura',
+        doneValue: 1240,
+        targetValue: 1800,
+        unitLabel: 'páginas',
+        stagesDone: 3,
+        stagesTotal: 5,
+        daysLeft: 23,
+      },
+    })
+
+    expect(goal.stats).toContainEqual({ value: '1.240 de 1.800', label: 'páginas' })
+    expect(goal.stats).toContainEqual({ value: '3 de 5', label: 'etapas' })
+    expect(goal.stats).toContainEqual({ value: '23', label: 'dias restantes' })
+  })
+
+  it('prazo vencido não vira contagem negativa', () => {
+    const goal = card({
+      type: 'goal_progress',
+      sourceType: 'objective',
+      progressAfter: 0.58,
+      metadata: { daysLeft: 0 },
+    })
+
+    expect(goal.stats).toContainEqual({ value: 'Último dia', label: null })
+  })
+
+  it('a semana mostra os dias ativos', () => {
+    const week = card({
+      type: 'weekly_review',
+      sourceType: 'week',
+      completionPercentage: 0.8,
+      metadata: { activeDays: 5, windowDays: 7 },
+    })
+
+    expect(week.stats).toContainEqual({ value: '5 de 7', label: 'dias ativos' })
+  })
+
+  /*
+    A área é do hábito e do objetivo, não do dia: o dia inteiro atravessa
+    várias, e "Leitura" num card que também tem treino e meditação seria
+    simplesmente falso.
+  */
+  it('a área entra no card do hábito, e não no do dia', () => {
+    const habit = card(
+      { type: 'habit_completed', sourceType: 'habit', metadata: { axis: 'leitura' } },
+      { axis: true },
+    )
+    expect(habit.stats).toContainEqual({ value: 'Leitura', label: null })
+
+    const day = card({ type: 'day_completed', metadata: { axis: 'leitura' } }, { axis: true })
+    expect(day.stats.some((stat) => stat.value === 'Leitura')).toBe(false)
+  })
+
+  it('o avanço do objetivo mostra os dois lados', () => {
+    const moved = card(
+      {
+        type: 'goal_progress',
+        sourceType: 'objective',
+        title: 'Lançar meu SaaS',
+        progressBefore: 0.42,
+        progressAfter: 0.58,
+      },
+      { progress: true },
+    )
+
+    expect(moved.stats).toContainEqual({ value: '42% → 58%', label: 'nesta semana' })
+    // A mesma notícia não aparece duas vezes: com o avanço na linha de apoio,
+    // a métrica secundária cala.
+    expect(moved.secondaryMetric).toBeNull()
+  })
+
+  it('não inventa avanço quando os dois lados são iguais', () => {
+    const still = card(
+      {
+        type: 'goal_progress',
+        sourceType: 'objective',
+        progressBefore: 0.58,
+        progressAfter: 0.58,
+      },
+      { progress: true },
+    )
+
+    expect(still.stats.some((stat) => stat.label === 'nesta semana')).toBe(false)
+  })
+
+  it('campo sem dado no evento não vira texto neutro', () => {
+    const empty = card(
+      { type: 'day_completed' },
+      { streak: true, axis: true, counts: true, progress: true },
+    )
+
+    expect(empty.stats).toEqual([])
+  })
+})
+
+describe('o painel só oferece o que o evento tem', () => {
+  it('esconde sequência, área e contagens quando o evento não carrega nenhuma', () => {
+    const bare = event({ type: 'day_completed', completionPercentage: 0.5 })
+    const offered = availableFieldsForEvent(bare)
+
+    expect(offered).not.toContain('streak')
+    expect(offered).not.toContain('counts')
+    expect(offered).toContain('completion')
+  })
+
+  it('oferece o que existe, e só isso', () => {
+    const rich = event({
+      type: 'day_completed',
+      completionPercentage: 1,
+      durationMin: 45,
+      metadata: { streakDays: 9, habitsDone: 4, items: [{ label: 'Ler', done: true }] },
+    })
+    const offered = availableFieldsForEvent(rich)
+
+    expect(offered).toContain('streak')
+    expect(offered).toContain('counts')
+    expect(offered).toContain('duration')
+    expect(offered).toContain('items')
+  })
+
+  it('nunca oferece campo fora da lista do tipo', () => {
+    const goal = event({
+      type: 'goal_progress',
+      sourceType: 'objective',
+      durationMin: 30,
+      metadata: { streakDays: 5 },
+    })
+
+    expect(availableFieldsForEvent(goal)).not.toContain('duration')
+    expect(availableFieldsForEvent(goal)).not.toContain('streak')
   })
 })

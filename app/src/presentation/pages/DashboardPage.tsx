@@ -102,6 +102,20 @@ export function DashboardPage() {
     [planner],
   )
 
+  /**
+   * A ação do plano entrando no dia.
+   *
+   * É o passo que faltava entre "o plano diz que é isso" e "hoje eu faço
+   * isso": sem ele a única saída era editar a ação num diálogo pra trocar a
+   * data, e um fluxo que depende de abrir o editor é um fluxo que ninguém faz.
+   */
+  const bringToToday = useCallback(
+    async (task: Task) => {
+      await planner.updateTask(task.id, { day: planner.today })
+    },
+    [planner],
+  )
+
   const shrinkTask = useCallback(
     async (task: Task) => {
       const smaller = shrinkToMinimal(task)
@@ -235,6 +249,7 @@ export function DashboardPage() {
           onStartFocus={startFocus}
           onCompleteTask={completeTask}
           onPostponeTask={postponeTask}
+          onBringToToday={bringToToday}
           onShrinkTask={shrinkTask}
           onApplyInsight={applyInsight}
           onContinueGoal={continueGoal}
@@ -320,7 +335,9 @@ export function DashboardPage() {
         <NextUpCard
           nextUp={view.nextUp}
           mainPriority={view.mainPriority}
+          today={planner.today}
           onStartFocus={startFocus}
+          onBringToToday={(task) => void bringToToday(task)}
         />
       </div>
 

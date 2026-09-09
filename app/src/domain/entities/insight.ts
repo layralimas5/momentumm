@@ -330,6 +330,41 @@ const paceBehindDeadline: Rule = (input) => {
   }
 }
 
+/** Ações sem etapa a partir das quais o objetivo virou lista de tarefas. */
+const UNSTAGED_THRESHOLD = 3
+
+/**
+ * Objetivo executando sem caminho.
+ *
+ * É o elo que falta quando a pessoa acumula ações num objetivo que nunca virou
+ * plano: o progresso cai no volume registrado, o gargalo não existe e a
+ * previsão se cala. Só dispara com ação acumulada — objetivo recém-criado
+ * ainda não tem o que quebrar em etapas, e cobrar plano no primeiro dia é
+ * cobrar burocracia.
+ */
+const objectiveWithoutPlan: Rule = (input) => {
+  const found = (input.objectives ?? [])
+    .filter((item) => !item.plan.hasPlan && item.plan.unstaged.length >= UNSTAGED_THRESHOLD)
+    .sort((a, b) => b.plan.unstaged.length - a.plan.unstaged.length)[0]
+
+  if (!found) return null
+
+  const objective = found.plan.objective
+  const open = found.plan.unstaged.length
+
+  return {
+    id: `objetivo-sem-plano-${objective.id}`,
+    title: `${objective.title} tem ${open} ações e nenhuma etapa`,
+    reason:
+      'Sem etapa, a barra do objetivo mede só o volume que você registrou — não dá pra saber que parte do caminho está feita nem o que está travando.',
+    recommendation:
+      'Quebra ele em três a cinco etapas e leva cada ação pra dentro de uma. É o que faz a porcentagem passar a significar alguma coisa.',
+    action: 'abrir-objetivo',
+    actionLabel: 'Montar o plano',
+    focus: { objectiveId: objective.id },
+  }
+}
+
 /** Uma ação obrigatória entre a pessoa e a etapa seguinte. */
 const unlockNextStage: Rule = (input) => {
   const found = (input.objectives ?? []).find(
@@ -551,6 +586,7 @@ const RULES: readonly Rule[] = [
   streakAtRisk,
   stageBottleneck,
   paceBehindDeadline,
+  objectiveWithoutPlan,
   overloadedDay,
   weekBiggerThanCapacity,
   lowEnergyPattern,
