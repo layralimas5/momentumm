@@ -3,6 +3,7 @@ import { addDays, dayKeyOf } from '@/domain/entities/day'
 import { forecastOf } from '@/domain/entities/forecast'
 import { countsAsDone } from '@/domain/entities/habit'
 import { generateInsights } from '@/domain/entities/insight'
+import { buildPlan } from '@/domain/entities/plan-builder'
 import { calculateMomentum } from '@/domain/entities/momentum'
 import { planProgressOf } from '@/domain/entities/plan-progress'
 import { totalWeightOf } from '@/domain/entities/plan-stage'
@@ -272,5 +273,79 @@ describe('ajuste do plano', () => {
 
     const tasks = await tasksRepo.listByUser()
     expect(tasks.some((task) => task.title === 'Mapear os concorrentes')).toBe(true)
+  })
+})
+
+/**
+ * O caminho que a tela "Novo objetivo" percorre: o plano gerado é gravado como
+ * objetivo, etapas e ações ligadas a elas — a mesma sequência do `applyPlan`.
+ *
+ * Existe porque o elo entre gerar e gravar já esteve quebrado uma vez: a prévia
+ * mostrava um plano e o app salvava três ações soltas, e o objetivo nascia sem
+ * caminho justo no dia em que ele era criado.
+ */
+describe('criar objetivo grava o plano inteiro', () => {
+  it('objetivo, etapas somando 100 e toda ação dentro da sua etapa', async () => {
+    const draft = buildPlan({
+      axis: 'estudo',
+      title: 'Terminar o curso',
+      target: 900,
+      today: TODAY,
+      deadline: addDays(TODAY, 45),
+      daysPerWeek: 5,
+      minutesPerDay: 60,
+    })
+
+    // Uma área comporta um objetivo ativo, e a conta demo já vem com um de
+    // estudo. Abrir espaço aqui é o mesmo que a pessoa faria na tela.
+    for (const item of await objectives.listByUser()) {
+      if (item.axis === 'estudo') await objectives.archive(item.id)
+    }
+
+    const created = await objectives.create({ userId: DEMO_USER.id, ...draft.objective })
+
+    const stageIds: string[] = []
+    for (const [index, stage] of draft.stages.entries()) {
+      const saved = await stagesRepo.create({
+        userId: DEMO_USER.id,
+        objectiveId: created.id,
+        title: stage.title,
+        description: stage.description,
+        order: index,
+        weight: stage.weight,
+        dueOn: stage.dueOn,
+      })
+      stageIds.push(saved.id)
+    }
+
+    let order = 0
+    for (const task of draft.tasks) {
+      const { stageIndex, ...fields } = task
+      await tasksRepo.create({
+        userId: DEMO_USER.id,
+        ...fields,
+        objectiveId: created.id,
+        stageId: stageIndex === null ? null : (stageIds[stageIndex] ?? null),
+        order: order++,
+      })
+    }
+
+    const [allStages, allTasks, allHabits] = await Promise.all([
+      stagesRepo.listByUser(),
+      tasksRepo.listByUser(),
+      habitsRepo.listByUser(),
+    ])
+
+    const mine = allStages.filter((stage) => stage.objectiveId === created.id)
+    expect(mine).toHaveLength(draft.stages.length)
+    expect(totalWeightOf(mine)).toBe(100)
+
+    const progress = planProgressOf(created, allStages, allTasks, allHabits, TODAY)
+
+    expect(progress.hasPlan).toBe(true)
+    // Nenhuma ação órfã: o objetivo recém-criado já mede caminho, não volume.
+    expect(progress.unstaged).toHaveLength(0)
+    expect(progress.nextTask?.day).toBe(TODAY)
+    expect(progress.currentStage?.stage.title).toBe(draft.stages[0]?.title)
   })
 })

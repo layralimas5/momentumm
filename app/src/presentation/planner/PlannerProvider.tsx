@@ -96,6 +96,17 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   const [online, setOnline] = useState(() => navigator.onLine)
   const mounted = useRef(true)
 
+  /*
+    O estado como ele está AGORA, e não como estava no render.
+
+    Criar várias etapas em sequência (o plano de um objetivo novo, a sugestão
+    da IA) acontece dentro de um `for` no mesmo tick: `data` não muda entre as
+    voltas, então a segunda etapa enxergaria um objetivo sem irmãs e o peso do
+    conjunto sairia somando muito mais que 100 na tela até o próximo reload.
+  */
+  const snapshot = useRef<Snapshot>(EMPTY)
+  snapshot.current = data
+
   // Recalculado a cada render: o app aberto virando o dia acompanha a data.
   const today = dayKeyOf(new Date())
 
@@ -443,7 +454,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     async (input: Omit<NewPlanStageInput, 'userId'>): Promise<PlanStage | null> => {
       if (!user) return null
 
-      const siblings = stagesOfObjective(data.planStages, input.objectiveId)
+      const siblings = stagesOfObjective(snapshot.current.planStages, input.objectiveId)
       const created = await container.planStages.create({
         userId: user.id,
         ...input,
@@ -453,7 +464,14 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       const balanced =
         input.weight === undefined ? rebalanceWeights([...siblings, created]) : [...siblings, created]
 
-      if (input.weight === undefined && balanced.length > 1) {
+      /*
+        Sem peso informado, o conjunto é sempre reescrito — inclusive quando a
+        etapa é a primeira. O repositório demo já rebalanceia sozinho no insert,
+        o Supabase não: pular essa chamada faria a primeira etapa nascer valendo
+        100% num lugar e 0% no outro, e o mesmo objetivo mostraria progressos
+        diferentes conforme o modo em que a conta roda.
+      */
+      if (input.weight === undefined) {
         await container.planStages.reweight(
           user.id,
           balanced.map((stage) => ({ id: stage.id, order: stage.order, weight: stage.weight })),
@@ -461,17 +479,22 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       }
 
       const byId = new Map(balanced.map((stage) => [stage.id, stage]))
+      const result = byId.get(created.id) ?? created
       setData((current) => ({
         ...current,
-        planStages: [
-          ...current.planStages.map((stage) => byId.get(stage.id) ?? stage),
-          byId.get(created.id) ?? created,
-        ],
+        planStages: [...current.planStages.map((stage) => byId.get(stage.id) ?? stage), result],
       }))
+      snapshot.current = {
+        ...snapshot.current,
+        planStages: [
+          ...snapshot.current.planStages.map((stage) => byId.get(stage.id) ?? stage),
+          result,
+        ],
+      }
       setError(null)
-      return byId.get(created.id) ?? created
+      return result
     },
-    [user, data.planStages],
+    [user],
   )
 
   const updateStage = useCallback(
@@ -630,7 +653,13 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     (objectiveId: string | null | undefined, stageId: string | null | undefined) => {
       if (!stageId) return { objectiveId: objectiveId ?? null, stageId: null }
 
-      const stage = data.planStages.find((item) => item.id === stageId)
+      /*
+        Do snapshot, não do render: a ação que nasce junto com a etapa (plano de
+        um objetivo novo, sugestão da IA) é gravada no mesmo tick em que a etapa
+        foi criada, e ler `data` aqui recusaria como inexistente uma etapa que
+        acabou de ser gravada — derrubando a criação do plano no meio.
+      */
+      const stage = snapshot.current.planStages.find((item) => item.id === stageId)
       if (!stage) throw new DomainError('Essa etapa não existe mais.')
 
       if (!objectiveId) return { objectiveId: stage.objectiveId, stageId }
@@ -638,7 +667,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       assertStageBelongsTo(stage, objectiveId)
       return { objectiveId, stageId }
     },
-    [data.planStages],
+    [],
   )
 
   const createHabit = useCallback(
@@ -935,25 +964,49 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         const objective = await createObjective(plan.objective)
         const goal = await createGoal(plan.goal).catch(() => null)
 
+        /*
+          As etapas vêm antes das ações porque cada ação nasce dentro de uma.
+          Sem esse passo o objetivo nasceria como uma lista: a barra mediria
+          volume registrado em vez de caminho percorrido, e gargalo, previsão e
+          as regras de insight que leem etapa ficariam todas de fora — no
+          objetivo recém-criado, que é justamente onde o plano importa mais.
+        */
+        const stageIds: (string | null)[] = []
+        if (objective) {
+          for (const [index, stage] of plan.stages.entries()) {
+            const created = await createStage({
+              objectiveId: objective.id,
+              title: stage.title,
+              description: stage.description,
+              order: index,
+              weight: stage.weight,
+              dueOn: stage.dueOn,
+            })
+            stageIds.push(created?.id ?? null)
+          }
+        }
+
         for (const habit of plan.habits) {
           await createHabit({ ...habit, objectiveId: objective?.id ?? null })
         }
 
         let order = 0
         for (const task of plan.tasks) {
-          const isMainPriority = (task.isMainPriority ?? false) && !priorityTaken
+          const { stageIndex, ...fields } = task
+          const isMainPriority = (fields.isMainPriority ?? false) && !priorityTaken
           if (isMainPriority) priorityTaken = true
           await createTask({
-            ...task,
+            ...fields,
             isMainPriority,
             goalId: goal?.id ?? null,
             objectiveId: objective?.id ?? null,
+            stageId: stageIndex === null ? null : (stageIds[stageIndex] ?? null),
             order: order++,
           })
         }
       }
     },
-    [user, createObjective, createGoal, createHabit, createTask],
+    [user, createObjective, createGoal, createStage, createHabit, createTask],
   )
 
   const todayActivities = useMemo(

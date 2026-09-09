@@ -216,6 +216,18 @@ function bottleneckOf(stages: readonly StageProgress[]): StageProgress | null {
 
   if (withOverdue[0]) return withOverdue[0]
 
+  /*
+    Etapa parada só existe onde alguma outra andou.
+
+    Num plano recém-criado todas as etapas estão em zero, e a de maior peso
+    ganharia o selo de "segurando o objetivo" no primeiro dia — antes de a
+    pessoa ter tido chance de fazer qualquer coisa. Atraso é fato e continua
+    valendo acima; "parada" é comparação, e sem nada em movimento não há com o
+    que comparar.
+  */
+  const moved = stages.some((item) => item.ratio > 0 || item.stage.status === 'concluida')
+  if (!moved) return null
+
   const stalled = open
     .filter((item) => item.totalTasks > 0 && item.ratio === 0 && item.stage.weight >= 20)
     .sort((a, b) => b.stage.weight - a.stage.weight || a.stage.order - b.stage.order)

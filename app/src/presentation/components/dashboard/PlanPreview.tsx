@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { activityType, formatUnit } from '@/domain/entities/activity-type'
-import { daysBetween, type DayKey } from '@/domain/entities/day'
+import { daysBetween, formatDayLabel, type DayKey } from '@/domain/entities/day'
 import type { Feasibility, PlanDraft } from '@/domain/entities/plan-builder'
 import { Button } from '@/presentation/components/ui/Button'
 import { HabitGlyph, Icon } from '@/presentation/components/ui/Icon'
@@ -111,9 +111,36 @@ export function PlanPreview({
         ))}
       </PlanBlock>
 
+      {/*
+        O caminho aparece ANTES das ações porque é ele que dá sentido a elas: a
+        prévia precisa mostrar exatamente o que vai ser gravado, e o que o app
+        grava é um plano com etapas, não uma lista de três tarefas.
+      */}
+      <PlanBlock title="O caminho até lá" icon="plano">
+        {plan.stages.map((stage, index) => (
+          <li key={stage.title} className="flex items-start gap-3 py-2">
+            <span
+              aria-hidden="true"
+              className="tabular mt-0.5 grid size-5 shrink-0 place-items-center rounded-md border border-line-hi text-[11px] font-semibold text-ink-faint"
+            >
+              {index + 1}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm text-ink">{stage.title}</span>
+              <span className="block text-xs text-pretty text-ink-faint">{stage.description}</span>
+            </span>
+            <span className="shrink-0 text-xs text-ink-faint">
+              {stage.weight}% · {formatDayLabel(stage.dueOn, today)}
+            </span>
+          </li>
+        ))}
+      </PlanBlock>
+
       <PlanBlock title="As primeiras ações" icon="jornada">
         {plan.tasks.map((task) => {
           const isMainPriority = Boolean(task.isMainPriority) && ownsMainPriority
+          const stageTitle =
+            task.stageIndex === null ? null : (plan.stages[task.stageIndex]?.title ?? null)
 
           return (
             <li key={task.title} className="flex items-start gap-3 py-2">
@@ -128,6 +155,7 @@ export function PlanPreview({
                 <span className="block text-sm text-ink">{task.title}</span>
                 <span className="block text-xs text-ink-faint">
                   {task.day === today ? 'Hoje' : 'Mais pra frente'}
+                  {stageTitle ? ` · ${stageTitle}` : ''}
                   {isMainPriority ? ' · prioridade principal' : ''}
                 </span>
               </span>
@@ -150,7 +178,7 @@ function PlanBlock({
   children,
 }: {
   readonly title: string
-  readonly icon: 'habitos' | 'jornada'
+  readonly icon: 'habitos' | 'jornada' | 'plano'
   readonly children: ReactNode
 }) {
   return (

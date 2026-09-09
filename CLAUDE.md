@@ -142,6 +142,28 @@ da sugestão). Antes disso a prévia prometia um caminho e salvava uma lista, e 
 objetivo criado por ali nascia sem plano — logo sem gargalo, sem previsão e fora
 de todas as regras de insight de etapa.
 
+**Todo objetivo nasce com caminho, não só o da IA.** `buildPlan` devolve três
+etapas — entrar no ritmo (20%), chegar na metade (40%), fechar (40%) — com data
+proporcional ao peso, e cada ação já traz o `stageIndex` da sua. Três e não
+cinco porque o gerador não sabe nada do assunto: o que dá pra afirmar de
+qualquer objetivo com alvo e prazo é que existe um começo, uma metade e um fim.
+Quem quiser um caminho mais fino quebra as etapas na mão. O `applyPlan` grava as
+etapas ANTES das ações, e é isso que faz o objetivo criado no onboarding e no
+diálogo "Novo objetivo" ter gargalo, previsão e as regras de insight de etapa
+desde o primeiro dia.
+
+`createStage` e `resolveStage` leem o snapshot corrente do provider, não o
+`data` do render: plano inteiro é gravado num `for` dentro do mesmo tick, e ler
+o estado do render fazia a segunda etapa nascer sem enxergar a primeira — peso
+somando mais de 100 na tela, e a ação recusada com "essa etapa não existe mais"
+logo depois de a etapa ser criada.
+
+**Gargalo só existe onde alguma etapa andou.** A regra de "etapa parada com
+peso alto" agora exige movimento em algum lugar do plano: com tudo em zero, a
+etapa mais pesada levava o selo de "segurando o objetivo" no primeiro dia, que
+é exatamente o aviso inventado que ensina a ignorar os avisos de verdade. Atraso
+é fato e continua valendo em qualquer plano.
+
 O insight `objetivo-sem-plano` fecha o elo que faltava: objetivo com três ou
 mais ações e nenhuma etapa é cobrado, porque ali a barra mede volume e ninguém
 consegue ver o que está travando. Abaixo desse número ele se cala — objetivo

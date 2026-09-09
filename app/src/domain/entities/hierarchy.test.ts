@@ -258,6 +258,27 @@ describe('progresso ponderado do objetivo', () => {
     expect(plan.overdueCount).toBe(3)
   })
 
+  it('plano em que nada andou ainda não tem gargalo', () => {
+    // Todas as etapas em zero: é um plano recém-criado, não um plano travado.
+    // Apontar a de maior peso no primeiro dia ensina a ignorar o aviso.
+    const tasks = [task('t1', 's1'), task('t2', 's2'), task('t3', 's3')]
+    const plan = planProgressOf(objective(), stages, tasks, [], TODAY)
+
+    expect(plan.bottleneck).toBeNull()
+  })
+
+  it('com o plano em movimento, a etapa pesada parada vira gargalo', () => {
+    const tasks = [
+      { ...task('t1', 's1'), status: 'feita' as const, completedAt: new Date() },
+      task('t2', 's2'),
+      task('t3', 's3'),
+    ]
+    const plan = planProgressOf(objective(), stages, tasks, [], TODAY)
+
+    expect(plan.bottleneck?.stage.id).toBeDefined()
+    expect(plan.bottleneck?.ratio).toBe(0)
+  })
+
   it('sem atraso e sem etapa parada de peso, não inventa gargalo', () => {
     const plan = planProgressOf(objective(), stages.slice(0, 1), [task('t1', 's1')], [], TODAY)
     expect(plan.bottleneck).toBeNull()

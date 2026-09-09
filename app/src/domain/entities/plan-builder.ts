@@ -1,8 +1,9 @@
-import { activityType, formatUnit, type ActivityTypeSlug } from './activity-type'
+import { activityType, formatUnit, type ActivityType, type ActivityTypeSlug } from './activity-type'
 import { addDays, daysBetween, type DayKey } from './day'
 import type { NewGoalInput } from './goal'
 import type { HabitIcon, NewHabitInput } from './habit'
 import { MAX_OBJECTIVE_DAYS, type NewObjectiveInput } from './objective'
+import { TOTAL_WEIGHT } from './plan-stage'
 import type { NewTaskInput } from './task'
 
 /**
@@ -29,7 +30,35 @@ import type { NewTaskInput } from './task'
 export type PlannedObjective = Omit<NewObjectiveInput, 'userId'>
 export type PlannedGoal = Omit<NewGoalInput, 'userId'>
 export type PlannedHabit = Omit<NewHabitInput, 'userId'>
-export type PlannedTask = Omit<NewTaskInput, 'userId'>
+
+/**
+ * Ação do plano, já sabendo em que etapa ela nasce.
+ *
+ * O índice aponta pra posição em `PlanDraft.stages` e não pra um id porque a
+ * etapa ainda não existe quando o plano é montado: quem grava resolve os dois
+ * na mesma passada. É o mesmo contrato que a sugestão da IA usa (`stepIndex`),
+ * e ter dois formatos diferentes pra dizer a mesma coisa seria o começo de dois
+ * caminhos divergindo.
+ */
+export interface PlannedTask extends Omit<NewTaskInput, 'userId'> {
+  readonly stageIndex: number | null
+}
+
+/**
+ * Etapa do plano gerado.
+ *
+ * Sem ela o objetivo nasce como uma lista de três ações: a barra passa a medir
+ * volume registrado, o app não consegue apontar gargalo nem previsão, e todas
+ * as regras de insight que leem etapa ficam de fora — inclusive a que cobra
+ * justamente o objetivo sem plano.
+ */
+export interface PlannedStage {
+  readonly title: string
+  readonly description: string | null
+  /** Quanto vale do objetivo. O conjunto soma 100, como o domínio exige. */
+  readonly weight: number
+  readonly dueOn: DayKey
+}
 
 export const FEASIBILITIES = ['confortavel', 'exigente', 'irreal'] as const
 export type Feasibility = (typeof FEASIBILITIES)[number]
@@ -38,6 +67,8 @@ export interface PlanDraft {
   readonly objective: PlannedObjective
   readonly goal: PlannedGoal
   readonly habits: readonly PlannedHabit[]
+  /** O caminho até o objetivo. As ações nascem dentro de uma dessas etapas. */
+  readonly stages: readonly PlannedStage[]
   /** A primeira sempre cai hoje e sempre nasce como prioridade principal. */
   readonly tasks: readonly PlannedTask[]
   readonly feasibility: Feasibility
@@ -254,6 +285,15 @@ export function buildPlan(input: PlanInput): PlanDraft {
 
   const checkpointDay = addDays(input.today, Math.max(3, Math.floor(totalDays / 2)))
 
+  const stages = stagesFor(input, totalDays, type)
+
+  /*
+    Cada ação já nasce dentro de uma etapa. As duas primeiras constroem a
+    rotina, então pertencem à etapa de entrada; a conferência de ritmo cai na
+    etapa do meio, que é exatamente o que ela mede. A última etapa nasce vazia
+    de propósito: o que fecha o objetivo ainda não se sabe hoje, e inventar uma
+    ação pra ela seria encher o plano de trabalho que ninguém pediu.
+  */
   const tasks: readonly PlannedTask[] = [
     {
       title: template.firstStep,
@@ -263,6 +303,7 @@ export function buildPlan(input: PlanInput): PlanDraft {
       minimalVersion: template.firstStepMinimal,
       day: input.today,
       isMainPriority: true,
+      stageIndex: 0,
     },
     {
       title: template.preparation,
@@ -272,6 +313,7 @@ export function buildPlan(input: PlanInput): PlanDraft {
       minimalVersion: template.preparationMinimal,
       day: input.today,
       isMainPriority: false,
+      stageIndex: 0,
     },
     {
       title: template.checkpoint,
@@ -281,6 +323,7 @@ export function buildPlan(input: PlanInput): PlanDraft {
       minimalVersion: 'Olhar o gráfico da semana e anotar uma conclusão',
       day: checkpointDay,
       isMainPriority: false,
+      stageIndex: 1,
     },
   ]
 
@@ -295,6 +338,7 @@ export function buildPlan(input: PlanInput): PlanDraft {
     },
     goal: { type: input.axis, target: weeklyTarget, period: 'semana' },
     habits: [habit],
+    stages,
     tasks,
     feasibility,
     perSession,
@@ -307,6 +351,57 @@ export function buildPlan(input: PlanInput): PlanDraft {
     suggestedDeadline,
     fittingTarget,
   }
+}
+
+/**
+ * O caminho até o objetivo, em três degraus.
+ *
+ * Três e não cinco porque o plano é gerado sem saber nada do assunto: o que dá
+ * pra afirmar de qualquer objetivo com alvo e prazo é que existe um começo, uma
+ * metade e um fim. Quem quiser um caminho mais fino quebra as etapas na mão —
+ * e aí o app tem o que refinar em vez de uma lista chapada.
+ *
+ * O peso não é igual: entrar no ritmo é o degrau mais curto e o que menos
+ * constrói do objetivo. Dar 33% a ele faria a barra pular pra um terço com a
+ * pessoa tendo lido três páginas.
+ */
+function stagesFor(input: PlanInput, totalDays: number, type: ActivityType): PlannedStage[] {
+  const target = Math.round(input.target)
+  const half = Math.max(1, Math.round(target / 2))
+
+  const drafts: readonly { title: string; description: string; weight: number }[] = [
+    {
+      title: 'Entrar no ritmo',
+      description: 'Preparar o que precisa e fazer as primeiras sessões, até a rotina existir.',
+      weight: 20,
+    },
+    {
+      title: 'Chegar na metade',
+      description: `Acumular ${formatUnit(type, half)} e conferir se o ritmo está de pé.`,
+      weight: 40,
+    },
+    {
+      title: 'Fechar o objetivo',
+      description: `Ir de ${formatUnit(type, half)} até ${formatUnit(type, target)}.`,
+      weight: 40,
+    },
+  ]
+
+  // Data proporcional ao peso: uma etapa de 40% ocupa 40% do calendário. É a
+  // única distribuição que a pessoa confere de cabeça, e ela mexe depois.
+  let consumed = 0
+  return drafts.map((draft, index) => {
+    consumed += draft.weight
+    const isLast = index === drafts.length - 1
+    return {
+      title: draft.title,
+      description: draft.description,
+      weight: draft.weight,
+      dueOn: isLast
+        ? input.deadline
+        : addDays(input.today, Math.max(1, Math.round((consumed / TOTAL_WEIGHT) * totalDays) - 1)),
+    }
+  })
 }
 
 function warningFor(

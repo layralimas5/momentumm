@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CIRCLE_FEED_TYPES } from './circle-feed'
-import { parseDayKey } from './day'
+import { dayKeyToDate, parseDayKey } from './day'
 import {
   createJourneyEvent,
   JOURNEY_EVENT_TYPES,
@@ -144,8 +144,15 @@ describe('nenhum tipo fica de fora da gravação', () => {
       existing: [],
     })
 
+    /*
+      O evento precisa nascer no MESMO dia que o gravador está avaliando. A
+      chave de repetição diária compara `event.day` com `today`, e `day` é
+      derivado de `occurredAt` — sem ancorar aqui, o teste passaria só no dia
+      em que foi escrito e a dedupe pareceria quebrada em toda execução futura.
+    */
+    const occurredAt = dayKeyToDate(today)
     const saved = first.map((candidate, index) =>
-      createJourneyEvent({ ...candidate, userId: 'user-1' }, `e${index}`),
+      createJourneyEvent({ ...candidate, userId: 'user-1', occurredAt }, `e${index}`),
     )
 
     const second = eventsToRecord({

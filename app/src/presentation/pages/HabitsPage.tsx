@@ -102,7 +102,12 @@ function HabitGroup({ habits }: { readonly habits: readonly Habit[] }) {
   return (
     <ul className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-3">
       {habits.map((habit) => (
-        <li key={habit.id}>
+        /*
+          `min-w-0` porque item de grid não encolhe abaixo do próprio conteúdo
+          por padrão: a linha de nome mais os três botões do card fazem 422px de
+          largura mínima, e no celular isso empurrava a página inteira pro lado.
+        */
+        <li key={habit.id} className="min-w-0">
           <HabitCard habit={habit} />
         </li>
       ))}

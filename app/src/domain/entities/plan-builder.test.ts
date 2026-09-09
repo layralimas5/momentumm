@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { addDays, daysBetween, parseDayKey } from './day'
+import { TOTAL_WEIGHT } from './plan-stage'
 import { MAX_OBJECTIVE_DAYS } from './objective'
 import {
   buildCombinedPlan,
@@ -267,5 +268,54 @@ describe('buildCombinedPlan', () => {
     })
     expect(combined.plans).toHaveLength(0)
     expect(combined.verdict).toContain('pelo menos uma área')
+  })
+})
+
+describe('o plano nasce com caminho, não com lista', () => {
+  /*
+    O objetivo criado sem etapa é um objetivo que o app não consegue explicar:
+    a barra passa a medir volume registrado, não existe gargalo, a previsão se
+    cala e todas as regras de insight que leem etapa ficam de fora. Era o que
+    acontecia com todo objetivo criado fora da IA.
+  */
+  it('gera etapas e elas somam 100%', () => {
+    const plan = buildPlan(input())
+
+    expect(plan.stages.length).toBeGreaterThanOrEqual(3)
+    expect(plan.stages.reduce((sum, stage) => sum + stage.weight, 0)).toBe(TOTAL_WEIGHT)
+  })
+
+  it('toda ação nasce dentro de uma etapa que existe', () => {
+    const plan = buildPlan(input())
+
+    for (const task of plan.tasks) {
+      expect(task.stageIndex).not.toBeNull()
+      expect(plan.stages[task.stageIndex ?? -1]).toBeDefined()
+    }
+  })
+
+  it('a última etapa fecha no prazo do objetivo e nenhuma passa dele', () => {
+    const plan = buildPlan(input())
+    const last = plan.stages[plan.stages.length - 1]
+
+    expect(last?.dueOn).toBe(plan.objective.deadline)
+    for (const stage of plan.stages) {
+      expect(daysBetween(stage.dueOn, plan.objective.deadline)).toBeGreaterThanOrEqual(0)
+    }
+  })
+
+  it('as datas das etapas andam pra frente, na ordem do caminho', () => {
+    const days = buildPlan(input()).stages.map((stage) => stage.dueOn)
+
+    for (let index = 1; index < days.length; index += 1) {
+      expect(daysBetween(days[index - 1] ?? TODAY, days[index] ?? TODAY)).toBeGreaterThan(0)
+    }
+  })
+
+  it('a conferência de ritmo cai na etapa do meio, não na de entrada', () => {
+    const plan = buildPlan(input())
+    const checkpoint = plan.tasks[plan.tasks.length - 1]
+
+    expect(checkpoint?.stageIndex).toBe(1)
   })
 })
