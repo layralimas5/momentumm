@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { addDays, formatDayLabel } from '@/domain/entities/day'
-import { isBlocked, isPending, resequence, TASK_STATUS_LABELS, type Task } from '@/domain/entities/task'
+import { isBlocked, isPending, TASK_STATUS_LABELS, type Task } from '@/domain/entities/task'
 import { PriorityTag } from '@/presentation/components/shared/Meta'
 import { ObjectiveLink } from '@/presentation/components/shared/Meta'
 import { ConfirmDialog } from '@/presentation/components/ui/ConfirmDialog'
@@ -18,20 +18,20 @@ import { cn } from '@/shared/lib/cn'
  * seria três jeitos diferentes de concluir, adiar e cancelar — e é assim que
  * uma delas acaba esquecendo de carimbar a data de conclusão.
  *
- * Reordenar é por botão de subir e descer, não por arrastar: arrastar não
- * funciona por teclado nem por leitor de tela, e no celular briga com a rolagem.
+ * A ordem se muda arrastando pela alça, que quem desenha a lista entrega em
+ * `handle` (ver `SortableList`). A linha não sabe reordenar sozinha: ordem é
+ * propriedade do conjunto, e a lista é quem conhece os irmãos.
  */
 export function TaskRow({
   task,
-  index,
-  siblings,
+  handle = null,
   showObjective,
   showDay = false,
   showWeight = false,
 }: {
   readonly task: Task
-  readonly index: number
-  readonly siblings: readonly Task[]
+  /** A alça de arrastar. Null quando a lista não é reordenável. */
+  readonly handle?: ReactNode
   readonly showObjective: boolean
   readonly showDay?: boolean
   /** Mostra peso e obrigatoriedade. Só faz sentido dentro de uma etapa. */
@@ -48,17 +48,6 @@ export function TaskRow({
   const cancelled = task.status === 'cancelada'
   const late = isPending(task) && task.day < planner.today
 
-  const move = (direction: -1 | 1) => {
-    const next = [...siblings]
-    const target = index + direction
-    const current = next[index]
-    const swap = next[target]
-    if (!current || !swap) return
-    next[index] = swap
-    next[target] = current
-    void planner.reorderTasks(resequence(next))
-  }
-
   return (
     /*
       No celular a linha empilha: título em cima, ações embaixo. Lado a lado,
@@ -66,8 +55,11 @@ export function TaskRow({
       quebra em uma palavra por linha — a lista deixa de ser legível justamente
       no aparelho em que ela é mais usada.
     */
-    <li className="flex flex-col gap-2 py-3 sm:flex-row sm:items-start sm:gap-3">
+    <div className="flex flex-col gap-2 py-3 sm:flex-row sm:items-start sm:gap-3">
       <div className="flex min-w-0 flex-1 items-start gap-3">
+        {/* A alça antes da caixa de concluir: é a primeira coisa da linha, e
+            fica na mesma coluna em todas elas. */}
+        {handle ? <div className="-my-2 -ml-2 shrink-0">{handle}</div> : null}
         <button
           type="button"
           aria-label={done ? `Reabrir ${task.title}` : `Concluir ${task.title}`}
@@ -140,18 +132,6 @@ export function TaskRow({
               />
             )}
             <IconButton
-              icon="subir"
-              label={`Subir ${task.title}`}
-              disabled={index === 0}
-              onClick={() => move(-1)}
-            />
-            <IconButton
-              icon="descer"
-              label={`Descer ${task.title}`}
-              disabled={index === siblings.length - 1}
-              onClick={() => move(1)}
-            />
-            <IconButton
               icon="adiar"
               label={`Adiar ${task.title} em um dia`}
               onClick={() =>
@@ -197,6 +177,6 @@ export function TaskRow({
         onConfirm={() => void planner.removeTask(task.id)}
         onClose={() => setConfirming(false)}
       />
-    </li>
+    </div>
   )
 }

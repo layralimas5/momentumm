@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { activityType } from '@/domain/entities/activity-type'
-import { inboxTasks, planHorizons } from '@/domain/entities/task'
+import { inboxTasks, planHorizons, type Task } from '@/domain/entities/task'
 import { StagePanel } from '@/presentation/components/plan/StagePanel'
 import { TaskRow } from '@/presentation/components/plan/TaskRow'
+import { useTaskMove } from '@/presentation/components/plan/use-task-move'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
+import { SortableList } from '@/presentation/components/ui/SortableList'
 import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { Panel, PanelHeader, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
@@ -159,18 +161,7 @@ export function PlanPage() {
                 icon="plano"
                 hint="Anotadas sem objetivo. Não contam pra nenhum progresso até ganharem um destino."
               />
-              <ol className="mt-4 flex flex-col divide-y divide-line">
-                {inbox.map((task, index) => (
-                  <TaskRow
-                    key={task.id}
-                    task={task}
-                    index={index}
-                    siblings={inbox}
-                    showObjective
-                    showDay
-                  />
-                ))}
-              </ol>
+              <TaskList tasks={inbox} label="Caixa de entrada" />
               <p className="mt-3 text-xs text-ink-faint">
                 Editar a ação e escolher objetivo e etapa é o que faz ela passar a empurrar
                 alguma coisa.
@@ -199,18 +190,7 @@ export function PlanPage() {
                 hint={horizon.hint}
                 icon={horizon.key === 'atrasada' ? 'adiar' : 'calendario'}
               />
-              <ol className="mt-4 flex flex-col divide-y divide-line">
-                {horizon.tasks.map((task, index) => (
-                  <TaskRow
-                    key={task.id}
-                    task={task}
-                    index={index}
-                    siblings={horizon.tasks}
-                    showObjective
-                    showDay
-                  />
-                ))}
-              </ol>
+              <TaskList tasks={horizon.tasks} label={horizon.label} />
             </Panel>
           ))}
 
@@ -229,5 +209,30 @@ export function PlanPage() {
         </div>
       )}
     </div>
+  )
+}
+
+/**
+ * As ações de um bloco do plano, reordenáveis pela alça.
+ *
+ * Mora aqui porque a caixa de entrada e a visão por prazo mostram a mesma
+ * lista com o mesmo comportamento — e o dia em que uma delas ganhar arraste e
+ * a outra não é o dia em que a ordem passa a depender de onde a pessoa clicou.
+ */
+function TaskList({ tasks, label }: { readonly tasks: readonly Task[]; readonly label: string }) {
+  const move = useTaskMove(tasks)
+
+  return (
+    <SortableList
+      items={tasks}
+      itemKey={(task) => task.id}
+      itemLabel={(task) => task.title}
+      onMove={move}
+      label={label}
+      className="mt-4 flex flex-col divide-y divide-line"
+      renderItem={(task, handle) => (
+        <TaskRow task={task} handle={handle} showObjective showDay />
+      )}
+    />
   )
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { activityType } from '@/domain/entities/activity-type'
 import { formatDayLabel } from '@/domain/entities/day'
 import type { PlanProgress, StageProgress } from '@/domain/entities/plan-progress'
@@ -10,16 +10,20 @@ import {
   weightsAreComplete,
   type PlanStage,
 } from '@/domain/entities/plan-stage'
+import type { Task } from '@/domain/entities/task'
 import { StageStatusTag } from '@/presentation/components/shared/Meta'
 import { Button } from '@/presentation/components/ui/Button'
 import { ConfirmDialog } from '@/presentation/components/ui/ConfirmDialog'
 import { Icon } from '@/presentation/components/ui/Icon'
+import { SortableList } from '@/presentation/components/ui/SortableList'
 import { IconButton, Panel, PanelHeader, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
+import { moveItem } from '@/shared/lib/move-item'
 import { StageDialog } from './StageDialog'
 import { TaskRow } from './TaskRow'
+import { useTaskMove } from './use-task-move'
 
 /**
  * O plano do objetivo: as etapas, na ordem, com as ações dentro.
@@ -45,17 +49,17 @@ export function StagePanel({ plan }: { readonly plan: PlanProgress }) {
   const stages = plan.stages
   const balanced = weightsAreComplete(stages.map((item) => item.stage))
 
-  const move = (index: number, direction: -1 | 1) => {
-    const next = [...stages.map((item) => item.stage)]
-    const target = index + direction
-    const current = next[index]
-    const swap = next[target]
-    if (!current || !swap) return
-    next[index] = swap
-    next[target] = current
+  const move = (from: number, to: number) => {
+    const ordered = moveItem(
+      stages.map((item) => item.stage),
+      from,
+      to,
+    )
     void planner.reweightStages(
       objective.id,
-      next.map((stage, position) => ({ ...stage, order: position })),
+      // A ordem muda, o peso de cada etapa não: arrastar o MVP pra frente não
+      // pode mudar o quanto ele vale do objetivo.
+      ordered.map((stage, position) => ({ ...stage, order: position })),
     )
   }
 
@@ -111,17 +115,21 @@ export function StagePanel({ plan }: { readonly plan: PlanProgress }) {
             </div>
           )}
 
-          <ol className="mt-4 flex flex-col gap-3">
-            {stages.map((item, index) => (
+          <SortableList
+            items={stages}
+            itemKey={(item) => item.stage.id}
+            itemLabel={(item) => `a etapa ${item.stage.title}`}
+            onMove={move}
+            label={`Etapas de ${objective.title}`}
+            className="mt-4 flex flex-col gap-3"
+            renderItem={(item, handle, index) => (
               <StageBlock
-                key={item.stage.id}
                 progress={item}
                 index={index}
-                total={stages.length}
+                handle={handle}
                 color={axis.colorToken}
                 isCurrent={plan.currentStage?.stage.id === item.stage.id}
                 isBottleneck={plan.bottleneck?.stage.id === item.stage.id}
-                onMove={move}
                 onEdit={() => setEditing(item.stage)}
                 onRemove={() => setRemoving(item)}
                 onAddTask={() =>
@@ -131,8 +139,8 @@ export function StagePanel({ plan }: { readonly plan: PlanProgress }) {
                   })
                 }
               />
-            ))}
-          </ol>
+            )}
+          />
         </>
       )}
 
@@ -143,18 +151,7 @@ export function StagePanel({ plan }: { readonly plan: PlanProgress }) {
             Elas pertencem a esse objetivo mas não estão em nenhum pedaço do caminho, então não
             contam pro progresso. Editar e escolher a etapa resolve.
           </p>
-          <ol className="mt-2 flex flex-col divide-y divide-line">
-            {plan.unstaged.map((task, index) => (
-              <TaskRow
-                key={task.id}
-                task={task}
-                index={index}
-                siblings={plan.unstaged}
-                showObjective={false}
-                showDay
-              />
-            ))}
-          </ol>
+          <StageTaskList tasks={plan.unstaged} label="Ações sem etapa" className="mt-2" />
         </div>
       ) : null}
 
@@ -195,22 +192,21 @@ export function StagePanel({ plan }: { readonly plan: PlanProgress }) {
 function StageBlock({
   progress,
   index,
-  total,
+  handle,
   color,
   isCurrent,
   isBottleneck,
-  onMove,
   onEdit,
   onRemove,
   onAddTask,
 }: {
   readonly progress: StageProgress
   readonly index: number
-  readonly total: number
+  /** A alça de arrastar, entregue pela lista. Null quando há uma etapa só. */
+  readonly handle: ReactNode
   readonly color: string
   readonly isCurrent: boolean
   readonly isBottleneck: boolean
-  readonly onMove: (index: number, direction: -1 | 1) => void
   readonly onEdit: () => void
   readonly onRemove: () => void
   readonly onAddTask: () => void
@@ -223,19 +219,26 @@ function StageBlock({
   const done = stage.status === 'concluida'
 
   return (
-    <li
+    <div
       className={cn(
         'rounded-xl border bg-surface-hi/30',
         isBottleneck ? 'border-flame/40' : isCurrent ? 'border-brand/40' : 'border-line',
       )}
     >
       <div className="flex flex-col gap-3 p-3.5 sm:flex-row sm:items-start">
-        <button
-          type="button"
-          aria-expanded={open}
-          onClick={() => setOpen((value) => !value)}
-          className="flex min-w-0 flex-1 items-start gap-3 text-left"
-        >
+        {/*
+          A alça anda junto do título, e não como uma linha própria: no celular
+          a etapa empilha, e uma alça sozinha em cima só gastava altura antes
+          de a pessoa chegar no nome da etapa.
+        */}
+        <div className="flex min-w-0 flex-1 items-start gap-1.5">
+          {handle ? <div className="-my-1.5 -ml-1.5 shrink-0">{handle}</div> : null}
+          <button
+            type="button"
+            aria-expanded={open}
+            onClick={() => setOpen((value) => !value)}
+            className="flex min-w-0 flex-1 items-start gap-3 text-left"
+          >
           <span
             aria-hidden="true"
             className={cn(
@@ -295,22 +298,11 @@ function StageBlock({
               label={`Progresso da etapa ${stage.title}`}
               color={color}
             />
-          </span>
-        </button>
+            </span>
+          </button>
+        </div>
 
         <div className="flex shrink-0 items-center gap-1 self-end sm:self-start">
-          <IconButton
-            icon="subir"
-            label={`Subir a etapa ${stage.title}`}
-            disabled={index === 0}
-            onClick={() => onMove(index, -1)}
-          />
-          <IconButton
-            icon="descer"
-            label={`Descer a etapa ${stage.title}`}
-            disabled={index === total - 1}
-            onClick={() => onMove(index, 1)}
-          />
           <IconButton icon="mais" label={`Nova ação em ${stage.title}`} onClick={onAddTask} />
           <IconButton icon="editar" label={`Editar a etapa ${stage.title}`} onClick={onEdit} />
           <IconButton icon="lixeira" label={`Apagar a etapa ${stage.title}`} onClick={onRemove} />
@@ -324,19 +316,7 @@ function StageBlock({
               Nenhuma ação nessa etapa. Enquanto ela estiver vazia, o progresso dela é zero.
             </p>
           ) : (
-            <ol className="flex flex-col divide-y divide-line">
-              {progress.tasks.map((task, position) => (
-                <TaskRow
-                  key={task.id}
-                  task={task}
-                  index={position}
-                  siblings={progress.tasks}
-                  showObjective={false}
-                  showDay
-                  showWeight
-                />
-              ))}
-            </ol>
+            <StageTaskList tasks={progress.tasks} label={`Ações de ${stage.title}`} showWeight />
           )}
 
           {/*
@@ -370,6 +350,46 @@ function StageBlock({
           ) : null}
         </div>
       ) : null}
-    </li>
+    </div>
+  )
+}
+
+/**
+ * As ações de uma etapa, ou as que ficaram sem etapa, reordenáveis pela alça.
+ *
+ * A ordem daqui é a ordem de execução dentro do pedaço do caminho: é ela que o
+ * plano lê pra dizer qual é a próxima ação da etapa.
+ */
+function StageTaskList({
+  tasks,
+  label,
+  showWeight = false,
+  className,
+}: {
+  readonly tasks: readonly Task[]
+  readonly label: string
+  readonly showWeight?: boolean
+  readonly className?: string
+}) {
+  const move = useTaskMove(tasks)
+
+  return (
+    <SortableList
+      items={tasks}
+      itemKey={(task) => task.id}
+      itemLabel={(task) => task.title}
+      onMove={move}
+      label={label}
+      className={cn('flex flex-col divide-y divide-line', className)}
+      renderItem={(task, handle) => (
+        <TaskRow
+          task={task}
+          handle={handle}
+          showObjective={false}
+          showDay
+          showWeight={showWeight}
+        />
+      )}
+    />
   )
 }
