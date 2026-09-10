@@ -17,7 +17,8 @@ import { InsightCard } from '@/presentation/components/dashboard/InsightCard'
 import { MomentumStrip } from '@/presentation/components/dashboard/MomentumStrip'
 import { NextUpCard } from '@/presentation/components/dashboard/NextUpCard'
 import { ObjectivesCard } from '@/presentation/components/dashboard/ObjectivesCard'
-import { Onboarding } from '@/presentation/components/dashboard/Onboarding'
+import { Activation } from '@/presentation/components/dashboard/Activation'
+import { ResumeActivationCard } from '@/presentation/components/dashboard/ResumeActivationCard'
 import { PriorityCard } from '@/presentation/components/dashboard/PriorityCard'
 import { RecoveryCard } from '@/presentation/components/dashboard/RecoveryCard'
 import { WeeklyProgressCard } from '@/presentation/components/dashboard/WeeklyProgressCard'
@@ -27,6 +28,7 @@ import { WinsCard } from '@/presentation/components/dashboard/WinsCard'
 import { ErrorNote } from '@/presentation/components/ui/States'
 import { useFocus } from '@/presentation/focus/use-focus'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
+import { useActivation } from '@/presentation/planner/use-activation'
 import { useAdaptiveDay } from '@/presentation/planner/use-adaptive-day'
 import { useDashboard, type GoalInMotion } from '@/presentation/planner/use-dashboard'
 import { useRecovery } from '@/presentation/planner/use-recovery'
@@ -75,6 +77,13 @@ export function DashboardPage() {
   */
   const adaptive = useAdaptiveDay(view)
   const recovery = useRecovery(view)
+
+  /*
+    O onboarding vive fora do `isNewUser` porque ele pode ser adiado: a pessoa
+    pula, usa o app vazio e volta depois. O estado de "onde parei" é do hook,
+    não desta tela.
+  */
+  const activation = useActivation()
 
   /*
     O dia de hoje virando registro: hábito concluído, rotina fechada, dia
@@ -281,15 +290,25 @@ export function DashboardPage() {
 
   if (planner.loading) return <DashboardSkeleton mobile={!isDesktop} />
 
-  if (planner.isNewUser) {
+  if (planner.isNewUser && !activation.skipped) {
     return (
-      <Onboarding
+      <Activation
         firstName={profile?.name.split(' ')[0] ?? null}
         today={planner.today}
-        onFinish={planner.applyPlan}
+        control={activation}
       />
     )
   }
+
+  /* Pulou o onboarding: o dashboard aparece, e com ele a porta de volta. */
+  const resumeCard =
+    planner.isNewUser && activation.skipped ? (
+      <ResumeActivationCard
+        step={activation.step}
+        started={activation.started}
+        onResume={activation.resume}
+      />
+    ) : null
 
   /*
     Duas árvores, não uma encolhida: o celular reordena o dia inteiro em torno
@@ -309,6 +328,7 @@ export function DashboardPage() {
           overdue={view.overdueCount}
           onReviewOverdue={() => navigate('/app/plano')}
         />
+        {resumeCard}
         <RecoveryCard
           state={recovery.state}
           budgetFor={recovery.budgetFor}
@@ -364,6 +384,8 @@ export function DashboardPage() {
           overdue={view.overdueCount}
           onReviewOverdue={() => navigate('/app/plano')}
         />
+
+        {resumeCard}
 
         <RecoveryCard
           state={recovery.state}

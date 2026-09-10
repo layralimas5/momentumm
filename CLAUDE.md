@@ -63,7 +63,7 @@ que existir base. Feed vazio afasta usuário.
 Fase 1 em pé, em `app/`. Roda em **modo demo** sem configurar nada (dados em
 `localStorage`) e vira contas reais ao preencher `.env.local` com o Supabase.
 
-Pronto: domínio completo com 550 testes, migrations com RLS até a 0011, repositórios demo e
+Pronto: domínio completo com 583 testes, migrations com RLS até a 0011, repositórios demo e
 Supabase, auth com rota protegida, registro rápido, cronômetro de sessão, streak
 dos últimos 7 dias, histórico com filtro por eixo, metas com progresso e perfil
 editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
@@ -648,23 +648,60 @@ grupo, chat, premiação e ranking global.
 
 O produto é um ciclo de três telas, nessa ordem:
 
-**1. Onboarding.** Quatro passos: **áreas, tempo, objetivos, plano**. Conta nova
-não vê cards vazios — escolhe o que quer mudar (uma área ou várias, uma por
-eixo), diz quanto tempo por dia consegue dar, escreve os objetivos com prazo e
-recebe um plano pronto pra virar hábito e ação. O último passo é o primeiro dia
-começando, não um resumo.
+**1. Onboarding — ativação rápida** (`activation`, `Activation.tsx`). Quatro
+perguntas e um plano:
 
-**As quatro áreas de fábrica são um começo, não a lista.** Em "Outra área" a
-pessoa escreve a dela (escrita, terapia, violão) e isso vira um eixo de verdade:
-`activity_types` ganha uma linha e a área entra no filtro do histórico, no
-registro rápido, no gráfico da semana e na review sem código novo — que era a
-promessa da arquitetura desde o primeiro commit. Área criada é medida em
-minutos e recebe roteiro e limites genéricos e conservadores.
+1. **O que você quer mudar?** — a área da VIDA (saúde, carreira, estudos,
+   projeto, finanças, pessoal, outra), não o eixo do app. Ninguém acorda
+   querendo "meditação": quer dormir melhor, quer sair do emprego
+2. **O que você quer alcançar?** — texto livre, com as palavras dela
+3. **Quando?** — prazo flexível, preset ou data definida
+4. **Quanto tempo, de verdade?** — horas por dia OU por semana, mais os dias da
+   semana disponíveis (que viram os `weekdays` do hábito, em vez do palpite que
+   o gerador fazia)
 
-O **tempo vem antes dos objetivos** de propósito: é ele que calibra cada alvo
-sugerido, e perguntar depois faria o app propor números que ele já sabe que não
-cabem. Com mais de um objetivo, o tempo do dia é dividido em partes iguais e o
-veredito soma o que os planos pedem — o dia não estica.
+A área vira eixo: `estudos` reaproveita o `estudo` de fábrica, e o resto cria
+uma linha em `activity_types` com o nome que a pessoa escolheu — a promessa da
+arquitetura desde o primeiro commit. **O eixo só é criado ao salvar**, nunca no
+passo 1: senão cada pessoa que desistisse no meio deixaria uma área órfã no
+filtro do histórico. A prévia inteira funciona antes disso porque
+`PlanInput.axisLabel` carrega o nome — sem ele o hábito nascia "Dedicar tempo a
+financas", com cara de identificador.
+
+**O alvo sai do que a pessoa escreveu, quando ela escreveu um número.**
+`readGoalQuantity` lê horas, minutos e páginas, e separa total de ritmo
+("30 min por dia" é ritmo: tratar como alvo daria um objetivo de meia hora pra
+três meses). "Ler 6 livros" NÃO vira 1500 páginas — converter livro em página é
+chutar a espessura do livro dela. Sem número reconhecível, o alvo sai do ritmo
+que o eixo sustenta (`comfortableSessionOf`), e a tela diz de onde veio.
+
+**Ambição contra disponibilidade, antes de salvar.** A comparação é semanal —
+é onde a frequência vive — e a frase é fixa: *"Seu plano exige aproximadamente
+5h40, mas sua disponibilidade é de 2h. Vamos reorganizar?"*, seguida da base da
+conta. Quando não fecha, `ready` é falso e o CTA não existe: as saídas ocupam o
+lugar dele, cada uma **recalculada pelo mesmo gerador antes de virar botão** —
+reduzir as ações, ajustar a frequência, ampliar o prazo ou revisar
+manualmente. Opção que promete resolver e não resolve é pior que opção nenhuma,
+então só entra na lista a que de fato faz o plano caber. **Plano impossível não
+é gerado nem como rascunho.**
+
+O último passo fecha com *"Seu plano está pronto. Você não precisa resolver o
+objetivo inteiro hoje. Seu próximo passo é este."* e o CTA **Começar meu
+Momentum**, que grava tudo de uma vez por `applyPlan`: objetivo, meta semanal,
+os três marcos, o hábito e as ações — inclusive a de hoje, já como prioridade
+principal.
+
+**Dá pra pular e retomar.** "Deixar pra depois" guarda passo e respostas no
+`localStorage` (é formulário pela metade, não dado de negócio) e o dashboard
+mostra o `ResumeActivationCard` enquanto a conta não tiver nada criado. Fechar
+a aba no terceiro passo e voltar dois dias depois cai no terceiro passo.
+
+O **tempo vem por último** de propósito: perguntado antes do objetivo ele vira
+promessa abstrata; perguntado depois, vira o filtro de realidade que decide o
+tamanho do plano.
+
+O `ObjectiveDialog` continua no fluxo antigo (`use-journey-draft`, por eixo):
+ele serve a quem já está dentro do app e conhece o vocabulário.
 
 **2. Dashboard (`Hoje`).** Saudação, momentum, progresso dos objetivos,
 prioridade do dia, hábitos, ações e check-in. O objetivo vem alto de propósito:
@@ -749,6 +786,6 @@ Quando incomodar, trocar por import dinâmico dentro do `container`.
 cd app
 npm install
 npm run dev     # modo demo, sem configurar nada
-npm test        # 550 testes de domínio
+npm test        # 583 testes de domínio
 npm run build
 ```

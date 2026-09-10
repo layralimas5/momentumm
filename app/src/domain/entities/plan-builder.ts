@@ -102,8 +102,25 @@ export interface PlanInput {
   readonly deadline: DayKey
   /** Dias por semana que a pessoa se compromete a aparecer. */
   readonly daysPerWeek: number
+  /**
+   * Os dias da semana escolhidos, quando a pessoa marcou quais são (0 =
+   * domingo). Sem isso o plano distribui por conta própria — o que é um
+   * palpite razoável, mas um palpite. Quem disse "terça e quinta" recebe terça
+   * e quinta.
+   */
+  readonly weekdays?: readonly number[]
   /** Minutos por dia reservados PRA ESTE objetivo. É o teto de tudo. */
   readonly minutesPerDay: number
+  /**
+   * Nome da área, quando o eixo ainda não existe no registro.
+   *
+   * O onboarding monta a prévia inteira ANTES de gravar a área — é o que
+   * evita uma linha órfã em `activity_types` pra cada pessoa que desiste no
+   * meio. Sem este campo, o roteiro cairia no rótulo derivado do slug e o
+   * hábito nasceria chamado "Dedicar tempo a financas", sem acento e com
+   * cara de identificador.
+   */
+  readonly axisLabel?: string
   readonly motive?: string | null
 }
 
@@ -130,6 +147,19 @@ const DEFAULT_SESSION_LIMITS: SessionLimits = { comfortable: 30, ceiling: 90 }
 
 function limitsOfAxis(axis: ActivityTypeSlug): SessionLimits {
   return SESSION_LIMITS[axis] ?? DEFAULT_SESSION_LIMITS
+}
+
+/**
+ * A sessão que se sustenta por meses nesse eixo, na unidade dele.
+ *
+ * Exportada porque é a régua de "quanto esse tipo de objetivo pede de
+ * verdade" — e é contra ela que o onboarding compara a disponibilidade
+ * declarada antes de gerar qualquer plano. Note que ela NÃO leva o tempo da
+ * pessoa em conta de propósito: é o pedido do eixo, não o que já foi cortado
+ * pra caber.
+ */
+export function comfortableSessionOf(axis: ActivityTypeSlug): number {
+  return limitsOfAxis(axis).comfortable
 }
 
 const ICON_BY_AXIS: Readonly<Record<string, HabitIcon>> = {
@@ -187,11 +217,11 @@ const TEMPLATES: Readonly<Record<string, AxisTemplate>> = {
  * Roteiro de qualquer área criada pela pessoa. Usa o nome dela nas frases, pra
  * o plano não parecer um formulário genérico preenchido com o que sobrou.
  */
-function templateFor(axis: ActivityTypeSlug): AxisTemplate {
+function templateFor(axis: ActivityTypeSlug, axisLabel?: string): AxisTemplate {
   const known = TEMPLATES[axis]
   if (known) return known
 
-  const label = activityType(axis).label.toLowerCase()
+  const label = (axisLabel ?? activityType(axis).label).toLowerCase()
 
   return {
     habit: `Dedicar tempo a ${label}`,
@@ -201,6 +231,22 @@ function templateFor(axis: ActivityTypeSlug): AxisTemplate {
     preparationMinimal: 'Anotar o primeiro passo',
     checkpoint: `Rever como ${label} está encaixando na rotina`,
   }
+}
+
+/**
+ * Os dias em que o hábito cobra presença.
+ *
+ * A escolha da pessoa manda. Sete dias marcados viram lista vazia porque é
+ * assim que o hábito representa "todo dia" — a mesma forma que `createHabit`
+ * já normaliza.
+ */
+function normalizeWeekdays(
+  chosen: readonly number[] | undefined,
+  daysPerWeek: number,
+): readonly number[] {
+  if (!chosen || chosen.length === 0) return WEEKDAYS_BY_FREQUENCY[daysPerWeek] ?? []
+  const valid = [...new Set(chosen)].filter((day) => Number.isInteger(day) && day >= 0 && day <= 6)
+  return valid.length === 7 ? [] : valid.sort((a, b) => a - b)
 }
 
 /** Distribuição dos dias na semana. Espalhar evita três dias colados e quatro vazios. */
@@ -240,7 +286,7 @@ function capacityPerSession(axis: ActivityTypeSlug, minutesPerDay: number): numb
 
 export function buildPlan(input: PlanInput): PlanDraft {
   const type = activityType(input.axis)
-  const template = templateFor(input.axis)
+  const template = templateFor(input.axis, input.axisLabel)
   const limits = limitsOfAxis(input.axis)
 
   const daysPerWeek = clamp(Math.round(input.daysPerWeek), MIN_DAYS_PER_WEEK, MAX_DAYS_PER_WEEK)
@@ -277,7 +323,7 @@ export function buildPlan(input: PlanInput): PlanDraft {
     icon: ICON_BY_AXIS[input.axis] ?? 'caneta',
     axis: input.axis,
     dayPart: 'qualquer',
-    weekdays: WEEKDAYS_BY_FREQUENCY[daysPerWeek] ?? [],
+    weekdays: normalizeWeekdays(input.weekdays, daysPerWeek),
     target: perSession,
     // Um terço mantém a sequência viva num dia ruim sem virar teatro.
     minimalTarget: Math.max(1, Math.round(perSession / 3)),
@@ -346,7 +392,15 @@ export function buildPlan(input: PlanInput): PlanDraft {
     minutesPerDay: Math.round(input.minutesPerDay),
     sessionsPerWeek: daysPerWeek,
     totalSessions,
-    rationale: `${formatUnit(type, Math.round(input.target))} em ${totalDays} dias, em ${daysPerWeek} ${daysPerWeek === 1 ? 'dia' : 'dias'} por semana, dá ${formatUnit(type, perSession)} por sessão — cerca de ${estimatedMinutes(input.axis, perSession)} minutos.`,
+    /*
+      A conversão em minutos só aparece quando ela ACRESCENTA alguma coisa.
+      Num eixo medido em tempo a frase virava "30 minutos por sessão — cerca
+      de 30 minutos", que é o app repetindo o mesmo número e parecendo que
+      não entendeu a própria conta.
+    */
+    rationale: `${formatUnit(type, Math.round(input.target))} em ${totalDays} dias, em ${daysPerWeek} ${daysPerWeek === 1 ? 'dia' : 'dias'} por semana, dá ${formatUnit(type, perSession)} por sessão${
+      type.unit === 'minutos' ? '' : ` — cerca de ${estimatedMinutes(input.axis, perSession)} minutos`
+    }.`,
     warning: warningFor(feasibility, input, perSession, capacity, suggestedDeadline, fittingTarget),
     suggestedDeadline,
     fittingTarget,
