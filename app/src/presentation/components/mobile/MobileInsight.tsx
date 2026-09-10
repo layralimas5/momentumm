@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import type { Insight } from '@/domain/entities/insight'
 import { Button } from '@/presentation/components/ui/Button'
@@ -113,6 +114,18 @@ export function MobileInsight({ insight, onApply, onDismiss }: MobileInsightProp
           >
             Dispensar este insight
           </Button>
+
+          {/* A tela cheia é o lugar de ver os outros padrões. No celular ela
+              só era alcançável pelos atalhos do perfil, longe de onde a
+              pergunta nasce. */}
+          <Link
+            to="/app/insights"
+            onClick={() => setDetailOpen(false)}
+            className="inline-flex min-h-11 items-center justify-center gap-1.5 text-sm text-brand-ink"
+          >
+            Ver todas as leituras do ritmo
+            <Icon name="seta" className="size-4" />
+          </Link>
         </div>
       </BottomSheet>
     </>

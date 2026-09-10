@@ -310,6 +310,46 @@ só existe se houve movimento de verdade no dia.
 
 Nenhuma sequência é encerrada em nenhum dos dois caminhos, e o card diz isso.
 
+### O posicionamento, e o que ele obriga no código
+
+> Outros apps registram o que você planejou. O Momentumm percebe quando seu
+> plano deixou de funcionar e ajuda você a continuar.
+
+Isso não é frase de landing: é um critério de aceite. Toda tela que DESCREVE um
+problema precisa carregar a execução que o resolve, e todo número que aparece
+em duas telas precisa ser o mesmo número. Três coisas saíram disso:
+
+**A entrada do Momentum é uma só** (`use-momentum-input`). O dashboard e o
+progresso montavam a entrada cada um por conta, e só o dashboard somava o
+avanço do plano: o fator de objetivos ficava medido numa tela e sem base na
+outra, e o mesmo score aparecia com dois valores em telas vizinhas. A fórmula
+sempre foi única (`calculateMomentum`); o que faltava era garantir que ela
+recebesse os mesmos dados.
+
+**A execução do insight é uma só** (`use-insight-actions`). Ela morava dentro
+do `DashboardPage`, então o mesmo padrão era acionável no dia e apenas texto na
+tela de Insights. O contrato do hook é estreito de propósito (`InsightContext`:
+capacidade e prioridade do dia), e é por isso que o progresso consegue aplicar
+o mesmo ajuste sem montar o dashboard inteiro.
+
+**Quem descreve, resolve.** A tela de Insights passou a receber os objetivos
+com plano e previsão — sem isso as oito regras que leem etapa, peso e prazo
+nunca disparavam ali, justamente as que percebem o plano travando — e cada
+leitura ganhou o botão que executa. O progresso ganhou "o próximo ajuste" com
+a mesma ação, no lugar de uma frase sobre o fator mais fraco. O cartão de
+objetivo ganhou "trazer pra hoje" na próxima ação: marcar um objetivo como
+"parado há mais de uma semana" e não oferecer a saída é diagnóstico sem
+tratamento.
+
+**Navegação.** `Momentumm AI` saiu da barra lateral e virou secundária: um item
+de IA ao lado de "Hábitos" e "Progresso" apresenta o produto como uma coleção
+de recursos. Ela continua inteira, achável pela busca e pelos atalhos do
+perfil. No lugar dela entrou o que estava **órfão**: `/app/insights` existia
+como rota e como tela e nenhuma parte do app levava até ela — nem a busca, que
+lê `APP_NAV`. Agora é "Leituras do ritmo", com entrada no dashboard, no
+progresso e no sheet do celular. As descrições da navegação passaram a dizer o
+PAPEL de cada tela no ciclo, não a funcionalidade dela.
+
 ### Share Studio e a camada de momentos
 
 O produto ganhou a ponte entre progresso e conteúdo: transformar o que a pessoa

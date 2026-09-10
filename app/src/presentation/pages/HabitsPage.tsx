@@ -51,7 +51,7 @@ export function HabitsPage() {
     <div className="flex flex-col gap-5">
       <PageHeader
         title="Hábitos"
-        description="A repetição que sustenta o resto. Poucos e pequenos ganham de muitos e ambiciosos."
+        description="A repetição que segura o plano nos dias em que a vontade não aparece. Por isso a versão mínima conta como cumprida: quebrar a sequência custa mais do que fazer pouco."
         action={
           <Button onClick={() => composer.open('habito')} disabled={limit.reached}>
             <Icon name="mais" className="size-4" />

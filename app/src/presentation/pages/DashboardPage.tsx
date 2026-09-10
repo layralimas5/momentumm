@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import type { Insight } from '@/domain/entities/insight'
 import { addDays } from '@/domain/entities/day'
 import type { RecoveryStep } from '@/domain/entities/recovery'
-import { isPending, shrinkToMinimal, type Task } from '@/domain/entities/task'
+import type { Task } from '@/domain/entities/task'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { AdaptiveDayCard } from '@/presentation/components/dashboard/AdaptiveDayCard'
 import { AdaptiveDayReview } from '@/presentation/components/dashboard/AdaptiveDayReview'
@@ -26,9 +26,9 @@ import { Section } from '@/presentation/components/dashboard/Section'
 import { TodayFocusCard } from '@/presentation/components/dashboard/TodayFocusCard'
 import { WinsCard } from '@/presentation/components/dashboard/WinsCard'
 import { ErrorNote } from '@/presentation/components/ui/States'
-import { useFocus } from '@/presentation/focus/use-focus'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
 import { useActivation } from '@/presentation/planner/use-activation'
+import { useInsightActions } from '@/presentation/planner/use-insight-actions'
 import { useAdaptiveDay } from '@/presentation/planner/use-adaptive-day'
 import { useDashboard, type GoalInMotion } from '@/presentation/planner/use-dashboard'
 import { useRecovery } from '@/presentation/planner/use-recovery'
@@ -63,7 +63,6 @@ export function DashboardPage() {
   const { profile } = useAuth()
   const planner = usePlanner()
   const view = useDashboard()
-  const focus = useFocus()
   const composer = useComposer()
   const navigate = useNavigate()
   const isDesktop = useIsDesktop()
@@ -86,6 +85,13 @@ export function DashboardPage() {
   const activation = useActivation()
 
   /*
+    Começar uma ação, encolher pra versão mínima e aplicar a recomendação são
+    os mesmos verbos em qualquer tela que mostre um insight. Eles moravam aqui
+    dentro, e por isso a tela de Insights só sabia descrever.
+  */
+  const { apply, startFocus, shrinkTask } = useInsightActions(view)
+
+  /*
     O dia de hoje virando registro: hábito concluído, rotina fechada, dia
     cumprido, retomada, recorde de momentum, objetivo cruzando uma faixa e
     marco alcançado.
@@ -95,19 +101,6 @@ export function DashboardPage() {
     chamada.
   */
   useJourneyRecorder(view)
-
-  const startFocus = useCallback(
-    (task: Task) => {
-      focus.start({
-        axis: task.axis ?? 'estudo',
-        label: task.title,
-        plannedMin: Math.min(60, Math.max(15, task.estimatedMin)),
-        taskId: task.id,
-      })
-      focus.setImmersive(true)
-    },
-    [focus],
-  )
 
   const completeTask = useCallback(
     async (task: Task) => {
@@ -139,97 +132,6 @@ export function DashboardPage() {
       await planner.updateTask(task.id, { day: planner.today })
     },
     [planner],
-  )
-
-  const shrinkTask = useCallback(
-    async (task: Task) => {
-      const smaller = shrinkToMinimal(task)
-      await planner.updateTask(task.id, {
-        title: smaller.title,
-        minimalVersion: null,
-        estimatedMin: smaller.estimatedMin,
-        effort: smaller.effort,
-      })
-    },
-    [planner],
-  )
-
-  /**
-   * Título de cada etapa por id. O dia inteiro lê daqui pra dizer a que ponto
-   * do plano cada linha pertence — é o que separa "Finalizar onboarding" de
-   * "Finalizar onboarding · Etapa: MVP · Objetivo: Lançar meu SaaS".
-   */
-  const stageTitles = useMemo(
-    () => new Map(planner.planStages.map((stage) => [stage.id, stage.title])),
-    [planner.planStages],
-  )
-
-  /** "Aplicar sugestão": o insight precisa mudar o dia, não só aconselhar. */
-  const applyInsight = useCallback(
-    async (insight: Insight) => {
-      const pendingToday = planner.tasks.filter(
-        (task) => task.day === planner.today && isPending(task),
-      )
-
-      switch (insight.action) {
-        case 'reduzir-acoes-do-dia': {
-          const keep = view.capacity.suggestedActions
-          const extras = pendingToday
-            .filter((task) => task.id !== view.mainPriority?.id)
-            .slice(Math.max(0, keep - 1))
-          for (const task of extras) {
-            await planner.updateTask(task.id, { day: addDays(planner.today, 1) })
-          }
-          break
-        }
-        case 'usar-versao-minima': {
-          for (const task of pendingToday.filter((item) => item.minimalVersion)) {
-            await shrinkTask(task)
-          }
-          break
-        }
-        case 'proteger-sequencia': {
-          if (view.mainPriority) startFocus(view.mainPriority)
-          else composer.open('acao')
-          break
-        }
-        case 'concentrar-na-manha': {
-          if (view.mainPriority && !view.mainPriority.isMainPriority) {
-            await planner.updateTask(view.mainPriority.id, { isMainPriority: true })
-          }
-          break
-        }
-        case 'criar-primeira-acao': {
-          composer.open('acao')
-          break
-        }
-        /*
-          As três ações da hierarquia levam a pessoa até onde a decisão
-          acontece. Um insight que aponta uma etapa travada e não abre essa
-          etapa transfere pra pessoa o trabalho de encontrar de novo o que o
-          app acabou de achar.
-        */
-        case 'abrir-objetivo': {
-          const target = insight.focus?.objectiveId
-          if (target) navigate(`/app/objetivos/${target}`)
-          break
-        }
-        case 'abrir-plano': {
-          navigate('/app/plano')
-          break
-        }
-        case 'comecar-acao': {
-          const task = planner.tasks.find((item) => item.id === insight.focus?.taskId)
-          if (task) startFocus(task)
-          break
-        }
-        case 'nenhuma':
-          break
-      }
-
-      view.dismissInsight(insight.id)
-    },
-    [planner, view, composer, navigate, shrinkTask, startFocus],
   )
 
   /** O tempo informado vira uma proposta de dia, nunca uma gravação direta. */
@@ -269,6 +171,32 @@ export function DashboardPage() {
     // Escolheu o passo: o recado de retomada já foi respondido por hoje.
     if (applied && fromRecovery) recovery.dismiss()
   }, [adaptive, recovery])
+
+  /**
+   * Título de cada etapa por id. O dia inteiro lê daqui pra dizer a que ponto
+   * do plano cada linha pertence — é o que separa "Finalizar onboarding" de
+   * "Finalizar onboarding · Etapa: MVP · Objetivo: Lançar meu SaaS".
+   */
+  const stageTitles = useMemo(
+    () => new Map(planner.planStages.map((stage) => [stage.id, stage.title])),
+    [planner.planStages],
+  )
+
+  /**
+   * "Aplicar sugestão": o insight precisa mudar o dia, não só aconselhar.
+   *
+   * Dispensar depois de aplicar é decisão DESTA tela: aqui aparece um insight
+   * por vez, e repetir o que a pessoa acabou de resolver seria ruído. Na tela
+   * de Insights a lista se atualiza sozinha — a regra para de casar porque o
+   * dado mudou, que é o único motivo honesto pra um insight sumir.
+   */
+  const applyInsight = useCallback(
+    async (insight: Insight) => {
+      await apply(insight)
+      view.dismissInsight(insight.id)
+    },
+    [apply, view],
+  )
 
   const continueGoal = useCallback(
     (goal: GoalInMotion) => {
@@ -502,7 +430,12 @@ export function DashboardPage() {
       </div>
 
       {view.insight ? (
-        <Section title="Seu Momentum" hint="O que os teus registros estão mostrando.">
+        <Section
+          title="Seu Momentum"
+          hint="O que os teus registros estão mostrando."
+          to="/app/insights"
+          toLabel="Ver todas as leituras"
+        >
           <InsightCard
             insight={view.insight}
             limits={planner.limits}

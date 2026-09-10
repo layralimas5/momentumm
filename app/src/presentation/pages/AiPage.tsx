@@ -36,7 +36,7 @@ export function AiPage() {
     <div className="flex flex-col gap-5">
       <PageHeader
         title="Momentumm AI"
-        description="Transforma um objetivo em plano e lê o teu progresso. Curto, específico e sempre baseado nos teus dados."
+        description="A ferramenta que transforma um objetivo em plano e lê o teu progresso. Ela não é o produto: o produto é o ciclo que continua rodando depois que o plano existe."
       />
 
       {ai.simulated ? (

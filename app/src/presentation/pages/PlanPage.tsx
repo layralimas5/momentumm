@@ -53,7 +53,7 @@ export function PlanPage() {
     <div className="flex flex-col gap-5">
       <PageHeader
         title="Plano"
-        description="Os teus objetivos virando passos com data. Não é uma lista de tarefas: cada ação daqui empurra alguma coisa."
+        description="O caminho até cada objetivo, com o que está travando visível. Não é uma lista de tarefas: cada ação daqui empurra uma etapa, e o app diz qual delas está segurando o resto."
         action={
           <Button onClick={() => composer.open('acao')}>
             <Icon name="mais" className="size-4" />

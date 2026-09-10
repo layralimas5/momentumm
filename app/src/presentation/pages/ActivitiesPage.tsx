@@ -54,7 +54,7 @@ export function ActivitiesPage() {
     <div className="flex flex-col gap-5">
       <PageHeader
         title="Minha Jornada"
-        description="Tudo que você já registrou, do mais recente. É aqui que a evolução deixa de ser sensação."
+        description="Tudo que você já registrou, do mais recente. É a memória que o app usa pra perceber quando teu ritmo mudou — e é aqui que a evolução deixa de ser sensação."
       />
 
       {error ? <ErrorNote message={error} /> : null}

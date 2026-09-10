@@ -3,10 +3,13 @@ import { activityType } from '@/domain/entities/activity-type'
 import { dayKeyToDate } from '@/domain/entities/day'
 import { MOMENTUM_LEVEL_LABELS, type DayDot, type MomentumFactor } from '@/domain/entities/momentum'
 import { deltaLabel } from '@/domain/entities/week'
+import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { Panel, PanelHeader, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
 import { usePlanner } from '@/presentation/planner/use-planner'
+import { useAsyncAction } from '@/presentation/hooks/use-async-action'
+import { useInsightActions } from '@/presentation/planner/use-insight-actions'
 import { useProgress, type PeriodTotals, type Rate } from '@/presentation/planner/use-progress'
 import { cn } from '@/shared/lib/cn'
 import { PageHeader } from './PageHeader'
@@ -22,13 +25,21 @@ export function ProgressPage() {
   const planner = usePlanner()
   const progress = useProgress()
 
+  /*
+    A mesma execução do dashboard e da tela de Insights. Descrever o risco e
+    não oferecer o ajuste é o que faz a pessoa ler três telas e não mudar
+    nada no dia seguinte.
+  */
+  const actions = useInsightActions(progress.insightContext)
+  const applyAdjustment = useAsyncAction(actions.apply)
+
   const hasData = planner.activities.length > 0 || planner.habitLogs.length > 0
 
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
         title="Progresso"
-        description="Onde você está evoluindo, onde está perdendo constância e qual é o próximo ajuste."
+        description="Onde você está evoluindo, onde perdeu constância, o que travou o plano e o ajuste que resolve."
       />
 
       {planner.error ? <ErrorNote message={planner.error} /> : null}
@@ -165,6 +176,54 @@ export function ProgressPage() {
                 ))}
               </ul>
             )}
+
+            {/*
+              O ajuste vem colado no risco de propósito.
+
+              Uma lista do que está travado e um link pra outra tela devolvem
+              o trabalho pra pessoa. Aqui o botão executa a recomendação — a
+              mesma que o dashboard executa, pelo mesmo hook.
+            */}
+            {progress.nextAdjustment ? (
+              <div className="mt-4 rounded-xl border border-brand/25 bg-brand-dim/25 px-3.5 py-3">
+                <p className="text-xs font-medium tracking-wide text-brand-ink uppercase">
+                  O próximo ajuste
+                </p>
+                <p className="mt-1.5 text-sm font-medium text-balance text-ink">
+                  {progress.nextAdjustment.title}
+                </p>
+                <p className="mt-1 text-sm text-ink-muted">
+                  {progress.nextAdjustment.recommendation}
+                </p>
+
+                {progress.nextAdjustment.action === 'nenhuma' ? null : (
+                  <Button
+                    size="sm"
+                    className="mt-3"
+                    loading={applyAdjustment.running}
+                    onClick={() => {
+                      if (progress.nextAdjustment) void applyAdjustment.run(progress.nextAdjustment)
+                    }}
+                  >
+                    {progress.nextAdjustment.actionLabel}
+                  </Button>
+                )}
+
+                <div aria-live="polite" className="min-h-5">
+                  {applyAdjustment.error ? (
+                    <p className="mt-1 text-sm text-danger">{applyAdjustment.error}</p>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            <Link
+              to="/app/insights"
+              className="mt-4 inline-flex items-center gap-1.5 text-sm text-brand-ink transition-colors hover:text-brand-hi"
+            >
+              Ver todas as leituras do ritmo
+              <Icon name="seta" className="size-4" />
+            </Link>
 
             {progress.stalled.length > 0 ? (
               <Link

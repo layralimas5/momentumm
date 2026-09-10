@@ -13,6 +13,15 @@ import {
   type MomentumScore,
 } from '@/domain/entities/momentum'
 import { summarizeWeek, type WeeklySummary } from '@/domain/entities/week'
+import {
+  generateInsights,
+  type Insight,
+  type InsightInput,
+  type ObjectiveInsightInput,
+} from '@/domain/entities/insight'
+import { capacityOf, checkInOfDay, type CapacityProfile } from '@/domain/entities/checkin'
+import { mainPriorityOf, type Task } from '@/domain/entities/task'
+import { useMomentumInput } from './use-momentum-input'
 import { usePlanner } from './use-planner'
 import { useObjectives, type ObjectiveView } from './use-objectives'
 
@@ -49,6 +58,17 @@ export interface ProgressView {
   readonly gains: readonly string[]
   /** O que precisa de atenção. */
   readonly risks: readonly string[]
+  /**
+   * O próximo ajuste, com a ação que o executa.
+   *
+   * A tela promete responder "qual é o próximo ajuste" desde o primeiro dia, e
+   * respondia com a frase do fator mais fraco — que diz onde há espaço, não o
+   * que fazer. O insight sai das MESMAS regras do dashboard, agora com os
+   * objetivos na entrada, então ele enxerga etapa travada e prazo escapando.
+   */
+  readonly nextAdjustment: Insight | null
+  /** O que a execução do ajuste precisa saber sobre o dia. */
+  readonly insightContext: { capacity: CapacityProfile; mainPriority: Task | null }
 }
 
 /**
@@ -63,12 +83,16 @@ export function useProgress(): ProgressView {
   const planner = usePlanner()
   const objectives = useObjectives()
 
-  const { activities, habits, habitLogs, tasks, today } = planner
+  const { today } = planner
 
-  const input = useMemo<MomentumInput>(
-    () => ({ activities, habits, habitLogs, tasks, today }),
-    [activities, habits, habitLogs, tasks, today],
-  )
+  /*
+    A MESMA entrada do dashboard, inclusive o avanço do plano.
+
+    Antes esta tela montava a própria: o fator de objetivos ficava sem base
+    aqui e medido lá, e o mesmo Momentum aparecia com dois valores em duas
+    telas do mesmo app.
+  */
+  const input = useMomentumInput()
 
   const momentum = useMemo(() => calculateMomentum(input), [input])
   const week = useMemo(() => summarizeWeek(input), [input])
@@ -83,6 +107,36 @@ export function useProgress(): ProgressView {
     () => totalsFor(input, startOfMonth(today), today, 'Este mês'),
     [input, today],
   )
+
+  const insightContext = useMemo(
+    () => ({
+      capacity: capacityOf(checkInOfDay(planner.checkIns, today)),
+      mainPriority: mainPriorityOf(planner.tasks, today),
+    }),
+    [planner.checkIns, planner.tasks, today],
+  )
+
+  const nextAdjustment = useMemo<Insight | null>(() => {
+    const objectiveInput: ObjectiveInsightInput[] = objectives.map((view) => ({
+      plan: view.plan,
+      forecast: view.forecast,
+    }))
+
+    const insightInput: InsightInput = {
+      activities: planner.activities,
+      habits: planner.habits,
+      habitLogs: planner.habitLogs,
+      tasks: planner.tasks,
+      checkIns: planner.checkIns,
+      streak: planner.streak,
+      momentum,
+      capacity: insightContext.capacity,
+      today,
+      objectives: objectiveInput,
+    }
+
+    return generateInsights(insightInput)[0] ?? null
+  }, [planner, momentum, insightContext.capacity, today, objectives])
 
   return useMemo(() => {
     const factors = momentumFactors(momentum)
@@ -174,8 +228,10 @@ export function useProgress(): ProgressView {
       stalled,
       gains: gains.slice(0, 4),
       risks: risks.slice(0, 4),
+      nextAdjustment,
+      insightContext,
     }
-  }, [momentum, series, week, month, last7, objectives])
+  }, [momentum, series, week, month, last7, objectives, nextAdjustment, insightContext])
 }
 
 interface TotalsWithHelpers extends PeriodTotals {

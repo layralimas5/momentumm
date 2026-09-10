@@ -18,6 +18,11 @@ export interface AppNavItem {
  * A ordem é o ciclo do produto, não o alfabeto: objetivo vira plano, plano vira
  * dia, dia vira progresso, progresso vira review, review vira objetivo de novo.
  * `Hoje` abre a lista porque é onde a pessoa entra todo dia.
+ *
+ * As descrições dizem o PAPEL de cada tela no ciclo, não a funcionalidade
+ * dela. "Gráficos e estatísticas" descreve um recurso que qualquer app tem;
+ * "se o ritmo está de pé e qual é o próximo ajuste" descreve o que essa tela
+ * resolve — e é essa a diferença que o produto vende.
  */
 export const APP_NAV: readonly AppNavItem[] = [
   {
@@ -25,49 +30,42 @@ export const APP_NAV: readonly AppNavItem[] = [
     label: 'Hoje',
     end: true,
     icon: 'hoje',
-    description: 'O que fazer agora, o que é prioridade e quanto já avançou',
+    description: 'O que fazer agora, e o que muda quando o dia não sai como planejado',
   },
   {
     to: '/app/objetivos',
     label: 'Objetivos',
     end: false,
     icon: 'objetivo',
-    description: 'O que você quer conquistar, com prazo e progresso',
+    description: 'Onde você quer chegar, com prazo e o quanto já andou de verdade',
   },
   {
     to: '/app/habitos',
     label: 'Hábitos',
     end: false,
     icon: 'habitos',
-    description: 'A repetição que sustenta, com frequência e consistência',
+    description: 'A repetição que segura o plano quando a motivação cai',
   },
   {
     to: '/app/plano',
     label: 'Plano',
     end: false,
     icon: 'plano',
-    description: 'Os objetivos virando ações com data e ordem',
+    description: 'O caminho até cada objetivo, e onde ele está travando',
   },
   {
     to: '/app/progresso',
     label: 'Progresso',
     end: false,
     icon: 'progresso',
-    description: 'Momentum, constância e o que precisa de atenção',
+    description: 'Se o teu ritmo está de pé, o que caiu e qual é o próximo ajuste',
   },
   {
     to: '/app/review',
     label: 'Review semanal',
     end: false,
     icon: 'calendario',
-    description: 'Como foi a semana e o que muda na próxima',
-  },
-  {
-    to: '/app/ia',
-    label: 'Momentumm AI',
-    end: false,
-    icon: 'ia',
-    description: 'Transformar objetivo em plano e ler o teu progresso',
+    description: 'O que a semana mostrou e o que muda na próxima',
   },
   /*
     Círculo fecha a navegação principal, e não entra no meio do ciclo, porque
@@ -98,6 +96,41 @@ export const APP_NAV: readonly AppNavItem[] = [
     end: false,
     icon: 'trofeu',
     description: 'Combinados curtos com o teu círculo, medidos pelo que você já faz',
+    secondary: true,
+  },
+
+  /*
+    Insights estava fora de TODA a navegação: a rota existia, a tela existia, e
+    nenhuma parte do app levava até ela — nem a busca, que lê esta lista. É a
+    tela que responde "o que mudou no meu ritmo", então ela entra aqui como
+    secundária e ganha entrada direta no dashboard e no progresso, que são os
+    dois lugares onde a pergunta nasce.
+  */
+  {
+    to: '/app/insights',
+    label: 'Leituras do ritmo',
+    end: false,
+    icon: 'insights',
+    description: 'Os padrões que os teus registros mostram, com o ajuste de cada um',
+    secondary: true,
+  },
+
+  /*
+    A IA sai da navegação principal e vira ferramenta.
+
+    Ela continua inteira e continua achável pela busca e pelos atalhos do
+    perfil. O que muda é a promessa da barra lateral: um item "Momentumm AI"
+    ao lado de "Hábitos" e "Progresso" apresenta o produto como uma coleção de
+    recursos, e é justamente essa leitura que o posicionamento recusa. A IA não
+    é um lugar onde se vai — é o que monta o plano no onboarding e o que lê o
+    progresso quando a pessoa pede.
+  */
+  {
+    to: '/app/ia',
+    label: 'Momentumm AI',
+    end: false,
+    icon: 'ia',
+    description: 'Transformar um objetivo em plano e ler o teu progresso',
     secondary: true,
   },
 

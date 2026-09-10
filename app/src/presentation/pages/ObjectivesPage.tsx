@@ -6,6 +6,7 @@ import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { Panel, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
+import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { useObjectives, type ObjectiveView } from '@/presentation/planner/use-objectives'
@@ -18,6 +19,10 @@ import { PageHeader } from './PageHeader'
  * fazer agora. Um objetivo sem próxima ação visível é um objetivo que a pessoa
  * vai olhar e fechar a aba — por isso a próxima ação vem no cartão, não só no
  * detalhe.
+ *
+ * E ela vem com o botão que a coloca no dia. Marcar um objetivo como "parado
+ * há mais de uma semana" e não oferecer a saída é diagnóstico sem tratamento:
+ * a pessoa fica sabendo que travou e continua sem saber por onde destravar.
  */
 export function ObjectivesPage() {
   const planner = usePlanner()
@@ -32,7 +37,7 @@ export function ObjectivesPage() {
     <div className="flex flex-col gap-5">
       <PageHeader
         title="Objetivos"
-        description="O que você quer conquistar, com prazo. É daqui que sai o plano — meta sem destino vira lista de tarefas."
+        description="Onde você quer chegar, com prazo. É daqui que sai o plano, e é contra isso que o app compara teu ritmo pra perceber quando alguma coisa parou de andar."
         action={
           <Button onClick={() => composer.open('objetivo')}>
             <Icon name="mais" className="size-4" />
@@ -170,12 +175,58 @@ function ObjectiveCard({ view }: { readonly view: ObjectiveView }) {
         )}
       </div>
 
-      {view.nextTask ? (
-        <p className="mt-3 truncate rounded-lg bg-surface-hi px-3 py-2 text-xs text-ink-muted">
-          <span className="text-ink-faint">Próxima ação: </span>
-          {view.nextTask.title}
-        </p>
-      ) : null}
+      {view.nextTask ? <NextStep view={view} /> : null}
     </Panel>
+  )
+}
+
+/**
+ * A próxima ação do objetivo, com a ponte pro dia.
+ *
+ * Era só texto. O caminho entre "o plano diz que é isso" e "hoje eu faço
+ * isso" passava por abrir o objetivo, achar a ação e editar a data — três
+ * telas pra uma decisão que cabe em um toque, e é justamente a decisão que
+ * tira um objetivo parado da inércia.
+ */
+function NextStep({ view }: { readonly view: ObjectiveView }) {
+  const planner = usePlanner()
+  const task = view.nextTask
+  const bring = useAsyncAction(async (id: string) => {
+    await planner.updateTask(id, { day: planner.today })
+  })
+
+  if (!task) return null
+
+  const today = task.day <= planner.today
+  const running = view.progress.state === 'em-andamento' || view.progress.state === 'nao-iniciado'
+
+  return (
+    <div className="mt-3 rounded-lg bg-surface-hi px-3 py-2">
+      <p className="truncate text-xs text-ink-muted">
+        <span className="text-ink-faint">Próxima ação: </span>
+        {task.title}
+      </p>
+
+      {today || !running ? (
+        <p className="mt-1 text-xs text-ink-faint">
+          {running ? 'Já está no teu dia de hoje.' : 'Retomar o objetivo devolve ela pro teu dia.'}
+        </p>
+      ) : (
+        <Button
+          size="sm"
+          variant="ghost"
+          className="mt-1 -ml-2"
+          loading={bring.running}
+          onClick={() => void bring.run(task.id)}
+        >
+          <Icon name="calendario" className="size-3.5" />
+          Trazer pra hoje
+        </Button>
+      )}
+
+      <div aria-live="polite" className="min-h-4">
+        {bring.error ? <p className="text-xs text-danger">{bring.error}</p> : null}
+      </div>
+    </div>
   )
 }

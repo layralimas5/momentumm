@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { totalMinutes } from '@/domain/entities/activity'
-import { addDays, dayKeyOf, type DayKey } from '@/domain/entities/day'
+import { addDays } from '@/domain/entities/day'
 import { capacityOf, checkInOfDay, type CapacityProfile, type CheckIn } from '@/domain/entities/checkin'
 import { paceOf, type GoalPace, type GoalProgress } from '@/domain/entities/goal'
 import {
@@ -21,18 +21,17 @@ import {
   type InsightInput,
   type ObjectiveInsightInput,
 } from '@/domain/entities/insight'
-import { planRatioAt } from '@/domain/entities/plan-progress'
-import { MOMENTUM_HORIZON_DAYS, MOMENTUM_WINDOW_DAYS, momentumHistory } from '@/domain/entities/momentum'
+import { MOMENTUM_WINDOW_DAYS, momentumHistory } from '@/domain/entities/momentum'
 import {
   calculateMomentum,
   recommendationFor,
-  type MomentumInput,
   type MomentumPoint,
   type MomentumScore,
 } from '@/domain/entities/momentum'
 import { isPending, mainPriorityOf, nextTaskForGoal, supportingTasksOf, type Task } from '@/domain/entities/task'
 import { summarizeWeek, type WeeklySummary } from '@/domain/entities/week'
 import { winOfDay, type Win } from '@/domain/entities/win'
+import { useMomentumInput } from './use-momentum-input'
 import { usePlanner } from './use-planner'
 import { useObjectives, type ObjectiveView } from './use-objectives'
 
@@ -188,52 +187,15 @@ export function useDashboard(): DashboardView {
   const checkIn = useMemo(() => checkInOfDay(checkIns, today), [checkIns, today])
   const capacity = useMemo(() => capacityOf(checkIn), [checkIn])
 
-  /**
-   * O avanço de plano na janela do momentum, somado entre os objetivos.
-   *
-   * É o que faz fechar uma etapa mexer no ritmo — sem isso o momentum
-   * enxergaria só hábito e ação solta, e uma semana de trabalho pesado num
-   * objetivo apareceria como semana parada.
-   */
-  const planGains = useMemo<Pick<MomentumInput, 'planGain' | 'previousPlanGain'>>(() => {
-    const running = objectives.filter((view) => view.plan.hasPlan)
-    // Objeto vazio, não `undefined` explícito: sem plano nenhum o fator fica
-    // neutro no momentum em vez de valer zero.
-    if (running.length === 0) return {}
+  /*
+    A entrada do score vem do hook compartilhado, não daqui.
 
-    // A janela é a do score (28 dias), não a semana: medir o avanço numa
-    // janela e pontuá-lo em outra faria o fator de objetivos discordar do
-    // período que o próprio detalhamento diz estar olhando.
-    const gainSince = (end: DayKey) => {
-      const start = addDays(end, -(MOMENTUM_HORIZON_DAYS - 1))
-      const total = running.reduce(
-        (sum, view) =>
-          sum +
-          (planRatioAt(view.plan.stages, end, dayKeyOf) -
-            planRatioAt(view.plan.stages, start, dayKeyOf)),
-        0,
-      )
-      return Math.max(0, total / running.length)
-    }
-
-    return {
-      planGain: gainSince(today),
-      previousPlanGain: gainSince(addDays(today, -MOMENTUM_WINDOW_DAYS)),
-    }
-  }, [objectives, today])
-
-  const momentumInput = useMemo<MomentumInput>(
-    () => ({
-      activities,
-      habits,
-      habitLogs,
-      tasks,
-      today,
-      weeklyReviews: planner.weeklyReviews,
-      ...planGains,
-    }),
-    [activities, habits, habitLogs, tasks, today, planner.weeklyReviews, planGains],
-  )
+    Ela era montada nesta tela e outra vez no progresso, com uma diferença
+    silenciosa: só esta somava o avanço do plano. Duas telas mostrando o mesmo
+    "Momentum" com números diferentes é como um app começa a discordar de si
+    mesmo.
+  */
+  const momentumInput = useMomentumInput()
 
   const momentum = useMemo(() => calculateMomentum(momentumInput), [momentumInput])
 
