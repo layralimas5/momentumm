@@ -1,4 +1,12 @@
-import type { AuthService, AuthUser, SignUpResult } from '@/domain/auth/auth-service'
+import type {
+  AuthService,
+  AuthUser,
+  MfaEnrollment,
+  MfaFactor,
+  SessionInfo,
+  SignUpResult,
+} from '@/domain/auth/auth-service'
+import { DomainError } from '@/shared/errors'
 import type { Activity, NewActivityInput } from '@/domain/entities/activity'
 import type { ActivityType } from '@/domain/entities/activity-type'
 import type { CheckIn, NewCheckInInput } from '@/domain/entities/checkin'
@@ -92,6 +100,58 @@ export class DemoAuthService implements AuthService {
       // sessão só em memória
     }
     this.emit(null)
+  }
+
+  /*
+    O modo demo não tem servidor de identidade, então ele não FINGE ter.
+
+    Devolver um MFA de mentira aqui seria pior que não ter: a tela de
+    segurança mostraria "verificação em duas etapas ativa" pra uma sessão que
+    é um objeto no localStorage. Cada caminho de credencial abaixo diz, em
+    voz alta, que aquilo só existe com Supabase configurado — e a sessão demo
+    nunca se apresenta como administrativa.
+  */
+  async currentSession(): Promise<SessionInfo | null> {
+    const user = await this.currentUser()
+    if (!user) return null
+    return { user, assurance: 'aal1', hasMfa: false, isAdmin: false }
+  }
+
+  async signInWithGoogle(): Promise<void> {
+    throw new DomainError('O login com Google precisa do Supabase configurado.')
+  }
+
+  async requestPasswordReset(): Promise<void> {
+    // Resolve em silêncio, igual ao caminho real: nem aqui o app diz se o
+    // e-mail existe.
+  }
+
+  async updatePassword(): Promise<void> {
+    throw new DomainError('Trocar a senha precisa do Supabase configurado.')
+  }
+
+  async completePasswordReset(): Promise<void> {
+    throw new DomainError('Recuperar a senha precisa do Supabase configurado.')
+  }
+
+  async listMfaFactors(): Promise<readonly MfaFactor[]> {
+    return []
+  }
+
+  async startMfaEnrollment(): Promise<MfaEnrollment> {
+    throw new DomainError('A verificação em duas etapas precisa do Supabase configurado.')
+  }
+
+  async confirmMfaEnrollment(): Promise<void> {
+    throw new DomainError('A verificação em duas etapas precisa do Supabase configurado.')
+  }
+
+  async verifyMfa(): Promise<void> {
+    throw new DomainError('A verificação em duas etapas precisa do Supabase configurado.')
+  }
+
+  async removeMfaFactor(): Promise<void> {
+    throw new DomainError('A verificação em duas etapas precisa do Supabase configurado.')
   }
 
   onChange(listener: (user: AuthUser | null) => void): () => void {
@@ -203,6 +263,15 @@ export class DemoPlanStageRepository implements PlanStageRepository {
 }
 
 export class DemoProfileRepository implements ProfileRepository {
+  /*
+    No modo demo "a conta" é o conteúdo do localStorage. Apagar aqui é apagar
+    de verdade o que existe — a mesma promessa da tela, no alcance que este
+    modo tem.
+  */
+  async deleteAccount(): Promise<void> {
+    demoStore.clear()
+  }
+
   async findById(): Promise<Profile | null> {
     return demoStore.profile()
   }

@@ -10,6 +10,10 @@ import { LandingPage } from '@/presentation/pages/LandingPage'
 const AuthPage = lazy(() =>
   import('@/presentation/pages/AuthPage').then((m) => ({ default: m.AuthPage })),
 )
+
+const NewPasswordPage = lazy(() =>
+  import('@/presentation/pages/NewPasswordPage').then((m) => ({ default: m.NewPasswordPage })),
+)
 const ToolsPage = lazy(() =>
   import('@/presentation/pages/ToolsPage').then((m) => ({ default: m.ToolsPage })),
 )
@@ -88,6 +92,13 @@ export function App() {
               path="/entrar"
               element={isAuthBypass ? <Navigate to="/app" replace /> : <AuthPage />}
             />
+            {/*
+              Destino do link de recuperação. Fica FORA da rota protegida: a
+              sessão que o link abre existe pra trocar a senha, e mandar essa
+              pessoa pro app antes de ela escolher a senha nova é justamente o
+              que a recuperação deveria impedir.
+            */}
+            <Route path="/nova-senha" element={<NewPasswordPage />} />
             <Route path="/ferramentas" element={<ToolsPage />} />
 
             <Route

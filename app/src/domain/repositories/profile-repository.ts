@@ -27,4 +27,12 @@ export interface ProfileUpdate {
 export interface ProfileRepository {
   findById(id: string): Promise<Profile | null>
   update(id: string, changes: ProfileUpdate): Promise<Profile>
+  /**
+   * Apaga a conta e tudo que depende dela.
+   *
+   * Sem parâmetro de propósito: quem é apagado é sempre a sessão atual. Um
+   * `deleteAccount(id)` seria uma assinatura que convida a passar o id de
+   * outra pessoa, e a checagem passaria a depender de quem chama.
+   */
+  deleteAccount(): Promise<void>
 }

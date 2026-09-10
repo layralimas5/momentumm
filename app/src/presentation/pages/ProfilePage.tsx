@@ -11,6 +11,7 @@ import { Field, Select, TextInput } from '@/presentation/components/ui/Field'
 import { ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 import { MobileShortcuts } from '@/presentation/components/mobile/MobileShortcuts'
+import { SecurityPanel } from '@/presentation/profile/SecurityPanel'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 
@@ -252,6 +253,14 @@ export function ProfilePage() {
           ) : null}
         </aside>
       </div>
+
+      {/*
+        Segurança vem depois do perfil e ocupa a largura inteira: senha,
+        segundo fator, sessões e exclusão são decisões de peso diferente das
+        de nome e @, e espremê-las na coluna lateral as faria parecer
+        preferências.
+      */}
+      <SecurityPanel />
     </div>
   )
 }

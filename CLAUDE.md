@@ -63,7 +63,7 @@ que existir base. Feed vazio afasta usuário.
 Fase 1 em pé, em `app/`. Roda em **modo demo** sem configurar nada (dados em
 `localStorage`) e vira contas reais ao preencher `.env.local` com o Supabase.
 
-Pronto: domínio completo com 583 testes, migrations com RLS até a 0011, repositórios demo e
+Pronto: domínio completo com 605 testes, migrations com RLS até a 0011, repositórios demo e
 Supabase, auth com rota protegida, registro rápido, cronômetro de sessão, streak
 dos últimos 7 dias, histórico com filtro por eixo, metas com progresso e perfil
 editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
@@ -349,6 +349,55 @@ como rota e como tela e nenhuma parte do app levava até ela — nem a busca, qu
 lê `APP_NAV`. Agora é "Leituras do ritmo", com entrada no dashboard, no
 progresso e no sheet do celular. As descrições da navegação passaram a dizer o
 PAPEL de cada tela no ciclo, não a funcionalidade dela.
+
+### Segurança
+
+A RLS existe desde o primeiro commit e as 18 tabelas sempre estiveram
+protegidas. O que faltava era a camada em volta dela, e uma falha dentro dela.
+
+**A falha:** `profiles.plan` era coluna de `profiles`, e a policy de update
+liberava a linha inteira pro dono. Qualquer conta podia mandar um PATCH com
+`{"plan":"pro"}` direto na API e virar PRO — o front nunca enviava esse campo,
+que é justamente por que passou despercebido. A regra que sai disso vale pra
+sempre: **entitlement nao mora em coluna que o dono edita**. Hoje um trigger
+recusa a mudança fora de `service_role` ou admin com MFA.
+
+**Papel fica fora de `profiles`** (`user_roles`, migration 0013), sem nenhuma
+política de escrita pra API pública. `is_admin()` exige as duas coisas juntas:
+papel de admin E sessão em `aal2` — o nível vem assinado no JWT, então "MFA
+obrigatório pra admin" é condição de leitura no banco, não tela que dá pra
+pular. `assert_admin()` é a versão que explode, pras funções privilegiadas:
+uma checagem que devolve falso vira `update ... where false`, responde 200 e o
+app acha que deu certo.
+
+**`audit_logs`** tem uma política só, de leitura pra admin em aal2. Não existe
+política de insert, update nem delete — e a ausência é a proteção: com RLS
+ligada, o que não tem política é negado. Quem grava é `record_audit`, que
+carimba o autor com `auth.uid()` em vez de aceitá-lo por parâmetro.
+
+**Políticas separadas por comando** (0015). As `for all` antigas já traziam
+`using` e `with check`, então não eram furo; o ganho é de revisão — afrouxar a
+leitura amanhã não toca mais na mesma linha que governa o delete.
+`apply_owner_policies` é o molde, pra a próxima tabela nascer com as quatro.
+
+**Storage privado** (0014) antes de existir upload, porque a ordem inversa é o
+que produz vazamento: quando a primeira tela de foto aparecer, o caminho mais
+curto já vai ser o bucket fechado. O caminho `<user_id>/arquivo` não é
+convenção, é a chave da autorização, e o trigger de exclusão leva os arquivos
+junto com a conta.
+
+**Autenticação** (`domain/auth`, `infrastructure/supabase/supabase-auth`):
+Google, recuperação, troca de senha com reautenticação, MFA por TOTP e
+encerramento global de sessão. Nenhuma resposta revela se um e-mail tem
+conta — o `error.message` do GoTrue diz "User already registered" com todas as
+letras, e ele subia direto pra tela. O freio de tentativas (`auth-throttle`) é
+do navegador e não substitui o limite do servidor: ele impede o formulário de
+virar ferramenta de teste de senha.
+
+**O teste que roda sempre:** `infrastructure/config/secrets.test.ts` varre
+`src`, `supabase` e o bundle atrás de `service_role`, `sb_secret_`, chave de
+IA e JWT embutido. A suíte de autorização (`supabase/tests/authorization.sql`)
+roda contra o banco de verdade, dentro de uma transação com rollback.
 
 ### Share Studio e a camada de momentos
 
@@ -826,6 +875,6 @@ Quando incomodar, trocar por import dinâmico dentro do `container`.
 cd app
 npm install
 npm run dev     # modo demo, sem configurar nada
-npm test        # 583 testes de domínio
+npm test        # 605 testes
 npm run build
 ```

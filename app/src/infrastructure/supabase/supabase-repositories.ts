@@ -1,5 +1,4 @@
 import type { PostgrestError } from '@supabase/supabase-js'
-import type { AuthService, AuthUser, SignUpResult } from '@/domain/auth/auth-service'
 import { createActivity, type Activity, type NewActivityInput } from '@/domain/entities/activity'
 import { createActivityType, type ActivityType } from '@/domain/entities/activity-type'
 import { createCheckIn, type CheckIn, type NewCheckInInput } from '@/domain/entities/checkin'
@@ -113,53 +112,28 @@ function fail(error: PostgrestError, action: string): never {
   throw new InfrastructureError(`Falha ao ${action}.`, error)
 }
 
-export class SupabaseAuthService implements AuthService {
-  async currentUser(): Promise<AuthUser | null> {
-    const { data, error } = await supabase().auth.getUser()
-    if (error || !data.user?.email) return null
-    return { id: data.user.id, email: data.user.email }
-  }
+/*
+  A autenticação mudou de arquivo.
 
-  async signIn(email: string, password: string): Promise<AuthUser> {
-    const { data, error } = await supabase().auth.signInWithPassword({ email, password })
-    if (error || !data.user?.email) {
-      throw new DomainError('E-mail ou senha não conferem.')
-    }
-    return { id: data.user.id, email: data.user.email }
-  }
+  Ela deixou de ser um adaptador de quatro métodos: MFA, recuperação, OAuth e
+  nível de garantia da sessão sao regras de seguranca, e elas precisam caber
+  numa revisão sem rolar por mil linhas de repositório. O re-export mantém
+  todo o resto do app importando do mesmo lugar de antes.
+*/
+export { SupabaseAuthService } from './supabase-auth'
 
-  async signUp(email: string, password: string, name: string): Promise<SignUpResult> {
-    assertValidName(name)
+/*
+  Exclusão de conta.
 
-    const { data, error } = await supabase().auth.signUp({
-      email,
-      password,
-      options: { data: { name: name.trim() } },
-    })
-
-    if (error || !data.user?.email) {
-      throw new DomainError(error?.message ?? 'Não consegui criar a conta agora.')
-    }
-
-    // Sem sessão significa confirmação de e-mail pendente. É um caso normal,
-    // não um erro: o app precisa dizer isso em vez de tentar entrar.
-    return {
-      user: { id: data.user.id, email: data.user.email },
-      needsConfirmation: data.session === null,
-    }
-  }
-
-  async signOut(): Promise<void> {
-    await supabase().auth.signOut()
-  }
-
-  onChange(listener: (user: AuthUser | null) => void): () => void {
-    const { data } = supabase().auth.onAuthStateChange((_event, session) => {
-      const user = session?.user
-      listener(user?.email ? { id: user.id, email: user.email } : null)
-    })
-    return () => data.subscription.unsubscribe()
-  }
+  A remoção acontece em `auth.users`, que a API pública não alcança — e nem
+  deveria. A função `delete_my_account` roda como definer, apaga sempre
+  `auth.uid()` e deixa o cascade levar o resto: perfil, objetivos, hábitos,
+  ações, registros, momentos e, pelo trigger de mídia, os arquivos.
+*/
+async function deleteOwnAccount(): Promise<void> {
+  const { error } = await supabase().rpc('delete_my_account')
+  if (error) throw new DomainError('Não consegui excluir a conta agora.')
+  await supabase().auth.signOut({ scope: 'global' })
 }
 
 export class SupabaseActivityRepository implements ActivityRepository {
@@ -423,6 +397,10 @@ export class SupabaseProfileRepository implements ProfileRepository {
       fail(error, 'salvar o perfil')
     }
     return toProfile(data)
+  }
+
+  async deleteAccount(): Promise<void> {
+    await deleteOwnAccount()
   }
 }
 
