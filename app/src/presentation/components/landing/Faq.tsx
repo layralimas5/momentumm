@@ -8,11 +8,6 @@ const QUESTIONS = [
       'Não. App de hábito pergunta se você fez ou não fez. Aqui você registra quanto fez, em que eixo e quando, e isso vira histórico, meta e sequência. A unidade é a atividade, não o check.',
   },
   {
-    question: 'Preciso ter amigos no app pra ele servir?',
-    answer:
-      'Não. Sequência, metas, estatísticas e histórico funcionam com você sozinho. A parte social entra depois, como camada, e é opcional.',
-  },
-  {
     question: 'Tudo que eu registro fica público?',
     answer:
       'Você escolhe. Cada registro pode ser público, visível só pra quem te segue ou totalmente privado. A regra é aplicada no banco de dados, não só na tela.',
@@ -30,7 +25,7 @@ const QUESTIONS = [
   {
     question: 'Quanto custa?',
     answer:
-      'O essencial é grátis e continua grátis. O PRO existe pra quem quer estatísticas avançadas, recap mensal e importações.',
+      'Registrar nas quatro áreas, sequência, recorde e uma meta ativa são grátis e continuam grátis. O PRO abre o histórico completo, as metas ilimitadas, as estatísticas e a comunidade.',
   },
 ] as const
 

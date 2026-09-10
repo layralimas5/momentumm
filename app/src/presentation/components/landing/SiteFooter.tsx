@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { Wordmark } from '@/presentation/components/brand/Logo'
 
 const EXPLORE = [
-  { label: 'Recursos', href: '/#recursos' },
+  { label: 'Como funciona', href: '/#como-funciona' },
   { label: 'Eixos', href: '/#eixos' },
   { label: 'Ferramentas', href: '/ferramentas' },
   { label: 'Momentumm PRO', href: '/#pro' },
@@ -96,19 +96,8 @@ export function SiteFooter() {
       </div>
 
       <div className="border-t border-line">
-        <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-6 text-sm text-ink-faint sm:flex-row sm:items-center sm:justify-between">
+        <div className="mx-auto max-w-5xl px-4 py-6 text-center text-sm text-ink-faint">
           <p>© {new Date().getFullYear()} Momentumm. Todos os direitos reservados.</p>
-          <p>
-            Desenvolvido por{' '}
-            <a
-              href="https://limadigitalstudio.com.br"
-              target="_blank"
-              rel="noreferrer"
-              className="text-ink-muted transition-colors hover:text-ink"
-            >
-              Layra Lima
-            </a>
-          </p>
         </div>
       </div>
     </footer>

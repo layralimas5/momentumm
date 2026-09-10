@@ -30,20 +30,18 @@ const PLANS: readonly Plan[] = [
     headline: 'Comece seu Momentum',
     price: 'R$ 0',
     period: 'para sempre',
-    description: 'Crie suas metas, registre seu progresso e construa consistência.',
+    description: 'Registre seu progresso e construa consistência nas quatro áreas.',
     specs: [
-      { label: 'Registros', value: 'Limitados' },
-      { label: 'Metas', value: '1 por eixo' },
-      { label: 'Histórico', value: 'Últimos 30 dias' },
+      { label: 'Metas', value: '1 ativa' },
+      { label: 'Histórico', value: 'Últimos 7 dias' },
+      { label: 'Comunidade', value: 'Não incluída' },
     ],
     features: [
-      'Check-ins',
       '4 áreas da vida',
-      '1 meta ativa por área',
-      'Momentum Score',
+      'Registro diário sem limite',
       'Streak e recorde pessoal',
-      'Histórico de 30 dias',
-      'Estatísticas básicas',
+      '1 meta ativa',
+      'Histórico de 7 dias',
     ],
     cta: 'Começar grátis',
   },
@@ -52,25 +50,28 @@ const PLANS: readonly Plan[] = [
     headline: 'Transforme progresso em evolução',
     price: 'R$ 29,90',
     period: '/mês',
+    strikePrice: 'R$ 79,90',
     description: 'Tudo que você precisa para entender seus padrões e evoluir mais rápido.',
     specs: [
-      { label: 'Registros', value: 'Ilimitados' },
       { label: 'Metas', value: 'Ilimitadas' },
       { label: 'Histórico', value: 'Completo' },
+      { label: 'Comunidade', value: 'Incluída' },
     ],
     features: [
       'Tudo do gratuito',
+      'Comunidade, feed e perfil público',
       'Metas ilimitadas',
       'Histórico completo',
+      'Momentum Score',
       'Analytics avançado',
       'Eixos personalizados',
       'Timer de foco',
-      'Weekly & Monthly Recap',
-      'Perfil PRO personalizado',
+      'Recap semanal e mensal',
       'Exportação dos dados',
       'Integrações',
       'Momentum Intelligence',
       'Insights personalizados com IA',
+      'Suporte por e-mail',
     ],
     cta: 'Começar com PRO',
     highlight: true,
@@ -80,17 +81,18 @@ const PLANS: readonly Plan[] = [
     headline: 'Construa seu melhor ano',
     price: 'R$ 179,90',
     period: '/ano',
-    strikePrice: 'R$ 358,80',
+    strikePrice: 'R$ 278,90',
     monthlyEquivalent: 'R$ 14,99/mês',
-    savings: 'Economize R$ 178,90',
+    savings: 'Economize R$ 99,00',
     description: 'O ano inteiro pelo preço de seis meses, com vantagens de quem chegou cedo.',
     specs: [
-      { label: 'Registros', value: 'Ilimitados' },
       { label: 'Metas', value: 'Ilimitadas' },
+      { label: 'Suporte', value: 'Prioritário' },
       { label: 'Selo Fundador', value: 'Incluído' },
     ],
     features: [
       'Tudo do PRO',
+      'Suporte prioritário',
       'Preço protegido na renovação*',
       '⚡ Founder Badge para membros elegíveis',
       'Benefícios exclusivos de fundador',
@@ -141,12 +143,19 @@ export function Pro() {
                 <h3 className="mt-4 text-balance text-lg font-semibold text-ink">{plan.headline}</h3>
 
                 <div className="mt-4">
-                  {plan.strikePrice ? (
-                    <p className="tabular text-sm text-ink-faint line-through">{plan.strikePrice}</p>
-                  ) : null}
-                  <p className="flex items-baseline gap-1">
+                  {/* O de-por fica na mesma linha: riscado em cima do preço lia
+                      como preço antigo do plano, não como desconto. */}
+                  <p className="flex flex-wrap items-baseline gap-x-1">
                     <span className="tabular text-3xl font-semibold text-ink">{plan.price}</span>
                     <span className="text-sm text-ink-muted">{plan.period}</span>
+                    {plan.strikePrice ? (
+                      <>
+                        <span className="sr-only">, de</span>
+                        <s className="tabular ml-2 text-sm text-ink-faint decoration-danger/70">
+                          {plan.strikePrice}
+                        </s>
+                      </>
+                    ) : null}
                   </p>
                   {plan.monthlyEquivalent ? (
                     <p className="tabular mt-1 text-sm text-ink-muted">{plan.monthlyEquivalent}</p>
