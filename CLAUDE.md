@@ -63,7 +63,7 @@ que existir base. Feed vazio afasta usuário.
 Fase 1 em pé, em `app/`. Roda em **modo demo** sem configurar nada (dados em
 `localStorage`) e vira contas reais ao preencher `.env.local` com o Supabase.
 
-Pronto: domínio completo com 388 testes, migrations com RLS até a 0011, repositórios demo e
+Pronto: domínio completo com 550 testes, migrations com RLS até a 0011, repositórios demo e
 Supabase, auth com rota protegida, registro rápido, cronômetro de sessão, streak
 dos últimos 7 dias, histórico com filtro por eixo, metas com progresso e perfil
 editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
@@ -251,6 +251,64 @@ que a conta da tela não é confiável.
 `momentumHistory` recalcula o score REAL de cada dia pela mesma função, em vez
 de guardar uma série à parte — histórico separado é como a curva começa a
 discordar do número grande no dia seguinte a qualquer ajuste de peso.
+
+### Dia Adaptável e Modo Retomada
+
+Os dois recursos que fazem o plano reagir ao dia real em vez de cobrar o dia
+ideal. São entidades separadas (`adaptive-day`, `recovery`) e desembocam na
+MESMA revisão: reorganizar o dia é uma operação só.
+
+**Dia Adaptável** (`buildAdaptiveDay`). A pessoa diz quanto tempo tem e o
+domínio devolve um plano com três vereditos por item — **manter**, **reduzir**
+pra versão mínima, **reagendar**. A ordem sai de um score que soma impacto,
+prioridade, vínculo com objetivo, prazo e progresso (juntos: "atrasado" já é a
+comparação entre os dois), gargalo da etapa, tempo estimado, sequência do
+hábito, há quantos dias a ação está sendo arrastada e o nível do Momentum —
+ritmo caindo empurra a repetição pra frente, ritmo alto empurra o objetivo.
+Pesos em `WEIGHT`, num lugar só.
+
+O que ele se recusa a fazer é o que define o recurso:
+
+- **Não puxa ação atrasada pro dia curto.** Encher o dia de hoje com a dívida
+  de ontem é o acúmulo com outro nome, e no terceiro dia a pessoa fecha o app
+- **Não empilha tudo em amanhã.** A ação reagendada procura o primeiro dia
+  cuja carga ainda comporta o tamanho dela, dentro do prazo do objetivo e de
+  uma semana no máximo. A carga de referência é a média do que a própria
+  pessoa costuma planejar, nunca um número fixo
+- **Não tira hábito do dia.** Hábito não muda de data: ele encolhe pra versão
+  mínima, e é ela que preserva a sequência. A reserva de tempo dele é sempre a
+  mínima — reservar a cheia faria a rotina comer o que move o objetivo
+- **Não devolve dia vazio, e não deixa o protegido cair.** A prioridade
+  principal encolhe mas não sai; sem versão mínima, o plano diz em voz alta que
+  ela não cabe em vez de escondê-la numa data futura
+- **Não grava nada sozinho.** A revisão ("Vamos proteger seu Momentum") mostra
+  item por item com o motivo, e só o "Confirmar" escreve
+
+**Modo Retomada** (`detectRecovery`). Liga com **sinais combinados** — três
+dias de baixa execução, objetivo sem avanço há uma semana, adiamentos
+recorrentes, queda de 8+ pontos no Momentum — e exige pelo menos dois: um sinal
+sozinho é quase sempre ruído (viagem, férias, espera de terceiro). Cada sinal
+mostra o número que o produziu. Hoje não conta como dia fraco (ainda está
+acontecendo) e quem já se moveu hoje não vê o card.
+
+Oferece até três passos pequenos, ordenados por **avanço por minuto** e não por
+importância: a ação mais importante costuma ser a maior, e oferecer ela como
+porta de entrada é pedir pra pessoa recomeçar pelo degrau em que ela parou. Um
+passo por objetivo, teto de 30 minutos, versão mínima quando existe.
+
+Escolher um passo abre a mesma revisão do Dia Adaptável, com o passo protegido,
+o orçamento reduzido ao tamanho da volta e a ação trazida pro dia se ela vier
+de outra data.
+
+**A recompensa da retomada é real, não um bônus inventado.** Ela vem por dois
+caminhos que já existiam: o passo escolhido vira a prioridade principal, e
+prioridade vale 3 pontos de impacto contra 1 de tarefa comum; e a retomada mais
+recente passou a pesar o dobro das anteriores no fator de capacidade de
+retomada (`LATEST_RETURN_WEIGHT`) — o fator pergunta "você consegue voltar?", e
+a resposta que vale é a de agora. Nada é gravado pra inflar o número: o crédito
+só existe se houve movimento de verdade no dia.
+
+Nenhuma sequência é encerrada em nenhum dos dois caminhos, e o card diz isso.
 
 ### Share Studio e a camada de momentos
 
@@ -691,6 +749,6 @@ Quando incomodar, trocar por import dinâmico dentro do `container`.
 cd app
 npm install
 npm run dev     # modo demo, sem configurar nada
-npm test        # 388 testes de domínio
+npm test        # 550 testes de domínio
 npm run build
 ```

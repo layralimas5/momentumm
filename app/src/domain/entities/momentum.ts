@@ -92,6 +92,18 @@ const PLAN_GAIN_CEILING = 0.35
 /** Dias sem movimento a partir dos quais existe uma falha pra retomar. */
 const GAP_FOR_RECOVERY = 2
 
+/**
+ * Peso da retomada mais recente contra as anteriores.
+ *
+ * O fator responde "você consegue voltar?", e a resposta que vale é a de
+ * agora. Com média simples, quem voltou hoje depois de três pausas antigas mal
+ * move o número — e o dia em que a pessoa mais precisa ver o esforço aparecer
+ * é justamente o dia em que ela voltou. O peso é 2 e não mais: acima disso o
+ * fator vira termômetro de um dia só, que é o defeito que a janela de 28 dias
+ * existe pra evitar.
+ */
+const LATEST_RETURN_WEIGHT = 2
+
 /** Dias de história a partir dos quais o score deixa de ser parcial. */
 const MIN_DAYS_FOR_FULL_SCORE = 7
 
@@ -139,7 +151,8 @@ export const MOMENTUM_PART_HINTS: Readonly<Record<MomentumPartKey, string>> = {
   priorities:
     'Do que você planejou, quanto saiu — medido por impacto: prioridade e ação de objetivo valem mais que tarefa comum.',
   objectives: 'O quanto o plano dos teus objetivos andou de verdade no período.',
-  recovery: 'Depois de um dia parado, quanto tempo você leva pra voltar. Voltar rápido devolve tudo.',
+  recovery:
+    'Depois de um dia parado, quanto tempo você leva pra voltar. Voltar rápido devolve tudo, e a volta mais recente é a que mais conta.',
 }
 
 export interface MomentumInput {
@@ -429,6 +442,9 @@ function objectivesFactor(gain: number | undefined): Factor {
  *
  * Quem não parou não recebe nota cheia de graça: sem pausa nenhuma o fator não
  * tem base e herda a consistência, porque não houve retomada pra medir.
+ *
+ * A retomada mais recente pesa o dobro das anteriores — ver
+ * `LATEST_RETURN_WEIGHT`. É por aí que voltar HOJE aparece no número.
  */
 function recoveryFactor(credits: readonly number[], days: readonly DayKey[]): Factor {
   // Nenhum movimento na janela inteira não é uma pausa, é ausência: não há
@@ -456,7 +472,24 @@ function recoveryFactor(credits: readonly number[], days: readonly DayKey[]): Fa
   if (running >= GAP_FOR_RECOVERY) notes.push(recoveryNote(running + 1))
 
   if (notes.length === 0) return null
-  return clamp01(notes.reduce((sum, note) => sum + note, 0) / notes.length)
+
+  /*
+    Média com a última retomada pesando o dobro.
+
+    É o que faz o Modo Retomada valer alguma coisa no número: a pessoa que
+    escolhe um passo pequeno e volta hoje fecha a pausa aberta com a melhor
+    nota possível, e essa nota é a que mais conta. Continua sendo dado real —
+    o crédito só existe se houve movimento de verdade no dia.
+  */
+  let total = 0
+  let weight = 0
+  notes.forEach((note, index) => {
+    const w = index === notes.length - 1 ? LATEST_RETURN_WEIGHT : 1
+    total += note * w
+    weight += w
+  })
+
+  return clamp01(total / weight)
 }
 
 /**

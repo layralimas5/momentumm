@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Insight } from '@/domain/entities/insight'
+import type { DayLoad } from '@/domain/entities/adaptive-day'
 import type { Task } from '@/domain/entities/task'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { useFocus } from '@/presentation/focus/use-focus'
@@ -12,6 +13,7 @@ import { MobileCheckIn } from './MobileCheckIn'
 import { MobileFocus } from './MobileFocus'
 import { MobileGoals } from './MobileGoals'
 import { MobileHabits } from './MobileHabits'
+import { AdaptiveDayCard } from '@/presentation/components/dashboard/AdaptiveDayCard'
 import { MomentumStrip } from '@/presentation/components/dashboard/MomentumStrip'
 import { NextUpCard } from '@/presentation/components/dashboard/NextUpCard'
 import { TodayFocusCard } from '@/presentation/components/dashboard/TodayFocusCard'
@@ -25,6 +27,9 @@ import { ProSheet } from './ProSheet'
 
 interface MobileDashboardProps {
   readonly view: DashboardView
+  /** O tamanho do dia como ele está montado: alimenta o Dia Adaptável. */
+  readonly dayLoad: DayLoad
+  readonly onAdaptDay: (availableMin: number) => void
   readonly onStartFocus: (task: Task) => void
   readonly onCompleteTask: (task: Task) => Promise<void>
   readonly onPostponeTask: (task: Task) => Promise<void>
@@ -45,6 +50,8 @@ interface MobileDashboardProps {
  */
 export function MobileDashboard({
   view,
+  dayLoad,
+  onAdaptDay,
   onStartFocus,
   onBringToToday,
   onCompleteTask,
@@ -114,6 +121,15 @@ export function MobileDashboard({
           </span>
         </p>
       ) : null}
+
+      {/* Antes do foco de propósito: no celular o app é aberto no meio do dia,
+          e "quanto tempo eu tenho agora" é a pergunta que reordena o resto. */}
+      <AdaptiveDayCard
+        plannedMin={dayLoad.minutes}
+        openItems={dayLoad.items}
+        capacity={view.capacity}
+        onAdapt={onAdaptDay}
+      />
 
       <ShareMomentsRow view={view} />
 

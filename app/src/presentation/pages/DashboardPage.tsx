@@ -2,8 +2,11 @@ import { useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Insight } from '@/domain/entities/insight'
 import { addDays } from '@/domain/entities/day'
+import type { RecoveryStep } from '@/domain/entities/recovery'
 import { isPending, shrinkToMinimal, type Task } from '@/domain/entities/task'
 import { useAuth } from '@/presentation/auth/use-auth'
+import { AdaptiveDayCard } from '@/presentation/components/dashboard/AdaptiveDayCard'
+import { AdaptiveDayReview } from '@/presentation/components/dashboard/AdaptiveDayReview'
 import { CheckInCard } from '@/presentation/components/dashboard/CheckInCard'
 import { DayHeader } from '@/presentation/components/dashboard/DayHeader'
 import { DashboardSkeleton } from '@/presentation/components/dashboard/DashboardSkeleton'
@@ -16,6 +19,7 @@ import { NextUpCard } from '@/presentation/components/dashboard/NextUpCard'
 import { ObjectivesCard } from '@/presentation/components/dashboard/ObjectivesCard'
 import { Onboarding } from '@/presentation/components/dashboard/Onboarding'
 import { PriorityCard } from '@/presentation/components/dashboard/PriorityCard'
+import { RecoveryCard } from '@/presentation/components/dashboard/RecoveryCard'
 import { WeeklyProgressCard } from '@/presentation/components/dashboard/WeeklyProgressCard'
 import { Section } from '@/presentation/components/dashboard/Section'
 import { TodayFocusCard } from '@/presentation/components/dashboard/TodayFocusCard'
@@ -23,7 +27,9 @@ import { WinsCard } from '@/presentation/components/dashboard/WinsCard'
 import { ErrorNote } from '@/presentation/components/ui/States'
 import { useFocus } from '@/presentation/focus/use-focus'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
+import { useAdaptiveDay } from '@/presentation/planner/use-adaptive-day'
 import { useDashboard, type GoalInMotion } from '@/presentation/planner/use-dashboard'
+import { useRecovery } from '@/presentation/planner/use-recovery'
 import { useJourneyRecorder } from '@/presentation/planner/use-journey-recorder'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { DayCompleteBanner } from '@/presentation/components/dashboard/DayCompleteBanner'
@@ -59,6 +65,16 @@ export function DashboardPage() {
   const composer = useComposer()
   const navigate = useNavigate()
   const isDesktop = useIsDesktop()
+
+  /*
+    Os dois recursos que reagem ao estado do dia em vez de esperarem um clique
+    no lugar certo. O Dia Adaptável responde "tenho pouco tempo"; o Modo
+    Retomada responde "sumi por uns dias". Os dois desembocam na MESMA revisão
+    — reorganizar o dia é uma operação só, e duas telas fazendo isso seriam
+    duas contas discordando na primeira mudança de regra.
+  */
+  const adaptive = useAdaptiveDay(view)
+  const recovery = useRecovery(view)
 
   /*
     O dia de hoje virando registro: hábito concluído, rotina fechada, dia
@@ -207,11 +223,60 @@ export function DashboardPage() {
     [planner, view, composer, navigate, shrinkTask, startFocus],
   )
 
+  /** O tempo informado vira uma proposta de dia, nunca uma gravação direta. */
+  const adaptDay = useCallback(
+    (availableMin: number) => adaptive.open({ availableMin }),
+    [adaptive],
+  )
+
+  /**
+   * O passo de retomada escolhido.
+   *
+   * Ele é protegido, entra no dia mesmo vindo de outra data e vira a
+   * prioridade principal — e é aí que mora a recompensa: prioridade concluída
+   * vale o triplo de uma tarefa comum no Momentum, e fechar a pausa de hoje é
+   * o que o fator de retomada mede.
+   */
+  const chooseRecoveryStep = useCallback(
+    (step: RecoveryStep) => {
+      const isTask = step.kind === 'acao'
+
+      adaptive.open({
+        availableMin: recovery.budgetFor(step),
+        protectIds: [step.id],
+        fromRecovery: true,
+        intro: `Passo escolhido: ${step.title}. O resto do dia se reorganiza em volta dele, e nada do que ficou pra trás foi somado aqui.`,
+        ...(isTask && step.fromAnotherDay ? { bringId: step.id } : {}),
+        ...(isTask ? { promoteId: step.id } : {}),
+        ...(isTask && step.minimal ? { minimalId: step.id } : {}),
+      })
+    },
+    [adaptive, recovery],
+  )
+
+  const confirmAdaptive = useCallback(async () => {
+    const fromRecovery = adaptive.request?.fromRecovery === true
+    const applied = await adaptive.confirm()
+    // Escolheu o passo: o recado de retomada já foi respondido por hoje.
+    if (applied && fromRecovery) recovery.dismiss()
+  }, [adaptive, recovery])
+
   const continueGoal = useCallback(
     (goal: GoalInMotion) => {
       if (goal.nextTask) startFocus(goal.nextTask)
     },
     [startFocus],
+  )
+
+  const reviewLayer = (
+    <AdaptiveDayReview
+      plan={adaptive.plan}
+      intro={adaptive.request?.intro}
+      applying={adaptive.applying}
+      error={adaptive.error}
+      onConfirm={() => void confirmAdaptive()}
+      onClose={adaptive.close}
+    />
   )
 
   if (planner.loading) return <DashboardSkeleton mobile={!isDesktop} />
@@ -244,8 +309,16 @@ export function DashboardPage() {
           overdue={view.overdueCount}
           onReviewOverdue={() => navigate('/app/plano')}
         />
+        <RecoveryCard
+          state={recovery.state}
+          budgetFor={recovery.budgetFor}
+          onChoose={chooseRecoveryStep}
+          onDismiss={recovery.dismiss}
+        />
         <MobileDashboard
           view={view}
+          dayLoad={adaptive.load}
+          onAdaptDay={adaptDay}
           onStartFocus={startFocus}
           onCompleteTask={completeTask}
           onPostponeTask={postponeTask}
@@ -254,6 +327,7 @@ export function DashboardPage() {
           onApplyInsight={applyInsight}
           onContinueGoal={continueGoal}
         />
+        {reviewLayer}
       </div>
     )
   }
@@ -291,6 +365,13 @@ export function DashboardPage() {
           onReviewOverdue={() => navigate('/app/plano')}
         />
 
+        <RecoveryCard
+          state={recovery.state}
+          budgetFor={recovery.budgetFor}
+          onChoose={chooseRecoveryStep}
+          onDismiss={recovery.dismiss}
+        />
+
         <MomentumStrip
           momentum={view.momentum}
           history={view.momentumSeries}
@@ -300,6 +381,13 @@ export function DashboardPage() {
         />
 
         {view.dayComplete ? <DayCompleteBanner win={view.todayWin} /> : null}
+
+        <AdaptiveDayCard
+          plannedMin={adaptive.load.minutes}
+          openItems={adaptive.load.items}
+          capacity={view.capacity}
+          onAdapt={adaptDay}
+        />
 
         <ShareMomentsRow view={view} />
 
@@ -453,6 +541,8 @@ export function DashboardPage() {
           />
         </Section>
       </div>
+
+      {reviewLayer}
     </div>
   )
 }
