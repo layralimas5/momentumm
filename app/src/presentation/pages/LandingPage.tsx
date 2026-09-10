@@ -1,23 +1,24 @@
 import { AxisMarquee } from '@/presentation/components/landing/AxisMarquee'
+import { AxisPlayground } from '@/presentation/components/landing/AxisPlayground'
 import { Faq } from '@/presentation/components/landing/Faq'
-import { FeatureShowcase } from '@/presentation/components/landing/FeatureShowcase'
 import { Hero } from '@/presentation/components/landing/Hero'
+import { HowItWorks } from '@/presentation/components/landing/HowItWorks'
+import { Problem } from '@/presentation/components/landing/Problem'
 import { Pro } from '@/presentation/components/landing/Pro'
-import { Results } from '@/presentation/components/landing/Results'
-import { ScrollFeatures } from '@/presentation/components/landing/ScrollFeatures'
 import { SiteFooter } from '@/presentation/components/landing/SiteFooter'
 import { SiteHeader } from '@/presentation/components/landing/SiteHeader'
-import { ValueProps } from '@/presentation/components/landing/ValueProps'
-import { WhyMomentumm } from '@/presentation/components/landing/WhyMomentumm'
+import { SoloFirst } from '@/presentation/components/landing/SoloFirst'
 
 /**
- * Ordem das seções espelhando a referência (fitfolio.com.br):
- * header → hero → faixa de eixos → proposta de valor → features com mockup →
- * celular que troca no scroll → por que escolher → resultados → PRO → FAQ →
- * rodapé.
+ * A ordem é um argumento, não um catálogo: promessa → o problema que ninguém
+ * tinha nomeado → como o app resolve → a prova jogável → a objeção do app
+ * vazio → preço → dúvidas.
  *
- * Oculto por ora: <Gallery /> ("Na prática"). O componente segue em
- * components/landing/Gallery.tsx, é só voltar a importar quando quiser mostrar.
+ * Quatro seções (ValueProps, FeatureShowcase, ScrollFeatures, WhyMomentumm)
+ * repetiam as mesmas três ideias e viraram HowItWorks + AxisPlayground.
+ * Results saiu: seção de "resultados reais" com card vazio anuncia produto sem
+ * usuário. O esqueleto dela continua no git, é só voltar quando houver gente
+ * de verdade pra citar.
  */
 export function LandingPage() {
   return (
@@ -34,11 +35,10 @@ export function LandingPage() {
       <main id="conteudo">
         <Hero />
         <AxisMarquee />
-        <ValueProps />
-        <FeatureShowcase />
-        <ScrollFeatures />
-        <WhyMomentumm />
-        <Results />
+        <Problem />
+        <HowItWorks />
+        <AxisPlayground />
+        <SoloFirst />
         <Pro />
         <Faq />
       </main>

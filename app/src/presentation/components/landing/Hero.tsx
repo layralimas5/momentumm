@@ -1,7 +1,12 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 
-const LINES = ['Cada página', 'Cada treino', 'Juntos'] as const
+/**
+ * O posicionamento inteiro cabe nessas duas linhas: app de hábito pergunta se
+ * você fez, o Momentumm registra quanto. Ele abria com a lista de eixos, que é
+ * o argumento fraco — agregador qualquer um é.
+ */
+const LINES = ['Não é se você fez.', 'É quanto você fez.'] as const
 
 export function Hero() {
   return (
@@ -49,40 +54,36 @@ export function Hero() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="mx-auto mt-6 max-w-xl text-pretty text-lg text-ink-muted"
         >
-          Leitura, estudo, treino, meditação e comunidade num app só, pra manter constância todos
-          os dias.
+          Leitura, estudo, treino e meditação viram número que acumula, na mesma linha do tempo. O
+          que o Strava fez com a corrida, pro resto do que você constrói.
         </motion.p>
 
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row"
+          className="mt-9 flex flex-col items-center gap-5"
         >
           <Link
             to="/entrar"
-            className="inline-flex h-14 w-full max-w-xs items-center justify-center gap-2.5 rounded-xl bg-brand px-7 text-white transition-colors hover:bg-brand-hi sm:w-auto"
+            className="inline-flex h-14 w-full max-w-xs items-center justify-center gap-2.5 rounded-xl bg-brand px-8 font-medium text-white transition-colors hover:bg-brand-hi sm:w-auto"
           >
             <BoltIcon />
-            <span className="text-left leading-tight">
-              <span className="block text-[10px] uppercase tracking-wide opacity-80">Comece</span>
-              <span className="block font-medium">Grátis agora</span>
-            </span>
+            Começar grátis
           </Link>
 
+          {/* Secundário vira link de texto: dois botões do mesmo peso dividiam o clique. */}
           <Link
             to="/app"
-            className="inline-flex h-14 w-full max-w-xs items-center justify-center gap-2.5 rounded-xl border border-line px-7 text-ink transition-colors hover:border-line-hi sm:w-auto"
+            className="text-sm text-ink-muted underline-offset-4 transition-colors hover:text-ink hover:underline"
           >
-            <EyeIcon />
-            <span className="text-left leading-tight">
-              <span className="block text-[10px] uppercase tracking-wide text-ink-faint">Conheça</span>
-              <span className="block font-medium">Ver por dentro</span>
-            </span>
+            Ver por dentro, sem criar conta
           </Link>
         </motion.div>
 
-        <p className="mt-4 text-sm text-ink-faint">Funciona no navegador. Sem cartão pra começar.</p>
+        <p className="mt-6 text-sm text-ink-faint">
+          Funciona no navegador. Sem cartão pra começar.
+        </p>
       </div>
     </section>
   )
@@ -92,22 +93,6 @@ function BoltIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" className="size-6 shrink-0" fill="currentColor">
       <path d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5Z" />
-    </svg>
-  )
-}
-
-function EyeIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      className="size-6 shrink-0"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
-      <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />
-      <circle cx="12" cy="12" r="3" />
     </svg>
   )
 }

@@ -1,4 +1,10 @@
-/** Estrutura do menu, espelhando a referência: 3 grupos + o PRO direto. */
+/**
+ * Estrutura do menu: 3 grupos + o PRO direto.
+ *
+ * As âncoras seguem os ids reais da LandingPage. Quando uma seção sair ou
+ * mudar de id, é aqui que o link precisa acompanhar — link de menu apontando
+ * pra âncora morta não dá erro, só não rola pra lugar nenhum.
+ */
 
 export interface NavLink {
   readonly label: string
@@ -13,32 +19,36 @@ export interface NavGroup {
 
 export const NAV_GROUPS: readonly NavGroup[] = [
   {
-    label: 'Recursos',
+    label: 'Produto',
     links: [
       {
-        label: 'Registro rápido',
-        description: 'Dois toques entre fazer e registrar',
-        href: '/#recursos',
+        label: 'Como funciona',
+        description: 'Registrar, acumular, continuar',
+        href: '/#como-funciona',
       },
-      { label: 'Sequência', description: 'Streak, recorde e o dia em risco', href: '/#eixos' },
       {
-        label: 'Metas',
-        description: 'Por dia, semana ou mês, somando sozinhas',
-        href: '/#passo-metas',
+        label: 'Testar agora',
+        description: 'Registre uma atividade sem criar conta',
+        href: '/#eixos',
       },
-      { label: 'Histórico', description: 'Tudo agrupado por dia e por eixo', href: '/#resultados' },
+      {
+        label: 'Sozinho ou com gente',
+        description: 'O que funciona antes de ter ninguém no feed',
+        href: '/#sozinho',
+      },
+      { label: 'Dúvidas', description: 'O que perguntam antes de começar', href: '/#faq' },
     ],
   },
   {
     label: 'Soluções',
     links: [
-      { label: 'Pra quem lê', description: 'Páginas, livros e ritmo de leitura', href: '/#passo-leituras' },
-      { label: 'Pra quem estuda', description: 'Horas de estudo que viram evolução', href: '/#passo-metas' },
-      { label: 'Pra quem treina', description: 'Treino na mesma linha do tempo', href: '/#passo-treinos' },
+      { label: 'Pra quem lê', description: 'Páginas, livros e ritmo de leitura', href: '/#eixos' },
+      { label: 'Pra quem estuda', description: 'Horas de estudo que viram evolução', href: '/#eixos' },
+      { label: 'Pra quem treina', description: 'Treino na mesma linha do tempo', href: '/#eixos' },
       {
         label: 'Pra quem acompanha alguém',
         description: 'Feed de quem você segue',
-        href: '/#passo-comunidade',
+        href: '/#sozinho',
       },
     ],
   },
