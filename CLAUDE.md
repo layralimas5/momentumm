@@ -63,8 +63,7 @@ que existir base. Feed vazio afasta usuário.
 Fase 1 em pé, em `app/`. Roda em **modo demo** sem configurar nada (dados em
 `localStorage`) e vira contas reais ao preencher `.env.local` com o Supabase.
 
-Pronto: domínio completo com 668 testes, migrations com RLS até a 0017, repositórios demo e
-Pronto: domínio completo com 668 testes, migrations com RLS até a 0018, repositórios demo e
+Pronto: domínio completo com 668 testes, migrations com RLS até a 0019, repositórios demo e
 Supabase, auth com rota protegida, registro rápido, cronômetro de sessão, streak
 dos últimos 7 dias, histórico com filtro por eixo, metas com progresso e perfil
 editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
