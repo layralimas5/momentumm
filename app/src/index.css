@@ -384,3 +384,13 @@
     }
   }
 }
+
+/* A linha fina de sincronização do app: um traço que atravessa o topo. */
+@keyframes sync {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}

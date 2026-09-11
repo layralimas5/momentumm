@@ -69,6 +69,8 @@ export interface PlannerState {
   readonly streak: Streak
   readonly limits: PlanLimits
   readonly loading: boolean
+  /** Recarregando por baixo dos dados atuais (voltou online, voltou pra aba). */
+  readonly syncing: boolean
   readonly error: string | null
   /** Falso quando o navegador perdeu a rede: a tela avisa em vez de falhar mudo. */
   readonly online: boolean

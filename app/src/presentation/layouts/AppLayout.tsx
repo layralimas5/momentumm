@@ -231,9 +231,27 @@ function SidebarLink({ item, collapsed }: { item: AppNavItem; collapsed: boolean
   )
 }
 
-/** Sem rede o app continua legível: o aviso explica por que nada salva. */
+/**
+ * Sem rede o app continua legível: o aviso explica por que nada salva. E
+ * quando a rede volta (ou a aba volta), o provider relê o servidor por baixo
+ * dos dados atuais; a linha fina no topo é o único sinal disso, porque trocar
+ * a tela por um esqueleto a cada retorno de aba seria pior que não avisar.
+ */
 function OfflineBanner() {
-  const { online } = usePlanner()
+  const { online, syncing } = usePlanner()
+
+  if (online && syncing) {
+    return (
+      <div role="status" className="relative h-0.5 w-full overflow-hidden bg-transparent">
+        <span
+          aria-hidden="true"
+          className="absolute inset-y-0 left-0 w-1/3 rounded-full bg-brand/70 motion-safe:animate-[sync_1.2s_ease-in-out_infinite]"
+        />
+        <span className="sr-only">Sincronizando com o servidor</span>
+      </div>
+    )
+  }
+
   if (online) return null
 
   return (
