@@ -100,6 +100,15 @@ export class SimulatedAiService implements AiService {
       bottlenecks.push(`O fator que mais derruba teu momentum é ${request.weakestFactor}.`)
     }
 
+    // O último review é a única parte do contexto que a simulação consegue
+    // usar sem inventar: é texto da própria pessoa, devolvido como lembrete.
+    const lastAdjustment = request.context.reviews.find((review) => review.adjustments)
+    if (lastAdjustment?.adjustments) {
+      patterns.push(
+        `No review de ${lastAdjustment.week} você decidiu: "${lastAdjustment.adjustments}".`,
+      )
+    }
+
     const overload =
       request.plannedTodayMin > request.capacityMin
         ? `Hoje o plano pede ${request.plannedTodayMin} minutos e a tua capacidade de hoje é ${request.capacityMin}.`

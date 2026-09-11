@@ -6,6 +6,7 @@ import type {
   AiProgressRequest,
   AiReviewRequest,
 } from '@/domain/ai/ai-service'
+import { buildAiContext, type AiUserContext } from '@/domain/ai/ai-context'
 import { activityType } from '@/domain/entities/activity-type'
 import { capacityOf, checkInOfDay } from '@/domain/entities/checkin'
 import { deadlineFrom } from '@/domain/entities/objective'
@@ -76,9 +77,29 @@ export function useAi() {
   const planner = usePlanner()
   const progress = useProgress()
 
+  // Um contexto só pros três pedidos, recalculado quando o snapshot muda.
+  const context = useMemo<AiUserContext>(
+    () =>
+      buildAiContext({
+        today: planner.today,
+        momentum: progress.momentum,
+        factors: progress.factors,
+        streak: planner.streak,
+        checkIns: planner.checkIns,
+        objectives: progress.objectives,
+        habits: planner.habits,
+        habitLogs: planner.habitLogs,
+        tasks: planner.tasks,
+        reviews: planner.weeklyReviews,
+        wins: planner.wins,
+      }),
+    [planner, progress],
+  )
+
   const buildPlan = useAiCall(async (draft: PlanRequestDraft): Promise<AiPlanSuggestion> => {
     const axis = activityType(draft.axis)
     const request: AiPlanRequest = {
+      context,
       title: draft.title,
       axis: draft.axis,
       target: draft.target,
@@ -97,6 +118,7 @@ export function useAi() {
     const todayTasks = tasksOfDay(planner.tasks, planner.today).filter(isPending)
 
     return {
+      context,
       momentum: progress.momentum.value,
       momentumLevel: progress.momentum.level,
       activeDays: progress.last7.activeDays,
@@ -110,7 +132,7 @@ export function useAi() {
       capacityMin: capacity.suggestedFocusMin * capacity.suggestedActions,
       weakestFactor: progress.weakest?.label.toLowerCase() ?? null,
     }
-  }, [planner.checkIns, planner.tasks, planner.today, progress])
+  }, [context, planner.checkIns, planner.tasks, planner.today, progress])
 
   const readProgress = useAiCall(
     async (): Promise<AiProgressReading> => container.ai.readProgress(request),
@@ -119,8 +141,8 @@ export function useAi() {
   // A síntese do review não passa por `useAiCall`: ela não tem tela própria e o
   // resultado é gravado no review em vez de ficar em estado local.
   const summarizeReview = useCallback(
-    (input: AiReviewRequest) => container.ai.summarizeReview(input),
-    [],
+    (input: Omit<AiReviewRequest, 'context'>) => container.ai.summarizeReview({ ...input, context }),
+    [context],
   )
 
   return {
@@ -129,5 +151,6 @@ export function useAi() {
     readProgress,
     summarizeReview,
     request,
+    context,
   }
 }

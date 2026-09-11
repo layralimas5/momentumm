@@ -3,6 +3,7 @@ import type { DayKey } from '@/domain/entities/day'
 import type { DayPart, HabitFrequency, HabitIcon } from '@/domain/entities/habit'
 import type { Priority } from '@/domain/entities/priority'
 import type { TaskEffort } from '@/domain/entities/task'
+import type { AiUserContext } from './ai-context'
 
 /**
  * Momentumm AI — a porta.
@@ -20,9 +21,16 @@ import type { TaskEffort } from '@/domain/entities/task'
  * As duas devolvem estrutura, não texto solto. É isso que permite a prévia
  * editável antes de salvar: a pessoa mexe em cada ação, e o app grava com as
  * mesmas regras de domínio de um plano feito na mão.
+ *
+ * Todo pedido carrega o `context` (ver `ai-context`): objetivos com plano e
+ * previsão, hábitos com constância, o dia, os reviews anteriores e o score
+ * aberto. Os campos soltos ao lado dele são o resumo que a implementação
+ * simulada consegue ler; a real lê o contexto inteiro.
  */
 
 export interface AiPlanRequest {
+  /** A conta inteira, do jeito que `buildAiContext` monta. */
+  readonly context: AiUserContext
   readonly title: string
   readonly axis: ActivityTypeSlug
   readonly target: number
@@ -79,6 +87,7 @@ export interface AiPlanSuggestion {
 }
 
 export interface AiProgressRequest {
+  readonly context: AiUserContext
   readonly momentum: number
   readonly momentumLevel: string
   readonly activeDays: number
@@ -104,6 +113,7 @@ export interface AiProgressReading {
 }
 
 export interface AiReviewRequest {
+  readonly context: AiUserContext
   readonly weekLabel: string
   readonly executionRate: number
   readonly habitsDone: number
