@@ -63,7 +63,7 @@ que existir base. Feed vazio afasta usuário.
 Fase 1 em pé, em `app/`. Roda em **modo demo** sem configurar nada (dados em
 `localStorage`) e vira contas reais ao preencher `.env.local` com o Supabase.
 
-Pronto: domínio completo com 605 testes, migrations com RLS até a 0011, repositórios demo e
+Pronto: domínio completo com 617 testes, migrations com RLS até a 0017, repositórios demo e
 Supabase, auth com rota protegida, registro rápido, cronômetro de sessão, streak
 dos últimos 7 dias, histórico com filtro por eixo, metas com progresso e perfil
 editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
@@ -733,6 +733,61 @@ que a pessoa já cumpre, e a tela existe pra combinar, conferir e encerrar.
 **Não implementado de propósito:** desafio público, descoberta, comunidade,
 grupo, chat, premiação e ranking global.
 
+### Momentumm AI de verdade
+
+A IA deixou de ser só simulada. A porta (`domain/ai/ai-service`) é a mesma;
+o que mudou é quem responde por ela:
+
+- **Modo demo:** `SimulatedAiService`, regras fixas, avisada na tela.
+- **Com Supabase:** `SupabaseAiService` → Edge Function `momentumm-ai`
+  (`supabase/functions/momentumm-ai`). A chave da Anthropic mora só no
+  segredo da função. Deploy e segredos em `supabase/functions/README.md`.
+
+**Todo pedido carrega o contexto inteiro da conta** (`domain/ai/ai-context`,
+`buildAiContext`, puro e testado): objetivos com etapas, gargalo, próxima ação
+e previsão; hábitos com constância e estado de hoje; ações do dia e atrasadas;
+os três últimos reviews escritos; vitórias recentes; o score aberto em
+fatores; a capacidade do check-in. Um contexto só, montado no `use-ai`, pros
+três pedidos, senão duas telas recebem leituras que se contradizem. Nenhum id
+atravessa a fronteira: a IA responde por posição (`stepIndex`) e por texto.
+
+**Prompt, formato de saída e validação vivem num lugar só**
+(`domain/ai/ai-prompts`), importado pelo app e pela função (import map em
+`deno.json` mapeia `@/` pra `src/`). A resposta é validada com zod nos DOIS
+lados; ícone, frequência ou prioridade fora do domínio falham antes de virar
+prévia. O modelo padrão é `claude-opus-5` (`MOMENTUMM_AI_MODEL` troca), com
+saída estruturada (`output_config.format`) e effort `medium`.
+
+**Teto por plano no servidor** (`PLAN_LIMITS[tier].aiCallsPerDay`: 5 no
+gratuito, 40 no PRO), contado em `ai_calls` (migration 0016), que só a função
+grava com service role. Sem política de insert pra API pública, pela mesma
+regra de `audit_logs`. `profiles.plan` é lido com service role: é a fonte que
+o cliente não consegue forjar.
+
+**Erros com código** (`domain/ai/ai-error`): `not_configured`,
+`quota_exceeded`, `model_unavailable`, `invalid_output`, `unauthorized`,
+`invalid_request`. `AiErrorNote` mostra a mensagem e oferece o PRO só na cota
+do gratuito. Função ausente chega ao navegador como falha de CORS
+(`FunctionsFetchError`), e a mensagem cobre as duas leituras possíveis.
+
+### Sincronização
+
+O provider recarrega em silêncio (`reload({ silent: true })`, dados atuais na
+tela, sem esqueleto) ao voltar a ficar online e ao voltar pra aba depois de
+um minuto parado (`RESYNC_AFTER_MS`). `syncing` sai no contexto e vira uma
+linha fina no topo. Não existe Realtime: a escrita continua otimista com
+rollback, e a releitura é o que traz o que foi marcado em outro aparelho.
+
+**Testado com conta real** (10/09/2026, auto-confirm ligado no projeto):
+cadastro pela tela → onboarding → objetivo com três etapas em `plan_stages`
+→ ações em `Hoje` → concluir → Momentum 0 → 49 → Progresso com número →
+review da semana anterior com aviso de "sem registro" → os três pedidos da
+IA saindo com JWT e contexto completo (função interceptada no teste, porque
+ela ainda não estava implantada) → plano da IA salvo com etapas de verdade.
+O que o teste achou e foi corrigido: Progresso ignorava ação concluída no
+empty state, "Voltei hoje" no primeiro dia de conta, e `delete_my_account`
+quebrado porque o Supabase passou a recusar delete em `storage.objects`
+(migration 0017 + cliente apaga a pasta pela Storage API).
 ### A jornada principal
 
 O produto é um ciclo de três telas, nessa ordem:
@@ -884,6 +939,6 @@ Quando incomodar, trocar por import dinâmico dentro do `container`.
 cd app
 npm install
 npm run dev     # modo demo, sem configurar nada
-npm test        # 605 testes
+npm test        # 617 testes
 npm run build
 ```
