@@ -841,8 +841,17 @@ O dashboard do celular é uma **árvore de componentes própria**
 `useIsDesktop()`. Não é o desktop encolhido: a ordem muda pra registrar,
 decidir e começar, e a análise vem depois.
 
-- Barra inferior com cinco lugares (Hoje, Jornada, +, Foco, Perfil). Hábitos,
-  Metas, Review e Insights não cabem lá e ficam nos atalhos do Perfil
+- Barra inferior com cinco lugares (Hoje, Objetivos, +, Plano, Perfil). O resto
+  (Hábitos, Progresso, Review, IA, Círculo, Foco, Metas, Jornada, Insights,
+  Configurações) chega pelos atalhos do Perfil e pelos links do Hoje. `TAB_ROUTES`
+  em `MobileTabBar` é a fonte: o topo e os atalhos leem dela
+- O topo cumprimenta só em `Hoje`. Nas outras telas fica a marca, e quando a
+  tela não está na barra (ou é um detalhe) aparece o "voltar": histórico do
+  app quando existe, senão a tela pai
+- Trocar de rota volta pro topo (`ScrollToHash` no `App`): o router não mexe na
+  rolagem, e "Ver todos" no fim de Hoje abria Hábitos já rolado
+- Diálogo e bottom sheet levam o foco pro primeiro campo (`use-focus-trap`), não
+  pro botão de fechar
 - Em `Minha Jornada` a **sequência abre a página**. No desktop ela mora na
   coluna lateral, mas no celular, no fim da rolagem, ela simplesmente não é
   vista — e é ela a resposta que traz a pessoa àquela tela
