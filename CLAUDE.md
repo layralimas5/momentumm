@@ -806,7 +806,7 @@ prévia. O modelo padrão é `claude-opus-5` (`MOMENTUMM_AI_MODEL` troca), com
 saída estruturada (`output_config.format`) e effort `medium`.
 
 **Franquia mensal no servidor** (`PLAN_LIMITS[tier].aiCallsPerMonth`: 0 no
-gratuito, 150 no PRO), contada em `ai_calls` (migrations 0016 e 0018, esta
+gratuito, 150 no PRO), contada em `ai_calls` (migrations 0016 e 0019, esta
 com os seis kinds), que só a função grava com service role. A resposta traz
 `usage` e o app mostra "3 de 150 leituras este mês". Sem política de insert pra API pública, pela mesma
 regra de `audit_logs`. `profiles.plan` é lido com service role: é a fonte que

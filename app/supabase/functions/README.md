@@ -12,7 +12,7 @@ npm i -g supabase
 supabase login
 supabase link --project-ref hsgjlxetdopomeibdbho
 
-# aplicar as migrations 0016 e 0018 (SQL editor ou `supabase db push`)
+# aplicar as migrations 0016 e 0019 (SQL editor ou `supabase db push`)
 
 # segredos da função
 supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
@@ -31,4 +31,4 @@ PRO), contada em `ai_calls`, que só a função escreve. Sem franquia a função
 responde `plan_required` antes de chamar o modelo.
 
 Kinds aceitos: `plan`, `day`, `progress`, `review`, `review_draft`,
-`recovery` (a 0018 abre a constraint de `ai_calls.kind` pra eles).
+`recovery` (a 0019 abre a constraint de `ai_calls.kind` pra eles).
