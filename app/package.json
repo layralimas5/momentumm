@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "ai:bundle": "esbuild src/domain/ai/edge-shared.ts --bundle --format=esm --platform=neutral --target=es2022 --external:zod --alias:@=./src --banner:js=\"// GERADO por 'npm run ai:bundle' a partir de src/domain/ai/edge-shared.ts. Nao editar.\" --outfile=supabase/functions/momentumm-ai/shared.ts",
+    "ai:deploy": "npm run ai:bundle && supabase functions deploy momentumm-ai"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

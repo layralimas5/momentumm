@@ -18,9 +18,16 @@ supabase link --project-ref hsgjlxetdopomeibdbho
 supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
 supabase secrets set MOMENTUMM_AI_MODEL=claude-opus-5   # opcional
 
-# deploy
-supabase functions deploy momentumm-ai
+# deploy (gera supabase/functions/momentumm-ai/shared.ts e sobe)
+npm run ai:deploy
 ```
+
+`shared.ts` é o domínio empacotado pelo esbuild a partir de
+`src/domain/ai/edge-shared.ts`. O bundler do Supabase não resolve os imports
+sem extensão do app (`./ai-context` em vez de `./ai-context.ts`), então a
+função não importa `src/` direto: importa o pacote. Ele fica versionado pra o
+deploy funcionar de qualquer checkout, e `npm run ai:bundle` o regenera —
+rodar sempre que `ai-prompts`, `ai-context` ou `plan` mudarem.
 
 Até o deploy, o app com Supabase configurado mostra "A Momentumm AI ainda não
 está disponível nesse ambiente" em vez de fingir uma resposta. O modo demo
