@@ -1,129 +1,33 @@
 import { Link } from 'react-router-dom'
 import { cn } from '@/shared/lib/cn'
+import { PRICING_FOOTNOTE, PRICING_PLANS } from './plans'
 import { Reveal } from './Reveal'
 import { Section, SectionHeading } from './Section'
+import { CTA } from './site'
 
-/** Resumo da comparação: as linhas que realmente decidem a escolha. */
-interface SpecRow {
-  readonly label: string
-  readonly value: string
-}
-
-interface Plan {
-  readonly badge: string
-  readonly headline: string
-  readonly price: string
-  readonly period: string
-  readonly strikePrice?: string
-  readonly monthlyEquivalent?: string
-  readonly savings?: string
-  readonly description: string
-  readonly specs: readonly SpecRow[]
-  readonly features: readonly string[]
-  readonly cta: string
-  readonly highlight?: boolean
-}
-
-const PLANS: readonly Plan[] = [
-  {
-    badge: 'Grátis',
-    headline: 'Comece seu Momentum',
-    price: 'R$ 0',
-    period: 'para sempre',
-    description: 'Registre seu progresso e construa consistência nas quatro áreas.',
-    specs: [
-      { label: 'Metas', value: '1 ativa' },
-      { label: 'Histórico', value: 'Últimos 7 dias' },
-      { label: 'Comunidade', value: 'Não incluída' },
-    ],
-    features: [
-      '4 áreas da vida',
-      'Registro diário sem limite',
-      'Streak e recorde pessoal',
-      '1 meta ativa',
-      'Histórico de 7 dias',
-    ],
-    cta: 'Começar grátis',
-  },
-  {
-    badge: '⚡ PRO',
-    headline: 'Transforme progresso em evolução',
-    price: 'R$ 29,90',
-    period: '/mês',
-    strikePrice: 'R$ 79,90',
-    description: 'Tudo que você precisa para entender seus padrões e evoluir mais rápido.',
-    specs: [
-      { label: 'Metas', value: 'Ilimitadas' },
-      { label: 'Histórico', value: 'Completo' },
-      { label: 'Comunidade', value: 'Incluída' },
-    ],
-    features: [
-      'Tudo do gratuito',
-      'Comunidade, feed e perfil público',
-      'Metas ilimitadas',
-      'Histórico completo',
-      'Momentum Score',
-      'Analytics avançado',
-      'Eixos personalizados',
-      'Timer de foco',
-      'Recap semanal e mensal',
-      'Exportação dos dados',
-      'Integrações',
-      'Momentum Intelligence',
-      'Insights personalizados com IA',
-      'Suporte por e-mail',
-    ],
-    cta: 'Começar com PRO',
-    highlight: true,
-  },
-  {
-    badge: '🏆 PRO Anual',
-    headline: 'Construa seu melhor ano',
-    price: 'R$ 179,90',
-    period: '/ano',
-    strikePrice: 'R$ 278,90',
-    monthlyEquivalent: 'R$ 14,99/mês',
-    savings: 'Economize R$ 99,00',
-    description: 'O ano inteiro pelo preço de seis meses, com vantagens de quem chegou cedo.',
-    specs: [
-      { label: 'Metas', value: 'Ilimitadas' },
-      { label: 'Suporte', value: 'Prioritário' },
-      { label: 'Selo Fundador', value: 'Incluído' },
-    ],
-    features: [
-      'Tudo do PRO',
-      'Suporte prioritário',
-      'Preço protegido na renovação*',
-      '⚡ Founder Badge para membros elegíveis',
-      'Benefícios exclusivos de fundador',
-      'Acesso antecipado a novidades',
-    ],
-    cta: 'Quero o PRO anual',
-  },
-]
-
-export function Pro() {
+export function Pricing() {
   return (
-    <Section id="pro" className="border-t border-line">
+    <Section id="planos" className="border-t border-line">
       <SectionHeading
-        eyebrow="Momentumm PRO"
-        title="Constância vira conquista"
-        description="O essencial é grátis e continua grátis. O PRO é pra quem quer enxergar a própria evolução com lupa."
+        eyebrow="Planos"
+        title="O método é grátis. O PRO é profundidade."
+        description="O plano gratuito entrega o ciclo inteiro e nunca bloqueia uma tela com banner. O PRO amplia quantidade, histórico e análise pra quem já tem ritmo."
       />
 
       <ul className="mt-12 grid items-center gap-4 lg:grid-cols-3">
-        {PLANS.map((plan, index) => (
+        {PRICING_PLANS.map((plan, index) => (
           /*
             A escala do destaque fica NESTE li, não no card e não no Reveal:
             o Reveal escreve transform inline pra animação de entrada e
             engoliria a classe de escala; o card usa transform no hover.
           */
           <li
-            key={plan.badge}
+            key={plan.id}
             className={cn('h-full', plan.highlight && 'relative z-10 lg:scale-[1.06]')}
           >
             <Reveal delay={index * 0.08} className="h-full">
               <article
+                aria-labelledby={`plano-${plan.id}`}
                 className={cn(
                   'pulse-on-hover flex h-full flex-col rounded-card border p-6',
                   plan.highlight
@@ -133,18 +37,19 @@ export function Pro() {
               >
                 <p
                   className={cn(
-                    'inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wide',
+                    'inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wide',
                     plan.highlight ? 'bg-brand text-white' : 'border border-line text-ink-muted',
                   )}
                 >
+                  {plan.highlight ? <BoltIcon /> : null}
                   {plan.badge}
                 </p>
 
-                <h3 className="mt-4 text-balance text-lg font-semibold text-ink">{plan.headline}</h3>
+                <h3 id={`plano-${plan.id}`} className="mt-4 text-balance text-lg font-semibold text-ink">
+                  {plan.headline}
+                </h3>
 
                 <div className="mt-4">
-                  {/* O de-por fica na mesma linha: riscado em cima do preço lia
-                      como preço antigo do plano, não como desconto. */}
                   <p className="flex flex-wrap items-baseline gap-x-1">
                     <span className="tabular text-3xl font-semibold text-ink">{plan.price}</span>
                     <span className="text-sm text-ink-muted">{plan.period}</span>
@@ -169,7 +74,6 @@ export function Pro() {
 
                 <p className="mt-4 text-pretty text-sm text-ink-muted">{plan.description}</p>
 
-                {/* Comparação resumida: só o que muda de um plano pro outro. */}
                 <dl
                   className={cn(
                     'mt-5 rounded-xl border px-4 py-3',
@@ -204,7 +108,7 @@ export function Pro() {
                 </ul>
 
                 <Link
-                  to="/entrar"
+                  to={CTA.primary.to}
                   className={cn(
                     'mt-6 inline-flex h-11 items-center justify-center rounded-xl px-4 text-sm font-medium transition-colors',
                     plan.highlight
@@ -220,11 +124,7 @@ export function Pro() {
         ))}
       </ul>
 
-      <p className="mt-6 text-center text-sm text-ink-faint">
-        * O preço protegido vale enquanto a assinatura anual não for cancelada. Os recursos do PRO
-        entram conforme forem ficando prontos.
-      </p>
-
+      <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-ink-faint">{PRICING_FOOTNOTE}</p>
     </Section>
   )
 }
@@ -242,6 +142,14 @@ function CheckIcon() {
       strokeLinejoin="round"
     >
       <path d="m5 13 4 4L19 7" />
+    </svg>
+  )
+}
+
+function BoltIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="size-3.5" fill="currentColor">
+      <path d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5Z" />
     </svg>
   )
 }

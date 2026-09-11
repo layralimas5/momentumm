@@ -1,37 +1,39 @@
 import { Link } from 'react-router-dom'
 import { Wordmark } from '@/presentation/components/brand/Logo'
+import { CTA, SITE, type SocialIconName } from './site'
 
-const EXPLORE = [
-  { label: 'Como funciona', href: '/#como-funciona' },
-  { label: 'Eixos', href: '/#eixos' },
-  { label: 'Ferramentas', href: '/ferramentas' },
-  { label: 'Momentumm PRO', href: '/#pro' },
+const PRODUCT = [
+  { label: 'O método', href: '/#metodo' },
+  { label: 'Por dentro', href: '/#telas' },
+  { label: 'Momentum Score', href: '/#momentum-score' },
+  { label: 'Momentumm AI', href: '/#ia' },
+  { label: 'Planos', href: '/#planos' },
   { label: 'Dúvidas', href: '/#faq' },
 ] as const
 
-const INFO = [
-  { label: 'Termos de uso', href: '/termos' },
-  { label: 'Privacidade', href: '/privacidade' },
-  { label: 'Preferências de cookies', href: '/cookies' },
+const RESOURCES = [
+  { label: 'Ferramentas grátis', href: '/ferramentas' },
+  { label: 'Entrar', href: '/entrar' },
+  { label: 'Ver o app em modo demo', href: '/app' },
 ] as const
 
-const SOCIAL = [
-  { label: 'Instagram', href: 'https://instagram.com', icon: 'instagram' },
-  { label: 'TikTok', href: 'https://tiktok.com', icon: 'tiktok' },
-  { label: 'YouTube', href: 'https://youtube.com', icon: 'youtube' },
+const LEGAL = [
+  { label: 'Termos de uso', href: '/termos' },
+  { label: 'Política de privacidade', href: '/privacidade' },
 ] as const
 
 export function SiteFooter() {
   return (
     <footer className="border-t border-line">
-      <div className="mx-auto grid max-w-5xl gap-10 px-4 py-14 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mx-auto grid max-w-5xl gap-10 px-4 py-14 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
           <Wordmark />
           <p className="mt-3 max-w-xs text-pretty text-sm text-ink-muted">
-            Clareza pra registrar a rotina. Constância pra enxergar a evolução.
+            Objetivo vira plano. Plano vira o que você faz hoje. Um sistema de progresso
+            pessoal, não mais um app de hábitos.
           </p>
           <ul className="mt-5 flex gap-2">
-            {SOCIAL.map((item) => (
+            {SITE.social.map((item) => (
               <li key={item.label}>
                 <a
                   href={item.href}
@@ -47,81 +49,71 @@ export function SiteFooter() {
           </ul>
         </div>
 
-        <nav aria-label="Explorar">
-          <h2 className="text-sm font-medium text-ink">Explorar</h2>
-          <ul className="mt-3 flex flex-col gap-2">
-            {EXPLORE.map((link) => (
-              <li key={link.label}>
-                <Link to={link.href} className="text-sm text-ink-muted transition-colors hover:text-ink">
-                  {link.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        <nav aria-label="Informações">
-          <h2 className="text-sm font-medium text-ink">Informações</h2>
-          <ul className="mt-3 flex flex-col gap-2">
-            {INFO.map((link) => (
-              <li key={link.label}>
-                <Link to={link.href} className="text-sm text-ink-muted transition-colors hover:text-ink">
-                  {link.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <FooterNav title="Produto" links={PRODUCT} />
+        <FooterNav title="Recursos" links={RESOURCES} />
 
         <div>
-          <h2 className="text-sm font-medium text-ink">Comece agora</h2>
-          <p className="mt-3 text-sm text-ink-muted">
-            Roda no navegador do celular e do computador. Sem instalar nada.
-          </p>
-          <div className="mt-4 flex items-center gap-3">
-            <QrPlaceholder />
-            <p className="text-xs text-ink-faint">
-              Aponte a câmera
-              <br />
-              pra abrir no celular
-            </p>
-          </div>
+          <h2 className="text-sm font-medium text-ink">Contato e legal</h2>
+          <ul className="mt-3 flex flex-col gap-2">
+            <li>
+              <a
+                href={`mailto:${SITE.contactEmail}`}
+                className="text-sm text-ink-muted transition-colors hover:text-ink"
+              >
+                {SITE.contactEmail}
+              </a>
+            </li>
+            {LEGAL.map((link) => (
+              <li key={link.href}>
+                <Link to={link.href} className="text-sm text-ink-muted transition-colors hover:text-ink">
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
           <Link
-            to="/entrar"
-            className="mt-4 inline-flex h-10 items-center justify-center rounded-xl bg-brand px-4 text-sm font-medium text-white transition-colors hover:bg-brand-hi"
+            to={CTA.primary.to}
+            className="mt-5 inline-flex h-10 items-center justify-center rounded-xl bg-brand px-4 text-sm font-medium text-white transition-colors hover:bg-brand-hi"
           >
-            Criar conta grátis
+            {CTA.primary.label}
           </Link>
         </div>
       </div>
 
       <div className="border-t border-line">
-        <div className="mx-auto max-w-5xl px-4 py-6 text-center text-sm text-ink-faint">
-          <p>© {new Date().getFullYear()} Momentumm. Todos os direitos reservados.</p>
+        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-2 px-4 py-6 text-center text-sm text-ink-faint sm:flex-row sm:text-left">
+          <p>© {new Date().getFullYear()} {SITE.name}. Todos os direitos reservados.</p>
+          <p>Roda no navegador do celular e do computador. Sem instalar nada.</p>
         </div>
       </div>
     </footer>
   )
 }
 
-/** Placeholder do QR: vira imagem real quando o domínio estiver de pé. */
-function QrPlaceholder() {
+function FooterNav({
+  title,
+  links,
+}: {
+  title: string
+  links: readonly { readonly label: string; readonly href: string }[]
+}) {
   return (
-    <span
-      aria-hidden="true"
-      className="grid size-20 shrink-0 grid-cols-5 gap-0.5 rounded-lg border border-line bg-surface p-2"
-    >
-      {Array.from({ length: 25 }, (_, index) => (
-        <span
-          key={index}
-          className={index % 3 === 0 || index % 7 === 0 ? 'rounded-[1px] bg-ink-faint' : ''}
-        />
-      ))}
-    </span>
+    <nav aria-label={title}>
+      <h2 className="text-sm font-medium text-ink">{title}</h2>
+      <ul className="mt-3 flex flex-col gap-2">
+        {links.map((link) => (
+          <li key={link.href}>
+            <Link to={link.href} className="text-sm text-ink-muted transition-colors hover:text-ink">
+              {link.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
   )
 }
 
-function SocialIcon({ name }: { name: 'instagram' | 'tiktok' | 'youtube' }) {
+function SocialIcon({ name }: { name: SocialIconName }) {
   if (name === 'instagram') {
     return (
       <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8">

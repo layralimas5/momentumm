@@ -17,6 +17,9 @@ const NewPasswordPage = lazy(() =>
 const ToolsPage = lazy(() =>
   import('@/presentation/pages/ToolsPage').then((m) => ({ default: m.ToolsPage })),
 )
+const LegalPage = lazy(() =>
+  import('@/presentation/pages/LegalPage').then((m) => ({ default: m.LegalPage })),
+)
 const DashboardPage = lazy(() =>
   import('@/presentation/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
 )
@@ -100,6 +103,8 @@ export function App() {
             */}
             <Route path="/nova-senha" element={<NewPasswordPage />} />
             <Route path="/ferramentas" element={<ToolsPage />} />
+            <Route path="/termos" element={<LegalPage kind="termos" />} />
+            <Route path="/privacidade" element={<LegalPage kind="privacidade" />} />
 
             <Route
               path="/app"

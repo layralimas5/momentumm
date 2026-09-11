@@ -1,42 +1,63 @@
+import { PLAN_LIMITS } from '@/domain/entities/plan'
 import { Reveal } from './Reveal'
 import { Section, SectionHeading } from './Section'
 
+const free = PLAN_LIMITS.free
+
+/**
+ * As dúvidas na ordem em que aparecem antes de alguém criar conta:
+ * funcionamento, diferença, planos, IA, segurança, cancelamento.
+ */
 const QUESTIONS = [
   {
-    question: 'O Momentumm é mais um app de hábitos?',
+    question: 'Como o Momentumm funciona no dia a dia?',
     answer:
-      'Não. App de hábito pergunta se você fez ou não fez. Aqui você registra quanto fez, em que eixo e quando, e isso vira histórico, meta e sequência. A unidade é a atividade, não o check.',
+      'Você cria um objetivo com prazo, o app monta um plano por etapas e cada etapa vira ações com data. Todo dia você abre a tela Hoje, faz um check-in de dez segundos, cumpre a prioridade principal e marca os hábitos. No fim da semana, o review mostra onde evoluiu, onde o ritmo caiu e o que ajustar.',
   },
   {
-    question: 'Tudo que eu registro fica público?',
+    question: 'Qual a diferença pra um app de hábitos, uma agenda ou o Notion?',
     answer:
-      'Você escolhe. Cada registro pode ser público, visível só pra quem te segue ou totalmente privado. A regra é aplicada no banco de dados, não só na tela.',
+      'Essas ferramentas registram o que você planejou. O Momentumm liga cada ação a um objetivo, mede quanto do objetivo já andou de verdade e percebe quando o plano parou de funcionar: dia adaptável quando a energia cai, modo retomada quando você some, e ajuste com botão pra aplicar. A pergunta que ele responde não é "fiz ou não fiz", é "estou avançando, e o que mudo se não estiver".',
   },
   {
-    question: 'E se eu perder um dia?',
+    question: 'E se eu perder um dia? Perco tudo?',
     answer:
-      'A sequência quebra só quando um dia inteiro passa sem nenhum registro, e o app avisa antes disso. Seu recorde pessoal fica guardado de qualquer jeito.',
+      'Não. A sequência conta dias cumpridos, e a versão mínima de um hábito conta. O Momentum Score olha 28 dias, então um dia vazio tira poucos pontos e nunca zera. Voltar em até dois dias devolve a nota cheia no fator de retomada.',
   },
   {
-    question: 'Posso registrar outras coisas além de leitura e treino?',
-    answer:
-      'Hoje são quatro eixos: leitura, estudo, treino e meditação. Eixos novos entram sem reescrever o app, então escrita, sono e outros chegam conforme a comunidade pedir.',
+    question: 'O que tem no plano gratuito e o que muda no PRO?',
+    answer: `O gratuito entrega o ciclo inteiro: objetivo, plano, dia, progresso, review, Momentum Score e a IA. Os limites são de quantidade: ${free.activeGoals} objetivos ativos, ${free.activeHabits} hábitos ativos, ${free.historyDays} dias de histórico e ${free.insightsPerDay} leitura do ritmo por dia. O PRO tira esses limites e adiciona análise semanal completa, relatório mensal e recomendações adaptativas. Nenhuma tela é bloqueada por banner.`,
   },
   {
-    question: 'Quanto custa?',
+    question: 'Como a IA usa os meus dados?',
     answer:
-      'Registrar nas quatro áreas, sequência, recorde e uma meta ativa são grátis e continuam grátis. O PRO abre o histórico completo, as metas ilimitadas, as estatísticas e a comunidade.',
+      'Ela lê o que você já colocou no app: objetivos, prazo, minutos por dia, hábitos, execução e Momentum. Com isso monta o plano, aponta gargalos e sugere ajustes. Toda sugestão vira uma prévia que você edita antes de salvar, e o que ela devolve segue as mesmas regras de domínio de um plano feito na mão. Nenhuma chave de IA roda no seu navegador.',
+  },
+  {
+    question: 'Meus dados ficam privados?',
+    answer:
+      'Tudo nasce privado. A regra de quem vê o quê é aplicada no banco de dados (Row Level Security), não só na tela, então nem um erro de interface expõe o seu registro. Compartilhar um momento com o Círculo é uma escolha por item, e gerar uma imagem pro Stories não muda a visibilidade do dado. A conta tem verificação em duas etapas.',
+  },
+  {
+    question: 'Posso cancelar quando quiser?',
+    answer:
+      'Sim. O PRO é uma assinatura sem fidelidade: cancela em Configurações e continua com o PRO até o fim do período pago. Depois disso a conta volta pro gratuito com tudo que você criou; o que passa do limite fica guardado, só não dá pra criar novos até liberar espaço.',
+  },
+  {
+    question: 'Funciona no celular?',
+    answer:
+      'Sim, e é ali que ele é afinado primeiro. Roda no navegador do celular e do computador, sem instalar nada. O dashboard do celular não é o do desktop encolhido: a ordem muda pra registrar, decidir e começar, e a análise vem depois.',
   },
 ] as const
 
 export function Faq() {
   return (
     <Section id="faq" className="border-t border-line bg-surface/30">
-      <SectionHeading title="O que você precisa saber antes de começar" />
+      <SectionHeading eyebrow="Dúvidas" title="O que perguntam antes de começar" />
 
       <div className="mx-auto mt-12 max-w-2xl">
         {QUESTIONS.map((item, index) => (
-          <Reveal key={item.question} delay={index * 0.04}>
+          <Reveal key={item.question} delay={index * 0.03}>
             <details className="group border-b border-line">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-left font-medium text-ink marker:hidden">
                 {item.question}
@@ -57,6 +78,25 @@ export function Faq() {
           </Reveal>
         ))}
       </div>
+
+      <FaqJsonLd />
     </Section>
+  )
+}
+
+/** Dados estruturados pra rich result de FAQ. Gerados da mesma lista da tela. */
+function FaqJsonLd() {
+  const data = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: QUESTIONS.map((item) => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: { '@type': 'Answer', text: item.answer },
+    })),
+  }
+
+  return (
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />
   )
 }

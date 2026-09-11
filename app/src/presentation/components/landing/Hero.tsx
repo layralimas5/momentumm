@@ -1,89 +1,109 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { TodayScreen } from './AppScreens'
+import { PhoneMockup } from './PhoneMockup'
+import { CTA } from './site'
 
 /**
- * O posicionamento inteiro cabe nessas duas linhas: app de hábito pergunta se
- * você fez, o Momentumm registra quanto. Ele abria com a lista de eixos, que é
- * o argumento fraco — agregador qualquer um é.
+ * A promessa em duas linhas: objetivo vira plano, plano vira o dia. É o
+ * critério de aceite do produto ("percebe quando o plano deixou de funcionar")
+ * dito do lado de quem usa. O mockup é a tela `Hoje`, porque é ela que a
+ * pessoa vai abrir todo dia.
  */
-const LINES = ['Não é se você fez.', 'É quanto você fez.'] as const
+const LINES = ['Objetivo vira plano.', 'Plano vira o que você faz hoje.'] as const
+
+const EASE = [0.22, 1, 0.36, 1] as const
 
 export function Hero() {
   return (
     <section id="home" className="relative overflow-hidden">
-      {/* O brilho sobe além do topo pra passar por trás do menu transparente. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-52 left-1/2 size-[40rem] -translate-x-1/2 rounded-full bg-brand/20 blur-[120px]"
+        className="pointer-events-none absolute -top-40 left-1/2 size-[44rem] -translate-x-1/2 rounded-full bg-brand/20 blur-[120px]"
       />
 
-      <div className="relative mx-auto max-w-3xl px-4 pb-20 pt-32 text-center sm:pb-28 sm:pt-40">
-        <motion.p
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-sm text-ink-muted"
-        >
-          <span aria-hidden="true" className="size-1.5 rounded-full bg-positive" />
-          Primeiras vagas abertas
-        </motion.p>
+      <div className="relative mx-auto grid max-w-6xl items-center gap-14 px-4 pb-20 pt-28 sm:pt-36 lg:grid-cols-[1.15fr_0.85fr] lg:gap-10 lg:pb-28 lg:pt-40">
+        <div className="text-center lg:text-left">
+          <motion.p
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-sm text-ink-muted"
+          >
+            <span aria-hidden="true" className="size-1.5 rounded-full bg-positive" />
+            {CTA.badge}
+          </motion.p>
 
-        <h1 className="mt-8 text-4xl font-semibold tracking-tight text-ink sm:text-6xl">
-          {LINES.map((line, index) => (
-            <motion.span
-              key={line}
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
-              className="block"
+          <h1 className="mt-7 text-balance text-4xl font-semibold tracking-tight text-ink sm:text-5xl xl:text-6xl">
+            {LINES.map((line, index) => (
+              <motion.span
+                key={line}
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.08, ease: EASE }}
+                className="block"
+              >
+                {index === LINES.length - 1 ? (
+                  <span className="bg-gradient-to-r from-brand-hi to-brand-ink bg-clip-text text-transparent">
+                    {line}
+                  </span>
+                ) : (
+                  line
+                )}
+              </motion.span>
+            ))}
+          </h1>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="mx-auto mt-6 max-w-xl text-pretty text-lg text-ink-muted lg:mx-0"
+          >
+            O Momentumm transforma o que você quer alcançar em ações diárias, mede se o seu ritmo
+            está de pé e ajusta o plano quando ele para de funcionar. Não é um app de hábitos: é
+            um sistema de progresso pessoal.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="mt-9 flex flex-col items-center gap-5 lg:items-start"
+          >
+            <Link
+              to={CTA.primary.to}
+              className="inline-flex h-14 w-full max-w-xs items-center justify-center gap-2.5 rounded-xl bg-brand px-8 font-medium text-white transition-colors hover:bg-brand-hi sm:w-auto"
             >
-              {index === LINES.length - 1 ? (
-                <span className="bg-gradient-to-r from-brand-hi to-flame bg-clip-text text-transparent">
-                  {line}
-                </span>
-              ) : (
-                line
-              )}
-            </motion.span>
-          ))}
-        </h1>
+              <BoltIcon />
+              {CTA.primary.label}
+            </Link>
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="mx-auto mt-6 max-w-xl text-pretty text-lg text-ink-muted"
-        >
-          Leitura, estudo, treino e meditação viram número que acumula, na mesma linha do tempo. O
-          que o Strava fez com a corrida, pro resto do que você constrói.
-        </motion.p>
+            <Link
+              to={CTA.secondary.to}
+              className="text-sm text-ink-muted underline-offset-4 transition-colors hover:text-ink hover:underline"
+            >
+              {CTA.secondary.label}
+            </Link>
+          </motion.div>
+
+          <p className="mt-6 text-sm text-ink-faint">{CTA.reassurance}</p>
+        </div>
 
         <motion.div
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="mt-9 flex flex-col items-center gap-5"
+          transition={{ duration: 0.7, delay: 0.25, ease: EASE }}
+          className="relative"
         >
-          <Link
-            to="/entrar"
-            className="inline-flex h-14 w-full max-w-xs items-center justify-center gap-2.5 rounded-xl bg-brand px-8 font-medium text-white transition-colors hover:bg-brand-hi sm:w-auto"
-          >
-            <BoltIcon />
-            Começar grátis
-          </Link>
-
-          {/* Secundário vira link de texto: dois botões do mesmo peso dividiam o clique. */}
-          <Link
-            to="/app"
-            className="text-sm text-ink-muted underline-offset-4 transition-colors hover:text-ink hover:underline"
-          >
-            Ver por dentro, sem criar conta
-          </Link>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-8 top-1/2 h-64 -translate-y-1/2 rounded-full bg-brand/25 blur-3xl"
+          />
+          <PhoneMockup tall className="relative">
+            <TodayScreen />
+          </PhoneMockup>
         </motion.div>
-
-        <p className="mt-6 text-sm text-ink-faint">
-          Funciona no navegador. Sem cartão pra começar.
-        </p>
       </div>
     </section>
   )

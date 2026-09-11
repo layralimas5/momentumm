@@ -128,45 +128,7 @@
   bottom: calc(5rem + env(safe-area-inset-bottom));
 }
 
-/*
-  Faixa de eixos em loop contínuo pra esquerda. A lista é renderizada duas vezes
-  e o trilho anda exatamente 50%: quando a primeira cópia sai, a segunda já está
-  no lugar dela, então não existe emenda visível nem frase terminando.
-*/
-@keyframes marquee-left {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-/* Ondas concêntricas do bloco "Por que escolher": nascem no ponto e se abrem. */
-@keyframes ripple {
-  0% {
-    transform: translate(-50%, -50%) scale(0.4);
-    opacity: 0;
-  }
-  15% {
-    opacity: 0.6;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(1.25);
-    opacity: 0;
-  }
-}
-
-/* O ponto central orbitando devagar, sem sair do lugar. */
-@keyframes orbit {
-  from {
-    transform: rotate(0deg) translateX(9px);
-  }
-  to {
-    transform: rotate(360deg) translateX(9px);
-  }
-}
-
+/* Brilho respirando devagar, pra elemento em destaque. */
 @keyframes glow-pulse {
   0%,
   100% {
@@ -191,14 +153,6 @@
 }
 
 @layer components {
-  .ripple-ring {
-    animation: ripple 7s ease-out infinite;
-  }
-
-  .orbit-dot {
-    animation: orbit 11s linear infinite;
-  }
-
   .glow-pulse {
     animation: glow-pulse 3s ease-in-out infinite;
   }
@@ -216,33 +170,10 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ripple-ring,
-    .orbit-dot,
     .glow-pulse,
     .pulse-on-hover:hover,
     .pulse-on-hover:focus-within {
       animation: none !important;
-    }
-  }
-
-  .marquee-track {
-    animation: marquee-left var(--marquee-duration, 42s) linear infinite;
-    will-change: transform;
-  }
-
-  .marquee:hover .marquee-track,
-  .marquee:focus-within .marquee-track {
-    animation-play-state: paused;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .marquee-track {
-      animation: none !important;
-      transform: none;
-    }
-
-    .marquee {
-      overflow-x: auto;
     }
   }
 }

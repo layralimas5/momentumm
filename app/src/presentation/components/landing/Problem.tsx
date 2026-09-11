@@ -2,15 +2,29 @@ import { Reveal } from './Reveal'
 import { Section, SectionHeading } from './Section'
 
 /**
- * A página abria vendendo solução, sem nomear a dor. Esta seção existe pra
- * dizer o inimigo em voz alta antes de qualquer recurso aparecer: o esforço
- * está espalhado, e o que está espalhado não acumula.
+ * A dor antes de qualquer recurso. Não é "falta de disciplina": é que o plano
+ * ideal não sobrevive ao dia real, e nenhuma ferramenta avisa quando isso
+ * acontece. A linha do tempo mostra o padrão que todo mundo reconhece.
  */
-const SILOS = [
-  { where: 'no leitor digital', what: 'O livro que você leu' },
-  { where: 'no relógio', what: 'O treino de terça' },
-  { where: 'na plataforma do curso', what: 'As horas de estudo' },
-  { where: 'em mais um app', what: 'Os dez minutos de meditação' },
+const TIMELINE = [
+  {
+    day: 'Dia 1',
+    title: 'A motivação monta o plano',
+    description:
+      'Objetivo novo, lista cheia, hábito pra todo dia. O plano é do tamanho da empolgação, não do tamanho da semana.',
+  },
+  {
+    day: 'Dia 12',
+    title: 'O dia real não cabe no plano',
+    description:
+      'Uma noite ruim, uma reunião a mais. A lista de hoje vira dívida de amanhã, e amanhã já tinha a lista dele.',
+  },
+  {
+    day: 'Dia 30',
+    title: 'O app é fechado, o objetivo fica',
+    description:
+      'Não por preguiça: porque a ferramenta só sabia cobrar o plano ideal. Ela nunca percebeu que ele tinha parado de funcionar.',
+  },
 ] as const
 
 export function Problem() {
@@ -18,26 +32,29 @@ export function Problem() {
     <Section id="problema" className="border-t border-line">
       <SectionHeading
         eyebrow="O problema"
-        title="Você fez muita coisa esse ano. Só não dá pra ver."
-        description="Não é falta de disciplina. É que cada coisa que você faz pra evoluir mora num lugar diferente, e nenhum deles conversa com o outro."
+        title="Você não tem um problema de motivação. Tem um problema de sistema."
+        description="Começar é fácil. Todo mundo começa. O que quase ninguém tem é uma forma de continuar quando o dia não sai como o planejado."
       />
 
-      <ul className="mt-12 grid gap-3 sm:grid-cols-2">
-        {SILOS.map((silo, index) => (
-          <Reveal key={silo.what} delay={index * 0.06}>
-            <li className="flex h-full items-baseline gap-2 rounded-card border border-line border-dashed bg-surface/40 px-5 py-4">
-              <span className="text-ink">{silo.what}</span>
-              <span aria-hidden="true" className="flex-1 border-b border-dashed border-line-hi" />
-              <span className="shrink-0 text-sm text-ink-faint">{silo.where}</span>
+      <ol className="mt-12 grid gap-4 md:grid-cols-3">
+        {TIMELINE.map((step, index) => (
+          <Reveal key={step.day} delay={index * 0.08}>
+            <li className="relative h-full rounded-card border border-line bg-surface p-6">
+              <span className="text-sm font-medium tabular text-brand-hi">{step.day}</span>
+              <h3 className="mt-2 text-balance font-medium text-ink">{step.title}</h3>
+              <p className="mt-2 text-pretty text-sm text-ink-muted">{step.description}</p>
             </li>
           </Reveal>
         ))}
-      </ul>
+      </ol>
 
       <Reveal delay={0.24}>
         <p className="mx-auto mt-10 max-w-2xl text-balance text-center text-lg text-ink-muted">
-          Quatro históricos pela metade e nenhuma resposta pra pergunta que importa:{' '}
-          <span className="text-ink">o que eu construí nos últimos doze meses?</span>
+          Agenda, lista e habit tracker registram o que você planejou.{' '}
+          <span className="text-ink">
+            Nenhum deles percebe quando o plano deixou de funcionar, e é nesse dia que você
+            desiste.
+          </span>
         </p>
       </Reveal>
     </Section>

@@ -1,5 +1,5 @@
 /**
- * Estrutura do menu: 3 grupos + o PRO direto.
+ * Estrutura do menu: 2 grupos + os links diretos.
  *
  * As âncoras seguem os ids reais da LandingPage. Quando uma seção sair ou
  * mudar de id, é aqui que o link precisa acompanhar — link de menu apontando
@@ -22,33 +22,29 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     label: 'Produto',
     links: [
       {
-        label: 'Como funciona',
-        description: 'Registrar, acumular, continuar',
-        href: '/#como-funciona',
+        label: 'O método',
+        description: 'Objetivo, plano, hoje, progresso, review, ajuste',
+        href: '/#metodo',
       },
       {
-        label: 'Testar agora',
-        description: 'Registre uma atividade sem criar conta',
-        href: '/#eixos',
+        label: 'Por dentro',
+        description: 'As seis telas do ciclo, com um exemplo só',
+        href: '/#telas',
       },
       {
-        label: 'Sozinho ou com gente',
-        description: 'O que funciona antes de ter ninguém no feed',
-        href: '/#sozinho',
+        label: 'Momentum Score',
+        description: 'Como o ritmo é medido sem punir uma falha',
+        href: '/#momentum-score',
       },
-      { label: 'Dúvidas', description: 'O que perguntam antes de começar', href: '/#faq' },
-    ],
-  },
-  {
-    label: 'Soluções',
-    links: [
-      { label: 'Pra quem lê', description: 'Páginas, livros e ritmo de leitura', href: '/#eixos' },
-      { label: 'Pra quem estuda', description: 'Horas de estudo que viram evolução', href: '/#eixos' },
-      { label: 'Pra quem treina', description: 'Treino na mesma linha do tempo', href: '/#eixos' },
       {
-        label: 'Pra quem acompanha alguém',
-        description: 'Feed de quem você segue',
-        href: '/#sozinho',
+        label: 'Momentumm AI',
+        description: 'A IA que monta o plano e lê o progresso',
+        href: '/#ia',
+      },
+      {
+        label: 'Por que é diferente',
+        description: 'Contra Notion, agenda, lista e habit tracker',
+        href: '/#comparacao',
       },
     ],
   },
@@ -75,5 +71,6 @@ export const NAV_GROUPS: readonly NavGroup[] = [
 ]
 
 export const NAV_DIRECT: readonly NavLink[] = [
-  { label: 'Momentumm PRO', description: 'Planos e o que muda', href: '/#pro' },
+  { label: 'Planos', description: 'Grátis e PRO, o que muda', href: '/#planos' },
+  { label: 'Dúvidas', description: 'O que perguntam antes de começar', href: '/#faq' },
 ]
