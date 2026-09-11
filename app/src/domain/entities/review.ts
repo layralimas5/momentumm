@@ -3,7 +3,14 @@ import { activityType, type ActivityTypeSlug } from './activity-type'
 import { averageEnergy, type CheckIn } from './checkin'
 import { addDays, dayKeyOf, dayKeyToDate, dayRange, type DayKey } from './day'
 import { countsAsDone, isScheduledOn, type Habit } from './habit'
-import { dailySeries, MOMENTUM_WINDOW_DAYS, type DayDot, type MomentumInput } from './momentum'
+import {
+  calculateMomentum,
+  dailySeries,
+  MOMENTUM_WINDOW_DAYS,
+  type DayDot,
+  type MomentumInput,
+  type MomentumScore,
+} from './momentum'
 import type { ObjectiveProgress } from './objective'
 
 /**
@@ -69,6 +76,12 @@ export interface WeekReview {
   readonly previousActiveDays: number
   readonly focusMinutes: number
   readonly previousFocusMinutes: number
+  /**
+   * O Momentum no fim da semana revisada, pela MESMA fórmula do dashboard.
+   * A review não tem conta própria de ritmo: ela lê o score que a pessoa viu
+   * no domingo, com a variação contra o domingo anterior.
+   */
+  readonly momentum: MomentumScore
   /** Onde o ritmo caiu. Vazio quando nada caiu. */
   readonly lost: readonly ReviewPoint[]
   /** Onde a semana evoluiu. Vazio quando nada subiu. */
@@ -125,6 +138,8 @@ export function reviewWeek(input: ReviewInput): WeekReview {
 
   const ready = activeDays >= MIN_ACTIVE_DAYS_FOR_READING || execution.planned > 0
 
+  const momentum = calculateMomentum({ ...input, today: end })
+
   const lost = ready ? findLosses(input, { start, end, execution, previousExecution, series }) : []
   const gained = ready
     ? findGains(input, {
@@ -149,6 +164,7 @@ export function reviewWeek(input: ReviewInput): WeekReview {
     previousActiveDays,
     focusMinutes,
     previousFocusMinutes,
+    momentum,
     lost,
     gained,
     recommendation: recommend(input, { execution, previousExecution, activeDays, lost, ready }),

@@ -2,7 +2,13 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ACTIVITY_VISIBILITIES, VISIBILITY_LABELS, type ActivityVisibility } from '@/domain/entities/activity'
 import { formatLimit, isPro, limitsOf, PLAN_LABELS, type PlanTier } from '@/domain/entities/plan'
-import { initialsOf, normalizeHandle, MAX_BIO_LENGTH } from '@/domain/entities/profile'
+import { MAX_REST_WEEKDAYS } from '@/domain/entities/momentum'
+import {
+  initialsOf,
+  normalizeHandle,
+  MAX_BIO_LENGTH,
+  WEEKDAY_LABELS,
+} from '@/domain/entities/profile'
 import { container } from '@/infrastructure/container'
 import { demoStore } from '@/infrastructure/demo/demo-store'
 import { useAuth } from '@/presentation/auth/use-auth'
@@ -26,7 +32,20 @@ export function ProfilePage() {
   const [visibility, setVisibility] = useState<ActivityVisibility>(
     profile?.defaultVisibility ?? 'publica',
   )
+  const [restWeekdays, setRestWeekdays] = useState<readonly number[]>(
+    profile?.restWeekdays ?? [],
+  )
   const [saved, setSaved] = useState(false)
+
+  const toggleRestDay = (day: number) => {
+    setRestWeekdays((current) =>
+      current.includes(day)
+        ? current.filter((item) => item !== day)
+        : current.length >= MAX_REST_WEEKDAYS
+          ? current
+          : [...current, day].sort((a, b) => a - b),
+    )
+  }
 
   const save = useAsyncAction(async () => {
     if (!user) return
@@ -35,6 +54,7 @@ export function ProfilePage() {
       handle,
       bio: bio.trim() || null,
       defaultVisibility: visibility,
+      restWeekdays,
     })
     await refreshProfile()
     setSaved(true)
@@ -156,6 +176,43 @@ export function ProfilePage() {
               </Select>
             )}
           </Field>
+
+          {/*
+            Descanso planejado é escolha, não falta: o Momentum tira da conta
+            o dia vazio que a pessoa marcou aqui. Dois por semana no máximo,
+            e o limite aparece antes da tentativa, não como erro depois.
+          */}
+          <fieldset className="flex flex-col gap-2">
+            <legend className="text-sm font-medium text-ink">Dias de descanso</legend>
+            <p className="text-xs text-pretty text-ink-muted">
+              Até {MAX_REST_WEEKDAYS} por semana. Um dia de descanso vazio não conta contra o
+              teu Momentum; se você se mover nele, ele conta normal.
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {WEEKDAY_LABELS.map((label, day) => {
+                const active = restWeekdays.includes(day)
+                const full = !active && restWeekdays.length >= MAX_REST_WEEKDAYS
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    aria-pressed={active}
+                    disabled={full}
+                    onClick={() => toggleRestDay(day)}
+                    className={cn(
+                      'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                      active
+                        ? 'border-brand/40 bg-brand-dim/50 text-brand-ink'
+                        : 'border-line text-ink-muted hover:bg-surface-hi',
+                      full ? 'cursor-not-allowed opacity-50' : '',
+                    )}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+          </fieldset>
 
           <div className="flex items-center gap-3">
             <Button type="submit" loading={save.running}>

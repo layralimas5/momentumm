@@ -16,6 +16,7 @@ import {
   type MomentumFactor,
   type MomentumScore,
 } from '@/domain/entities/momentum'
+import type { MomentumNextAction } from '@/domain/entities/momentum-next-action'
 import { OBJECTIVE_STATE_LABELS, type ObjectiveProgress } from '@/domain/entities/objective'
 import type { PlanProgress } from '@/domain/entities/plan-progress'
 import type { Streak } from '@/domain/entities/streak'
@@ -111,6 +112,8 @@ export interface AiUserContext {
   readonly today: DayKey
   readonly momentum: {
     readonly value: number
+    /** O mesmo cálculo sem o limite de variação diária. */
+    readonly rawValue: number
     readonly level: string
     readonly delta: number
     readonly hasEnoughData: boolean
@@ -120,6 +123,10 @@ export interface AiUserContext {
       readonly weightPercent: number
       readonly measured: boolean
     }[]
+    /** O que subiu e o que caiu contra a semana anterior, em pontos do score. */
+    readonly drivers: readonly { readonly label: string; readonly delta: number }[]
+    /** A ação em aberto que mais sobe o score hoje, ou null. */
+    readonly nextAction: { readonly title: string; readonly gain: number; readonly reason: string } | null
   }
   readonly consistency: {
     readonly activeDaysLast7: number
@@ -147,6 +154,7 @@ export interface AiContextInput {
   readonly today: DayKey
   readonly momentum: MomentumScore
   readonly factors: readonly MomentumFactor[]
+  readonly nextAction?: MomentumNextAction | null
   readonly streak: Streak
   readonly checkIns: readonly CheckIn[]
   readonly objectives: readonly {
@@ -306,6 +314,7 @@ export function buildAiContextBundle(input: AiContextInput): AiContextBundle {
     today,
     momentum: {
       value: input.momentum.value,
+      rawValue: input.momentum.rawValue,
       level: MOMENTUM_LEVEL_LABELS[input.momentum.level],
       delta: input.momentum.delta,
       hasEnoughData: input.momentum.hasEnoughData,
@@ -315,6 +324,17 @@ export function buildAiContextBundle(input: AiContextInput): AiContextBundle {
         weightPercent: factor.weightPercent,
         measured: factor.measured,
       })),
+      drivers: input.momentum.drivers.map((driver) => ({
+        label: driver.label,
+        delta: driver.delta,
+      })),
+      nextAction: input.nextAction
+        ? {
+            title: input.nextAction.title,
+            gain: input.nextAction.gain,
+            reason: input.nextAction.reason,
+          }
+        : null,
     },
     consistency: {
       activeDaysLast7: input.momentum.activeDays,

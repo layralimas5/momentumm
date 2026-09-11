@@ -12,6 +12,7 @@ import {
   type MomentumInput,
   type MomentumScore,
 } from '@/domain/entities/momentum'
+import { bestNextAction, type MomentumNextAction } from '@/domain/entities/momentum-next-action'
 import { summarizeWeek, type WeeklySummary } from '@/domain/entities/week'
 import {
   generateInsights,
@@ -67,6 +68,8 @@ export interface ProgressView {
    * objetivos na entrada, então ele enxerga etapa travada e prazo escapando.
    */
   readonly nextAdjustment: Insight | null
+  /** A ação em aberto que mais sobe o score hoje, pela mesma fórmula do número. */
+  readonly nextAction: MomentumNextAction | null
   /** O que a execução do ajuste precisa saber sobre o dia. */
   readonly insightContext: { capacity: CapacityProfile; mainPriority: Task | null }
 }
@@ -95,6 +98,7 @@ export function useProgress(): ProgressView {
   const input = useMomentumInput()
 
   const momentum = useMemo(() => calculateMomentum(input), [input])
+  const nextAction = useMemo(() => bestNextAction(input), [input])
   const week = useMemo(() => summarizeWeek(input), [input])
   const series = useMemo(() => dailySeries(input), [input])
 
@@ -229,9 +233,20 @@ export function useProgress(): ProgressView {
       gains: gains.slice(0, 4),
       risks: risks.slice(0, 4),
       nextAdjustment,
+      nextAction,
       insightContext,
     }
-  }, [momentum, series, week, month, last7, objectives, nextAdjustment, insightContext])
+  }, [
+    momentum,
+    series,
+    week,
+    month,
+    last7,
+    objectives,
+    nextAdjustment,
+    nextAction,
+    insightContext,
+  ])
 }
 
 interface TotalsWithHelpers extends PeriodTotals {

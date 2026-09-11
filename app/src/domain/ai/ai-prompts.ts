@@ -1,6 +1,9 @@
-import { z } from 'zod'
+// `zod/v4`, não `zod`: o `zodOutputFormat` do SDK da Anthropic gera o JSON
+// Schema com `z.toJSONSchema` da v4, que recusa schema construído pela API v3.
+import { z } from 'zod/v4'
 import type { DayKey } from '@/domain/entities/day'
 import { DAY_PARTS, HABIT_FREQUENCIES, HABIT_ICONS } from '@/domain/entities/habit'
+import { MOMENTUM_RULES } from '@/domain/entities/momentum'
 import { PRIORITIES } from '@/domain/entities/priority'
 import { TASK_EFFORTS } from '@/domain/entities/task'
 import type { AiUserContext } from './ai-context'
@@ -31,7 +34,9 @@ export const AI_KINDS = ['plan', 'day', 'progress', 'review', 'review_draft', 'r
 export type AiKind = (typeof AI_KINDS)[number]
 
 const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/
-const dayKeySchema = z.string().regex(DAY_KEY).transform((value) => value as DayKey)
+// Sem `.transform`: a saída estruturada da Anthropic vira JSON Schema, e
+// transform não tem representação lá. O brand entra por tipo, não por runtime.
+const dayKeySchema = z.string().regex(DAY_KEY) as unknown as z.ZodType<DayKey, string>
 
 /** O que o endpoint aceita. O contexto é validado só na forma: ele é do app. */
 export const aiEndpointRequestSchema = z.object({
@@ -201,6 +206,8 @@ Regras que não se negociam:
 - Nunca compare a pessoa com outras pessoas.
 - Nenhum diagnóstico médico ou psicológico. Cansaço, ansiedade e sono são dados de contexto, nunca conclusão.
 - Quando você propõe um ajuste, ele aponta pro item pelo ref do contexto (a1, o2, h1) e traz o motivo com o número que o sustenta. Você propõe; a pessoa decide. Nunca escreva como se já tivesse mudado alguma coisa.
+- O Momentum Score é calculado pelo app, nunca por você. Ao explicá-lo, use só as regras abaixo e os números do contexto. Não invente fator, peso nem regra.
+${MOMENTUM_RULES.map((rule) => `  - ${rule.title}: ${rule.detail}`).join('\n')}
 - Devolva só o formato pedido, sem texto fora dele.`
 
 /** O contexto vira texto compacto, seção por seção. Só o que existe aparece. */
@@ -220,6 +227,23 @@ export function renderContext(context: AiUserContext): string {
       )
       .join('; ')}`,
   )
+  if (context.momentum.rawValue !== context.momentum.value) {
+    push(
+      `Momentum bruto (sem o limite diário): ${context.momentum.rawValue}/100 — o exibido ainda vai ${context.momentum.rawValue > context.momentum.value ? 'subir' : 'cair'} até lá`,
+    )
+  }
+  if (context.momentum.drivers.length > 0) {
+    push(
+      `O que mudou vs semana anterior: ${context.momentum.drivers
+        .map((driver) => `${driver.label} ${signed(driver.delta)}`)
+        .join('; ')}`,
+    )
+  }
+  if (context.momentum.nextAction) {
+    push(
+      `Próxima ação com mais potencial: "${context.momentum.nextAction.title}" (${signed(context.momentum.nextAction.gain)} no score hoje) — ${context.momentum.nextAction.reason}`,
+    )
+  }
   push(
     `Constância: ${context.consistency.activeDaysLast7} dos últimos 7 dias, ${context.consistency.activeDaysLast28} dos últimos 28; sequência atual ${context.consistency.streak} (recorde ${context.consistency.streakRecord})`,
   )

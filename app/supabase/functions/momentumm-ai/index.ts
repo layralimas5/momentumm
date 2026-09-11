@@ -22,15 +22,19 @@
 import Anthropic from 'npm:@anthropic-ai/sdk@0.125.0'
 import { zodOutputFormat } from 'npm:@anthropic-ai/sdk@0.125.0/helpers/zod'
 import { createClient } from 'npm:@supabase/supabase-js@2.116.0'
+// `shared.ts` é gerado por `npm run ai:bundle` a partir de
+// `src/domain/ai/edge-shared.ts`: o bundler do Supabase não resolve os imports
+// sem extensão do app, então o domínio chega aqui já empacotado.
 import {
   AI_OUTPUT_SCHEMAS,
   AI_SYSTEM_PROMPT,
   aiEndpointRequestSchema,
+  PLAN_LIMITS,
   userPromptFor,
   type AiEndpointRequest,
-} from '@/domain/ai/ai-prompts'
-import type { AiErrorCode } from '@/domain/ai/ai-error'
-import { PLAN_LIMITS, type PlanTier } from '@/domain/entities/plan'
+  type AiErrorCode,
+  type PlanTier,
+} from './shared.ts'
 
 const DEFAULT_MODEL = 'claude-opus-5'
 

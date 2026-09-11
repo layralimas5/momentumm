@@ -38,6 +38,7 @@ import type { Objective } from '@/domain/entities/objective'
 import { PLAN_TIERS } from '@/domain/entities/plan'
 import { STAGE_STATUSES, type PlanStage } from '@/domain/entities/plan-stage'
 import { PRIORITIES } from '@/domain/entities/priority'
+import { normalizeRestWeekdays } from '@/domain/entities/momentum'
 import { PROFILE_VISIBILITIES, type Profile } from '@/domain/entities/profile'
 import { REVIEW_STEPS, type WeeklyReview } from '@/domain/entities/weekly-review'
 import { ParseError } from '@/shared/errors'
@@ -102,6 +103,8 @@ const profileRowSchema = z.object({
   profile_visibility: z.enum(PROFILE_VISIBILITIES).nullish(),
   // Conta criada antes da migration de planos não tem a coluna preenchida.
   plan: z.enum(PLAN_TIERS).nullish(),
+  // Base anterior à 0018 responde sem a coluna: sem descanso marcado.
+  rest_weekdays: z.array(z.number().int()).nullish(),
   created_at: z.string(),
 })
 
@@ -208,6 +211,7 @@ export function toProfile(row: unknown): Profile {
     */
     visibility: parsed.profile_visibility ?? 'privado',
     plan: parsed.plan ?? 'free',
+    restWeekdays: normalizeRestWeekdays(parsed.rest_weekdays ?? []),
     createdAt: new Date(parsed.created_at),
   }
 }

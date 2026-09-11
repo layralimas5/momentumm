@@ -5,6 +5,7 @@ import {
   type MomentumPoint,
   type MomentumScore,
 } from '@/domain/entities/momentum'
+import type { MomentumNextAction } from '@/domain/entities/momentum-next-action'
 import type { Streak } from '@/domain/entities/streak'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { Tag } from '@/presentation/components/ui/Surface'
@@ -30,6 +31,7 @@ export function MomentumStrip({
   streak,
   recommendation,
   detail,
+  nextAction = null,
 }: {
   readonly momentum: MomentumScore
   readonly history: readonly MomentumPoint[]
@@ -38,6 +40,7 @@ export function MomentumStrip({
   readonly recommendation: string
   /** Variação e curva. No gratuito só a pontuação de hoje aparece. */
   readonly detail: boolean
+  readonly nextAction?: MomentumNextAction | null
 }) {
   const [open, setOpen] = useState(false)
 
@@ -128,6 +131,7 @@ export function MomentumStrip({
         today={today}
         recommendation={recommendation}
         detail={detail}
+        nextAction={nextAction}
         onClose={() => setOpen(false)}
       />
     </>

@@ -34,7 +34,13 @@ import type { NewWinInput, Win } from '@/domain/entities/win'
 import type { Goal, NewGoalInput } from '@/domain/entities/goal'
 import type { NewObjectiveInput, Objective } from '@/domain/entities/objective'
 import type { Profile } from '@/domain/entities/profile'
-import { assertValidBio, assertValidHandle, assertValidName } from '@/domain/entities/profile'
+import {
+  assertValidBio,
+  assertValidHandle,
+  assertValidName,
+  assertValidRestWeekdays,
+  normalizedRestWeekdays,
+} from '@/domain/entities/profile'
 import type { ActivityRepository } from '@/domain/repositories/activity-repository'
 import type {
   ActivityTypeRepository,
@@ -280,6 +286,7 @@ export class DemoProfileRepository implements ProfileRepository {
     if (changes.name !== undefined) assertValidName(changes.name)
     if (changes.handle !== undefined) assertValidHandle(changes.handle)
     if (changes.bio !== undefined) assertValidBio(changes.bio)
+    if (changes.restWeekdays !== undefined) assertValidRestWeekdays(changes.restWeekdays)
 
     return demoStore.updateProfile({
       ...(changes.name !== undefined ? { name: changes.name.trim() } : {}),
@@ -288,6 +295,10 @@ export class DemoProfileRepository implements ProfileRepository {
       ...(changes.avatarUrl !== undefined ? { avatarUrl: changes.avatarUrl } : {}),
       ...(changes.defaultVisibility !== undefined
         ? { defaultVisibility: changes.defaultVisibility }
+        : {}),
+      ...(changes.visibility !== undefined ? { visibility: changes.visibility } : {}),
+      ...(changes.restWeekdays !== undefined
+        ? { restWeekdays: normalizedRestWeekdays(changes.restWeekdays) }
         : {}),
       ...(changes.plan !== undefined ? { plan: changes.plan } : {}),
     })

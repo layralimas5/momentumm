@@ -1,5 +1,5 @@
 import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js'
-import type { z } from 'zod'
+import type { z } from 'zod/v4'
 import { AiError, isAiErrorCode } from '@/domain/ai/ai-error'
 import {
   AI_FUNCTION_NAME,

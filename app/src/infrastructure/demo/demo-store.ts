@@ -138,6 +138,7 @@ function seed(): DemoState {
     // o contrário do que o produto faz.
     visibility: 'privado',
     plan: 'free',
+    restWeekdays: [],
     // Doze semanas atrás: a demo precisa ter história pra "12 semanas no
     // Momentumm" significar alguma coisa na tela.
     createdAt: dateAt(addDays(today, -84), 9),
@@ -721,7 +722,11 @@ function friendMoments(today: DayKey): JourneyEvent[] {
 
 interface StoredState {
   customAxes?: ActivityType[]
-  profile: Omit<Profile, 'createdAt'> & { createdAt: string; plan?: PlanTier }
+  profile: Omit<Profile, 'createdAt' | 'restWeekdays'> & {
+    createdAt: string
+    plan?: PlanTier
+    restWeekdays?: number[]
+  }
   activities: Array<Omit<Activity, 'occurredAt'> & { occurredAt: string }>
   objectives: Array<
     Omit<Objective, 'createdAt' | 'completedAt' | 'archivedAt'> & {
@@ -786,6 +791,7 @@ function revive(raw: string): DemoState {
     profile: {
       ...parsed.profile,
       plan: parsed.profile.plan ?? 'free',
+      restWeekdays: parsed.profile.restWeekdays ?? [],
       createdAt: new Date(parsed.profile.createdAt),
     },
     activities: parsed.activities.map((item) => ({

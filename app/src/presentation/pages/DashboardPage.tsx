@@ -382,6 +382,7 @@ export function DashboardPage() {
           streak={planner.streak}
           recommendation={view.recommendation}
           detail={planner.limits.momentumDetail}
+          nextAction={view.nextAction}
         />
 
         {view.dayComplete ? <DayCompleteBanner win={view.todayWin} /> : null}

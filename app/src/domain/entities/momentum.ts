@@ -1,50 +1,65 @@
 import type { Activity } from './activity'
 import { totalMinutes } from './activity'
 import type { CapacityProfile } from './checkin'
-import { addDays, dayRange, daysBetween, type DayKey } from './day'
+import { addDays, dayKeyToDate, dayRange, daysBetween, type DayKey } from './day'
 import { countsAsDone, type Habit, type HabitLog } from './habit'
 import { habitImpact, impactPointsOf, taskImpact, type ImpactLevel } from './momentum-impact'
 import { type Task } from './task'
 import type { WeeklyReview } from './weekly-review'
 
 /**
- * Momentum: o ritmo da pessoa, não a nota dela.
+ * Momentum Score: o ritmo da pessoa, não a nota dela.
  *
- * O score vai de 0 a 100 e sai de quatro fatores, cada um normalizado entre 0 e
- * 100 antes de entrar na média ponderada:
+ * ## A fórmula oficial
  *
- *   Consistência recente ....... 35%
- *   Execução das prioridades ... 30%
- *   Progresso nos objetivos .... 20%
- *   Capacidade de retomada ..... 15%
+ *   Score = consistência × 0,35 + prioridades × 0,30 + progresso × 0,20 + retomada × 0,15
+ *
+ * Cada fator é normalizado entre 0 e 100 antes de entrar na média, e o
+ * resultado fica entre 0 e 100. Os pesos moram em `DEFAULT_MOMENTUM_WEIGHTS`
+ * e são a ÚNICA coisa a mexer numa recalibragem.
+ *
+ *   Consistência recente ....... 35%  cumprimento nos últimos 28 dias, os
+ *                                     últimos 7 pesando o triplo
+ *   Execução das prioridades ... 30%  do impacto planejado, quanto saiu
+ *                                     (baixo 1, médio 2, alto 3)
+ *   Progresso nos objetivos .... 20%  avanço do plano no ritmo que o prazo pede
+ *   Capacidade de retomada ..... 15%  quanto tempo leva pra voltar depois de parar
  *
  * ## A janela é de 28 dias, com a última semana pesando mais
  *
  * Sete dias sozinhos transformam o número num termômetro de humor: uma gripe
- * derruba o score inteiro e some com a história de um mês inteiro de trabalho.
- * Vinte e oito dias sozinhos fazem o contrário — a pessoa muda o comportamento
- * hoje e o número não reage, então ele deixa de servir pra decidir alguma
- * coisa. A saída é a janela longa com peso: cada um dos últimos sete dias vale
- * o triplo dos vinte e um anteriores, o que faz a semana atual responder por
- * metade do score e as três anteriores pela outra metade.
+ * derruba o score inteiro. Vinte e oito dias sozinhos fazem o contrário: a
+ * pessoa muda hoje e o número não reage. A saída é a janela longa com peso:
+ * cada um dos últimos sete dias vale o triplo dos vinte e um anteriores, o que
+ * faz a semana atual responder por metade do score.
  *
  * ## O que conta é impacto, não quantidade
  *
- * Cada coisa concluída vale 1, 2 ou 3 (ver `momentum-impact`). Contar itens
- * faria cinco hábitos de dois minutos renderem mais que a ação que destrava a
- * etapa do objetivo — o oposto do que o produto defende.
+ * Cada coisa concluída vale 1, 2 ou 3 (ver `momentum-impact`). Hábito tem
+ * teto em 2, e cada categoria tem teto por dia. Sem os tetos, criar hábitos
+ * fáceis vira a maneira mais rápida de subir o número.
  *
- * E existe teto: hábitos rendem no máximo `MAX_HABIT_IMPACT_PER_DAY` por dia,
- * ações de impacto baixo no máximo `MAX_LOW_IMPACT_PER_DAY`, e o dia inteiro
- * satura em `FULL_DAY_IMPACT`. Sem os tetos, criar hábitos fáceis vira a
- * maneira mais rápida de subir o número.
+ * ## O que cada estado faz com o número
  *
- * ## Falhar um dia custa pouco, e voltar rápido devolve
+ *   concluída ........ soma o impacto ao dia (crédito) e à execução das prioridades
+ *   pendente hoje .... neutra: o dia ainda está aberto
+ *   vencida .......... planejada e não feita; reduz a execução das prioridades
+ *   adiada ........... custa metade de uma vencida: adiar é decisão, ignorar não
+ *   cancelada ........ sai da conta inteira
+ *   dia de descanso .. sai da conta se ficou vazio; conta normal se teve movimento
  *
- * Um dia vazio é um dia sem crédito, nunca um zero no score: com 28 dias na
- * conta, o pior dia possível tira poucos pontos. E a retomada mede o TEMPO até
- * o retorno — voltar no dia seguinte devolve nota cheia, sumir duas semanas
- * não.
+ * ## O número não pula
+ *
+ * O score exibido sobe no máximo `MAX_DAILY_RISE` e cai no máximo
+ * `MAX_DAILY_DROP` pontos por dia. O valor bruto continua sendo calculado, e a
+ * diferença entre os dois é dita em voz alta (`heldBack`). Um dia ruim
+ * nunca zera o número, e a pontuação nunca vira punição.
+ *
+ * ## Retomar é recompensado sem apagar a pausa
+ *
+ * A pausa continua na janela de 28 dias (a consistência lembra dela), mas o
+ * retorno rápido devolve a nota cheia no fator de retomada, e a volta mais
+ * recente pesa o dobro das anteriores.
  */
 
 /** A semana: a unidade de comparação do produto (e a régua de "recente"). */
@@ -66,11 +81,8 @@ const FULL_DAY_IMPACT = 4
 
 /**
  * Teto do que a repetição rende por dia — e ele é menor que uma prioridade de
- * propósito.
- *
- * Com teto 3, marcar três hábitos fáceis empataria com fechar a ação que
- * destrava a etapa, e a maneira mais rápida de subir o score passaria a ser
- * criar hábitos pequenos. Em 2, a prioridade ganha sempre.
+ * propósito. Com teto 3, marcar três hábitos fáceis empataria com fechar a
+ * ação que destrava a etapa. Em 2, a prioridade ganha sempre.
  */
 const MAX_HABIT_IMPACT_PER_DAY = 2
 
@@ -82,6 +94,25 @@ const MAX_ACTIVITY_IMPACT_PER_DAY = 2
 
 /** Quanto do dia vale só por ter tido movimento, antes de olhar o tamanho. */
 const PRESENCE_CREDIT = 0.5
+
+/**
+ * Quanto uma ação adiada pesa contra a pessoa, comparada a uma vencida.
+ *
+ * Adiar é decisão: a pessoa olhou pra ação e disse "não hoje". Ignorar é a
+ * ação vencer sem ninguém olhar. Cobrar as duas igual ensina que não vale a
+ * pena decidir — e zerar a adiada ensina que adiar é grátis.
+ */
+export const POSTPONED_WEIGHT = 0.5
+
+/**
+ * Teto da execução das prioridades quando nada de impacto médio ou alto foi
+ * planejado na janela.
+ *
+ * Sem ele, uma lista só de tarefas fáceis 100% cumprida marcaria 100 no fator
+ * "execução das prioridades" — de quem nunca definiu uma prioridade. O teto é
+ * a diferença entre "cumpri o que planejei" e "planejei o que importa".
+ */
+export const PRIORITIES_CAP_WITHOUT_PRIORITY = 0.7
 
 /**
  * Avanço de plano que satura o fator de objetivos em 28 dias. 35% do caminho
@@ -96,16 +127,42 @@ const GAP_FOR_RECOVERY = 2
  * Peso da retomada mais recente contra as anteriores.
  *
  * O fator responde "você consegue voltar?", e a resposta que vale é a de
- * agora. Com média simples, quem voltou hoje depois de três pausas antigas mal
- * move o número — e o dia em que a pessoa mais precisa ver o esforço aparecer
- * é justamente o dia em que ela voltou. O peso é 2 e não mais: acima disso o
- * fator vira termômetro de um dia só, que é o defeito que a janela de 28 dias
- * existe pra evitar.
+ * agora. O peso é 2 e não mais: acima disso o fator vira termômetro de um dia
+ * só, que é o defeito que a janela de 28 dias existe pra evitar.
  */
 const LATEST_RETURN_WEIGHT = 2
 
 /** Dias de história a partir dos quais o score deixa de ser parcial. */
 const MIN_DAYS_FOR_FULL_SCORE = 7
+
+/**
+ * Quanto o score EXIBIDO pode subir e cair de um dia pro outro.
+ *
+ * Subir mais rápido que cair é de propósito: a retomada precisa aparecer na
+ * tela no dia em que acontece, e a queda precisa dar tempo de reagir antes de
+ * virar um número que assusta. Nenhum dos dois esconde o valor bruto — ele
+ * continua em `rawValue`, e a diferença aparece como "ainda a absorver".
+ */
+export const MAX_DAILY_RISE = 6
+export const MAX_DAILY_DROP = 4
+
+/**
+ * Quantos dias a suavização olha pra trás pra chegar no valor de hoje.
+ *
+ * O número exibido depende do de ontem, que depende do de anteontem. Recuar
+ * oito semanas é o suficiente pra qualquer diferença entre o bruto e o
+ * exibido já ter sido absorvida antes da janela do score começar.
+ */
+const SMOOTHING_SPAN_DAYS = 56
+
+/**
+ * Quantos dias de descanso planejado cabem numa semana.
+ *
+ * Dois, e não mais: acima disso "descanso" vira a maneira de tirar da conta os
+ * dias em que não se quer ser medido. Dois dias por semana é fim de semana —
+ * o único descanso que o produto precisa reconhecer sem discutir.
+ */
+export const MAX_REST_WEEKDAYS = 2
 
 export const MOMENTUM_LEVELS = ['desacelerando', 'retomando', 'constante', 'avancando'] as const
 export type MomentumLevel = (typeof MOMENTUM_LEVELS)[number]
@@ -147,13 +204,70 @@ export const MOMENTUM_PART_LABELS: Readonly<Record<MomentumPartKey, string>> = {
 
 export const MOMENTUM_PART_HINTS: Readonly<Record<MomentumPartKey, string>> = {
   consistency:
-    'Em quantos dias você moveu alguma coisa, com os últimos sete dias pesando o triplo dos anteriores.',
+    'Em quantos dias você moveu alguma coisa nos últimos 28, com os últimos sete pesando o triplo. Dia de descanso planejado não conta contra.',
   priorities:
-    'Do que você planejou, quanto saiu — medido por impacto: prioridade e ação de objetivo valem mais que tarefa comum.',
-  objectives: 'O quanto o plano dos teus objetivos andou de verdade no período.',
+    'Do que você planejou, quanto saiu — medido por impacto: prioridade e ação de objetivo valem mais que tarefa comum. Ação vencida pesa, adiada pesa metade, cancelada não pesa.',
+  objectives:
+    'O quanto o plano dos teus objetivos andou de verdade no período, comparado com o ritmo que o prazo pede.',
   recovery:
-    'Depois de um dia parado, quanto tempo você leva pra voltar. Voltar rápido devolve tudo, e a volta mais recente é a que mais conta.',
+    'Depois de parar, quanto tempo você leva pra voltar. Voltar em até dois dias devolve tudo, e a volta mais recente é a que mais conta.',
 }
+
+/** A fórmula em uma linha, pra tela e pra IA dizerem a mesma coisa. */
+export const MOMENTUM_FORMULA =
+  'Score = consistência × 0,35 + prioridades × 0,30 + progresso × 0,20 + retomada × 0,15'
+
+export interface MomentumRule {
+  readonly title: string
+  readonly detail: string
+}
+
+/**
+ * "Como seu score é calculado", em regras curtas.
+ *
+ * É a mesma lista pro diálogo do dashboard, pro progresso e pro contexto da
+ * Momentumm AI. Uma explicação em cada lugar seria três explicações que
+ * divergem na primeira recalibragem.
+ */
+export const MOMENTUM_RULES: readonly MomentumRule[] = [
+  {
+    title: 'Quatro fatores, um número',
+    detail: `${MOMENTUM_FORMULA}. Cada fator vai de 0 a 100 antes de entrar na conta.`,
+  },
+  {
+    title: `${MOMENTUM_HORIZON_DAYS} dias, os últimos ${MOMENTUM_WINDOW_DAYS} valendo o triplo`,
+    detail:
+      'Um dia ruim não apaga um mês de trabalho, e uma semana boa aparece na hora.',
+  },
+  {
+    title: 'Impacto, não quantidade',
+    detail:
+      'Prioridade principal e ação de alta em um objetivo valem 3, ação de objetivo vale 2, tarefa comum e hábito valem 1. Hábitos e tarefas comuns têm teto por dia: repetir o fácil não sobe o número.',
+  },
+  {
+    title: 'Concluir soma, vencer desconta, adiar custa metade',
+    detail:
+      'Ação vencida pesa contra a execução. Ação adiada pesa metade, porque adiar é uma decisão. Cancelada sai da conta. O que ainda é de hoje não pesa: o dia está aberto. Semana sem nenhuma ação planejada deixa o fator sem base.',
+  },
+  {
+    title: 'Descanso planejado não é falta',
+    detail: `Até ${MAX_REST_WEEKDAYS} dias por semana marcados como descanso saem da conta quando ficam vazios. Se você se mover num dia de descanso, ele conta normalmente.`,
+  },
+  {
+    title: `Sobe até ${MAX_DAILY_RISE} e cai até ${MAX_DAILY_DROP} pontos de um dia pro outro`,
+    detail:
+      'O número que você vê é uma média móvel com a variação limitada em relação ao dia anterior. O valor bruto continua sendo calculado, e o que falta absorver fica visível.',
+  },
+  {
+    title: 'Voltar conta, e a pausa fica na história',
+    detail:
+      'Voltar em até dois dias devolve a nota cheia de retomada, e a volta mais recente pesa o dobro. A pausa continua na janela de 28 dias: o número recompensa a volta sem fingir que ela não aconteceu.',
+  },
+  {
+    title: 'Conta nova mede só o que existe',
+    detail: `A janela começa no teu primeiro registro. Com menos de ${MIN_DAYS_FOR_FULL_SCORE} dias de história o número aparece como "ainda se formando", e fator sem dados acompanha a consistência em vez de valer zero.`,
+  },
+]
 
 export interface MomentumInput {
   readonly activities: readonly Activity[]
@@ -164,6 +278,11 @@ export interface MomentumInput {
   /** Reviews escritos. Não entram no score; ficam pro resto do app. */
   readonly weeklyReviews?: readonly WeeklyReview[]
   /**
+   * Dias da semana de descanso planejado (0 = domingo). No máximo
+   * `MAX_REST_WEEKDAYS`; o excedente é ignorado.
+   */
+  readonly restWeekdays?: readonly number[] | undefined
+  /**
    * Progresso de plano ganho na janela atual e na anterior, de 0 a 1.
    *
    * Vem de fora porque depende de etapas, e o momentum não conhece a
@@ -172,6 +291,12 @@ export interface MomentumInput {
    */
   readonly planGain?: number
   readonly previousPlanGain?: number
+  /**
+   * O ganho de plano da janela que termina em qualquer dia. Quando existe,
+   * substitui os dois acima e faz o histórico e a suavização enxergarem o
+   * avanço real de cada dia, em vez de repetir o de hoje pra trás.
+   */
+  readonly planGainAt?: ((end: DayKey) => number | undefined) | undefined
 }
 
 /** Cada parte, de 0 a 1. */
@@ -193,10 +318,17 @@ export interface MomentumDriver {
 }
 
 export interface MomentumScore {
-  /** 0 a 100. */
+  /** 0 a 100: o número exibido, já com o limite de variação diária. */
   readonly value: number
+  /** 0 a 100: o mesmo cálculo sem o limite diário. */
+  readonly rawValue: number
+  /**
+   * Pontos que o número exibido ainda não absorveu: positivo quando o bruto
+   * está acima (ainda vai subir), negativo quando está abaixo (ainda vai cair).
+   */
+  readonly heldBack: number
   readonly level: MomentumLevel
-  /** Diferença em pontos contra o mesmo cálculo sete dias atrás. */
+  /** Diferença em pontos contra o número exibido sete dias atrás. */
   readonly delta: number
   /** Dias com movimento nos últimos sete. */
   readonly activeDays: number
@@ -222,35 +354,91 @@ export function calculateMomentum(
   input: MomentumInput,
   weights: MomentumWeights = DEFAULT_MOMENTUM_WEIGHTS,
 ): MomentumScore {
-  const current = windowScore(input, input.today, weights, input.planGain)
-  const previousEnd = addDays(input.today, -MOMENTUM_WINDOW_DAYS)
-  const previous = windowScore(input, previousEnd, weights, input.previousPlanGain)
+  const prepared = prepare(input, weights)
+  const series = smoothedSeries(prepared, input.today)
+
+  const current = series.get(input.today) ?? emptyPoint()
+  const previous = series.get(addDays(input.today, -MOMENTUM_WINDOW_DAYS)) ?? emptyPoint()
 
   const value = Math.round(current.value)
+  const rawValue = Math.round(current.raw.value)
   const delta = value - Math.round(previous.value)
-  const activeDays = activeDaysBetween(input, addDays(input.today, -(MOMENTUM_WINDOW_DAYS - 1)), input.today)
+  const activeDays = activeDaysBetween(
+    prepared,
+    addDays(input.today, -(MOMENTUM_WINDOW_DAYS - 1)),
+    input.today,
+  )
   const level = levelOf(value, delta, activeDays)
 
-  const first = oldestDay(input)
   const hasEnoughData =
-    first !== null && daysBetween(first, input.today) + 1 >= MIN_DAYS_FOR_FULL_SCORE
+    prepared.first !== null &&
+    daysBetween(prepared.first, input.today) + 1 >= MIN_DAYS_FOR_FULL_SCORE
 
-  const drivers = driversOf(current.parts, previous.parts, weights)
+  const drivers = driversOf(current.raw.parts, previous.raw.parts, weights)
 
   return {
     value,
+    rawValue,
+    heldBack: rawValue - value,
     level,
     delta,
     activeDays,
-    activeDaysInHorizon: current.activeDays,
-    parts: current.parts,
-    basis: current.basis,
+    activeDaysInHorizon: current.raw.activeDays,
+    parts: current.raw.parts,
+    basis: current.raw.basis,
     hasEnoughData,
     drivers,
     headline: headlineFor(level, delta, drivers, hasEnoughData, value),
     explanation: explain(level, value, delta, activeDays),
   }
 }
+
+// ---------------------------------------------------------------------------
+// preparação: o que todo cálculo precisa e nenhum precisa refazer
+// ---------------------------------------------------------------------------
+
+interface Prepared {
+  readonly input: MomentumInput
+  readonly weights: MomentumWeights
+  readonly restWeekdays: ReadonlySet<number>
+  /** O primeiro dia com registro na conta, ou null. */
+  readonly first: DayKey | null
+  /** Crédito de cada dia, calculado uma vez por cálculo. */
+  readonly credits: Map<DayKey, number>
+}
+
+function prepare(input: MomentumInput, weights: MomentumWeights): Prepared {
+  return {
+    input,
+    weights,
+    restWeekdays: new Set(normalizeRestWeekdays(input.restWeekdays ?? [])),
+    first: oldestDay(input),
+    credits: new Map(),
+  }
+}
+
+/** Só dias válidos, sem repetição, e nunca mais que `MAX_REST_WEEKDAYS`. */
+export function normalizeRestWeekdays(weekdays: readonly number[]): number[] {
+  const valid = [...new Set(weekdays)].filter((day) => Number.isInteger(day) && day >= 0 && day <= 6)
+  return valid.sort((a, b) => a - b).slice(0, MAX_REST_WEEKDAYS)
+}
+
+function isRestDay(prepared: Prepared, day: DayKey): boolean {
+  if (prepared.restWeekdays.size === 0) return false
+  return prepared.restWeekdays.has(dayKeyToDate(day).getDay())
+}
+
+function creditAt(prepared: Prepared, day: DayKey): number {
+  const cached = prepared.credits.get(day)
+  if (cached !== undefined) return cached
+  const credit = dayCredit(prepared.input, day)
+  prepared.credits.set(day, credit)
+  return credit
+}
+
+// ---------------------------------------------------------------------------
+// o score bruto de uma janela
+// ---------------------------------------------------------------------------
 
 interface WindowScore {
   readonly value: number
@@ -262,37 +450,31 @@ interface WindowScore {
 /** Um fator: valor de 0 a 1, ou null quando não havia o que medir. */
 type Factor = number | null
 
-function windowScore(
-  input: MomentumInput,
-  end: DayKey,
-  weights: MomentumWeights,
-  gain: number | undefined,
-): WindowScore {
+function windowScore(prepared: Prepared, end: DayKey): WindowScore {
+  const { input, weights } = prepared
+
   /*
     A janela começa no primeiro registro da conta, nunca antes dele — mas nunca
     é menor que uma semana.
 
     Quem tem duas semanas de app não pode ser medido contra 14 dias em que a
-    conta não existia: aqueles dias não são falha, são ausência de história. Sem
-    esse corte, o teto de uma conta nova seria 59 mesmo com tudo cumprido.
-
-    O piso de sete dias existe pelo motivo inverso: sem ele, uma janela de um
-    dia só faria "registrei hoje" empatar com "registrei todos os dias da
-    semana", e a constância deixaria de significar qualquer coisa no começo —
-    justamente quando ela é o hábito que precisa se formar.
+    conta não existia: aqueles dias não são falha, são ausência de história.
+    O piso de sete dias existe pelo motivo inverso: sem ele, "registrei hoje"
+    empataria com "registrei todos os dias da semana".
   */
   const horizon = addDays(end, -(MOMENTUM_HORIZON_DAYS - 1))
   const shortest = addDays(end, -(MOMENTUM_WINDOW_DAYS - 1))
-  const first = oldestDay(input)
+  const first = prepared.first
   const start = first && first > horizon ? maxDay(horizon, minDay(first, shortest)) : horizon
   const days = dayRange(start, end)
 
-  const credits = days.map((day) => dayCredit(input, day))
-  const consistency = weightedAverage(days, credits, end)
+  const credits = days.map((day) => creditAt(prepared, day))
+  const rest = days.map((day) => isRestDay(prepared, day))
 
-  const priorities = prioritiesFactor(input, days, end)
-  const objectives = objectivesFactor(gain)
-  const recovery = recoveryFactor(credits, days)
+  const consistency = consistencyFactor(days, credits, rest, end)
+  const priorities = prioritiesFactor(prepared, days, rest, end)
+  const objectives = objectivesFactor(planGainFor(input, end))
+  const recovery = recoveryFactor(credits, rest)
 
   const parts: MomentumParts = {
     consistency,
@@ -309,18 +491,31 @@ function windowScore(
   }
 
   const value =
-    (parts.consistency * weights.consistency +
-      parts.priorities * weights.priorities +
-      parts.objectives * weights.objectives +
-      parts.recovery * weights.recovery) *
-    100
+    parts.consistency * weights.consistency +
+    parts.priorities * weights.priorities +
+    parts.objectives * weights.objectives +
+    parts.recovery * weights.recovery
 
   return {
-    value: clamp01(value / 100) * 100,
+    value: clamp01(value) * 100,
     activeDays: credits.filter((credit) => credit > 0).length,
     parts,
     basis,
   }
+}
+
+/**
+ * O ganho de plano da janela que termina em `end`.
+ *
+ * Com `planGainAt` a resposta é exata pra qualquer dia. Sem ele, o que existe
+ * são dois números: o de hoje e o de uma semana atrás, e cada dia usa o mais
+ * próximo dele.
+ */
+function planGainFor(input: MomentumInput, end: DayKey): number | undefined {
+  if (input.planGainAt) return input.planGainAt(end)
+  return daysBetween(end, input.today) >= MOMENTUM_WINDOW_DAYS
+    ? input.previousPlanGain
+    : input.planGain
 }
 
 /**
@@ -333,12 +528,26 @@ function dayWeight(day: DayKey, end: DayKey): number {
   return daysBetween(day, end) < MOMENTUM_WINDOW_DAYS ? RECENT_DAY_WEIGHT : OLDER_DAY_WEIGHT
 }
 
-function weightedAverage(days: readonly DayKey[], values: readonly number[], end: DayKey): number {
+/**
+ * Consistência: a média ponderada do crédito de cada dia.
+ *
+ * Dia de descanso planejado que ficou vazio sai da média — nem soma, nem
+ * divide. Dia de descanso com movimento entra normal: descansar é direito,
+ * não obrigação.
+ */
+function consistencyFactor(
+  days: readonly DayKey[],
+  credits: readonly number[],
+  rest: readonly boolean[],
+  end: DayKey,
+): number {
   let total = 0
   let weight = 0
   days.forEach((day, index) => {
+    const credit = credits[index] ?? 0
+    if (rest[index] && credit === 0) return
     const w = dayWeight(day, end)
-    total += (values[index] ?? 0) * w
+    total += credit * w
     weight += w
   })
   return weight === 0 ? 0 : clamp01(total / weight)
@@ -369,7 +578,10 @@ function dayCredit(input: MomentumInput, day: DayKey): number {
     else high += impactPointsOf(level)
   }
 
-  const activities = input.activities.filter((activity) => activity.day === day).length
+  let activities = 0
+  for (const activity of input.activities) {
+    if (activity.day === day) activities += 1
+  }
 
   const total =
     Math.min(habits, MAX_HABIT_IMPACT_PER_DAY) +
@@ -392,31 +604,72 @@ function dayCredit(input: MomentumInput, day: DayKey): number {
  * Execução das prioridades: do impacto que a pessoa planejou, quanto saiu.
  *
  * A razão é de IMPACTO, não de contagem: fechar a prioridade principal e deixar
- * duas tarefas comuns pendentes rende mais que o contrário. Ação cancelada sai
- * da conta inteira — largar conscientemente não é o mesmo que deixar pendente, e
- * punir a decisão ensina a pessoa a mentir pro app. Dia futuro também sai: ação
- * marcada pra amanhã ainda não é dívida.
+ * duas tarefas comuns pendentes rende mais que o contrário.
+ *
+ *   feita ............ planejada e cumprida
+ *   vencida .......... planejada, não cumprida (pendente com o dia já passado)
+ *   adiada ........... planejada com peso `POSTPONED_WEIGHT`, não cumprida
+ *   cancelada ........ fora da conta: largar conscientemente não é falhar
+ *   pendente no dia .. fora da conta: o dia ainda está aberto
+ *   futura ........... fora da conta: ainda não é dívida
+ *   dia de descanso .. pendente em dia de descanso não é cobrada
+ *
+ * E sem nada de impacto médio ou alto planejado na janela, o fator não passa
+ * de `PRIORITIES_CAP_WITHOUT_PRIORITY`: cumprir só o fácil não é executar
+ * prioridade.
+ *
+ * Sem NENHUMA ação planejada na última semana o fator não tem base e herda a
+ * consistência. Uma razão de três semanas atrás carregando 30% do score de
+ * quem parou de planejar seria a execução perfeita de quem não executa nada.
  */
-function prioritiesFactor(input: MomentumInput, days: readonly DayKey[], end: DayKey): Factor {
+function prioritiesFactor(
+  prepared: Prepared,
+  days: readonly DayKey[],
+  rest: readonly boolean[],
+  end: DayKey,
+): Factor {
   const start = days[0]
   if (!start) return null
 
   let planned = 0
   let done = 0
+  let hasPriority = false
+  let hasRecentPlan = false
 
-  for (const task of input.tasks) {
+  for (const task of prepared.input.tasks) {
     if (task.day < start || task.day > end) continue
     if (task.status === 'cancelada') continue
 
-    const points = impactPointsOf(taskImpact(task))
+    const level = taskImpact(task)
+    const points = impactPointsOf(level)
     const weight = dayWeight(task.day, end)
+    if (weight === RECENT_DAY_WEIGHT) hasRecentPlan = true
+
+    if (task.status === 'feita') {
+      planned += points * weight
+      done += points * weight
+      if (level !== 'baixo') hasPriority = true
+      continue
+    }
+
+    if (task.status === 'adiada') {
+      planned += points * weight * POSTPONED_WEIGHT
+      if (level !== 'baixo') hasPriority = true
+      continue
+    }
+
+    // pendente ou em andamento: só vira dívida depois que o dia fecha.
+    if (task.day >= end) continue
+    if (rest[daysBetween(start, task.day)]) continue
 
     planned += points * weight
-    if (task.status === 'feita') done += points * weight
+    if (level !== 'baixo') hasPriority = true
   }
 
-  if (planned === 0) return null
-  return clamp01(done / planned)
+  if (planned === 0 || !hasRecentPlan) return null
+
+  const ratio = clamp01(done / planned)
+  return hasPriority ? ratio : Math.min(ratio, PRIORITIES_CAP_WITHOUT_PRIORITY)
 }
 
 /**
@@ -436,17 +689,17 @@ function objectivesFactor(gain: number | undefined): Factor {
  * Capacidade de retomada: quanto tempo você leva pra voltar depois de parar.
  *
  * Cada pausa de dois dias ou mais vira uma nota pelo tempo que levou pra
- * fechar. Voltar no terceiro dia devolve quase tudo; sumir duas semanas, quase
- * nada. Pausa ainda aberta no fim da janela entra com a nota do tamanho que ela
- * já tem — senão bastaria continuar parado pra o fator nunca contar.
+ * fechar. Pausa ainda aberta no fim da janela entra com a nota do tamanho que
+ * ela já tem — senão bastaria continuar parado pra o fator nunca contar.
  *
- * Quem não parou não recebe nota cheia de graça: sem pausa nenhuma o fator não
- * tem base e herda a consistência, porque não houve retomada pra medir.
+ * Dia de descanso vazio é transparente: não abre pausa, não alonga pausa e não
+ * fecha pausa. Quem não parou não recebe nota cheia de graça: sem pausa nenhuma
+ * o fator não tem base e herda a consistência.
  *
  * A retomada mais recente pesa o dobro das anteriores — ver
  * `LATEST_RETURN_WEIGHT`. É por aí que voltar HOJE aparece no número.
  */
-function recoveryFactor(credits: readonly number[], days: readonly DayKey[]): Factor {
+function recoveryFactor(credits: readonly number[], rest: readonly boolean[]): Factor {
   // Nenhum movimento na janela inteira não é uma pausa, é ausência: não há
   // retomada pra medir, e cobrar uma daria nota a quem nunca começou.
   if (!credits.some((credit) => credit > 0)) return null
@@ -455,8 +708,8 @@ function recoveryFactor(credits: readonly number[], days: readonly DayKey[]): Fa
   let running = 0
   let started = false
 
-  days.forEach((_, index) => {
-    const moved = (credits[index] ?? 0) > 0
+  credits.forEach((credit, index) => {
+    const moved = credit > 0
     if (moved) {
       // Só conta pausa depois do primeiro movimento: os dias anteriores ao
       // primeiro registro não são uma parada, são a conta ainda sem história.
@@ -465,6 +718,7 @@ function recoveryFactor(credits: readonly number[], days: readonly DayKey[]): Fa
       started = true
       return
     }
+    if (rest[index]) return
     if (started) running += 1
   })
 
@@ -473,14 +727,6 @@ function recoveryFactor(credits: readonly number[], days: readonly DayKey[]): Fa
 
   if (notes.length === 0) return null
 
-  /*
-    Média com a última retomada pesando o dobro.
-
-    É o que faz o Modo Retomada valer alguma coisa no número: a pessoa que
-    escolhe um passo pequeno e volta hoje fecha a pausa aberta com a melhor
-    nota possível, e essa nota é a que mais conta. Continua sendo dado real —
-    o crédito só existe se houve movimento de verdade no dia.
-  */
   let total = 0
   let weight = 0
   notes.forEach((note, index) => {
@@ -508,18 +754,79 @@ function recoveryNote(gapDays: number): number {
   return 0.1
 }
 
-function activeDaysBetween(input: MomentumInput, start: DayKey, end: DayKey): number {
-  return dayRange(start, end).filter((day) => dayCredit(input, day) > 0).length
+// ---------------------------------------------------------------------------
+// suavização: o número que a pessoa vê
+// ---------------------------------------------------------------------------
+
+interface SmoothedPoint {
+  /** O valor exibido, já limitado pela variação diária. */
+  readonly value: number
+  readonly raw: WindowScore
+}
+
+function emptyPoint(): SmoothedPoint {
+  const zero: MomentumParts = { consistency: 0, priorities: 0, objectives: 0, recovery: 0 }
+  const none: MomentumBasis = {
+    consistency: true,
+    priorities: false,
+    objectives: false,
+    recovery: false,
+  }
+  return { value: 0, raw: { value: 0, activeDays: 0, parts: zero, basis: none } }
+}
+
+/**
+ * A série exibida, dia a dia, até `end`.
+ *
+ * Cada ponto é o score bruto daquele dia puxado pra dentro do limite diário em
+ * relação ao ponto anterior. A série começa no primeiro registro da conta (o
+ * primeiro ponto é o bruto: não há ontem pra comparar) e nunca mais de
+ * `SMOOTHING_SPAN_DAYS` atrás, que é o bastante pra qualquer diferença já ter
+ * sido absorvida.
+ */
+function smoothedSeries(prepared: Prepared, end: DayKey): Map<DayKey, SmoothedPoint> {
+  const series = new Map<DayKey, SmoothedPoint>()
+  if (prepared.first === null) return series
+
+  const span = addDays(end, -(SMOOTHING_SPAN_DAYS - 1))
+  const start = maxDay(span, prepared.first)
+  if (start > end) return series
+
+  let previous: number | null = null
+  for (const day of dayRange(start, end)) {
+    const raw = windowScore(prepared, day)
+    /*
+      Na primeira semana da conta o número é o bruto, sem limite: ele está
+      "se formando" e a tela diz isso. Limitar ali faria quem cumpre tudo
+      desde o primeiro dia ver 40 no sétimo, e a explicação seria "porque
+      ontem era 34" — uma regra de estabilidade aplicada a um número que
+      ainda não existia.
+    */
+    const forming = daysBetween(prepared.first, day) + 1 < MIN_DAYS_FOR_FULL_SCORE
+    const value: number =
+      previous === null || forming
+        ? raw.value
+        : Math.min(previous + MAX_DAILY_RISE, Math.max(previous - MAX_DAILY_DROP, raw.value))
+    series.set(day, { value, raw })
+    previous = value
+  }
+  return series
+}
+
+function activeDaysBetween(prepared: Prepared, start: DayKey, end: DayKey): number {
+  return dayRange(start, end).filter((day) => creditAt(prepared, day) > 0).length
 }
 
 /** O primeiro dia com registro na conta, ou null: antes dele não existe "parada". */
 export function oldestDay(input: MomentumInput): DayKey | null {
-  const days = [
-    ...input.activities.map((item) => item.day),
-    ...input.habitLogs.map((item) => item.day),
-    ...input.tasks.map((item) => item.day),
-  ].sort()
-  return days[0] ?? null
+  let first: DayKey | null = null
+  const consider = (day: DayKey) => {
+    if (first === null || day < first) first = day
+  }
+  for (const item of input.activities) consider(item.day)
+  for (const item of input.habitLogs) consider(item.day)
+  for (const item of input.tasks) consider(item.day)
+  return first
 }
 
 function minDay(a: DayKey, b: DayKey): DayKey {
@@ -534,6 +841,10 @@ function clamp01(value: number): number {
   if (!Number.isFinite(value)) return 0
   return Math.min(1, Math.max(0, value))
 }
+
+// ---------------------------------------------------------------------------
+// leitura: motivos, nível, frases
+// ---------------------------------------------------------------------------
 
 /**
  * O que mexeu no número desde a semana passada, em pontos do score.
@@ -655,6 +966,24 @@ export function recommendationFor(score: MomentumScore, capacity: CapacityProfil
   }
 }
 
+/**
+ * A frase sobre o que o número ainda não absorveu. Null quando bruto e
+ * exibido já são o mesmo — aí não há nada a explicar.
+ */
+export function heldBackNote(score: MomentumScore): string | null {
+  if (score.heldBack >= 2) {
+    return `O número sobe no máximo ${MAX_DAILY_RISE} pontos por dia: ainda há ${score.heldBack} a absorver do que você já fez.`
+  }
+  if (score.heldBack <= -2) {
+    return `O número cai no máximo ${MAX_DAILY_DROP} pontos por dia: sem movimento, ainda vai cair ${Math.abs(score.heldBack)}. Uma ação hoje segura essa queda.`
+  }
+  return null
+}
+
+// ---------------------------------------------------------------------------
+// o score aberto em fatores
+// ---------------------------------------------------------------------------
+
 export interface MomentumFactor {
   readonly key: MomentumPartKey
   readonly label: string
@@ -676,6 +1005,9 @@ export interface MomentumFactor {
 /**
  * O score aberto em fatores. Existe pro número não ser um oráculo: a pessoa
  * precisa ver de onde vieram os pontos pra saber o que mexer amanhã.
+ *
+ * Os pontos são repartidos sobre o valor EXIBIDO: um detalhamento que soma 47
+ * embaixo de um 46 ensina que a conta da tela não é confiável.
  */
 export function momentumFactors(
   score: MomentumScore,
@@ -701,12 +1033,9 @@ export function momentumFactors(
 /**
  * Reparte os pontos entre os fatores de modo que a soma bata com o score.
  *
- * Arredondar cada fator por conta própria produz um detalhamento que soma 47
- * embaixo de um número 46 — e um detalhamento que não fecha com o número é pior
- * que não ter detalhamento: ensina que a conta da tela não é confiável.
- *
- * O resto vai pros maiores restos decimais, que é a repartição que menos
- * distorce cada linha individualmente.
+ * O total pode ser menor OU maior que a soma dos brutos por causa do limite
+ * diário. A diferença vai pros fatores na ordem do maior resto decimal, um
+ * ponto por vez, sem deixar nenhum negativo nem acima do máximo.
  */
 function distributePoints(exact: readonly number[], total: number): number[] {
   const floors = exact.map((value) => Math.floor(value))
@@ -717,10 +1046,21 @@ function distributePoints(exact: readonly number[], total: number): number[] {
     .sort((a, b) => b.rest - a.rest)
 
   const points = [...floors]
-  for (const { index } of order) {
-    if (remaining <= 0) break
-    points[index] = (points[index] ?? 0) + 1
-    remaining -= 1
+  let guard = 0
+  while (remaining !== 0 && guard < 400) {
+    guard += 1
+    const step = remaining > 0 ? 1 : -1
+    const candidates = step > 0 ? order : [...order].reverse()
+    let moved = false
+    for (const { index } of candidates) {
+      const current = points[index] ?? 0
+      if (step < 0 && current <= 0) continue
+      points[index] = current + step
+      remaining -= step
+      moved = true
+      if (remaining === 0) break
+    }
+    if (!moved) break
   }
   return points
 }
@@ -741,24 +1081,22 @@ export function weakestFactor(
 /**
  * A evolução do score, um ponto por dia.
  *
- * Cada ponto é o score REAL daquele dia — a mesma função, com a janela
- * terminando ali. Guardar um histórico à parte abriria a porta pra a curva
- * discordar do número grande depois de qualquer ajuste na fórmula.
- *
- * O ganho de plano não é reconstruído dia a dia (ele vem de fora, já apurado),
- * então a curva usa o valor atual pro fator de objetivos. É a única
- * aproximação daqui, e ela move a linha inteira junto, sem distorcer a forma.
+ * Cada ponto é o score EXIBIDO daquele dia — a mesma série que produz o número
+ * grande, com o mesmo limite diário. Guardar um histórico à parte abriria a
+ * porta pra a curva discordar do número depois de qualquer ajuste na fórmula.
  */
 export function momentumHistory(
   input: MomentumInput,
   days = 14,
   weights: MomentumWeights = DEFAULT_MOMENTUM_WEIGHTS,
 ): MomentumPoint[] {
+  const prepared = prepare(input, weights)
+  const series = smoothedSeries(prepared, input.today)
   const start = addDays(input.today, -(days - 1))
 
   return dayRange(start, input.today).map((day) => ({
     day,
-    value: Math.round(windowScore(input, day, weights, input.planGain).value),
+    value: Math.round(series.get(day)?.value ?? 0),
   }))
 }
 
