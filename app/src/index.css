@@ -58,6 +58,20 @@
      saltar (prioridade principal, sessao de foco) recebe brilho. */
   --shadow-raised: 0 1px 0 0 rgb(255 255 255 / 0.03) inset;
   --shadow-glow: 0 0 0 1px rgb(109 92 255 / 0.25), 0 18px 60px -28px rgb(109 92 255 / 0.65);
+
+  /* Esteira continua de cards (depoimentos). A faixa tem duas copias da
+     lista separadas pelo mesmo gap interno; deslocar metade mais meio gap
+     faz a segunda copia cair exatamente onde a primeira comecou. */
+  --animate-marquee: marquee 60s linear infinite;
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(calc(-50% - 0.5rem));
+    }
+  }
 }
 
 @layer base {
@@ -314,4 +328,9 @@
       animation: none !important;
     }
   }
+}
+
+/* Bordas da esteira de depoimentos somem no fundo em vez de cortar o card. */
+.marquee-fade {
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
 }

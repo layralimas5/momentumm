@@ -11,6 +11,7 @@ import { Problem } from '@/presentation/components/landing/Problem'
 import { Screens } from '@/presentation/components/landing/Screens'
 import { SiteFooter } from '@/presentation/components/landing/SiteFooter'
 import { SiteHeader } from '@/presentation/components/landing/SiteHeader'
+import { Testimonials } from '@/presentation/components/landing/Testimonials'
 import { Trust } from '@/presentation/components/landing/Trust'
 
 /**
@@ -23,8 +24,8 @@ import { Trust } from '@/presentation/components/landing/Trust'
  * Os CTAs no meio existem porque do hero aos planos são milhares de pixels:
  * quem se convence nas telas ou no score não deveria precisar rolar até o fim.
  *
- * Nada aqui é depoimento inventado: `Trust` é prova de método, e dá lugar a
- * gente de verdade quando ela existir.
+ * `Testimonials` é vitrine (ver testimonials-data.ts) até haver usuários pra
+ * citar; `Trust` segue sendo prova de método, que não depende disso.
  */
 export function LandingPage() {
   return (
@@ -48,6 +49,7 @@ export function LandingPage() {
         <MomentumAi />
         <InlineCta prompt="O plano leva dois minutos pra montar." />
         <Comparison />
+        <Testimonials />
         <Trust />
         <Pricing />
         <Faq />

@@ -48,7 +48,7 @@ export function Trust() {
       <SectionHeading
         eyebrow="Por que confiar"
         title="O que sustenta a promessa."
-        description="Ainda não temos depoimentos pra mostrar, e não vamos inventar. O que dá pra verificar são as decisões do produto."
+        description="Além do que as pessoas dizem, o que dá pra verificar são as decisões do produto."
       />
 
       <ul className="mt-12 grid gap-4 sm:grid-cols-2">
