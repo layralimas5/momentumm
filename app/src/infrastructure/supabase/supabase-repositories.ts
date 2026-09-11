@@ -43,7 +43,13 @@ import {
   type Objective,
 } from '@/domain/entities/objective'
 import type { Profile } from '@/domain/entities/profile'
-import { assertValidBio, assertValidHandle, assertValidName } from '@/domain/entities/profile'
+import {
+  assertValidBio,
+  assertValidHandle,
+  assertValidName,
+  assertValidRestWeekdays,
+  normalizedRestWeekdays,
+} from '@/domain/entities/profile'
 import type { ActivityRepository } from '@/domain/repositories/activity-repository'
 import type {
   ActivityTypeRepository,
@@ -397,6 +403,7 @@ export class SupabaseProfileRepository implements ProfileRepository {
     if (changes.name !== undefined) assertValidName(changes.name)
     if (changes.handle !== undefined) assertValidHandle(changes.handle)
     if (changes.bio !== undefined) assertValidBio(changes.bio)
+    if (changes.restWeekdays !== undefined) assertValidRestWeekdays(changes.restWeekdays)
 
     const { data, error } = await supabase()
       .from('profiles')
@@ -410,6 +417,9 @@ export class SupabaseProfileRepository implements ProfileRepository {
           : {}),
         ...(changes.visibility !== undefined
           ? { profile_visibility: changes.visibility }
+          : {}),
+        ...(changes.restWeekdays !== undefined
+          ? { rest_weekdays: normalizedRestWeekdays(changes.restWeekdays) }
           : {}),
       })
       .eq('id', id)

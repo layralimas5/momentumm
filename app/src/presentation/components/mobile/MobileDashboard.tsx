@@ -107,6 +107,7 @@ export function MobileDashboard({
         today={planner.today}
         streak={planner.streak}
         recommendation={view.recommendation}
+        nextAction={view.nextAction}
       />
 
       {view.dayComplete ? (

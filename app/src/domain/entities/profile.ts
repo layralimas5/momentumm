@@ -1,5 +1,6 @@
 import { DomainError } from '@/shared/errors'
 import type { ActivityVisibility } from './activity'
+import { MAX_REST_WEEKDAYS, normalizeRestWeekdays } from './momentum'
 import type { PlanTier } from './plan'
 
 /**
@@ -45,7 +46,40 @@ export interface Profile {
   readonly visibility: ProfileVisibility
   /** Plano da conta. Decide limites, nunca acesso às telas. */
   readonly plan: PlanTier
+  /**
+   * Dias da semana de descanso planejado (0 = domingo). Vazio é o padrão:
+   * ninguém nasce com folga marcada, e o Momentum só tira da conta o que a
+   * pessoa declarou. No máximo `MAX_REST_WEEKDAYS`.
+   */
+  readonly restWeekdays: readonly number[]
   readonly createdAt: Date
+}
+
+export const WEEKDAY_LABELS: readonly string[] = [
+  'Domingo',
+  'Segunda',
+  'Terça',
+  'Quarta',
+  'Quinta',
+  'Sexta',
+  'Sábado',
+]
+
+export function assertValidRestWeekdays(weekdays: readonly number[]): void {
+  if (weekdays.some((day) => !Number.isInteger(day) || day < 0 || day > 6)) {
+    throw new DomainError('Dia da semana inválido pro descanso.')
+  }
+  if (new Set(weekdays).size > MAX_REST_WEEKDAYS) {
+    throw new DomainError(
+      `Até ${MAX_REST_WEEKDAYS} dias de descanso por semana. Acima disso o descanso vira a regra, e o ritmo deixa de ser medido.`,
+    )
+  }
+}
+
+/** Os dias válidos, ordenados e dentro do limite. */
+export function normalizedRestWeekdays(weekdays: readonly number[]): number[] {
+  assertValidRestWeekdays(weekdays)
+  return normalizeRestWeekdays(weekdays)
 }
 
 /**

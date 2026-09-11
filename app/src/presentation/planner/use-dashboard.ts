@@ -22,6 +22,7 @@ import {
   type ObjectiveInsightInput,
 } from '@/domain/entities/insight'
 import { MOMENTUM_WINDOW_DAYS, momentumHistory, oldestDay } from '@/domain/entities/momentum'
+import { bestNextAction, type MomentumNextAction } from '@/domain/entities/momentum-next-action'
 import {
   calculateMomentum,
   recommendationFor,
@@ -138,6 +139,8 @@ export interface DashboardView {
   readonly momentum: MomentumScore
   /** A evolução do score, um ponto por dia, pros últimos 14 dias. */
   readonly momentumSeries: readonly MomentumPoint[]
+  /** A ação em aberto que mais sobe o score hoje, pela mesma fórmula. */
+  readonly nextAction: MomentumNextAction | null
   readonly recommendation: string
   readonly mainPriority: Task | null
   readonly supportingTasks: readonly Task[]
@@ -205,6 +208,7 @@ export function useDashboard(): DashboardView {
     seguinte a qualquer ajuste de peso.
   */
   const momentumSeries = useMemo(() => momentumHistory(momentumInput), [momentumInput])
+  const nextAction = useMemo(() => bestNextAction(momentumInput), [momentumInput])
   const week = useMemo(() => summarizeWeek(momentumInput), [momentumInput])
 
   // Lê a série de trás pra frente, pulando o próprio dia: o buraco que
@@ -498,6 +502,7 @@ export function useDashboard(): DashboardView {
     capacity,
     momentum,
     momentumSeries,
+    nextAction,
     recommendation: recommendationFor(momentum, capacity),
     mainPriority,
     supportingTasks,

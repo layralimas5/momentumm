@@ -9,7 +9,11 @@ import {
   type JourneyEvent,
   type JourneyVisibility,
 } from '@/domain/entities/journey-event'
-import { MOMENTUM_LEVEL_LABELS, MOMENTUM_WINDOW_DAYS } from '@/domain/entities/momentum'
+import {
+  MOMENTUM_HORIZON_DAYS,
+  MOMENTUM_LEVEL_LABELS,
+  momentumFactors,
+} from '@/domain/entities/momentum'
 import {
   milestoneKindOf,
   nextMilestones,
@@ -97,8 +101,14 @@ export function PersonalProfilePage() {
     ainda dá pra recuperar. Aqui a pergunta é outra — "o quanto eu venho
     sustentando isso" — e a porcentagem é o que responde numa linha só, junto
     com objetivos ativos e tempo de casa.
+
+    O número é o FATOR de consistência do próprio score (28 dias, a última
+    semana pesando o triplo), não uma conta paralela sobre 7 dias: duas
+    telas contando "constância" com contas diferentes é como um app começa a
+    discordar de si mesmo.
   */
-  const consistency = Math.round((view.momentum.activeDays / MOMENTUM_WINDOW_DAYS) * 100)
+  const consistency =
+    momentumFactors(view.momentum).find((factor) => factor.key === 'consistency')?.score ?? 0
 
   if (loading) return <LoadingBlock label="Carregando teu perfil" />
   if (!profile) return <ErrorNote message="Não consegui carregar teu perfil. Recarrega a página." />
@@ -185,7 +195,7 @@ export function PersonalProfilePage() {
         <Stat
           label="Consistência"
           value={`${consistency}%`}
-          hint={`${view.momentum.activeDays} de ${MOMENTUM_WINDOW_DAYS} dias com movimento`}
+          hint={`${view.momentum.activeDaysInHorizon} de ${MOMENTUM_HORIZON_DAYS} dias com movimento`}
         />
         <Stat
           label="Semanas de progresso"

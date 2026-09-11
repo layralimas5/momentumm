@@ -1,7 +1,14 @@
 import { Link } from 'react-router-dom'
 import { activityType } from '@/domain/entities/activity-type'
 import { dayKeyToDate } from '@/domain/entities/day'
-import { MOMENTUM_LEVEL_LABELS, type DayDot, type MomentumFactor } from '@/domain/entities/momentum'
+import {
+  heldBackNote,
+  MOMENTUM_LEVEL_LABELS,
+  type DayDot,
+  type MomentumFactor,
+} from '@/domain/entities/momentum'
+import { MomentumNextAction } from '@/presentation/components/dashboard/MomentumNextAction'
+import { MomentumRules } from '@/presentation/components/dashboard/MomentumRules'
 import { deltaLabel } from '@/domain/entities/week'
 import { Button, buttonClass } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
@@ -85,6 +92,7 @@ export function ProgressPage() {
 
               <p className="max-w-md text-pretty text-sm text-ink-muted">
                 {progress.momentum.explanation}
+                {heldBackNote(progress.momentum) ? ` ${heldBackNote(progress.momentum)}` : ''}
               </p>
             </div>
 
@@ -109,6 +117,15 @@ export function ProgressPage() {
                   {progress.weakest.maxPoints - progress.weakest.points} pontos na mesa.
                 </p>
               ) : null}
+
+              {/*
+                A próxima ação vem do MESMO cálculo do número: é o item em
+                aberto que mais sobe o score se sair hoje. "Onde há espaço"
+                diz o fator; isto diz o que fazer.
+              */}
+              <MomentumNextAction action={progress.nextAction} className="mt-4" />
+
+              <MomentumRules className="mt-4" />
             </div>
           </Panel>
 

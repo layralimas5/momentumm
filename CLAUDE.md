@@ -63,7 +63,7 @@ que existir base. Feed vazio afasta usuário.
 Fase 1 em pé, em `app/`. Roda em **modo demo** sem configurar nada (dados em
 `localStorage`) e vira contas reais ao preencher `.env.local` com o Supabase.
 
-Pronto: domínio completo com 617 testes, migrations com RLS até a 0017, repositórios demo e
+Pronto: domínio completo com 643 testes, migrations com RLS até a 0018, repositórios demo e
 Supabase, auth com rota protegida, registro rápido, cronômetro de sessão, streak
 dos últimos 7 dias, histórico com filtro por eixo, metas com progresso e perfil
 editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
@@ -194,10 +194,48 @@ outro objetivo e trigger que carimba a data de conclusão.
 
 ### O Momentum Score
 
-Quatro fatores, cada um normalizado de 0 a 100 antes de entrar na média:
-**consistência recente (35%)**, **execução das prioridades (30%)**, **progresso
-nos objetivos (20%)** e **capacidade de retomada (15%)**. Os pesos vivem em
-`DEFAULT_MOMENTUM_WEIGHTS` e são a única coisa a mexer numa recalibragem.
+**A fórmula oficial:** `Score = consistência × 0,35 + prioridades × 0,30 +
+progresso × 0,20 + retomada × 0,15`. Quatro fatores, cada um normalizado de 0 a
+100 antes de entrar na média: **consistência recente (35%)**, **execução das
+prioridades (30%)**, **progresso nos objetivos (20%)** e **capacidade de
+retomada (15%)**. Os pesos vivem em `DEFAULT_MOMENTUM_WEIGHTS` e são a única
+coisa a mexer numa recalibragem. `MOMENTUM_FORMULA` e `MOMENTUM_RULES` são o
+texto de "Como seu score é calculado" — o mesmo no diálogo do dashboard, no
+progresso e no system prompt da Momentumm AI.
+
+**O cálculo é um só** (`calculateMomentum`) e a entrada é uma só
+(`use-momentum-input`: dados, dias de descanso do perfil e `planGainAt`).
+Dashboard, progresso, perfil, review semanal (`WeekReview.momentum`, com a
+janela terminando no domingo revisado) e Momentumm AI leem daí. O perfil
+mostra a consistência do próprio fator, não uma conta paralela sobre 7 dias.
+
+**O número não pula** (`MAX_DAILY_RISE = 6`, `MAX_DAILY_DROP = 4`). O valor
+exibido é o bruto puxado pra dentro do limite em relação ao dia anterior
+(`smoothedSeries`, recuando até 56 dias); `rawValue` e `heldBack` dizem o que
+ainda falta absorver, e `heldBackNote` põe isso em uma frase. Na primeira
+semana da conta o número é o bruto: limitar um número que ainda está se
+formando faria quem cumpre tudo ver 40 no sétimo dia. A variação semanal
+compara exibido com exibido, e `momentumHistory` é a MESMA série.
+
+**O que cada estado faz** (`prioritiesFactor`): concluída soma; pendente com o
+dia vencido desconta; `adiada` pesa `POSTPONED_WEIGHT` (metade, porque adiar
+é decisão); cancelada sai; pendente de HOJE não pesa (o dia está aberto);
+futura não é dívida. Sem nada de impacto médio ou alto planejado na janela o
+fator não passa de `PRIORITIES_CAP_WITHOUT_PRIORITY` (70): cumprir só o fácil
+não é executar prioridade. Semana sem nenhuma ação planejada deixa o fator
+sem base — uma razão de três semanas atrás carregando 30% do score de quem
+parou de planejar seria a execução perfeita de quem não executa nada.
+
+**Descanso planejado** (`profiles.rest_weekdays`, migration 0018, no máximo
+`MAX_REST_WEEKDAYS = 2`, editado em Configurações). Dia de descanso vazio sai
+da consistência (nem soma nem divide), não abre nem alonga pausa na retomada,
+e pendente nele não é cobrada. Dia de descanso com movimento conta normal.
+
+**A próxima ação com mais potencial** (`momentum-next-action`) não é
+heurística: é o próprio score recalculado com cada item em aberto de hoje ou
+vencido (e cada hábito de hoje) marcado como feito. Ganha o que mais sobe o
+número, com o fator que puxou e o motivo. Aparece no diálogo do score, no
+progresso e no contexto da IA.
 
 **A janela é de 28 dias, com cada um dos últimos 7 valendo o triplo dos
 anteriores.** Sete dias sozinhos fazem o número virar termômetro de humor — uma
@@ -939,6 +977,6 @@ Quando incomodar, trocar por import dinâmico dentro do `container`.
 cd app
 npm install
 npm run dev     # modo demo, sem configurar nada
-npm test        # 617 testes
+npm test        # 643 testes
 npm run build
 ```

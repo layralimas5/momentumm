@@ -4,7 +4,9 @@ import {
   PROFILE_VISIBILITIES,
   assertValidBio,
   assertValidName,
+  assertValidRestWeekdays,
   initialsOf,
+  normalizedRestWeekdays,
   membershipLabel,
   normalizeHandle,
   suggestHandle,
@@ -62,5 +64,21 @@ describe('nome, bio e @', () => {
   it('as iniciais cobrem o avatar sem foto', () => {
     expect(initialsOf('Layra Lima')).toBe('LL')
     expect(initialsOf('Lay')).toBe('L')
+  })
+})
+
+describe('dias de descanso', () => {
+  it('aceita até dois dias válidos e devolve ordenado sem repetição', () => {
+    expect(normalizedRestWeekdays([6, 0, 6])).toEqual([0, 6])
+    expect(normalizedRestWeekdays([])).toEqual([])
+  })
+
+  it('recusa mais de dois dias: acima disso o descanso vira a regra', () => {
+    expect(() => assertValidRestWeekdays([0, 3, 6])).toThrow(DomainError)
+  })
+
+  it('recusa dia fora de 0 a 6', () => {
+    expect(() => assertValidRestWeekdays([7])).toThrow(DomainError)
+    expect(() => assertValidRestWeekdays([1.5])).toThrow(DomainError)
   })
 })

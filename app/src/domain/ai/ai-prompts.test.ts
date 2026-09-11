@@ -16,6 +16,7 @@ const context: AiUserContext = {
   today: TODAY,
   momentum: {
     value: 46,
+    rawValue: 51,
     level: 'Constante',
     delta: 0,
     hasEnoughData: true,
@@ -25,6 +26,12 @@ const context: AiUserContext = {
       { label: 'Progresso nos objetivos', score: 45, weightPercent: 20, measured: false },
       { label: 'Capacidade de retomada', score: 60, weightPercent: 15, measured: true },
     ],
+    drivers: [{ label: 'Execução das prioridades', delta: -4 }],
+    nextAction: {
+      title: 'Ler 20 páginas',
+      gain: 3,
+      reason: 'É o item de maior impacto ainda em aberto. +3 no score hoje, puxado por execução das prioridades.',
+    },
   },
   consistency: { activeDaysLast7: 5, activeDaysLast28: 12, streak: 1, streakRecord: 4 },
   capacity: { label: 'Plena', focusMin: 25, actions: 3, checkedIn: false },
@@ -101,6 +108,9 @@ describe('renderContext', () => {
     expect(text).toContain('Ajustes decididos: Ler de manhã')
     expect(text).toContain('PRIORIDADE PRINCIPAL')
     expect(text).toContain('sem base')
+    expect(text).toContain('Momentum bruto (sem o limite diário): 51/100')
+    expect(text).toContain('O que mudou vs semana anterior: Execução das prioridades -4')
+    expect(text).toContain('Próxima ação com mais potencial: "Ler 20 páginas" (+3 no score hoje)')
     expect(text).not.toContain('AÇÕES ATRASADAS')
   })
 

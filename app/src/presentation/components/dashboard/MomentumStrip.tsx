@@ -5,6 +5,7 @@ import {
   type MomentumPoint,
   type MomentumScore,
 } from '@/domain/entities/momentum'
+import type { MomentumNextAction } from '@/domain/entities/momentum-next-action'
 import type { Streak } from '@/domain/entities/streak'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { Tag } from '@/presentation/components/ui/Surface'
@@ -29,12 +30,14 @@ export function MomentumStrip({
   today,
   streak,
   recommendation,
+  nextAction = null,
 }: {
   readonly momentum: MomentumScore
   readonly history: readonly MomentumPoint[]
   readonly today: DayKey
   readonly streak: Streak
   readonly recommendation: string
+  readonly nextAction?: MomentumNextAction | null
 }) {
   const [open, setOpen] = useState(false)
 
@@ -124,6 +127,7 @@ export function MomentumStrip({
         history={history}
         today={today}
         recommendation={recommendation}
+        nextAction={nextAction}
         onClose={() => setOpen(false)}
       />
     </>

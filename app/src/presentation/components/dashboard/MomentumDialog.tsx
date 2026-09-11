@@ -1,9 +1,11 @@
 import type { DayKey } from '@/domain/entities/day'
 import {
+  heldBackNote,
   MOMENTUM_LEVEL_LABELS,
   type MomentumPoint,
   type MomentumScore,
 } from '@/domain/entities/momentum'
+import type { MomentumNextAction as NextAction } from '@/domain/entities/momentum-next-action'
 import { Dialog } from '@/presentation/components/ui/Dialog'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { Tag } from '@/presentation/components/ui/Surface'
@@ -11,6 +13,8 @@ import { cn } from '@/shared/lib/cn'
 import { MomentumBreakdown } from './MomentumBreakdown'
 import { MomentumDrivers } from './MomentumDrivers'
 import { MomentumHistoryChart } from './MomentumHistoryChart'
+import { MomentumNextAction } from './MomentumNextAction'
+import { MomentumRules } from './MomentumRules'
 
 /**
  * "Entender meu score", inteiro.
@@ -26,6 +30,7 @@ export function MomentumDialog({
   history,
   today,
   recommendation,
+  nextAction = null,
   onClose,
 }: {
   readonly open: boolean
@@ -33,8 +38,11 @@ export function MomentumDialog({
   readonly history: readonly MomentumPoint[]
   readonly today: DayKey
   readonly recommendation: string
+  /** A ação que mais sobe o número hoje. Null quando não há nada em aberto. */
+  readonly nextAction?: NextAction | null
   readonly onClose: () => void
 }) {
+  const held = heldBackNote(momentum)
   const tone =
     momentum.level === 'avancando'
       ? 'positive'
@@ -84,6 +92,14 @@ export function MomentumDialog({
           </section>
         ) : null}
 
+        {held ? (
+          <p role="status" className="text-xs text-pretty text-ink-faint">
+            {held}
+          </p>
+        ) : null}
+
+        <MomentumNextAction action={nextAction} />
+
         <MomentumDrivers drivers={momentum.drivers} hasEnoughData={momentum.hasEnoughData} />
 
         <section aria-labelledby="momentum-fatores">
@@ -97,6 +113,8 @@ export function MomentumDialog({
           <Icon name="raio" className="mt-0.5 size-4 shrink-0 text-brand-ink" />
           <span>{recommendation}</span>
         </p>
+
+        <MomentumRules />
       </div>
     </Dialog>
   )

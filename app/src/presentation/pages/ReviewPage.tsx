@@ -36,6 +36,7 @@ import { toUserMessage } from '@/shared/errors'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { ShareButton } from '@/presentation/share/ShareButton'
 import { useDashboard } from '@/presentation/planner/use-dashboard'
+import { useMomentumInput } from '@/presentation/planner/use-momentum-input'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 import { PageHeader } from './PageHeader'
@@ -55,6 +56,7 @@ export function ReviewPage() {
   const { user } = useAuth()
   const planner = usePlanner()
   const dashboard = useDashboard()
+  const momentumInput = useMomentumInput()
 
   const weekStart = reviewWeekStart(planner.today)
 
@@ -74,17 +76,16 @@ export function ReviewPage() {
    * diria "24 a 30" enquanto os números seriam de "23 a 29".
    */
   const computed = useMemo<WeekReview>(() => {
+    // A MESMA entrada do Momentum do dashboard (descanso planejado e avanço
+    // do plano inclusos), com a janela terminando no domingo revisado.
     const input: ReviewInput = {
-      activities: planner.activities,
-      habits: planner.habits,
-      habitLogs: planner.habitLogs,
-      tasks: planner.tasks,
+      ...momentumInput,
       checkIns: planner.checkIns,
       objectives: planner.objectiveProgress,
       today: addDays(weekStart, 6),
     }
     return reviewWeek(input)
-  }, [planner, weekStart])
+  }, [momentumInput, planner.checkIns, planner.objectiveProgress, weekStart])
 
   const [step, setStep] = useState<ReviewStep>(stored.lastStep)
   const [showHistory, setShowHistory] = useState(false)
@@ -345,7 +346,18 @@ function SummaryStep({ review }: { readonly review: WeekReview }) {
     <div className="flex flex-col gap-4">
       <p className="text-pretty text-base text-ink">{review.headline}</p>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <Figure
+          label="Momentum"
+          value={`${review.momentum.value}`}
+          hint={
+            review.momentum.hasEnoughData
+              ? review.momentum.delta === 0
+                ? 'igual à anterior'
+                : `${review.momentum.delta > 0 ? '+' : ''}${review.momentum.delta} vs. anterior`
+              : 'se formando'
+          }
+        />
         <Figure label="Execução" value={percent(review.execution.rate)} />
         <Figure label="Dias ativos" value={`${review.activeDays}/7`} />
         <Figure
@@ -360,6 +372,7 @@ function SummaryStep({ review }: { readonly review: WeekReview }) {
 
       <p className="text-xs text-ink-faint">
         Semana de {weekRangeLabel(review.start, review.end)}
+        {review.momentum.hasEnoughData ? ` · ${review.momentum.headline}` : ''}
       </p>
 
       {review.gained.length > 0 ? (
@@ -737,11 +750,20 @@ function Entry({ label, value }: { readonly label: string; readonly value: strin
   )
 }
 
-function Figure({ label, value }: { readonly label: string; readonly value: string }) {
+function Figure({
+  label,
+  value,
+  hint,
+}: {
+  readonly label: string
+  readonly value: string
+  readonly hint?: string
+}) {
   return (
     <div className="rounded-lg border border-line bg-surface-hi px-3 py-2.5">
       <p className="text-xs text-ink-faint">{label}</p>
       <p className="tabular mt-0.5 text-lg font-semibold text-ink">{value}</p>
+      {hint ? <p className="text-xs text-ink-faint">{hint}</p> : null}
     </div>
   )
 }

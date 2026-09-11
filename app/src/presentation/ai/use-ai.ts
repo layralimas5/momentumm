@@ -91,6 +91,7 @@ export function useAi() {
         today: planner.today,
         momentum: progress.momentum,
         factors: progress.factors,
+        nextAction: progress.nextAction,
         streak: planner.streak,
         checkIns: planner.checkIns,
         objectives: progress.objectives,

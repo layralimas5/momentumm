@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { DayKey } from '@/domain/entities/day'
 import { DAY_PARTS, HABIT_FREQUENCIES, HABIT_ICONS } from '@/domain/entities/habit'
+import { MOMENTUM_RULES } from '@/domain/entities/momentum'
 import { PRIORITIES } from '@/domain/entities/priority'
 import { TASK_EFFORTS } from '@/domain/entities/task'
 import type { AiUserContext } from './ai-context'
@@ -122,6 +123,8 @@ Regras que não se negociam:
 - Um objetivo tem um caminho de 3 a 5 etapas, cada uma com peso em porcentagem do total. Ação pertence a uma etapa. Hábito sustenta o objetivo inteiro.
 - Previsão é sempre condicional ("mantendo esse ritmo"). Nunca prometa data.
 - Nunca compare a pessoa com outras pessoas.
+- O Momentum Score é calculado pelo app, nunca por você. Ao explicá-lo, use só as regras abaixo e os números do contexto. Não invente fator, peso nem regra.
+${MOMENTUM_RULES.map((rule) => `  - ${rule.title}: ${rule.detail}`).join('\n')}
 - Devolva só o formato pedido, sem texto fora dele.`
 
 /** O contexto vira texto compacto, seção por seção. Só o que existe aparece. */
@@ -141,6 +144,23 @@ export function renderContext(context: AiUserContext): string {
       )
       .join('; ')}`,
   )
+  if (context.momentum.rawValue !== context.momentum.value) {
+    push(
+      `Momentum bruto (sem o limite diário): ${context.momentum.rawValue}/100 — o exibido ainda vai ${context.momentum.rawValue > context.momentum.value ? 'subir' : 'cair'} até lá`,
+    )
+  }
+  if (context.momentum.drivers.length > 0) {
+    push(
+      `O que mudou vs semana anterior: ${context.momentum.drivers
+        .map((driver) => `${driver.label} ${signed(driver.delta)}`)
+        .join('; ')}`,
+    )
+  }
+  if (context.momentum.nextAction) {
+    push(
+      `Próxima ação com mais potencial: "${context.momentum.nextAction.title}" (${signed(context.momentum.nextAction.gain)} no score hoje) — ${context.momentum.nextAction.reason}`,
+    )
+  }
   push(
     `Constância: ${context.consistency.activeDaysLast7} dos últimos 7 dias, ${context.consistency.activeDaysLast28} dos últimos 28; sequência atual ${context.consistency.streak} (recorde ${context.consistency.streakRecord})`,
   )
