@@ -90,7 +90,13 @@ async function translate(error: unknown): Promise<Error> {
   }
 
   if (error instanceof FunctionsFetchError) {
-    return new InfrastructureError('Sem resposta da Momentumm AI.', error)
+    // Função ausente responde ao preflight sem CORS, e o navegador entrega
+    // isso como falha de rede: daqui não dá pra separar "não implantada" de
+    // "sem conexão", então a mensagem cobre as duas.
+    return new AiError(
+      'model_unavailable',
+      'Não consegui falar com a Momentumm AI. Ou ela ainda não foi configurada nesse ambiente, ou a conexão caiu.',
+    )
   }
 
   return new InfrastructureError('Falha ao chamar a Momentumm AI.', error)

@@ -33,7 +33,13 @@ export function ProgressPage() {
   const actions = useInsightActions(progress.insightContext)
   const applyAdjustment = useAsyncAction(actions.apply)
 
-  const hasData = planner.activities.length > 0 || planner.habitLogs.length > 0
+  // Ação concluída é movimento: o Momentum conta ela, então a tela que mostra
+  // o Momentum não pode dizer "nada pra medir" no dia em que a pessoa fechou
+  // a primeira prioridade da conta.
+  const hasData =
+    planner.activities.length > 0 ||
+    planner.habitLogs.length > 0 ||
+    planner.tasks.some((task) => task.status === 'feita')
 
   return (
     <div className="flex flex-col gap-5">
