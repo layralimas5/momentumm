@@ -144,26 +144,8 @@ function PlanCard({ plan, cycle }: { plan: PricingPlan; cycle: BillingCycle }) {
 
       <p className="mt-2 text-pretty text-sm text-ink-muted">{plan.description}</p>
 
-      <dl
-        className={cn(
-          'mt-5 rounded-xl border px-4 py-3',
-          plan.highlight ? 'border-brand/40 bg-canvas/40' : 'border-line bg-surface-hi/60',
-        )}
-      >
-        {plan.specs.map((spec) => (
-          <div
-            key={spec.label}
-            className="flex items-center justify-between gap-3 border-b border-line py-2 last:border-b-0"
-          >
-            <dt className="text-xs text-ink-faint">{spec.label}</dt>
-            <dd className={cn('text-right text-xs font-medium', plan.highlight ? 'text-brand-hi' : 'text-ink')}>
-              {spec.value}
-            </dd>
-          </div>
-        ))}
-      </dl>
 
-      <ul className="mt-5 flex flex-1 flex-col gap-2.5">
+      <ul className="mt-6 flex flex-1 flex-col gap-2.5 border-t border-line pt-6">
         {plan.features.map((feature) => (
           <li key={feature} className="flex gap-2.5 text-sm text-ink-muted">
             <CheckIcon />

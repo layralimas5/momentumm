@@ -1,4 +1,4 @@
-import { formatLimit, PLAN_LIMITS } from '@/domain/entities/plan'
+import { PLAN_LIMITS } from '@/domain/entities/plan'
 
 /**
  * Os planos da landing.
@@ -15,11 +15,6 @@ import { formatLimit, PLAN_LIMITS } from '@/domain/entities/plan'
 
 export type BillingCycle = 'mensal' | 'anual'
 
-export interface SpecRow {
-  readonly label: string
-  readonly value: string
-}
-
 export interface Price {
   readonly amount: string
   readonly period: string
@@ -34,7 +29,6 @@ export interface PricingPlan {
   readonly headline: string
   readonly prices: Readonly<Record<BillingCycle, Price>>
   readonly description: string
-  readonly specs: readonly SpecRow[]
   readonly features: readonly string[]
   readonly cta: string
   readonly highlight?: boolean
@@ -45,12 +39,6 @@ const pro = PLAN_LIMITS.pro
 
 function plural(count: number, singular: string, pluralForm: string): string {
   return `${count} ${count === 1 ? singular : pluralForm}`
-}
-
-/** `formatLimit` devolve "ilimitado" em minúscula; a tabela de specs é título. */
-function limitLabel(max: number): string {
-  const label = formatLimit(max)
-  return label.charAt(0).toUpperCase() + label.slice(1)
 }
 
 function focusLabel(durations: readonly number[]): string {
@@ -77,13 +65,10 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
     prices: { mensal: FREE_PRICE, anual: FREE_PRICE },
     description:
       'Tudo que faz o método funcionar. Os limites são de quantidade e profundidade, nunca de acesso a uma tela.',
-    specs: [
-      { label: 'Objetivos ativos', value: limitLabel(free.activeGoals) },
-      { label: 'Hábitos ativos', value: limitLabel(free.activeHabits) },
-      { label: 'Histórico', value: `${free.historyDays} dias` },
-    ],
     features: [
       ...CORE_FEATURES,
+      `Até ${plural(free.activeGoals, 'objetivo ativo', 'objetivos ativos')} e ${plural(free.activeHabits, 'hábito ativo', 'hábitos ativos')}`,
+      `Histórico dos últimos ${free.historyDays} dias`,
       `${plural(free.insightsPerDay, 'leitura do ritmo', 'leituras do ritmo')} por dia`,
       `Sessões de foco de ${focusLabel(free.focusDurations)}`,
     ],
@@ -105,11 +90,6 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
     },
     description:
       'Sem limite de objetivos e hábitos, histórico completo e as análises que só fazem sentido com mais dados.',
-    specs: [
-      { label: 'Objetivos ativos', value: limitLabel(pro.activeGoals) },
-      { label: 'Hábitos ativos', value: limitLabel(pro.activeHabits) },
-      { label: 'Histórico', value: 'Completo' },
-    ],
     features: [
       'Tudo do gratuito',
       'Objetivos e hábitos ilimitados',

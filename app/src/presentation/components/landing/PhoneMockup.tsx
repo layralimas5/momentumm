@@ -24,7 +24,7 @@ export function PhoneMockup({
     <div
       aria-hidden="true"
       className={cn(
-        'relative mx-auto w-full max-w-[250px] rounded-[2.5rem] border border-line-hi bg-surface p-2.5 shadow-2xl shadow-black/40 sm:max-w-[290px]',
+        'relative mx-auto w-full max-w-[300px] rounded-[2.5rem] border border-line-hi bg-surface p-2.5 shadow-2xl shadow-black/40',
         className,
       )}
     >
@@ -32,7 +32,7 @@ export function PhoneMockup({
       <div
         className={cn(
           'overflow-hidden rounded-[2rem] bg-canvas px-3.5 pb-4 pt-10',
-          tall ? 'h-[520px] sm:h-[600px]' : 'h-[440px] sm:h-[540px]',
+          tall ? 'h-[600px]' : 'h-[540px]',
         )}
       >
         {children}

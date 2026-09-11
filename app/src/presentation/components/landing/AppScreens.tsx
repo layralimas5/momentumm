@@ -301,9 +301,9 @@ function Factor({ label, weight, value }: { label: string; weight: string; value
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <MockCard className="p-2.5">
+    <MockCard className="min-w-0 p-2">
       <p className="text-[10px] text-ink-faint">{label}</p>
-      <p className="tabular mt-0.5 text-sm font-semibold text-ink">{value}</p>
+      <p className="tabular mt-0.5 text-sm font-semibold leading-tight text-ink">{value}</p>
     </MockCard>
   )
 }
@@ -385,7 +385,7 @@ export function AdaptiveDayScreen() {
           <Verdict label="Tabela de resultados" verdict="Fica pra depois" detail="Segunda, dia mais vazio" tone="neutral" />
         </ul>
 
-        <div className="mt-3 flex items-center gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5">
           <span className="whitespace-nowrap rounded-lg bg-brand px-2.5 py-1 text-[11px] font-medium text-white">
             Confirmar 3 mudanças
           </span>
