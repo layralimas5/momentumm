@@ -13,6 +13,8 @@ import { StreakCard } from '@/presentation/components/activity/StreakCard'
 import { Stat, StatGrid } from '@/presentation/components/ui/Stat'
 import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { useIsDesktop } from '@/presentation/hooks/use-media-query'
+import { withinHistory } from '@/domain/entities/plan-usage'
+import { UpgradeHint } from '@/presentation/components/dashboard/UpgradeHint'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 import { PageHeader } from './PageHeader'
@@ -30,14 +32,22 @@ type Filter = ActivityTypeSlug | 'todos'
  * histórico, ela simplesmente não é vista.
  */
 export function ActivitiesPage() {
-  const { activities, today, loading, error, removeActivity, streak, logActivity, axes } =
+  const { activities, today, loading, error, removeActivity, streak, logActivity, axes, limits } =
     usePlanner()
   const [filter, setFilter] = useState<Filter>('todos')
   const isDesktop = useIsDesktop()
 
+  // O histórico do plano corta a LISTA, não a memória: sequência, momentum e
+  // metas continuam lendo tudo. O que sai da tela volta no PRO.
+  const reachable = useMemo(
+    () => withinHistory(activities, limits, today, (activity) => activity.day),
+    [activities, limits, today],
+  )
+  const outOfReach = activities.length - reachable.length
+
   const filtered = useMemo(
-    () => (filter === 'todos' ? activities : activities.filter((item) => item.type === filter)),
-    [activities, filter],
+    () => (filter === 'todos' ? reachable : reachable.filter((item) => item.type === filter)),
+    [reachable, filter],
   )
 
   const days = useMemo(() => {
@@ -92,6 +102,12 @@ export function ActivitiesPage() {
           ) : (
             <>
               <Summary activities={filtered} days={days.length} />
+
+              {outOfReach > 0 ? (
+                <UpgradeHint
+                  message={`${outOfReach} ${outOfReach === 1 ? 'registro anterior ficou' : 'registros anteriores ficaram'} fora dos últimos ${limits.historyDays} dias do plano gratuito. Nada foi apagado.`}
+                />
+              ) : null}
 
               {/* Cada dia é um bloco fechado, então duas colunas no desktop não quebram a leitura. */}
               <div className="grid gap-4 2xl:grid-cols-2 2xl:items-start">

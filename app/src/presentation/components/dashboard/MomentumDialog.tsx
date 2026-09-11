@@ -11,6 +11,7 @@ import { cn } from '@/shared/lib/cn'
 import { MomentumBreakdown } from './MomentumBreakdown'
 import { MomentumDrivers } from './MomentumDrivers'
 import { MomentumHistoryChart } from './MomentumHistoryChart'
+import { UpgradeHint } from './UpgradeHint'
 
 /**
  * "Entender meu score", inteiro.
@@ -19,6 +20,10 @@ import { MomentumHistoryChart } from './MomentumHistoryChart'
  * mandar a pessoa pra outra rota faria ela perder o dia de vista pra ler sobre
  * ele. O mesmo componente serve desktop e celular — o `Dialog` já sobe como
  * folha embaixo em tela estreita e centraliza em tela larga.
+ *
+ * Sem `detail` (o gratuito), o diálogo mostra a pontuação de hoje e a frase
+ * que a explica, e para aí: evolução, o que subiu e caiu e os quatro fatores
+ * são a parte de ANALISAR, que é o que o PRO libera.
  */
 export function MomentumDialog({
   open,
@@ -26,6 +31,7 @@ export function MomentumDialog({
   history,
   today,
   recommendation,
+  detail,
   onClose,
 }: {
   readonly open: boolean
@@ -33,6 +39,8 @@ export function MomentumDialog({
   readonly history: readonly MomentumPoint[]
   readonly today: DayKey
   readonly recommendation: string
+  /** Evolução, o que mudou e os quatro fatores. Falso no gratuito. */
+  readonly detail: boolean
   readonly onClose: () => void
 }) {
   const tone =
@@ -46,7 +54,11 @@ export function MomentumDialog({
     <Dialog
       open={open}
       title="Entender meu score"
-      description="De onde vieram os pontos, e o que mexeu neles desde a semana passada."
+      description={
+        detail
+          ? 'De onde vieram os pontos, e o que mexeu neles desde a semana passada.'
+          : 'A tua pontuação de hoje, calculada com os teus registros reais.'
+      }
       size="lg"
       onClose={onClose}
     >
@@ -58,7 +70,7 @@ export function MomentumDialog({
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <Tag tone={tone}>{MOMENTUM_LEVEL_LABELS[momentum.level]}</Tag>
-              <Delta delta={momentum.delta} hasHistory={momentum.hasEnoughData} />
+              {detail ? <Delta delta={momentum.delta} hasHistory={momentum.hasEnoughData} /> : null}
             </div>
             <p className="mt-1.5 text-sm text-pretty text-ink-muted">{momentum.headline}</p>
           </div>
@@ -74,24 +86,30 @@ export function MomentumDialog({
           </p>
         )}
 
-        {/* Curva reta no zero não é informação: some até existir o que mostrar. */}
-        {history.length > 1 && history.some((point) => point.value > 0) ? (
-          <section aria-labelledby="momentum-historico">
-            <h3 id="momentum-historico" className="text-xs font-semibold tracking-wide text-ink-muted uppercase">
-              Evolução
-            </h3>
-            <MomentumHistoryChart history={history} today={today} className="mt-2" />
-          </section>
-        ) : null}
+        {detail ? (
+          <>
+            {/* Curva reta no zero não é informação: some até existir o que mostrar. */}
+            {history.length > 1 && history.some((point) => point.value > 0) ? (
+              <section aria-labelledby="momentum-historico">
+                <h3 id="momentum-historico" className="text-xs font-semibold tracking-wide text-ink-muted uppercase">
+                  Evolução
+                </h3>
+                <MomentumHistoryChart history={history} today={today} className="mt-2" />
+              </section>
+            ) : null}
 
-        <MomentumDrivers drivers={momentum.drivers} hasEnoughData={momentum.hasEnoughData} />
+            <MomentumDrivers drivers={momentum.drivers} hasEnoughData={momentum.hasEnoughData} />
 
-        <section aria-labelledby="momentum-fatores">
-          <h3 id="momentum-fatores" className="text-xs font-semibold tracking-wide text-ink-muted uppercase">
-            Os quatro fatores
-          </h3>
-          <MomentumBreakdown momentum={momentum} className="mt-3" />
-        </section>
+            <section aria-labelledby="momentum-fatores">
+              <h3 id="momentum-fatores" className="text-xs font-semibold tracking-wide text-ink-muted uppercase">
+                Os quatro fatores
+              </h3>
+              <MomentumBreakdown momentum={momentum} className="mt-3" />
+            </section>
+          </>
+        ) : (
+          <UpgradeHint message="No PRO o score abre em evolução, o que subiu e caiu desde a semana passada e os quatro fatores que o formam." />
+        )}
 
         <p className="flex items-start gap-2 rounded-card border border-brand/25 bg-brand-dim/30 px-4 py-3 text-sm text-pretty text-ink">
           <Icon name="raio" className="mt-0.5 size-4 shrink-0 text-brand-ink" />

@@ -4,10 +4,14 @@ import { PLAN_LIMITS } from '@/domain/entities/plan'
  * Os planos da landing.
  *
  * Os LIMITES vêm do domínio (`PLAN_LIMITS`): quantos objetivos, hábitos,
- * dias de histórico e leituras por dia cada plano guarda. Copiar o número
+ * planos, ações por dia e dias de histórico cada plano guarda. Copiar o número
  * aqui faria a landing prometer 5 hábitos no dia em que o app passasse a
  * guardar 3. O que mora neste arquivo é só o que o domínio não sabe: preço,
- * texto e o que o PRO acrescenta além dos limites.
+ * texto e a frase de cada plano.
+ *
+ * A separação é uma frase: o gratuito ORGANIZA E EXECUTA, o PRO REGISTRA,
+ * ANALISA E EVOLUI. A tabela completa (`planMatrix`) fica logo abaixo dos
+ * cards; aqui entram só os pontos que decidem.
  *
  * O PRO é um plano só com dois ciclos de cobrança. Dois cards pro mesmo
  * produto dividiam a atenção e escondiam o desconto do anual.
@@ -35,25 +39,10 @@ export interface PricingPlan {
 }
 
 const free = PLAN_LIMITS.free
-const pro = PLAN_LIMITS.pro
 
 function plural(count: number, singular: string, pluralForm: string): string {
   return `${count} ${count === 1 ? singular : pluralForm}`
 }
-
-function focusLabel(durations: readonly number[]): string {
-  return `${durations.join(', ')} min`
-}
-
-/** O que o ciclo inteiro entrega em qualquer plano. O PRO não libera o básico. */
-const CORE_FEATURES = [
-  'Objetivo, plano por etapas, dia e review semanal',
-  'Momentum Score com os quatro fatores',
-  'Check-in, prioridade principal e versão mínima',
-  'Dia Adaptável e Modo Retomada',
-  'Momentumm AI pra montar o plano e ler o progresso',
-  'Círculo de amigos e desafios, privado por padrão',
-] as const
 
 const FREE_PRICE: Price = { amount: 'R$ 0', period: 'para sempre' }
 
@@ -61,23 +50,26 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
   {
     id: 'free',
     badge: 'Grátis',
-    headline: 'O ciclo inteiro, sem cartão',
+    headline: 'Organize e execute',
     prices: { mensal: FREE_PRICE, anual: FREE_PRICE },
     description:
-      'Tudo que faz o método funcionar. Os limites são de quantidade e profundidade, nunca de acesso a uma tela.',
+      'Cria o objetivo, organiza os hábitos, acompanha as ações do dia e vê o teu Momentum Score de hoje. É o ciclo rodando, sem cartão.',
     features: [
-      ...CORE_FEATURES,
-      `Até ${plural(free.activeGoals, 'objetivo ativo', 'objetivos ativos')} e ${plural(free.activeHabits, 'hábito ativo', 'hábitos ativos')}`,
+      `Até ${plural(free.activeObjectives, 'objetivo ativo', 'objetivos ativos')} e ${plural(free.activeHabits, 'hábito ativo', 'hábitos ativos')}`,
+      `${plural(free.activePlans, 'plano ativo', 'planos ativos')} por etapas`,
+      `Até ${free.actionsPerDay} ações por dia no Hoje`,
       `Histórico dos últimos ${free.historyDays} dias`,
-      `${plural(free.insightsPerDay, 'leitura do ritmo', 'leituras do ritmo')} por dia`,
-      `Sessões de foco de ${focusLabel(free.focusDurations)}`,
+      'Momentum Score de hoje',
+      'Check-in semanal manual',
+      'Dia Adaptável e Modo Retomada',
+      'Círculo de amigos e desafios, privado por padrão',
     ],
     cta: 'Começar grátis',
   },
   {
     id: 'pro',
     badge: 'PRO',
-    headline: 'Profundidade pra quem já está no ritmo',
+    headline: 'Registre, analise e evolua',
     prices: {
       mensal: { amount: 'R$ 29,90', period: '/mês', strike: 'R$ 79,90' },
       anual: {
@@ -89,17 +81,18 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
       },
     },
     description:
-      'Sem limite de objetivos e hábitos, histórico completo e as análises que só fazem sentido com mais dados.',
+      'Entender os próprios padrões, registrar a jornada, ver as métricas e ajustar o plano com a leitura da IA. É a proposta inteira do Momentumm.',
     features: [
-      'Tudo do gratuito',
-      'Objetivos e hábitos ilimitados',
+      'Tudo do gratuito, sem limite de quantidade',
       'Histórico completo',
-      'Leituras do ritmo sem limite diário',
-      `Sessões de foco de ${focusLabel(pro.focusDurations)}`,
-      'Análise semanal completa, com comparação e leitura por horário',
-      'Relatório mensal',
-      'Recomendações adaptativas ao seu ritmo',
-      'Suporte por e-mail',
+      'Momentum Score com evolução e detalhamento',
+      'Review semanal cruzando os teus dados reais',
+      'Momentumm AI com franquia mensal',
+      'Métricas detalhadas e relatórios semanais e mensais',
+      'Registros em texto, foto e voz',
+      'Análises de IA: padrões, gargalos e recomendações',
+      'Compartilhamento com todos os modelos e exportação de dados',
+      'Lembretes personalizados, temas e preferências',
     ],
     cta: 'Começar com PRO',
     highlight: true,

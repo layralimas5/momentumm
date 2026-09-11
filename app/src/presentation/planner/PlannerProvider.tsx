@@ -29,6 +29,15 @@ import {
   type NewJourneyEventInput,
 } from '@/domain/entities/journey-event'
 import { limitsOf } from '@/domain/entities/plan'
+import {
+  actionsLimit,
+  assertWithinLimit,
+  habitLimit,
+  hasPlan,
+  objectiveLimit,
+  planLimit,
+  planUsageOf,
+} from '@/domain/entities/plan-usage'
 import { planProgressOf } from '@/domain/entities/plan-progress'
 import {
   assertStageBelongsTo,
@@ -109,6 +118,8 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
 
   // Recalculado a cada render: o app aberto virando o dia acompanha a data.
   const today = dayKeyOf(new Date())
+
+  const limits = useMemo(() => limitsOf(profile?.plan ?? 'free'), [profile])
 
   useEffect(() => {
     mounted.current = true
@@ -270,12 +281,13 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   const createObjective = useCallback(
     async (input: Omit<NewObjectiveInput, 'userId'>): Promise<Objective | null> => {
       if (!user) return null
+      assertWithinLimit('Objetivos ativos', objectiveLimit(limits, snapshot.current.objectives))
       const objective = await container.objectives.create({ userId: user.id, ...input })
       setData((current) => ({ ...current, objectives: [...current.objectives, objective] }))
       setError(null)
       return objective
     },
-    [user],
+    [user, limits],
   )
 
   const updateObjective = useCallback(
@@ -454,6 +466,14 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     async (input: Omit<NewPlanStageInput, 'userId'>): Promise<PlanStage | null> => {
       if (!user) return null
 
+      // Só a PRIMEIRA etapa abre um plano novo; as seguintes moram no mesmo.
+      if (!hasPlan(snapshot.current.planStages, input.objectiveId)) {
+        assertWithinLimit(
+          'Planos ativos',
+          planLimit(limits, snapshot.current.objectives, snapshot.current.planStages),
+        )
+      }
+
       const siblings = stagesOfObjective(snapshot.current.planStages, input.objectiveId)
       const created = await container.planStages.create({
         userId: user.id,
@@ -494,7 +514,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       setError(null)
       return result
     },
-    [user],
+    [user, limits],
   )
 
   const updateStage = useCallback(
@@ -673,13 +693,14 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   const createHabit = useCallback(
     async (input: Omit<NewHabitInput, 'userId'>): Promise<Habit | null> => {
       if (!user) return null
+      assertWithinLimit('Hábitos ativos', habitLimit(limits, snapshot.current.habits))
       const link = resolveStage(input.objectiveId, input.stageId)
       const habit = await container.habits.create({ userId: user.id, ...input, ...link })
       setData((current) => ({ ...current, habits: [...current.habits, habit] }))
       setError(null)
       return habit
     },
-    [user, resolveStage],
+    [user, limits, resolveStage],
   )
 
   const updateHabit = useCallback(
@@ -758,6 +779,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   const createTask = useCallback(
     async (input: Omit<NewTaskInput, 'userId'>): Promise<Task | null> => {
       if (!user) return null
+      assertWithinLimit('Ações no dia', actionsLimit(limits, snapshot.current.tasks, input.day))
       const link = resolveStage(input.objectiveId, input.stageId)
       const task = await container.tasks.create({ userId: user.id, ...input, ...link })
       setData((current) => ({
@@ -774,7 +796,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       setError(null)
       return task
     },
-    [user, resolveStage],
+    [user, limits, resolveStage],
   )
 
   const updateTask = useCallback(
@@ -971,8 +993,16 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
           as regras de insight que leem etapa ficariam todas de fora — no
           objetivo recém-criado, que é justamente onde o plano importa mais.
         */
+        /*
+          No gratuito só um objetivo carrega plano por etapas. Passado esse
+          limite o objetivo nasce sem etapas, e é a tela que avisa antes: um
+          objetivo que mede volume é melhor que um plano gravado pela metade.
+        */
         const stageIds: (string | null)[] = []
-        if (objective) {
+        const canPlan =
+          objective !== null &&
+          !planLimit(limits, snapshot.current.objectives, snapshot.current.planStages).reached
+        if (objective && canPlan) {
           for (const [index, stage] of plan.stages.entries()) {
             const created = await createStage({
               objectiveId: objective.id,
@@ -1006,7 +1036,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         }
       }
     },
-    [user, createObjective, createGoal, createStage, createHabit, createTask],
+    [user, limits, createObjective, createGoal, createStage, createHabit, createTask],
   )
 
   const todayActivities = useMemo(
@@ -1057,7 +1087,12 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     [data.objectives, data.planStages, data.tasks, data.habits, today],
   )
 
-  const limits = useMemo(() => limitsOf(profile?.plan ?? 'free'), [profile])
+  /**
+   * Os limites do plano contados sobre o estado atual. As telas leem daqui
+   * pra desabilitar o botão antes; as criações abaixo recusam mesmo assim,
+   * porque o botão não é a única porta (onboarding, IA, atalho).
+   */
+  const usage = useMemo(() => planUsageOf(limits, data), [limits, data])
 
   const isNewUser =
     !loading &&
@@ -1089,6 +1124,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       journeyEvents: data.journeyEvents,
       streak,
       limits,
+      usage,
       loading,
       error,
       online,
@@ -1136,6 +1172,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       plans,
       streak,
       limits,
+      usage,
       loading,
       error,
       online,

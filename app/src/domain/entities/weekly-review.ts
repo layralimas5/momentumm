@@ -98,6 +98,64 @@ export const REVIEW_STEP_META: readonly ReviewStepMeta[] = [
 export const MAX_REVIEW_ANSWER = 600
 export const MAX_PRIORITIES = 3
 
+/**
+ * O check-in do gratuito: quatro perguntas, respondidas de memória.
+ *
+ * O review completo cruza os dados reais da semana (execução, pendências,
+ * hábitos, a recomendação) e isso é analisar — o PRO. O gratuito não perde a
+ * pausa semanal, perde a leitura automática: as perguntas guardam nos mesmos
+ * campos, então quem passa pro PRO reencontra o que escreveu no lugar certo.
+ */
+export const BASIC_REVIEW_STEPS = [
+  'aprendizados',
+  'conquistas',
+  'dificuldades',
+  'prioridades',
+] as const satisfies readonly ReviewStep[]
+
+export const BASIC_REVIEW_STEP_META: readonly ReviewStepMeta[] = [
+  {
+    key: 'aprendizados',
+    title: 'A semana',
+    question: 'Como foi sua semana?',
+    placeholder: 'Corrida, mas consegui manter o essencial.',
+    readOnly: false,
+  },
+  {
+    key: 'conquistas',
+    title: 'O que funcionou',
+    question: 'O que funcionou?',
+    placeholder: 'Estudar antes do trabalho segurou a semana.',
+    readOnly: false,
+  },
+  {
+    key: 'dificuldades',
+    title: 'O que dificultou',
+    question: 'O que dificultou sua constância?',
+    placeholder: 'Reuniões no fim da tarde comeram o horário de estudo.',
+    readOnly: false,
+  },
+  {
+    key: 'prioridades',
+    title: 'Próxima semana',
+    question: 'Qual será seu foco na próxima semana?',
+    placeholder: 'Terminar o capítulo 5.',
+    readOnly: false,
+  },
+]
+
+/** Quanto do check-in básico já foi respondido, de 0 a 1. */
+export function basicReviewProgress(review: WeeklyReview): number {
+  const answered = [
+    review.learnings,
+    review.achievements,
+    review.difficulties,
+    review.priorities.length > 0 ? 'x' : null,
+  ].filter(Boolean).length
+
+  return answered / BASIC_REVIEW_STEPS.length
+}
+
 export interface WeeklyReview {
   readonly id: string
   readonly userId: string

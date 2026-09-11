@@ -63,7 +63,7 @@ que existir base. Feed vazio afasta usuário.
 Fase 1 em pé, em `app/`. Roda em **modo demo** sem configurar nada (dados em
 `localStorage`) e vira contas reais ao preencher `.env.local` com o Supabase.
 
-Pronto: domínio completo com 605 testes, migrations com RLS até a 0011, repositórios demo e
+Pronto: domínio completo com 622 testes, migrations com RLS até a 0011, repositórios demo e
 Supabase, auth com rota protegida, registro rápido, cronômetro de sessão, streak
 dos últimos 7 dias, histórico com filtro por eixo, metas com progresso e perfil
 editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
@@ -91,8 +91,20 @@ Entidades novas (`app/src/domain/entities/`):
 - `insight` — regras determinísticas sobre os dados reais. Sem padrão detectado
   não há insight: nada de frase motivacional genérica
 - `win` — uma vitória por dia
-- `plan` — limites de `free` e `pro`. O PRO amplia profundidade, **nunca**
-  libera o básico: o dashboard não é bloqueado por banner
+- `plan` — a matriz de `free` e `pro`, numa frase: **o gratuito organiza e
+  executa, o PRO registra, analisa e evolui**. Gratuito: 2 objetivos, 5
+  hábitos, 1 plano por etapas, 5 ações por dia, 15 dias de histórico, só a
+  pontuação de hoje do Momentum, check-in semanal manual de quatro perguntas
+  (`BASIC_REVIEW_STEPS`), 1 modelo de card. PRO: sem limites, evolução e
+  detalhamento do score, review cruzando os dados, Momentumm AI, métricas,
+  relatórios, registros em texto/foto/voz, análises, personalização.
+  `planMatrix()` gera a tabela da landing a partir dos mesmos números.
+  `plan-usage` conta o uso sobre o estado (`planUsageOf`) e o
+  `PlannerProvider` recusa a criação que passa do limite (`PlanLimitError`);
+  as telas leem `planner.usage` pra desabilitar e explicar antes. O dashboard
+  continua sem banner: limite aparece onde encosta (`UpgradeHint`,
+  `PlanLimitDialog` na porta do Composer) e recurso sem versão menor mostra
+  o `ProGate` (IA, métricas, leituras do ritmo)
 
 Estado único em `presentation/planner/PlannerProvider` (carrega tudo de uma vez,
 escritas otimistas). A sessão de foco vive em `presentation/focus/FocusProvider`
@@ -855,7 +867,7 @@ decidir e começar, e a análise vem depois.
   o `index.html` usa `viewport-fit=cover`
 - Botão flutuante aparece só quando o card que oferece a mesma ação saiu da
   tela (IntersectionObserver), nunca competindo com a barra de baixo
-- Limite de plano vira `ProSheet` contextual, jamais pop-up ao abrir o app
+- Limite de plano vira `PlanLimitDialog` contextual (o `Dialog` sobe como folha no celular), jamais pop-up ao abrir o app
 
 O cronômetro guarda a sessão no `localStorage` (`momentumm.timer.v1`), sobrevive a
 recarregar a página e calcula o tempo por timestamp, nunca por contador de tique.
@@ -875,6 +887,6 @@ Quando incomodar, trocar por import dinâmico dentro do `container`.
 cd app
 npm install
 npm run dev     # modo demo, sem configurar nada
-npm test        # 605 testes
+npm test        # 622 testes
 npm run build
 ```

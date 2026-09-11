@@ -328,6 +328,7 @@ export function DashboardPage() {
           today={planner.today}
           streak={planner.streak}
           recommendation={view.recommendation}
+          detail={planner.limits.momentumDetail}
         />
 
         {view.dayComplete ? <DayCompleteBanner win={view.todayWin} /> : null}
@@ -459,6 +460,7 @@ export function DashboardPage() {
             <CheckInCard
               checkIn={view.checkIn}
               capacity={view.capacity}
+              textLogs={planner.limits.textLogs}
               onSave={(input) => planner.saveCheckIn({ ...input, day: planner.today })}
             />
           </Section>
@@ -470,7 +472,6 @@ export function DashboardPage() {
               task={view.mainPriority}
               capacity={view.capacity}
               minutesToday={view.focusMinutesToday}
-              limits={planner.limits}
             />
           </Section>
 

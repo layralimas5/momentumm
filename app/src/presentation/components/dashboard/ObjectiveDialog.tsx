@@ -10,6 +10,7 @@ import { useJourneyDraft } from '@/presentation/planner/use-journey-draft'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { AxisPicker } from './AxisPicker'
 import { CombinedPlanPreview } from './CombinedPlanPreview'
+import { UpgradeHint } from './UpgradeHint'
 import { ObjectiveFields } from './ObjectiveFields'
 import { TimeBudgetFields } from './TimeBudgetFields'
 
@@ -129,6 +130,13 @@ function ObjectiveForm({ today, takenAxes, onClose, onSubmit }: Omit<ObjectiveDi
         />
       </div>
 
+      {/* Dito antes de gravar: a prévia mostra três etapas, e no gratuito só
+          um objetivo carrega plano. Descobrir isso depois do clique seria a
+          tela prometendo um caminho que o app não guardou. */}
+      {planner.usage.plans.reached ? (
+        <UpgradeHint message="Esse objetivo nasce sem etapas: o plano gratuito guarda um plano ativo por vez. O progresso dele vai medir o volume registrado." />
+      ) : null}
+
       <div aria-live="polite" className="min-h-5">
         {submit.error ? <p className="text-sm text-danger">{submit.error}</p> : null}
       </div>
@@ -139,7 +147,7 @@ function ObjectiveForm({ today, takenAxes, onClose, onSubmit }: Omit<ObjectiveDi
         </Button>
         <Button onClick={() => void submit.run()} loading={submit.running} disabled={axisTaken}>
           <Icon name="check" className="size-4" />
-          Criar objetivo e plano
+          {planner.usage.plans.reached ? 'Criar objetivo' : 'Criar objetivo e plano'}
         </Button>
       </div>
     </div>

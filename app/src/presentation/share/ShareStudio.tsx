@@ -22,6 +22,9 @@ import { ShareCompositionCarousel } from './ShareCompositionCarousel'
 import { ShareStudioControls } from './ShareStudioControls'
 import { ShareStudioPhotoPicker } from './ShareStudioPhotoPicker'
 import { ShareStudioVisibilityControls } from './ShareStudioVisibilityControls'
+import { UpgradeHint } from '@/presentation/components/dashboard/UpgradeHint'
+import { usePlanner } from '@/presentation/planner/use-planner'
+import { ShareCardPreview } from './ShareCardPreview'
 import { useSharePhoto } from './use-share-photo'
 import { trackShare } from './share-analytics'
 import {
@@ -57,6 +60,10 @@ type Status = 'idle' | 'generating' | 'shared' | 'saved' | 'cancelled'
  * opção só é uma pergunta que já tem resposta.
  */
 export function ShareStudio({ event, displayName, today, compact }: ShareStudioProps) {
+  const { limits } = usePlanner()
+  // No gratuito o card sai no modelo padrão, do jeito que nasce: cor, arranjo
+  // e o que entra no card são a personalização, e ela mora no PRO.
+  const customizable = limits.shareCustomization
   const format: ShareFormat = DEFAULT_SHARE_FORMAT
   const [template, setTemplate] = useState<ShareTemplateId>(DEFAULT_SHARE_TEMPLATE)
   const [composition, setComposition] = useState<ShareCompositionId>(DEFAULT_SHARE_COMPOSITION)
@@ -181,7 +188,7 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
 
   const busy = status === 'generating'
 
-  const preview = (
+  const preview = customizable ? (
     <ShareCompositionCarousel
       data={data}
       template={template}
@@ -191,9 +198,18 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
       onChange={chooseComposition}
       className={cn('mx-auto w-full', compact ? '' : 'max-w-md')}
     />
+  ) : (
+    <ShareCardPreview
+      data={data}
+      template={template}
+      composition={composition}
+      format={format}
+      photo={background.photo}
+      className={cn('mx-auto w-full', compact ? '' : 'max-w-md')}
+    />
   )
 
-  const options = (
+  const options = customizable ? (
     <div className="flex flex-col gap-5">
       <Field label="Fundo">
         <ShareStudioPhotoPicker state={background} />
@@ -219,6 +235,8 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
         />
       </Field>
     </div>
+  ) : (
+    <UpgradeHint message="O card sai no modelo padrão. No PRO você escolhe cor, arranjo, foto de fundo e o que aparece nele." />
   )
 
   /*

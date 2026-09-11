@@ -11,6 +11,7 @@ import {
   type TaskDraft,
 } from '@/presentation/components/dashboard/Composer'
 import { ObjectiveDialog } from '@/presentation/components/dashboard/ObjectiveDialog'
+import { PlanLimitDialog, type PlanLimitNotice } from '@/presentation/plan/PlanLimitDialog'
 import { usePlanner } from './use-planner'
 
 interface OpenOptions {
@@ -53,10 +54,39 @@ export function ComposerProvider({ children }: { children: ReactNode }) {
   const [presetObjectiveId, setPresetObjectiveId] = useState<string | null>(null)
   const [presetStageId, setPresetStageId] = useState<string | null>(null)
   const [presetDay, setPresetDay] = useState<DayKey | null>(null)
+  const [limitNotice, setLimitNotice] = useState<PlanLimitNotice | null>(null)
+
+  /*
+    O limite é checado na porta, antes do formulário abrir. Abrir, preencher e
+    só então ouvir "não cabe" é o jeito de fazer a pessoa não tentar de novo.
+    Editar nunca é barrado: o que já existe continua editável em qualquer plano.
+  */
+  const { usage, today } = planner
+  const limitFor = useCallback(
+    (nextKind: ComposerTarget, options?: OpenOptions): PlanLimitNotice | null => {
+      if (options?.editing || options?.editingHabit) return null
+      const check =
+        nextKind === 'objetivo'
+          ? { feature: 'Objetivos ativos', limit: usage.objectives }
+          : nextKind === 'habito'
+            ? { feature: 'Hábitos ativos', limit: usage.habits }
+            : nextKind === 'acao'
+              ? { feature: 'Ações no dia', limit: usage.actionsOn(options?.presetDay ?? today) }
+              : null
+      if (!check || !check.limit.reached || !check.limit.message) return null
+      return { feature: check.feature, message: check.limit.message }
+    },
+    [usage, today],
+  )
 
   const controls = useMemo<ComposerControls>(
     () => ({
       open(nextKind, options) {
+        const notice = limitFor(nextKind, options)
+        if (notice) {
+          setLimitNotice(notice)
+          return
+        }
         if (nextKind === 'objetivo') {
           setObjectiveOpen(true)
           return
@@ -75,7 +105,7 @@ export function ComposerProvider({ children }: { children: ReactNode }) {
         setObjectiveOpen(false)
       },
     }),
-    [],
+    [limitFor],
   )
 
   const submitTask = useCallback(
@@ -140,6 +170,7 @@ export function ComposerProvider({ children }: { children: ReactNode }) {
         onClose={() => setObjectiveOpen(false)}
         onSubmit={planner.applyPlan}
       />
+      <PlanLimitDialog notice={limitNotice} onClose={() => setLimitNotice(null)} />
     </ComposerContext.Provider>
   )
 }

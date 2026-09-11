@@ -1,6 +1,5 @@
 import { activityType } from '@/domain/entities/activity-type'
 import type { CapacityProfile } from '@/domain/entities/checkin'
-import type { PlanLimits } from '@/domain/entities/plan'
 import type { Task } from '@/domain/entities/task'
 import { formatElapsed } from '@/domain/entities/timer'
 import { useFocus } from '@/presentation/focus/use-focus'
@@ -13,11 +12,9 @@ interface MobileFocusProps {
   readonly task: Task | null
   readonly capacity: CapacityProfile
   readonly minutesToday: number
-  readonly limits: PlanLimits
-  readonly onNeedPro: (feature: string) => void
 }
 
-const ALL_DURATIONS = [15, 25, 45, 60] as const
+const DURATIONS = [15, 25, 45, 60] as const
 
 /**
  * Card de foco no celular.
@@ -26,13 +23,7 @@ const ALL_DURATIONS = [15, 25, 45, 60] as const
  * pela capacidade do dia, então em geral é só tocar em "Iniciar foco" — a
  * sessão em si acontece na tela imersiva, não aqui.
  */
-export function MobileFocus({
-  task,
-  capacity,
-  minutesToday,
-  limits,
-  onNeedPro,
-}: MobileFocusProps) {
+export function MobileFocus({ task, capacity, minutesToday }: MobileFocusProps) {
   const focus = useFocus()
   const session = focus.session
 
@@ -91,17 +82,14 @@ export function MobileFocus({
           aria-label="Duração da sessão"
           className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {ALL_DURATIONS.map((value) => {
-            const locked = !limits.focusDurations.includes(value)
-            const selected = value === suggested && !locked
+          {DURATIONS.map((value) => {
+            const selected = value === suggested
             return (
               <button
                 key={value}
                 type="button"
                 onClick={() =>
-                  locked
-                    ? onNeedPro(`Sessões de ${value} minutos`)
-                    : focus.start({ axis, label, plannedMin: value, taskId: task?.id ?? null })
+                  focus.start({ axis, label, plannedMin: value, taskId: task?.id ?? null })
                 }
                 className={[
                   'tabular flex min-h-12 shrink-0 items-center gap-1.5 rounded-xl border px-4 text-sm font-medium transition-colors',
@@ -111,7 +99,6 @@ export function MobileFocus({
                 ].join(' ')}
               >
                 {value} min
-                {locked ? <Icon name="raio" className="size-3.5 text-brand-hi" /> : null}
               </button>
             )
           })}

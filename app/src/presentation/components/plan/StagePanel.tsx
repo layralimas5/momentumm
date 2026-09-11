@@ -11,6 +11,7 @@ import {
   type PlanStage,
 } from '@/domain/entities/plan-stage'
 import type { Task } from '@/domain/entities/task'
+import { UpgradeHint } from '@/presentation/components/dashboard/UpgradeHint'
 import { StageStatusTag } from '@/presentation/components/shared/Meta'
 import { Button } from '@/presentation/components/ui/Button'
 import { ConfirmDialog } from '@/presentation/components/ui/ConfirmDialog'
@@ -49,6 +50,10 @@ export function StagePanel({ plan }: { readonly plan: PlanProgress }) {
   const stages = plan.stages
   const balanced = weightsAreComplete(stages.map((item) => item.stage))
 
+  // A primeira etapa abre um plano novo, e é isso que o gratuito limita. Um
+  // objetivo que já tem caminho continua ganhando etapas em qualquer plano.
+  const planBlocked = stages.length === 0 && planner.usage.plans.reached
+
   const move = (from: number, to: number) => {
     const ordered = moveItem(
       stages.map((item) => item.stage),
@@ -78,7 +83,12 @@ export function StagePanel({ plan }: { readonly plan: PlanProgress }) {
         icon="plano"
         hint="As etapas até o objetivo. O peso de cada uma é o quanto ela vale do total."
         action={
-          <Button size="sm" variant="secondary" onClick={() => setCreating(true)}>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => setCreating(true)}
+            disabled={planBlocked}
+          >
             <Icon name="mais" className="size-4" />
             Nova etapa
           </Button>
@@ -92,10 +102,17 @@ export function StagePanel({ plan }: { readonly plan: PlanProgress }) {
             Sem etapas, o progresso só consegue medir volume registrado. Quebra o objetivo em
             três a cinco pedaços e cada ação passa a empurrar um deles.
           </p>
-          <Button className="mt-4" size="sm" onClick={() => setCreating(true)}>
-            <Icon name="mais" className="size-4" />
-            Criar a primeira etapa
-          </Button>
+          {planBlocked ? (
+            <UpgradeHint
+              className="mx-auto mt-4 w-fit text-left"
+              message={planner.usage.plans.message ?? ''}
+            />
+          ) : (
+            <Button className="mt-4" size="sm" onClick={() => setCreating(true)}>
+              <Icon name="mais" className="size-4" />
+              Criar a primeira etapa
+            </Button>
+          )}
         </div>
       ) : (
         <>

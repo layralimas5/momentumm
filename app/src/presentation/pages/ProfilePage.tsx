@@ -200,10 +200,17 @@ export function ProfilePage() {
             </div>
 
             <ul className="mt-3 flex flex-col gap-1.5 text-xs text-ink-faint">
-              <li>Metas ativas: {formatLimit(limits.activeGoals)}</li>
+              <li>Objetivos ativos: {formatLimit(limits.activeObjectives)}</li>
               <li>Hábitos ativos: {formatLimit(limits.activeHabits)}</li>
-              <li>Sessões de foco: {limits.focusDurations.join(', ')} min</li>
-              <li>Insights por vez: {formatLimit(limits.insightsPerDay)}</li>
+              <li>Planos ativos: {formatLimit(limits.activePlans)}</li>
+              <li>Ações por dia: {formatLimit(limits.actionsPerDay)}</li>
+              <li>
+                Histórico:{' '}
+                {Number.isFinite(limits.historyDays) ? `últimos ${limits.historyDays} dias` : 'completo'}
+              </li>
+              <li>Momentum Score: {limits.momentumDetail ? 'evolução e detalhamento' : 'pontuação de hoje'}</li>
+              <li>Review semanal: {limits.fullReview ? 'completo' : 'check-in manual'}</li>
+              <li>Momentumm AI: {limits.ai ? 'franquia mensal' : 'não disponível'}</li>
             </ul>
 
             {isPro(profile.plan) ? null : (

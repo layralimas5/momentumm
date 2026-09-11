@@ -8,6 +8,7 @@ import {
   type BillingCycle,
   type PricingPlan,
 } from './plans'
+import { PlanMatrix } from './PlanMatrix'
 import { Reveal } from './Reveal'
 import { Section, SectionHeading } from './Section'
 import { CTA } from './site'
@@ -19,8 +20,8 @@ export function Pricing() {
     <Section id="planos" className="border-t border-line">
       <SectionHeading
         eyebrow="Planos"
-        title="O método é grátis. O PRO é profundidade."
-        description="O plano gratuito entrega o ciclo inteiro e nunca bloqueia uma tela com banner. O PRO amplia quantidade, histórico e análise pra quem já tem ritmo."
+        title="O gratuito organiza e executa. O PRO registra, analisa e evolui."
+        description="No gratuito você cria objetivo, organiza hábitos, acompanha o dia e vê o Momentum Score de hoje. O PRO libera entender os próprios padrões, registrar a jornada, ver métricas e ajustar o plano com a leitura da IA."
       />
 
       <div className="mt-10 flex justify-center">
@@ -36,6 +37,8 @@ export function Pricing() {
           </li>
         ))}
       </ul>
+
+      <PlanMatrix className="mt-10" />
 
       <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-ink-faint">{PRICING_FOOTNOTE}</p>
     </Section>

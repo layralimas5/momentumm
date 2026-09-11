@@ -17,6 +17,8 @@ interface MobileMomentumProps {
   readonly today: DayKey
   readonly streak: Streak
   readonly recommendation: string
+  /** Variação, curva e o fator que mais mexeu. No gratuito só a pontuação de hoje. */
+  readonly detail: boolean
 }
 
 /**
@@ -37,6 +39,7 @@ export function MobileMomentum({
   today,
   streak,
   recommendation,
+  detail,
 }: MobileMomentumProps) {
   const [open, setOpen] = useState(false)
 
@@ -73,15 +76,17 @@ export function MobileMomentum({
               ) : null}
             </span>
             <span className="mt-1 block text-sm text-ink-faint">
-              {!momentum.hasEnoughData
-                ? 'primeira semana de registro'
-                : momentum.delta === 0
-                  ? 'igual à semana passada'
-                  : `${momentum.delta > 0 ? '+' : '−'}${Math.abs(momentum.delta)} vs. semana passada`}
+              {!detail
+                ? 'pontuação de hoje'
+                : !momentum.hasEnoughData
+                  ? 'primeira semana de registro'
+                  : momentum.delta === 0
+                    ? 'igual à semana passada'
+                    : `${momentum.delta > 0 ? '+' : '−'}${Math.abs(momentum.delta)} vs. semana passada`}
             </span>
           </span>
 
-          <Sparkline history={history} />
+          {detail ? <Sparkline history={history} /> : null}
           <Icon name="seta" className="size-4 shrink-0 text-ink-faint" />
         </div>
 
@@ -89,7 +94,7 @@ export function MobileMomentum({
 
         {/* Um fator só: no celular, a lista inteira do que mudou vive dentro do
             diálogo. Aqui cabe o que explica a variação em uma linha. */}
-        {top && momentum.hasEnoughData ? (
+        {detail && top && momentum.hasEnoughData ? (
           <p className="mt-1.5 flex items-center gap-1.5 text-xs text-ink-faint">
             <Icon
               name={top.delta > 0 ? 'subir' : 'descer'}
@@ -112,6 +117,7 @@ export function MobileMomentum({
         history={history}
         today={today}
         recommendation={recommendation}
+        detail={detail}
         onClose={() => setOpen(false)}
       />
     </>

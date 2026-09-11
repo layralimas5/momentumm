@@ -10,13 +10,13 @@ import { Icon } from '@/presentation/components/ui/Icon'
 import { EmptyState } from '@/presentation/components/ui/States'
 import { Panel, PanelHeader, Tag } from '@/presentation/components/ui/Surface'
 import { MomentumBreakdown } from '@/presentation/components/dashboard/MomentumBreakdown'
-import { UpgradeHint } from '@/presentation/components/dashboard/UpgradeHint'
 import { WeeklyProgressCard } from '@/presentation/components/dashboard/WeeklyProgressCard'
 import { momentumEvent } from '@/domain/share/journey-event-builders'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { ShareButton } from '@/presentation/share/ShareButton'
 import { useDashboard } from '@/presentation/planner/use-dashboard'
 import { useInsightActions } from '@/presentation/planner/use-insight-actions'
+import { ProGate } from '@/presentation/plan/ProGate'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 import { PageHeader } from './PageHeader'
@@ -60,13 +60,27 @@ export function InsightsPage() {
       today: planner.today,
       objectives,
     }
-    const all = generateInsights(input)
-    return planner.limits.insightsPerDay === Number.POSITIVE_INFINITY
-      ? all
-      : all.slice(0, planner.limits.insightsPerDay)
+    return generateInsights(input)
   }, [planner, view.momentum, view.capacity, objectives])
 
   const total = insights.length
+
+  // As leituras cruzam padrões do histórico inteiro: é análise, e análise é o
+  // PRO. A tela continua no mapa pra pessoa saber o que ela responde.
+  if (!planner.limits.aiAnalysis) {
+    return (
+      <div className="flex flex-col gap-5">
+        <PageHeader
+          title="O que mudou no seu ritmo"
+          description="Padrões, gargalos e o ajuste que cada um pede, lidos dos teus próprios registros."
+        />
+        <ProGate
+          title="Leituras do ritmo"
+          description="Etapa travando, constância caindo, dia maior que a tua capacidade: cada padrão aparece aqui com o botão que o resolve."
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -101,10 +115,6 @@ export function InsightsPage() {
             insights.map((insight) => (
               <InsightPanel key={insight.id} insight={insight} onApply={actions.apply} />
             ))
-          )}
-
-          {planner.limits.insightsPerDay === Number.POSITIVE_INFINITY ? null : (
-            <UpgradeHint message="O plano gratuito mostra um insight por vez. No PRO todos ficam abertos, com histórico completo." />
           )}
         </div>
 

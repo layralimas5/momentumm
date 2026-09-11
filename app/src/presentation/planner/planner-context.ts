@@ -17,6 +17,7 @@ import type {
   ObjectiveProgress,
 } from '@/domain/entities/objective'
 import type { PlanLimits } from '@/domain/entities/plan'
+import type { PlanUsage } from '@/domain/entities/plan-usage'
 import type { PlanProgress } from '@/domain/entities/plan-progress'
 import type { NewPlanStageInput, PlanStage } from '@/domain/entities/plan-stage'
 import type { PlanDraft } from '@/domain/entities/plan-builder'
@@ -68,6 +69,8 @@ export interface PlannerState {
   readonly journeyEvents: readonly JourneyEvent[]
   readonly streak: Streak
   readonly limits: PlanLimits
+  /** Quanto de cada limite já foi usado. Pra desabilitar e explicar antes de recusar. */
+  readonly usage: PlanUsage
   readonly loading: boolean
   readonly error: string | null
   /** Falso quando o navegador perdeu a rede: a tela avisa em vez de falhar mudo. */

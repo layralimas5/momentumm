@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Insight } from '@/domain/entities/insight'
 import type { DayLoad } from '@/domain/entities/adaptive-day'
@@ -23,7 +23,6 @@ import { MobileObjectives } from './MobileObjectives'
 import { MobilePriority } from './MobilePriority'
 import { MobileWins } from './MobileWins'
 import { ShareMomentsRow } from '@/presentation/share/ShareMomentsRow'
-import { ProSheet } from './ProSheet'
 
 interface MobileDashboardProps {
   readonly view: DashboardView
@@ -64,8 +63,6 @@ export function MobileDashboard({
   const composer = useComposer()
   const focus = useFocus()
   const navigate = useNavigate()
-
-  const [proFeature, setProFeature] = useState<string | null>(null)
 
   const checkInRef = useRef<HTMLDivElement>(null)
   const priorityRef = useRef<HTMLDivElement>(null)
@@ -108,6 +105,7 @@ export function MobileDashboard({
         today={planner.today}
         streak={planner.streak}
         recommendation={view.recommendation}
+        detail={planner.limits.momentumDetail}
       />
 
       {view.dayComplete ? (
@@ -199,6 +197,7 @@ export function MobileDashboard({
         today={planner.today}
         streak={planner.streak}
         recommendation={view.recommendation}
+        detail={planner.limits.momentumDetail}
       />
 
       {/* Daqui pra baixo é consulta e registro do fim do dia. */}
@@ -215,8 +214,6 @@ export function MobileDashboard({
           task={view.mainPriority}
           capacity={view.capacity}
           minutesToday={view.focusMinutesToday}
-          limits={planner.limits}
-          onNeedPro={setProFeature}
         />
       </div>
 
@@ -269,12 +266,6 @@ export function MobileDashboard({
         coisa da tela.
       */}
       <span aria-hidden="true" className="h-14 shrink-0" />
-
-      <ProSheet
-        open={proFeature !== null}
-        feature={proFeature}
-        onClose={() => setProFeature(null)}
-      />
     </div>
   )
 }

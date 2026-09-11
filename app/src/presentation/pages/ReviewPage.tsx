@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { addDays, formatDayLabel } from '@/domain/entities/day'
 import { habitConsistency } from '@/domain/entities/habit'
+import { withinHistory } from '@/domain/entities/plan-usage'
 import { isPending, type Task } from '@/domain/entities/task'
 import {
   percent,
@@ -11,6 +12,9 @@ import {
   type WeekReview,
 } from '@/domain/entities/review'
 import {
+  BASIC_REVIEW_STEP_META,
+  BASIC_REVIEW_STEPS,
+  basicReviewProgress,
   emptyReview,
   isComplete,
   MAX_PRIORITIES,
@@ -21,8 +25,10 @@ import {
   reviewWeekStart,
   weekLabel,
   type ReviewStep,
+  type ReviewStepMeta,
   type WeeklyReview,
 } from '@/domain/entities/weekly-review'
+import { UpgradeHint } from '@/presentation/components/dashboard/UpgradeHint'
 import { ObjectiveLink } from '@/presentation/components/shared/Meta'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
@@ -83,11 +89,23 @@ export function ReviewPage() {
     return reviewWeek(input)
   }, [planner, weekStart])
 
-  const [step, setStep] = useState<ReviewStep>(stored.lastStep)
+  /*
+    O gratuito faz o check-in de quatro perguntas; o PRO faz o review que
+    cruza os dados. As duas listas guardam nos mesmos campos, e o passo
+    retomado precisa existir na lista atual — quem muda de plano no meio de
+    um review volta pro começo, nunca pra um passo que a tela não mostra.
+  */
+  const full = planner.limits.fullReview
+  const steps: readonly ReviewStep[] = full ? REVIEW_STEPS : BASIC_REVIEW_STEPS
+  const metas: readonly ReviewStepMeta[] = full ? REVIEW_STEP_META : BASIC_REVIEW_STEP_META
+
+  const [step, setStep] = useState<ReviewStep>(
+    steps.includes(stored.lastStep) ? stored.lastStep : (steps[0] ?? 'resumo'),
+  )
   const [showHistory, setShowHistory] = useState(false)
 
-  const index = REVIEW_STEPS.indexOf(step)
-  const meta = REVIEW_STEP_META[index]
+  const index = steps.indexOf(step)
+  const meta = metas[index]
 
   const save = useCallback(
     async (patch: Parameters<typeof planner.saveWeeklyReview>[1]) => {
@@ -107,7 +125,12 @@ export function ReviewPage() {
   if (showHistory) {
     return (
       <ReviewHistory
-        reviews={planner.weeklyReviews}
+        // A semana revisada termina seis dias depois de começar: é o fim dela
+        // que decide se ainda cabe no histórico do plano.
+        reviews={withinHistory(planner.weeklyReviews, planner.limits, planner.today, (review) =>
+          addDays(review.weekStart, 6),
+        )}
+        hidden={planner.weeklyReviews.length}
         onBack={() => setShowHistory(false)}
       />
     )
@@ -116,12 +139,12 @@ export function ReviewPage() {
   if (!meta) return null
 
   const done = isComplete(stored)
-  const filled = reviewProgress(stored)
+  const filled = full ? reviewProgress(stored) : basicReviewProgress(stored)
 
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
-        title="Review semanal"
+        title={full ? 'Review semanal' : 'Check-in da semana'}
         description={`A semana de ${weekLabel(weekStart)}. Rápido: uma pergunta por vez, e o que você escreve fica salvo na hora.`}
         action={
           planner.weeklyReviews.length > 0 ? (
@@ -134,6 +157,9 @@ export function ReviewPage() {
       />
 
       {planner.error ? <ErrorNote message={planner.error} /> : null}
+      {full ? null : (
+        <UpgradeHint message="No PRO o review cruza a execução, as pendências e os hábitos da semana e escreve a leitura pra você." />
+      )}
 
       {done ? (
         <p className="flex items-center gap-2.5 rounded-lg border border-positive/30 bg-positive/10 px-3.5 py-3 text-sm text-ink-muted">
@@ -142,7 +168,7 @@ export function ReviewPage() {
         </p>
       ) : null}
 
-      <Stepper current={index} filled={filled} onSelect={goTo} />
+      <Stepper metas={metas} current={index} filled={filled} onSelect={goTo} />
 
       <Panel>
         <PanelHeader
@@ -150,7 +176,7 @@ export function ReviewPage() {
           hint={meta.question}
           action={
             <span className="tabular text-xs text-ink-faint">
-              {index + 1}/{REVIEW_STEPS.length}
+              {index + 1}/{steps.length}
             </span>
           }
         />
@@ -209,7 +235,7 @@ export function ReviewPage() {
           ) : null}
         </div>
 
-        {step === 'prioridades' ? (
+        {step === 'prioridades' && full && planner.limits.ai ? (
           <AiSummary review={stored} computed={computed} onSave={save} />
         ) : null}
 
@@ -218,7 +244,7 @@ export function ReviewPage() {
             variant="ghost"
             disabled={index === 0}
             onClick={() => {
-              const previous = REVIEW_STEPS[index - 1]
+              const previous = steps[index - 1]
               if (previous) goTo(previous)
             }}
           >
@@ -226,7 +252,7 @@ export function ReviewPage() {
             Voltar
           </Button>
 
-          {index === REVIEW_STEPS.length - 1 ? (
+          {index === steps.length - 1 ? (
             <div className="flex flex-wrap items-center gap-2">
               {/* O card da semana só aparece depois que a semana foi fechada:
                   compartilhar um resumo pela metade seria contar uma história
@@ -261,7 +287,7 @@ export function ReviewPage() {
           ) : (
             <Button
               onClick={() => {
-                const next = REVIEW_STEPS[index + 1]
+                const next = steps[index + 1]
                 if (next) goTo(next)
               }}
             >
@@ -276,10 +302,12 @@ export function ReviewPage() {
 }
 
 function Stepper({
+  metas,
   current,
   filled,
   onSelect,
 }: {
+  readonly metas: readonly ReviewStepMeta[]
   readonly current: number
   readonly filled: number
   readonly onSelect: (step: ReviewStep) => void
@@ -287,7 +315,7 @@ function Stepper({
   return (
     <div>
       <ol className="flex flex-wrap gap-1.5">
-        {REVIEW_STEP_META.map((meta, index) => (
+        {metas.map((meta, index) => (
           <li key={meta.key}>
             <button
               type="button"
@@ -619,12 +647,16 @@ function AiSummary({
 
 function ReviewHistory({
   reviews,
+  hidden,
   onBack,
 }: {
   readonly reviews: readonly WeeklyReview[]
+  /** Quantos reviews a conta tem ao todo. A diferença é o que o histórico do plano esconde. */
+  readonly hidden: number
   readonly onBack: () => void
 }) {
   const sorted = [...reviews].sort((a, b) => (a.weekStart < b.weekStart ? 1 : -1))
+  const outOfReach = hidden - reviews.length
 
   return (
     <div className="flex flex-col gap-5">
@@ -641,6 +673,12 @@ function ReviewHistory({
         title="Reviews anteriores"
         description="O que você escreveu nas semanas passadas. É aqui que dá pra ver se o ajuste da semana passada pegou."
       />
+
+      {outOfReach > 0 ? (
+        <UpgradeHint
+          message={`${outOfReach} ${outOfReach === 1 ? 'review mais antigo ficou' : 'reviews mais antigos ficaram'} fora do histórico do plano gratuito. Nada foi apagado.`}
+        />
+      ) : null}
 
       {sorted.length === 0 ? (
         <EmptyState

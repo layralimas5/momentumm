@@ -29,12 +29,15 @@ export function MomentumStrip({
   today,
   streak,
   recommendation,
+  detail,
 }: {
   readonly momentum: MomentumScore
   readonly history: readonly MomentumPoint[]
   readonly today: DayKey
   readonly streak: Streak
   readonly recommendation: string
+  /** Variação e curva. No gratuito só a pontuação de hoje aparece. */
+  readonly detail: boolean
 }) {
   const [open, setOpen] = useState(false)
 
@@ -72,7 +75,7 @@ export function MomentumStrip({
             quem começou ontem é comparar com o vazio e inflar o primeiro número
             que a pessoa vê.
           */}
-          {momentum.hasEnoughData ? (
+          {!detail ? null : momentum.hasEnoughData ? (
             <span
               className={cn(
                 'tabular inline-flex items-center gap-1 text-xs',
@@ -98,7 +101,7 @@ export function MomentumStrip({
 
         {/* A curva some antes do resto quando a largura aperta: ela é a parte
             decorativa da faixa, e o número com a leitura é a parte útil. */}
-        {history.length > 1 && history.some((point) => point.value > 0) ? (
+        {detail && history.length > 1 && history.some((point) => point.value > 0) ? (
           <div className="hidden w-32 shrink-0 xl:block">
             <MomentumHistoryChart history={history} today={today} compact />
           </div>
@@ -124,6 +127,7 @@ export function MomentumStrip({
         history={history}
         today={today}
         recommendation={recommendation}
+        detail={detail}
         onClose={() => setOpen(false)}
       />
     </>

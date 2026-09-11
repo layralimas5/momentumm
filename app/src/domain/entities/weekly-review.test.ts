@@ -2,9 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { parseDayKey } from './day'
 import {
   applyDraft,
+  BASIC_REVIEW_STEP_META,
+  BASIC_REVIEW_STEPS,
+  basicReviewProgress,
   emptyReview,
   isComplete,
   MAX_REVIEW_ANSWER,
+  REVIEW_STEPS,
   reviewProgress,
   reviewWeekStart,
   weekLabel,
@@ -100,5 +104,34 @@ describe('reviewWeekStart', () => {
 describe('weekLabel', () => {
   it('mostra o intervalo de sete dias', () => {
     expect(weekLabel(WEEK)).toContain('31')
+  })
+})
+
+describe('check-in básico', () => {
+  it('usa só passos que a pessoa escreve, todos existentes no review completo', () => {
+    expect(BASIC_REVIEW_STEP_META.map((meta) => meta.key)).toEqual([...BASIC_REVIEW_STEPS])
+    for (const meta of BASIC_REVIEW_STEP_META) {
+      expect(REVIEW_STEPS).toContain(meta.key)
+      expect(meta.readOnly).toBe(false)
+    }
+  })
+
+  it('faz as quatro perguntas do gratuito', () => {
+    expect(BASIC_REVIEW_STEP_META.map((meta) => meta.question)).toEqual([
+      'Como foi sua semana?',
+      'O que funcionou?',
+      'O que dificultou sua constância?',
+      'Qual será seu foco na próxima semana?',
+    ])
+  })
+
+  it('mede o progresso só sobre as quatro respostas', () => {
+    const half = applyDraft(review(), { learnings: 'Corrida.', achievements: 'Estudar cedo.' })
+    expect(basicReviewProgress(half)).toBe(0.5)
+
+    const full = applyDraft(half, { difficulties: 'Reuniões.', priorities: ['Capítulo 5'] })
+    expect(basicReviewProgress(full)).toBe(1)
+    // O review completo ainda cobra os ajustes: o básico não.
+    expect(reviewProgress(full)).toBeLessThan(1)
   })
 })

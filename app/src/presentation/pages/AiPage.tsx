@@ -12,6 +12,7 @@ import { ErrorNote } from '@/presentation/components/ui/States'
 import { Panel, PanelHeader, Tag } from '@/presentation/components/ui/Surface'
 import { useAi, type PlanRequestDraft } from '@/presentation/ai/use-ai'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
+import { ProGate } from '@/presentation/plan/ProGate'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 import { PageHeader } from './PageHeader'
@@ -29,8 +30,26 @@ type Mode = 'plano' | 'leitura'
  * forma mais rápida de encher a semana de coisa que ninguém vai fazer.
  */
 export function AiPage() {
+  const planner = usePlanner()
   const ai = useAi()
   const [mode, setMode] = useState<Mode>('plano')
+
+  // A IA é o PRO inteiro: não existe versão menor dela pra mostrar. A tela
+  // fica no mapa pra pessoa saber o que ela faz, e diz como liberar.
+  if (!planner.limits.ai) {
+    return (
+      <div className="flex flex-col gap-5">
+        <PageHeader
+          title="Momentumm AI"
+          description="Transforma um objetivo em plano e lê o teu progresso a partir dos teus registros reais."
+        />
+        <ProGate
+          title="Momentumm AI"
+          description="Um objetivo vira plano por etapas, com ações que cabem no teu tempo; e o teu progresso vira uma leitura com o ajuste que ele pede. Franquia mensal no PRO."
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-5">

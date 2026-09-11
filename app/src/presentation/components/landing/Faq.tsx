@@ -26,7 +26,7 @@ const QUESTIONS = [
   },
   {
     question: 'O que tem no plano gratuito e o que muda no PRO?',
-    answer: `O gratuito entrega o ciclo inteiro: objetivo, plano, dia, progresso, review, Momentum Score e a IA. Os limites são de quantidade: ${free.activeGoals} objetivos ativos, ${free.activeHabits} hábitos ativos, ${free.historyDays} dias de histórico e ${free.insightsPerDay} leitura do ritmo por dia. O PRO tira esses limites e adiciona análise semanal completa, relatório mensal e recomendações adaptativas. Nenhuma tela é bloqueada por banner.`,
+    answer: `O gratuito organiza e executa: até ${free.activeObjectives} objetivos ativos, ${free.activeHabits} hábitos, ${free.activePlans} plano por etapas, ${free.actionsPerDay} ações por dia, os últimos ${free.historyDays} dias de histórico, o Momentum Score de hoje e um check-in semanal manual. O PRO registra, analisa e evolui: tira os limites, abre o histórico completo, a evolução e o detalhamento do score, o review cruzando os dados reais, a Momentumm AI, métricas, relatórios, registros em texto, foto e voz, todos os modelos de compartilhamento e exportação. A tabela completa está na seção de planos.`,
   },
   {
     question: 'Como a IA usa os meus dados?',

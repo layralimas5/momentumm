@@ -50,7 +50,6 @@ export function FocusPage() {
           task={view.mainPriority}
           capacity={view.capacity}
           minutesToday={view.focusMinutesToday}
-          limits={planner.limits}
         />
 
         <div className="flex min-w-0 flex-col gap-5">

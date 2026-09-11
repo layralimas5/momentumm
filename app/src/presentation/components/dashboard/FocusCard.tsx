@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { activityType } from '@/domain/entities/activity-type'
 import type { CapacityProfile } from '@/domain/entities/checkin'
-import type { PlanLimits } from '@/domain/entities/plan'
 import type { Task } from '@/domain/entities/task'
 import { formatElapsed } from '@/domain/entities/timer'
 import { useFocus } from '@/presentation/focus/use-focus'
@@ -9,23 +8,21 @@ import { Button } from '@/presentation/components/ui/Button'
 import { ChoiceGroup } from '@/presentation/components/ui/Choice'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { Panel, PanelHeader, ProgressBar } from '@/presentation/components/ui/Surface'
-import { UpgradeHint } from './UpgradeHint'
 
 interface FocusCardProps {
   readonly task: Task | null
   readonly capacity: CapacityProfile
   readonly minutesToday: number
-  readonly limits: PlanLimits
 }
 
-const ALL_DURATIONS = [15, 25, 45, 60] as const
+const DURATIONS = [15, 25, 45, 60] as const
 
 /**
  * Sessão de foco. O seletor sugere a duração que combina com a capacidade do
  * dia — em dia ruim ele não oferece uma hora de cara, porque a sessão que não
  * começa não serve pra nada.
  */
-export function FocusCard({ task, capacity, minutesToday, limits }: FocusCardProps) {
+export function FocusCard({ task, capacity, minutesToday }: FocusCardProps) {
   const focus = useFocus()
   /*
     A duração segue a capacidade do dia ATÉ a pessoa escolher outra. Guardar um
@@ -83,8 +80,6 @@ export function FocusCard({ task, capacity, minutesToday, limits }: FocusCardPro
     )
   }
 
-  const available = ALL_DURATIONS.filter((value) => limits.focusDurations.includes(value))
-  const blocked = ALL_DURATIONS.filter((value) => !limits.focusDurations.includes(value))
   const axis = task?.axis ?? 'estudo'
   const label = task?.title ?? 'Sessão livre de foco'
 
@@ -103,7 +98,7 @@ export function FocusCard({ task, capacity, minutesToday, limits }: FocusCardPro
         label="Duração da sessão"
         value={duration}
         onChange={setChosen}
-        options={available.map((value) => ({ value, label: `${value} min` }))}
+        options={DURATIONS.map((value) => ({ value, label: `${value} min` }))}
       />
 
       <p className="mt-4 rounded-xl border border-line bg-surface-hi/60 px-3.5 py-3 text-sm">
@@ -136,13 +131,6 @@ export function FocusCard({ task, capacity, minutesToday, limits }: FocusCardPro
         <Icon name="relogio" className="size-4 text-ink-faint" />
         {minutesToday} minutos registrados hoje
       </p>
-
-      {blocked.length > 0 ? (
-        <UpgradeHint
-          className="mt-3"
-          message={`Sessões de ${blocked.join(' e ')} minutos fazem parte do PRO.`}
-        />
-      ) : null}
     </Panel>
   )
 }

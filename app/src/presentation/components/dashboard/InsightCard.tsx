@@ -72,10 +72,10 @@ export function InsightCard({ insight, limits, onApply, onDismiss }: InsightCard
             {apply.error ? <p className="mt-1 text-sm text-danger">{apply.error}</p> : null}
           </div>
 
-          {limits.adaptiveRecommendations ? null : (
+          {limits.aiAnalysis ? null : (
             <UpgradeHint
               className="mt-3"
-              message="No PRO os insights ficam contínuos e se adaptam ao seu histórico completo."
+              message="No PRO todas as leituras ficam abertas, com padrões e gargalos do histórico completo."
             />
           )}
         </Panel>

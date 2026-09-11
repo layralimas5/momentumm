@@ -1,9 +1,15 @@
 /**
- * Planos. A regra de produto é explícita: o dashboard NÃO é bloqueado por
- * banner. O gratuito precisa entregar o ciclo inteiro (check-in, prioridade,
- * hábitos, foco, progresso resumido) — o PRO amplia profundidade, não libera o
- * básico. Por isso os limites aqui são de quantidade e de profundidade, nunca
- * de acesso à tela.
+ * Planos.
+ *
+ * A separação é uma frase: o gratuito ORGANIZA E EXECUTA, o PRO REGISTRA,
+ * ANALISA E EVOLUI. Quem está no gratuito cria objetivo, organiza alguns
+ * hábitos, acompanha as ações do dia, marca o que concluiu e vê o Momentum
+ * Score de hoje. O que ela não consegue é olhar pra trás com profundidade:
+ * evolução do score, métricas, relatórios, análises da IA e a review que cruza
+ * os dados reais da semana.
+ *
+ * A regra de produto continua: o dashboard NÃO é bloqueado por banner. O PRO
+ * aparece onde o limite encosta, numa linha, e sai do caminho.
  */
 
 export const PLAN_TIERS = ['free', 'pro'] as const
@@ -16,16 +22,35 @@ export const PLAN_LABELS: Readonly<Record<PlanTier, string>> = {
 
 export interface PlanLimits {
   readonly tier: PlanTier
-  readonly activeGoals: number
+  /** Objetivos em andamento ao mesmo tempo (pausado e concluído não contam). */
+  readonly activeObjectives: number
   readonly activeHabits: number
-  /** Quantos insights diferentes ficam disponíveis por dia. */
-  readonly insightsPerDay: number
+  /** Objetivos ativos com plano por etapas. */
+  readonly activePlans: number
+  /** Ações que cabem num mesmo dia. */
+  readonly actionsPerDay: number
   readonly historyDays: number
-  readonly focusDurations: readonly number[]
-  /** Análise semanal completa, com comparação e leitura por horário. */
-  readonly advancedAnalytics: boolean
-  readonly monthlyReport: boolean
-  readonly adaptiveRecommendations: boolean
+  /** Evolução e detalhamento do score. Sem isso, só a pontuação de hoje. */
+  readonly momentumDetail: boolean
+  /** Review cruzando os dados reais. Sem isso, o check-in manual de quatro perguntas. */
+  readonly fullReview: boolean
+  readonly ai: boolean
+  /** Métricas detalhadas de período: últimos 7 dias, mês, comparação. */
+  readonly metrics: boolean
+  readonly reports: boolean
+  /** Registros em texto (a nota do registro de atividade). */
+  readonly textLogs: boolean
+  readonly photoLogs: boolean
+  readonly voiceLogs: boolean
+  /** Padrões, gargalos e recomendações a partir do histórico. */
+  readonly aiAnalysis: boolean
+  readonly objectiveTemplates: number
+  /** Modelos de card no compartilhamento. Um só no gratuito. */
+  readonly shareTemplates: number
+  readonly shareCustomization: boolean
+  readonly dataExport: boolean
+  readonly remindersPerHabit: number
+  readonly themes: boolean
 }
 
 const UNLIMITED = Number.POSITIVE_INFINITY
@@ -33,25 +58,49 @@ const UNLIMITED = Number.POSITIVE_INFINITY
 export const PLAN_LIMITS: Readonly<Record<PlanTier, PlanLimits>> = {
   free: {
     tier: 'free',
-    activeGoals: 3,
+    activeObjectives: 2,
     activeHabits: 5,
-    insightsPerDay: 1,
-    historyDays: 30,
-    focusDurations: [15, 25],
-    advancedAnalytics: false,
-    monthlyReport: false,
-    adaptiveRecommendations: false,
+    activePlans: 1,
+    actionsPerDay: 5,
+    historyDays: 15,
+    momentumDetail: false,
+    fullReview: false,
+    ai: false,
+    metrics: false,
+    reports: false,
+    textLogs: false,
+    photoLogs: false,
+    voiceLogs: false,
+    aiAnalysis: false,
+    objectiveTemplates: 3,
+    shareTemplates: 1,
+    shareCustomization: false,
+    dataExport: false,
+    remindersPerHabit: 1,
+    themes: false,
   },
   pro: {
     tier: 'pro',
-    activeGoals: UNLIMITED,
+    activeObjectives: UNLIMITED,
     activeHabits: UNLIMITED,
-    insightsPerDay: UNLIMITED,
+    activePlans: UNLIMITED,
+    actionsPerDay: UNLIMITED,
     historyDays: UNLIMITED,
-    focusDurations: [15, 25, 45, 60],
-    advancedAnalytics: true,
-    monthlyReport: true,
-    adaptiveRecommendations: true,
+    momentumDetail: true,
+    fullReview: true,
+    ai: true,
+    metrics: true,
+    reports: true,
+    textLogs: true,
+    photoLogs: true,
+    voiceLogs: true,
+    aiAnalysis: true,
+    objectiveTemplates: UNLIMITED,
+    shareTemplates: UNLIMITED,
+    shareCustomization: true,
+    dataExport: true,
+    remindersPerHabit: UNLIMITED,
+    themes: true,
   },
 }
 
@@ -61,6 +110,10 @@ export function limitsOf(tier: PlanTier): PlanLimits {
 
 export function isPro(tier: PlanTier): boolean {
   return tier === 'pro'
+}
+
+export function isUnlimited(max: number): boolean {
+  return !Number.isFinite(max)
 }
 
 export interface LimitCheck {
@@ -82,5 +135,46 @@ export function checkLimit(used: number, max: number, what: string): LimitCheck 
 }
 
 export function formatLimit(max: number): string {
-  return Number.isFinite(max) ? String(max) : 'ilimitado'
+  return isUnlimited(max) ? 'ilimitado' : String(max)
+}
+
+/**
+ * A matriz inteira, linha a linha, do jeito que a landing e o perfil mostram.
+ * Sai do domínio pra tabela nunca prometer um número diferente do que o app
+ * aplica.
+ */
+export interface PlanMatrixRow {
+  readonly feature: string
+  readonly free: string
+  readonly pro: string
+}
+
+function count(max: number, singular: string, plural: string): string {
+  if (isUnlimited(max)) return `${plural.charAt(0).toUpperCase()}${plural.slice(1)} ilimitados`
+  return `Até ${max} ${max === 1 ? singular : plural}`
+}
+
+export function planMatrix(): readonly PlanMatrixRow[] {
+  const free = PLAN_LIMITS.free
+  return [
+    { feature: 'Objetivos ativos', free: count(free.activeObjectives, 'objetivo', 'objetivos'), pro: 'Ilimitados' },
+    { feature: 'Hábitos ativos', free: count(free.activeHabits, 'hábito', 'hábitos'), pro: 'Ilimitados' },
+    { feature: 'Planos ativos', free: String(free.activePlans), pro: 'Ilimitados' },
+    { feature: 'Ações no Hoje', free: `Até ${free.actionsPerDay} por dia`, pro: 'Ilimitadas' },
+    { feature: 'Histórico', free: `Últimos ${free.historyDays} dias`, pro: 'Histórico completo' },
+    { feature: 'Momentum Score', free: 'Apenas pontuação atual', pro: 'Pontuação, evolução e detalhamento' },
+    { feature: 'Review semanal', free: 'Check-in básico manual', pro: 'Review completo e personalizado' },
+    { feature: 'Momentumm AI', free: 'Não disponível', pro: 'Franquia mensal' },
+    { feature: 'Métricas', free: 'Não disponível', pro: 'Métricas detalhadas' },
+    { feature: 'Relatórios', free: 'Não disponível', pro: 'Semanais e mensais' },
+    { feature: 'Registros em texto', free: 'Não disponível', pro: 'Disponível' },
+    { feature: 'Fotos nos registros', free: 'Não disponível', pro: 'Disponível com limite' },
+    { feature: 'Registros por voz', free: 'Não disponível', pro: 'Disponível com limite mensal' },
+    { feature: 'Análises de IA', free: 'Não disponível', pro: 'Padrões, gargalos e recomendações' },
+    { feature: 'Templates de objetivos', free: `Até ${free.objectiveTemplates} templates básicos`, pro: 'Biblioteca completa' },
+    { feature: 'Compartilhamento', free: `${free.shareTemplates} modelo padrão`, pro: 'Todos os modelos e personalização' },
+    { feature: 'Exportação de dados', free: 'Não disponível', pro: 'PDF, imagem e CSV' },
+    { feature: 'Lembretes', free: `${free.remindersPerHabit} lembrete por hábito`, pro: 'Lembretes personalizados' },
+    { feature: 'Personalização', free: 'Tema padrão', pro: 'Temas, cores e preferências' },
+  ]
 }

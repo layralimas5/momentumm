@@ -66,18 +66,18 @@ export function WeeklyProgressCard({ week, limits }: WeeklyProgressCardProps) {
         <Metric
           label="Hábitos"
           value={current.habitsDone}
-          delta={limits.advancedAnalytics ? deltaLabel(current.habitsDone, previous.habitsDone, '') : null}
+          delta={limits.metrics ? deltaLabel(current.habitsDone, previous.habitsDone, '') : null}
         />
         <Metric
           label="Ações"
           value={current.tasksDone}
-          delta={limits.advancedAnalytics ? deltaLabel(current.tasksDone, previous.tasksDone, '') : null}
+          delta={limits.metrics ? deltaLabel(current.tasksDone, previous.tasksDone, '') : null}
         />
         <Metric
           label="Minutos"
           value={current.focusMinutes}
           delta={
-            limits.advancedAnalytics
+            limits.metrics
               ? deltaLabel(current.focusMinutes, previous.focusMinutes, '')
               : null
           }
@@ -89,10 +89,10 @@ export function WeeklyProgressCard({ week, limits }: WeeklyProgressCardProps) {
         <span>{week.conclusion}</span>
       </p>
 
-      {limits.advancedAnalytics ? null : (
+      {limits.metrics ? null : (
         <UpgradeHint
           className="mt-3"
-          message="Comparação com semanas anteriores e relatório mensal ficam no PRO."
+          message="Comparação com semanas anteriores, métricas detalhadas e relatórios ficam no PRO."
         />
       )}
     </Panel>

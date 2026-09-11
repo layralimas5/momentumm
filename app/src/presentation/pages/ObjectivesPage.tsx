@@ -6,6 +6,7 @@ import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { Panel, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
+import { UpgradeHint } from '@/presentation/components/dashboard/UpgradeHint'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
 import { usePlanner } from '@/presentation/planner/use-planner'
@@ -33,13 +34,15 @@ export function ObjectivesPage() {
   const paused = views.filter((view) => view.progress.state === 'pausado')
   const done = views.filter((view) => view.progress.state === 'concluido')
 
+  const limit = planner.usage.objectives
+
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
         title="Objetivos"
         description="Onde você quer chegar, com prazo. É daqui que sai o plano, e é contra isso que o app compara teu ritmo pra perceber quando alguma coisa parou de andar."
         action={
-          <Button onClick={() => composer.open('objetivo')}>
+          <Button onClick={() => composer.open('objetivo')} disabled={limit.reached}>
             <Icon name="mais" className="size-4" />
             Novo objetivo
           </Button>
@@ -47,6 +50,7 @@ export function ObjectivesPage() {
       />
 
       {planner.error ? <ErrorNote message={planner.error} /> : null}
+      {limit.message ? <UpgradeHint message={limit.message} /> : null}
 
       {planner.loading && views.length === 0 ? (
         <LoadingBlock label="Carregando os objetivos" />

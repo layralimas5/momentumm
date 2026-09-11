@@ -18,11 +18,14 @@ import { ChoiceGroup } from '@/presentation/components/ui/Choice'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { Panel, PanelHeader, Tag } from '@/presentation/components/ui/Surface'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
+import { UpgradeHint } from './UpgradeHint'
 import { cn } from '@/shared/lib/cn'
 
 interface CheckInCardProps {
   readonly checkIn: CheckIn | null
   readonly capacity: CapacityProfile
+  /** A observação em texto do dia. É o registro escrito, e ele mora no PRO. */
+  readonly textLogs: boolean
   readonly onSave: (input: {
     mood: MoodState
     energy: EnergyLevel
@@ -38,7 +41,7 @@ interface CheckInCardProps {
  * Depois de respondido o card encolhe: ele já cumpriu a função e não pode ficar
  * ocupando o espaço de quem ainda tem coisa a decidir.
  */
-export function CheckInCard({ checkIn, capacity, onSave }: CheckInCardProps) {
+export function CheckInCard({ checkIn, capacity, textLogs, onSave }: CheckInCardProps) {
   const [editing, setEditing] = useState(false)
 
   if (checkIn && !editing) {
@@ -48,6 +51,7 @@ export function CheckInCard({ checkIn, capacity, onSave }: CheckInCardProps) {
   return (
     <CheckInForm
       checkIn={checkIn}
+      textLogs={textLogs}
       onCancel={checkIn ? () => setEditing(false) : undefined}
       onSave={async (input) => {
         await onSave(input)
@@ -97,10 +101,12 @@ function CheckInSummary({
 
 function CheckInForm({
   checkIn,
+  textLogs,
   onSave,
   onCancel,
 }: {
   checkIn: CheckIn | null
+  textLogs: boolean
   onSave: (input: {
     mood: MoodState
     energy: EnergyLevel
@@ -212,7 +218,7 @@ function CheckInForm({
             className="mt-2 h-11 w-full rounded-xl border border-line bg-canvas/50 px-3.5 text-ink placeholder:text-ink-faint transition-colors focus:border-brand"
           />
         </div>
-      ) : (
+      ) : textLogs ? (
         <button
           type="button"
           onClick={() => setNoteOpen(true)}
@@ -221,6 +227,8 @@ function CheckInForm({
           <Icon name="mais" className="size-3.5" />
           Adicionar uma observação
         </button>
+      ) : (
+        <UpgradeHint className="mt-4" message="A observação em texto do dia faz parte do PRO." />
       )}
 
       <div className="mt-5 flex flex-wrap items-center gap-3">

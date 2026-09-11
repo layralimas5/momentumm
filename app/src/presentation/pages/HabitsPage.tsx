@@ -13,7 +13,6 @@ import {
   statusOf,
   type Habit,
 } from '@/domain/entities/habit'
-import { checkLimit } from '@/domain/entities/plan'
 import { ObjectiveLink, PriorityTag } from '@/presentation/components/shared/Meta'
 import { Button } from '@/presentation/components/ui/Button'
 import { ConfirmDialog } from '@/presentation/components/ui/ConfirmDialog'
@@ -45,7 +44,7 @@ export function HabitsPage() {
   const running = active.filter(isHabitRunning)
   const paused = active.filter((habit) => habit.pausedAt !== null)
 
-  const limit = checkLimit(running.length, planner.limits.activeHabits, 'hábitos ativos')
+  const limit = planner.usage.habits
 
   return (
     <div className="flex flex-col gap-5">
