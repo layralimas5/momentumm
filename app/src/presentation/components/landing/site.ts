@@ -10,16 +10,12 @@ export const SITE = {
   tagline: 'Do objetivo à ação de hoje.',
   description:
     'O Momentumm transforma objetivos em ações diárias, mede se o ritmo está de pé e ajusta o plano quando ele deixa de funcionar. Um sistema de progresso pessoal, não mais um app de hábitos.',
-  /** Endereço de contato mostrado no rodapé e nas páginas legais. */
-  contactEmail: 'contato@momentumm.app',
-  social: [
-    { label: 'Instagram', href: 'https://instagram.com/momentumm.app', icon: 'instagram' },
-    { label: 'TikTok', href: 'https://tiktok.com/@momentumm.app', icon: 'tiktok' },
-    { label: 'YouTube', href: 'https://youtube.com/@momentumm', icon: 'youtube' },
-  ],
+  /**
+   * Ainda não existe e-mail de contato. Quando existir, preencher aqui: o
+   * rodapé e as páginas legais passam a mostrar sozinhos.
+   */
+  contactEmail: null as string | null,
 } as const
-
-export type SocialIconName = (typeof SITE.social)[number]['icon']
 
 /**
  * O estágio decide o CTA da página inteira. Hoje o produto aceita conta

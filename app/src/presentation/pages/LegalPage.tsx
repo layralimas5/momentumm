@@ -48,7 +48,7 @@ const DOCUMENTS: Readonly<Record<LegalKind, LegalDocument>> = {
       {
         title: '3. Seu conteúdo',
         paragraphs: [
-          'Objetivos, hábitos, ações, notas e registros são seus. O Momentumm não reivindica nenhum direito sobre eles. Você pode apagar a sua conta a qualquer momento em Configurações, e isso remove os seus dados dos nossos sistemas. Pra receber uma cópia dos seus dados, escreva pra gente.',
+          'Objetivos, hábitos, ações, notas e registros são seus. O Momentumm não reivindica nenhum direito sobre eles. Você pode apagar a sua conta a qualquer momento em Configurações, e isso remove os seus dados dos nossos sistemas. Pra receber uma cópia dos seus dados, use o canal de contato indicado no rodapé do site.',
           'Você nos concede apenas a licença necessária pra armazenar, processar e exibir o seu conteúdo pra você e pra quem você escolher compartilhar.',
         ],
       },
@@ -85,7 +85,7 @@ const DOCUMENTS: Readonly<Record<LegalKind, LegalDocument>> = {
       },
       {
         title: '9. Contato',
-        paragraphs: [`Dúvidas sobre estes termos: ${SITE.contactEmail}.`],
+        paragraphs: ['Dúvidas sobre estes termos podem ser enviadas pelo canal de contato indicado no rodapé do site.'],
       },
     ],
   },
@@ -133,7 +133,7 @@ const DOCUMENTS: Readonly<Record<LegalKind, LegalDocument>> = {
       {
         title: '6. Seus direitos',
         paragraphs: [
-          'Você pode acessar e corrigir os seus dados no próprio app, e apagar a conta em Configurações, a qualquer momento. Apagar a conta remove os seus dados dos nossos sistemas, incluindo os arquivos associados. Pra exercer qualquer direito previsto na LGPD que não esteja disponível na tela, escreva pra gente.',
+          'Você pode acessar e corrigir os seus dados no próprio app, e apagar a conta em Configurações, a qualquer momento. Apagar a conta remove os seus dados dos nossos sistemas, incluindo os arquivos associados. Pra exercer qualquer direito previsto na LGPD que não esteja disponível na tela, use o canal de contato indicado no rodapé do site.',
         ],
       },
       {
@@ -152,7 +152,7 @@ const DOCUMENTS: Readonly<Record<LegalKind, LegalDocument>> = {
         title: '9. Mudanças e contato',
         paragraphs: [
           'Podemos atualizar esta política; mudanças relevantes são avisadas no app ou por e-mail.',
-          `Dúvidas ou pedidos sobre privacidade: ${SITE.contactEmail}.`,
+          'Dúvidas ou pedidos sobre privacidade podem ser enviados pelo canal de contato indicado no rodapé do site.',
         ],
       },
     ],
