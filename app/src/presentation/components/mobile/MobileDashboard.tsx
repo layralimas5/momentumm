@@ -18,7 +18,6 @@ import { MomentumStrip } from '@/presentation/components/dashboard/MomentumStrip
 import { NextUpCard } from '@/presentation/components/dashboard/NextUpCard'
 import { TodayFocusCard } from '@/presentation/components/dashboard/TodayFocusCard'
 import { MobileInsight } from './MobileInsight'
-import { MobileMomentum } from './MobileMomentum'
 import { MobileObjectives } from './MobileObjectives'
 import { MobilePriority } from './MobilePriority'
 import { MobileWins } from './MobileWins'
@@ -191,14 +190,6 @@ export function MobileDashboard({
         insight={view.insight}
         onApply={onApplyInsight}
         onDismiss={view.dismissInsight}
-      />
-
-      <MobileMomentum
-        momentum={view.momentum}
-        history={view.momentumSeries}
-        today={planner.today}
-        streak={planner.streak}
-        recommendation={view.recommendation}
       />
 
       {/* Daqui pra baixo é consulta e registro do fim do dia. */}

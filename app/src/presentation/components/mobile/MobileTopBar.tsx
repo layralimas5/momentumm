@@ -1,41 +1,92 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { activityType } from '@/domain/entities/activity-type'
 import { countsAsDone, habitsScheduledOn, statusOf } from '@/domain/entities/habit'
 import { Avatar } from '@/presentation/components/ui/Avatar'
+import { LogoMark } from '@/presentation/components/brand/Logo'
 import { isPending } from '@/domain/entities/task'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { BottomSheet } from '@/presentation/components/ui/BottomSheet'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { usePlanner } from '@/presentation/planner/use-planner'
+import { TAB_ROUTES } from './MobileTabBar'
+import { navItemFor } from '@/presentation/layouts/nav-items'
 
 /**
- * Topo do celular: saudação, data, notificações e avatar. Só isso.
+ * Topo do celular: onde a pessoa está, notificações e avatar. Só isso.
  *
- * O header do desktop tem busca, atalho de teclado e botão de adicionar — no
+ * Em `Hoje` ele cumprimenta e dá a data, porque é a tela que abre o dia. Nas
+ * outras fica só a marca: repetir "Boa noite" em cima de "Plano" gastava a
+ * primeira dobra com uma frase que não respondia nada. E quando a tela não
+ * está na barra de baixo (Hábitos, Progresso, Review...) ou é um detalhe
+ * (um objetivo, um desafio), ganha um "voltar" à esquerda: sem ele a única
+ * saída era a barra, que não sabia de onde a pessoa tinha vindo.
+ *
+ * O header do desktop tem busca, atalho de teclado e botão de adicionar. No
  * celular a busca não se usa com uma mão e o adicionar já mora na barra de
- * baixo, ao alcance do polegar. Repetir os dois aqui só roubaria altura da
- * primeira dobra, que é onde a prioridade do dia precisa aparecer.
+ * baixo, ao alcance do polegar.
  */
 export function MobileTopBar() {
   const { profile } = useAuth()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const [alertsOpen, setAlertsOpen] = useState(false)
   const alerts = useAlerts()
 
   const firstName = profile?.name.split(' ')[0] ?? null
   const now = new Date()
 
+  const isHome = pathname === '/app'
+  const current = navItemFor(pathname)
+  const inTabBar = current ? TAB_ROUTES.includes(current.to) : false
+  const detail = current ? pathname !== current.to : false
+
+  const goBack = () => {
+    // Histórico do próprio app volta pra onde a pessoa estava; link aberto
+    // direto (sem histórico) sobe pra tela pai, e no limite pra Hoje.
+    if (hasInAppHistory()) {
+      navigate(-1)
+      return
+    }
+    navigate(detail && current ? current.to : '/app')
+  }
+
   return (
     <>
       <header className="sticky top-0 z-30 border-b border-line bg-canvas/90 backdrop-blur-md pt-safe">
         <div className="flex items-center gap-3 px-4 pb-3 pt-1">
+          {!isHome && (!inTabBar || detail) ? (
+            <button
+              type="button"
+              onClick={goBack}
+              className="-ml-2 grid size-11 shrink-0 place-items-center rounded-full text-ink-muted transition-colors active:bg-surface"
+            >
+              <Icon name="setaEsq" className="size-5" />
+              <span className="sr-only">Voltar</span>
+            </button>
+          ) : null}
+
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-lg font-semibold tracking-tight text-ink">
-              {greeting(now)}
-              {firstName ? `, ${firstName}` : ''}
-            </h1>
-            <p className="mt-0.5 truncate text-sm text-ink-faint">{formatToday(now)}</p>
+            {isHome ? (
+              <>
+                <h1 className="truncate text-lg font-semibold tracking-tight text-ink">
+                  {greeting(now)}
+                  {firstName ? `, ${firstName}` : ''}
+                </h1>
+                <p className="mt-0.5 truncate text-sm text-ink-faint">{formatToday(now)}</p>
+              </>
+            ) : (
+              /*
+                Fora de Hoje o título visível é o da própria página, logo
+                abaixo. Repeti-lo aqui em letra menor seria a mesma palavra
+                duas vezes na primeira dobra, então o topo fica com a marca e
+                o nome da tela vai só pra leitor de tela.
+              */
+              <>
+                <LogoMark className="size-7" />
+                <h1 className="sr-only">{current?.label ?? 'Momentumm'}</h1>
+              </>
+            )}
           </div>
 
           <button
@@ -167,4 +218,16 @@ function greeting(now: Date): string {
 function formatToday(now: Date): string {
   const label = now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
   return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
+/**
+ * O React Router numera cada entrada que ele mesmo empilha (`idx`). Zero é a
+ * primeira: quem chegou por link direto não tem pra onde voltar dentro do app,
+ * e `navigate(-1)` levaria pra fora dele.
+ */
+function hasInAppHistory(): boolean {
+  const state: unknown = window.history.state
+  if (typeof state !== 'object' || state === null || !('idx' in state)) return false
+  const idx = (state as { idx: unknown }).idx
+  return typeof idx === 'number' && idx > 0
 }

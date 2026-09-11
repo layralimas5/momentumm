@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { APP_NAV } from '@/presentation/layouts/nav-items'
+import { TAB_ROUTES } from './MobileTabBar'
 
 /**
  * As telas que não cabem na barra inferior.
@@ -14,7 +15,6 @@ import { APP_NAV } from '@/presentation/layouts/nav-items'
  * Configurações, e Configurações só era alcançável por ela mesma, o caminho se
  * fechava num círculo — dava pra sair, mas não pra voltar.
  */
-const TAB_ROUTES = ['/app', '/app/objetivos', '/app/plano', '/app/perfil']
 
 const SHORTCUTS = APP_NAV.filter((item) => !TAB_ROUTES.includes(item.to))
 
