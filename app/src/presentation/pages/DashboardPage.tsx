@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Insight } from '@/domain/entities/insight'
 import { addDays } from '@/domain/entities/day'
@@ -38,6 +38,10 @@ import { DayCompleteBanner } from '@/presentation/components/dashboard/DayComple
 import { MobileDashboard } from '@/presentation/components/mobile/MobileDashboard'
 import { ShareMomentsRow } from '@/presentation/share/ShareMomentsRow'
 import { useIsDesktop } from '@/presentation/hooks/use-media-query'
+import { AiDayDialog } from '@/presentation/ai/AiDayDialog'
+import { AiRecoveryDialog } from '@/presentation/ai/AiRecoveryDialog'
+import { AiEntry } from '@/presentation/ai/AiBits'
+import { useAi } from '@/presentation/ai/use-ai'
 
 /**
  * "Hoje" — o dashboard.
@@ -76,6 +80,16 @@ export function DashboardPage() {
   */
   const adaptive = useAdaptiveDay(view)
   const recovery = useRecovery(view)
+
+  /*
+    As duas portas da IA no Hoje: "Reorganizar meu dia" ao lado do Dia
+    Adaptável e "Criar plano de retorno" dentro do Modo Retomada. A IA lê o
+    mesmo estado que a aritmética, e devolve propostas que a pessoa confirma
+    uma a uma — nunca uma gravação direta.
+  */
+  const ai = useAi()
+  const [aiDayOpen, setAiDayOpen] = useState(false)
+  const [aiRecoveryOpen, setAiRecoveryOpen] = useState(false)
 
   /*
     O onboarding vive fora do `isNewUser` porque ele pode ser adiado: a pessoa
@@ -206,13 +220,49 @@ export function DashboardPage() {
   )
 
   const reviewLayer = (
-    <AdaptiveDayReview
-      plan={adaptive.plan}
-      intro={adaptive.request?.intro}
-      applying={adaptive.applying}
-      error={adaptive.error}
-      onConfirm={() => void confirmAdaptive()}
-      onClose={adaptive.close}
+    <>
+      <AdaptiveDayReview
+        plan={adaptive.plan}
+        intro={adaptive.request?.intro}
+        applying={adaptive.applying}
+        error={adaptive.error}
+        onConfirm={() => void confirmAdaptive()}
+        onClose={adaptive.close}
+      />
+      <AiDayDialog
+        open={aiDayOpen}
+        ai={ai}
+        defaultAvailableMin={view.capacity.suggestedFocusMin * view.capacity.suggestedActions}
+        plannedMin={adaptive.load.minutes}
+        onClose={() => setAiDayOpen(false)}
+      />
+      {recovery.state ? (
+        <AiRecoveryDialog
+          open={aiRecoveryOpen}
+          ai={ai}
+          state={recovery.state}
+          onApplied={recovery.dismiss}
+          onClose={() => setAiRecoveryOpen(false)}
+        />
+      ) : null}
+    </>
+  )
+
+  const aiDayEntry = (
+    <AiEntry
+      enabled={ai.enabled}
+      label="Reorganizar meu dia"
+      hint="a IA lê o dia, os próximos sete e os prazos, e propõe o menor conjunto de ajustes que faz o dia caber."
+      onClick={() => setAiDayOpen(true)}
+    />
+  )
+
+  const aiRecoveryEntry = (
+    <AiEntry
+      enabled={ai.enabled}
+      label="Criar plano de retorno"
+      hint="a IA monta até três passos pequenos pra hoje, lidos do que já estava no teu plano."
+      onClick={() => setAiRecoveryOpen(true)}
     />
   )
 
@@ -262,11 +312,13 @@ export function DashboardPage() {
           budgetFor={recovery.budgetFor}
           onChoose={chooseRecoveryStep}
           onDismiss={recovery.dismiss}
+          aiEntry={aiRecoveryEntry}
         />
         <MobileDashboard
           view={view}
           dayLoad={adaptive.load}
           onAdaptDay={adaptDay}
+          aiDayEntry={aiDayEntry}
           onStartFocus={startFocus}
           onCompleteTask={completeTask}
           onPostponeTask={postponeTask}
@@ -320,6 +372,7 @@ export function DashboardPage() {
           budgetFor={recovery.budgetFor}
           onChoose={chooseRecoveryStep}
           onDismiss={recovery.dismiss}
+          aiEntry={aiRecoveryEntry}
         />
 
         <MomentumStrip
@@ -338,6 +391,7 @@ export function DashboardPage() {
           openItems={adaptive.load.items}
           capacity={view.capacity}
           onAdapt={adaptDay}
+          aiEntry={aiDayEntry}
         />
 
         <ShareMomentsRow view={view} />

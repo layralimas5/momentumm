@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import type { RecoveryState, RecoveryStep } from '@/domain/entities/recovery'
 import { Button } from '@/presentation/components/ui/Button'
@@ -28,9 +29,11 @@ interface RecoveryCardProps {
   readonly budgetFor: (step: RecoveryStep) => number
   readonly onChoose: (step: RecoveryStep) => void
   readonly onDismiss: () => void
+  /** A porta da IA ("Criar plano de retorno"), quando o plano tem. */
+  readonly aiEntry?: ReactNode
 }
 
-export function RecoveryCard({ state, budgetFor, onChoose, onDismiss }: RecoveryCardProps) {
+export function RecoveryCard({ state, budgetFor, onChoose, onDismiss, aiEntry }: RecoveryCardProps) {
   if (!state) return null
 
   return (
@@ -115,6 +118,7 @@ export function RecoveryCard({ state, budgetFor, onChoose, onDismiss }: Recovery
         )}
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
+          {aiEntry}
           <Button size="sm" variant="ghost" onClick={onDismiss}>
             Hoje não
           </Button>

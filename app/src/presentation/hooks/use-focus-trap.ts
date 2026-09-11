@@ -24,7 +24,7 @@ export function useFocusTrap(
 
     // Espera o painel montar pra levar o foco pra dentro dele.
     const frame = requestAnimationFrame(() => {
-      focusableIn(panelRef.current)[0]?.focus()
+      initialFocusIn(panelRef.current)?.focus()
     })
 
     return () => {
@@ -64,6 +64,22 @@ export function useFocusTrap(
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [open, panelRef, onClose])
 }
+
+/**
+ * Onde o foco entra ao abrir: o primeiro campo, quando existe.
+ *
+ * O primeiro focável de todo painel é o botão de fechar do cabeçalho. Abrir a
+ * busca rápida, digitar e nada acontecer, porque o foco estava no "Fechar", é
+ * o diálogo ensinando a usar o mouse. Sem campo (confirmação, folha de
+ * escolhas) o primeiro focável continua sendo o destino: ali o botão de fechar
+ * é a opção mais segura pra um Enter apressado.
+ */
+function initialFocusIn(root: HTMLElement | null): HTMLElement | undefined {
+  const items = focusableIn(root)
+  return items.find((element) => element.matches(FIELD)) ?? items[0]
+}
+
+const FIELD = 'input:not([type="checkbox"]):not([type="radio"]),textarea,select'
 
 function focusableIn(root: HTMLElement | null): HTMLElement[] {
   if (!root) return []

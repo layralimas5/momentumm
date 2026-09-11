@@ -51,6 +51,8 @@ export interface PlanLimits {
   readonly dataExport: boolean
   readonly remindersPerHabit: number
   readonly themes: boolean
+  /** Chamadas à Momentumm AI por mês (a franquia). O teto é aplicado no servidor. */
+  readonly aiCallsPerMonth: number
 }
 
 const UNLIMITED = Number.POSITIVE_INFINITY
@@ -78,6 +80,7 @@ export const PLAN_LIMITS: Readonly<Record<PlanTier, PlanLimits>> = {
     dataExport: false,
     remindersPerHabit: 1,
     themes: false,
+    aiCallsPerMonth: 0,
   },
   pro: {
     tier: 'pro',
@@ -101,6 +104,7 @@ export const PLAN_LIMITS: Readonly<Record<PlanTier, PlanLimits>> = {
     dataExport: true,
     remindersPerHabit: UNLIMITED,
     themes: true,
+    aiCallsPerMonth: 150,
   },
 }
 
@@ -164,7 +168,7 @@ export function planMatrix(): readonly PlanMatrixRow[] {
     { feature: 'Histórico', free: `Últimos ${free.historyDays} dias`, pro: 'Histórico completo' },
     { feature: 'Momentum Score', free: 'Apenas pontuação atual', pro: 'Pontuação, evolução e detalhamento' },
     { feature: 'Review semanal', free: 'Check-in básico manual', pro: 'Review completo e personalizado' },
-    { feature: 'Momentumm AI', free: 'Não disponível', pro: 'Franquia mensal' },
+    { feature: 'Momentumm AI', free: 'Não disponível', pro: `Franquia mensal (${PLAN_LIMITS.pro.aiCallsPerMonth} leituras)` },
     { feature: 'Métricas', free: 'Não disponível', pro: 'Métricas detalhadas' },
     { feature: 'Relatórios', free: 'Não disponível', pro: 'Semanais e mensais' },
     { feature: 'Registros em texto', free: 'Não disponível', pro: 'Disponível' },

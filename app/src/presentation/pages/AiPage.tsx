@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import type { AiPlanSuggestion, AiTaskSuggestion } from '@/domain/ai/ai-service'
 import { activityType } from '@/domain/entities/activity-type'
 import { formatDayLabel, parseDayKey } from '@/domain/entities/day'
@@ -10,6 +10,9 @@ import { Field, Select, TextInput } from '@/presentation/components/ui/Field'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { ErrorNote } from '@/presentation/components/ui/States'
 import { Panel, PanelHeader, Tag } from '@/presentation/components/ui/Surface'
+import { AiErrorNote } from '@/presentation/ai/AiErrorNote'
+import { AiProgressPanel } from '@/presentation/ai/AiProgressPanel'
+import { AiSkeleton } from '@/presentation/ai/AiBits'
 import { useAi, type PlanRequestDraft } from '@/presentation/ai/use-ai'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 import { ProGate } from '@/presentation/plan/ProGate'
@@ -32,7 +35,9 @@ type Mode = 'plano' | 'leitura'
 export function AiPage() {
   const planner = usePlanner()
   const ai = useAi()
-  const [mode, setMode] = useState<Mode>('plano')
+  // `?funcao=plano|leitura`: as portas contextuais chegam aqui já na função certa.
+  const [params] = useSearchParams()
+  const [mode, setMode] = useState<Mode>(params.get('funcao') === 'leitura' ? 'leitura' : 'plano')
 
   // A IA é o PRO inteiro: não existe versão menor dela pra mostrar. A tela
   // fica no mapa pra pessoa saber o que ela faz, e diz como liberar.
@@ -209,7 +214,9 @@ function PlanBuilder() {
             )}
           </Field>
 
-          {ai.buildPlan.error ? <ErrorNote message={ai.buildPlan.error} /> : null}
+          {ai.buildPlan.error ? (
+            <AiErrorNote message={ai.buildPlan.error} code={ai.buildPlan.errorCode} />
+          ) : null}
 
           <Button type="submit" loading={ai.buildPlan.loading} disabled={draft.title.trim().length < 3}>
             <Icon name="ia" className="size-4" />
@@ -219,7 +226,9 @@ function PlanBuilder() {
       </Panel>
 
       {ai.buildPlan.loading ? (
-        <PlanSkeleton />
+        <Panel>
+          <AiSkeleton />
+        </Panel>
       ) : suggestion ? (
         <PlanPreview
           draft={draft}
@@ -494,101 +503,5 @@ function PlanPreview({
 
 function ProgressReader() {
   const ai = useAi()
-  const reading = ai.readProgress.result
-
-  return (
-    <div className="flex flex-col gap-5">
-      <Panel>
-        <PanelHeader
-          title="Leitura do progresso"
-          icon="ia"
-          hint="Olha os teus últimos 7 dias, os objetivos parados e o que está planejado pra hoje."
-        />
-
-        {ai.readProgress.error ? (
-          <div className="mt-4">
-            <ErrorNote message={ai.readProgress.error} />
-          </div>
-        ) : null}
-
-        <Button
-          className="mt-4"
-          loading={ai.readProgress.loading}
-          onClick={() => void ai.readProgress.run()}
-        >
-          <Icon name="raio" className="size-4" />
-          {reading ? 'Ler de novo' : 'Ler meu progresso'}
-        </Button>
-      </Panel>
-
-      {ai.readProgress.loading ? <PlanSkeleton /> : null}
-
-      {reading && !ai.readProgress.loading ? (
-        <div className="grid gap-5 xl:grid-cols-2">
-          <Panel tone="brand" className="xl:col-span-2">
-            <p className="text-pretty text-base text-ink">{reading.summary}</p>
-            <p className="mt-4 rounded-lg bg-surface/60 px-3.5 py-3 text-sm text-ink-muted">
-              <span className="text-ink-faint">Próxima ação: </span>
-              {reading.nextAction}
-            </p>
-          </Panel>
-
-          <ReadingBlock title="Padrões" icon="progresso" items={reading.patterns} />
-          <ReadingBlock title="Gargalos" icon="cadeado" items={reading.bottlenecks} />
-          <ReadingBlock title="Objetivos parados" icon="pausa" items={reading.stalled} />
-          <ReadingBlock title="Ajustes sugeridos" icon="editar" items={reading.adjustments} />
-
-          {reading.overload ? (
-            <Panel className="xl:col-span-2">
-              <PanelHeader title="Sinal de sobrecarga" icon="sino" />
-              <p className="mt-3 text-sm text-ink-muted">{reading.overload}</p>
-            </Panel>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
-  )
-}
-
-function ReadingBlock({
-  title,
-  icon,
-  items,
-}: {
-  readonly title: string
-  readonly icon: 'progresso' | 'cadeado' | 'pausa' | 'editar'
-  readonly items: readonly string[]
-}) {
-  if (items.length === 0) return null
-
-  return (
-    <Panel>
-      <PanelHeader title={title} icon={icon} />
-      <ul className="mt-3 flex flex-col gap-2.5">
-        {items.map((item) => (
-          <li key={item} className="text-pretty text-sm text-ink-muted">
-            {item}
-          </li>
-        ))}
-      </ul>
-    </Panel>
-  )
-}
-
-function PlanSkeleton() {
-  return (
-    <Panel>
-      <div role="status" aria-live="polite" className="flex flex-col gap-3">
-        <span className="sr-only">Pensando</span>
-        {[0, 1, 2, 3].map((index) => (
-          <span
-            key={index}
-            aria-hidden="true"
-            className="h-4 animate-pulse rounded bg-surface-top"
-            style={{ width: `${100 - index * 12}%` }}
-          />
-        ))}
-      </div>
-    </Panel>
-  )
+  return <AiProgressPanel ai={ai} title="Ler meu progresso" />
 }

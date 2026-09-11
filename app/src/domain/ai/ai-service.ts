@@ -3,6 +3,7 @@ import type { DayKey } from '@/domain/entities/day'
 import type { DayPart, HabitFrequency, HabitIcon } from '@/domain/entities/habit'
 import type { Priority } from '@/domain/entities/priority'
 import type { TaskEffort } from '@/domain/entities/task'
+import type { AiUserContext } from './ai-context'
 
 /**
  * Momentumm AI — a porta.
@@ -12,17 +13,33 @@ import type { TaskEffort } from '@/domain/entities/task'
  * real mora na infraestrutura e, quando existir, vai passar por um endpoint
  * próprio no servidor. Chave de LLM no frontend é chave pública.
  *
- * As duas funções do V1 são deliberadamente estreitas:
+ * As funções do V1 são deliberadamente estreitas, uma por porta de entrada:
  *
- *   1. `buildPlan`   — objetivo vira etapas, hábitos e ações
- *   2. `readProgress` — os dados viram leitura curta e um próximo passo
+ *   1. `buildPlan`      — objetivo vira etapas, hábitos e ações (Objetivos)
+ *   2. `reorganizeDay`  — o dia contra a capacidade real (Hoje)
+ *   3. `readProgress`   — os dados viram diagnóstico e ajustes (Progresso)
+ *   4. `draftReview`    — a review semanal pré-escrita pelos dados (Review)
+ *   5. `planRecovery`   — o plano de volta, sem culpa (Modo Retomada)
+ *   6. `summarizeReview` — a síntese da semana já respondida
  *
- * As duas devolvem estrutura, não texto solto. É isso que permite a prévia
- * editável antes de salvar: a pessoa mexe em cada ação, e o app grava com as
- * mesmas regras de domínio de um plano feito na mão.
+ * Nenhuma delas é chat. Todas devolvem estrutura, não texto solto: é isso que
+ * permite a prévia editável antes de salvar — a pessoa aceita, edita ou
+ * rejeita cada item, e o app grava com as mesmas regras de domínio de um
+ * plano feito na mão. Nada é escrito sem confirmação.
+ *
+ * Todo ajuste proposto é um `AiAdjustment`: um tipo fechado, com o alvo
+ * apontado por REF (o apelido que o contexto deu) e o motivo em uma frase.
+ * O app sabe executar cada tipo; um tipo que não existe aqui não existe.
+ *
+ * Todo pedido carrega o `context` (ver `ai-context`): objetivos com plano e
+ * previsão, hábitos com constância, o dia, os reviews anteriores e o score
+ * aberto. Os campos soltos ao lado dele são o resumo que a implementação
+ * simulada consegue ler; a real lê o contexto inteiro.
  */
 
 export interface AiPlanRequest {
+  /** A conta inteira, do jeito que `buildAiContext` monta. */
+  readonly context: AiUserContext
   readonly title: string
   readonly axis: ActivityTypeSlug
   readonly target: number
@@ -79,6 +96,7 @@ export interface AiPlanSuggestion {
 }
 
 export interface AiProgressRequest {
+  readonly context: AiUserContext
   readonly momentum: number
   readonly momentumLevel: string
   readonly activeDays: number
@@ -101,9 +119,12 @@ export interface AiProgressReading {
   readonly stalled: readonly string[]
   readonly adjustments: readonly string[]
   readonly nextAction: string
+  /** Os ajustes que dá pra aplicar com um toque, cada um com o motivo. */
+  readonly proposals: readonly AiAdjustment[]
 }
 
 export interface AiReviewRequest {
+  readonly context: AiUserContext
   readonly weekLabel: string
   readonly executionRate: number
   readonly habitsDone: number
@@ -113,10 +134,136 @@ export interface AiReviewRequest {
   readonly learnings: string | null
 }
 
+// ---------------------------------------------------------------------------
+// Ajustes: o que a IA pode propor e o app sabe aplicar.
+// ---------------------------------------------------------------------------
+
+export const AI_ADJUSTMENT_TYPES = [
+  'move_action',
+  'shrink_action',
+  'set_minutes',
+  'set_main_priority',
+  'extend_deadline',
+  'change_habit_frequency',
+  'create_action',
+] as const
+export type AiAdjustmentType = (typeof AI_ADJUSTMENT_TYPES)[number]
+
+interface AiAdjustmentBase {
+  /** Uma frase com o dado que motivou. Sem motivo o ajuste não entra. */
+  readonly reason: string
+}
+
+export type AiAdjustment =
+  | (AiAdjustmentBase & { readonly type: 'move_action'; readonly ref: string; readonly toDay: DayKey })
+  | (AiAdjustmentBase & { readonly type: 'shrink_action'; readonly ref: string })
+  | (AiAdjustmentBase & { readonly type: 'set_minutes'; readonly ref: string; readonly estimatedMin: number })
+  | (AiAdjustmentBase & { readonly type: 'set_main_priority'; readonly ref: string })
+  | (AiAdjustmentBase & { readonly type: 'extend_deadline'; readonly ref: string; readonly toDay: DayKey })
+  | (AiAdjustmentBase & {
+      readonly type: 'change_habit_frequency'
+      readonly ref: string
+      readonly timesPerWeek: number
+      readonly weekdays: readonly number[]
+    })
+  | (AiAdjustmentBase & {
+      readonly type: 'create_action'
+      readonly title: string
+      readonly day: DayKey
+      readonly estimatedMin: number
+      readonly minimalVersion: string | null
+      /** Ref do objetivo que a ação empurra. Null é caixa de entrada. */
+      readonly objectiveRef: string | null
+    })
+
+// ---------------------------------------------------------------------------
+// Hoje: reorganizar o dia contra a capacidade real.
+// ---------------------------------------------------------------------------
+
+export interface AiDayRequest {
+  readonly context: AiUserContext
+  /** O tempo que a pessoa disse ter hoje. Teto, nunca meta. */
+  readonly availableMin: number
+  readonly plannedMin: number
+}
+
+export interface AiDayPlan {
+  /** Uma frase: o que o dia pede contra o que cabe, com os minutos. */
+  readonly summary: string
+  readonly fits: boolean
+  readonly adjustments: readonly AiAdjustment[]
+  readonly reasoning: string
+}
+
+// ---------------------------------------------------------------------------
+// Review: a revisão pré-escrita pelos dados, pra pessoa corrigir.
+// ---------------------------------------------------------------------------
+
+export interface AiReviewDraftRequest {
+  readonly context: AiUserContext
+  readonly weekLabel: string
+  readonly executionRate: number
+  readonly habitsDone: number
+  readonly habitsPlanned: number
+  readonly tasksDone: number
+  readonly tasksPlanned: number
+  readonly activeDays: number
+  readonly focusMinutes: number
+  /** O que ela já escreveu, pra IA completar e não sobrescrever. */
+  readonly written: {
+    readonly achievements: string | null
+    readonly difficulties: string | null
+    readonly learnings: string | null
+    readonly adjustments: string | null
+  }
+}
+
+export interface AiReviewDraft {
+  readonly achievements: string
+  readonly difficulties: string
+  readonly learnings: string
+  readonly adjustments: string
+  readonly priorities: readonly string[]
+  /** De onde saiu cada resposta: os números citados. */
+  readonly basis: string
+}
+
+// ---------------------------------------------------------------------------
+// Modo Retomada: o plano de volta.
+// ---------------------------------------------------------------------------
+
+export interface AiRecoveryRequest {
+  readonly context: AiUserContext
+  /** Os sinais que ligaram o modo, com o número de cada um. */
+  readonly signals: readonly string[]
+  readonly daysSinceLastMove: number
+}
+
+export interface AiRecoveryPlan {
+  /** A leitura do que aconteceu, sem contar dias perdidos e sem culpa. */
+  readonly opening: string
+  /** Até três passos pequenos. Trazer, encolher ou criar. */
+  readonly adjustments: readonly AiAdjustment[]
+  /** Refs dos hábitos que valem manter na versão mínima esta semana. */
+  readonly keepHabits: readonly string[]
+  readonly reasoning: string
+}
+
+/** Quanto da franquia mensal já foi usado, como o servidor contou. */
+export interface AiQuota {
+  readonly used: number
+  readonly limit: number
+}
+
 export interface AiService {
   /** A implementação simulada responde true aqui pra tela poder avisar. */
   readonly simulated: boolean
+  /** A última contagem que o servidor devolveu. Null enquanto ninguém chamou. */
+  readonly quota: AiQuota | null
   buildPlan(request: AiPlanRequest): Promise<AiPlanSuggestion>
+  reorganizeDay(request: AiDayRequest): Promise<AiDayPlan>
   readProgress(request: AiProgressRequest): Promise<AiProgressReading>
+  draftReview(request: AiReviewDraftRequest): Promise<AiReviewDraft>
+  planRecovery(request: AiRecoveryRequest): Promise<AiRecoveryPlan>
   summarizeReview(request: AiReviewRequest): Promise<string>
 }

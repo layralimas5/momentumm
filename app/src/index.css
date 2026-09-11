@@ -334,3 +334,13 @@
 .marquee-fade {
   mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
 }
+
+/* A linha fina de sincronização do app: um traço que atravessa o topo. */
+@keyframes sync {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}

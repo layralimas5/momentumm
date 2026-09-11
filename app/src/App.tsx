@@ -147,15 +147,24 @@ export function App() {
 }
 
 /**
- * O React Router não rola até a âncora sozinho. Isso importa quando o link vem
- * de outra rota (ex: /ferramentas → /#pro), porque a seção só existe depois que
- * a página nova monta. Os passos (#passo-...) são tratados pelo próprio bloco.
+ * O React Router não mexe na rolagem sozinho: trocar de tela mantém a posição
+ * da anterior. No celular isso aparece como "Ver todos" no fim de Hoje abrindo
+ * Hábitos já rolado até o terceiro card, então toda troca de rota sem âncora
+ * volta pro topo.
+ *
+ * Com âncora ele rola até ela. Isso importa quando o link vem de outra rota
+ * (ex: /ferramentas → /#pro), porque a seção só existe depois que a página
+ * nova monta. Os passos (#passo-...) são tratados pelo próprio bloco.
  */
 function ScrollToHash() {
   const { pathname, hash } = useLocation()
 
   useEffect(() => {
-    if (!hash || hash.startsWith('#passo-')) return
+    if (!hash) {
+      window.scrollTo(0, 0)
+      return
+    }
+    if (hash.startsWith('#passo-')) return
 
     const target = document.querySelector(hash)
     if (target) {

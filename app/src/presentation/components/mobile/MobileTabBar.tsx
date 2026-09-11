@@ -12,6 +12,9 @@ interface TabItem {
 }
 
 /** Dois de cada lado do botão central. Mais que isso vira alvo pequeno demais. */
+/** As rotas que a barra leva: o topo e os atalhos do perfil leem daqui. */
+export const TAB_ROUTES: readonly string[] = ['/app', '/app/objetivos', '/app/plano', '/app/perfil']
+
 const LEFT: readonly TabItem[] = [
   { to: '/app', label: 'Hoje', icon: 'hoje', end: true },
   { to: '/app/objetivos', label: 'Objetivos', icon: 'objetivo', end: false },

@@ -6,3 +6,6 @@ dist
 !.env.example
 *.tsbuildinfo
 .DS_Store
+
+# Cache do Supabase CLI
+supabase/.temp

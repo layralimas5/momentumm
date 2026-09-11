@@ -512,7 +512,8 @@ function activeDaysBetween(input: MomentumInput, start: DayKey, end: DayKey): nu
   return dayRange(start, end).filter((day) => dayCredit(input, day) > 0).length
 }
 
-function oldestDay(input: MomentumInput): DayKey | null {
+/** O primeiro dia com registro na conta, ou null: antes dele não existe "parada". */
+export function oldestDay(input: MomentumInput): DayKey | null {
   const days = [
     ...input.activities.map((item) => item.day),
     ...input.habitLogs.map((item) => item.day),

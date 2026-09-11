@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Insight } from '@/domain/entities/insight'
 import type { DayLoad } from '@/domain/entities/adaptive-day'
@@ -18,7 +18,6 @@ import { MomentumStrip } from '@/presentation/components/dashboard/MomentumStrip
 import { NextUpCard } from '@/presentation/components/dashboard/NextUpCard'
 import { TodayFocusCard } from '@/presentation/components/dashboard/TodayFocusCard'
 import { MobileInsight } from './MobileInsight'
-import { MobileMomentum } from './MobileMomentum'
 import { MobileObjectives } from './MobileObjectives'
 import { MobilePriority } from './MobilePriority'
 import { MobileWins } from './MobileWins'
@@ -29,6 +28,8 @@ interface MobileDashboardProps {
   /** O tamanho do dia como ele está montado: alimenta o Dia Adaptável. */
   readonly dayLoad: DayLoad
   readonly onAdaptDay: (availableMin: number) => void
+  /** A porta da IA no card do dia. Montada pela página, que é quem tem o diálogo. */
+  readonly aiDayEntry?: ReactNode
   readonly onStartFocus: (task: Task) => void
   readonly onCompleteTask: (task: Task) => Promise<void>
   readonly onPostponeTask: (task: Task) => Promise<void>
@@ -51,6 +52,7 @@ export function MobileDashboard({
   view,
   dayLoad,
   onAdaptDay,
+  aiDayEntry,
   onStartFocus,
   onBringToToday,
   onCompleteTask,
@@ -127,6 +129,7 @@ export function MobileDashboard({
         openItems={dayLoad.items}
         capacity={view.capacity}
         onAdapt={onAdaptDay}
+        aiEntry={aiDayEntry}
       />
 
       <ShareMomentsRow view={view} />
@@ -189,15 +192,6 @@ export function MobileDashboard({
         insight={view.insight}
         onApply={onApplyInsight}
         onDismiss={view.dismissInsight}
-      />
-
-      <MobileMomentum
-        momentum={view.momentum}
-        history={view.momentumSeries}
-        today={planner.today}
-        streak={planner.streak}
-        recommendation={view.recommendation}
-        detail={planner.limits.momentumDetail}
       />
 
       {/* Daqui pra baixo é consulta e registro do fim do dia. */}

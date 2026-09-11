@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { addDays, formatDayLabel } from '@/domain/entities/day'
 import { habitConsistency } from '@/domain/entities/habit'
@@ -30,12 +30,16 @@ import {
 } from '@/domain/entities/weekly-review'
 import { UpgradeHint } from '@/presentation/components/dashboard/UpgradeHint'
 import { ObjectiveLink } from '@/presentation/components/shared/Meta'
-import { Button } from '@/presentation/components/ui/Button'
+import { Button, buttonClass } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { EmptyState, ErrorNote } from '@/presentation/components/ui/States'
 import { Panel, PanelHeader, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
 import { weeklyReviewEvent } from '@/domain/share/journey-event-builders'
+import { AiErrorNote } from '@/presentation/ai/AiErrorNote'
+import { AiReviewDraftPanel } from '@/presentation/ai/AiReviewDraftPanel'
 import { useAi } from '@/presentation/ai/use-ai'
+import { AiError, type AiErrorCode } from '@/domain/ai/ai-error'
+import { toUserMessage } from '@/shared/errors'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { ShareButton } from '@/presentation/share/ShareButton'
 import { useDashboard } from '@/presentation/planner/use-dashboard'
@@ -96,6 +100,9 @@ export function ReviewPage() {
     um review volta pro começo, nunca pra um passo que a tela não mostra.
   */
   const full = planner.limits.fullReview
+  // "Preparar minha revisão": a IA pré-escreve as respostas pelos dados da
+  // semana. Só onde a review é a completa e a IA existe no plano.
+  const ai = useAi()
   const steps: readonly ReviewStep[] = full ? REVIEW_STEPS : BASIC_REVIEW_STEPS
   const metas: readonly ReviewStepMeta[] = full ? REVIEW_STEP_META : BASIC_REVIEW_STEP_META
 
@@ -166,6 +173,36 @@ export function ReviewPage() {
           <Icon name="check" className="size-4 shrink-0 text-positive" />
           Review dessa semana concluído. Dá pra continuar editando à vontade.
         </p>
+      ) : null}
+
+      {/*
+        Semana sem registro suficiente: o formulário continua aberto (dá pra
+        escrever o que aconteceu fora do app), mas a tela diz em voz alta que
+        os números abaixo estão vazios por falta de dado, e aponta a saída. Sem
+        isso, 0% em quatro caixas parece bug, não conta nova.
+      */}
+      {!done && !computed.ready ? (
+        <div className="flex flex-col gap-3 rounded-lg border border-dashed border-line px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-ink-muted">
+            <span className="font-medium text-ink">Essa semana ainda não tem registro. </span>
+            O review lê o que você marcou em Hoje: sem isso os números ficam em zero e a leitura
+            não escreve nada. Responder à mão continua valendo.
+          </p>
+          <Link to="/app" className={buttonClass({ variant: 'secondary', size: 'sm', className: 'shrink-0' })}>
+            <Icon name="hoje" className="size-4" />
+            Registrar o dia
+          </Link>
+        </div>
+      ) : null}
+
+      {full && ai.enabled && !done ? (
+        <AiReviewDraftPanel
+          ai={ai}
+          stored={stored}
+          computed={computed}
+          onSave={save}
+          onApplied={() => goTo('conquistas')}
+        />
       ) : null}
 
       <Stepper metas={metas} current={index} filled={filled} onSelect={goTo} />
@@ -520,6 +557,9 @@ function AnswerField({
 }) {
   const [draft, setDraft] = useState(value)
 
+  // O valor muda por fora quando o rascunho da IA é aceito: a caixa acompanha.
+  useEffect(() => setDraft(value), [value])
+
   return (
     <label className="flex flex-col gap-2">
       <span className="sr-only">{label}</span>
@@ -599,9 +639,11 @@ function AiSummary({
 }) {
   const ai = useAi()
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<{ message: string; code: AiErrorCode | null } | null>(null)
 
   const generate = async () => {
     setLoading(true)
+    setError(null)
     try {
       const summary = await ai.summarizeReview({
         weekLabel: weekRangeLabel(computed.start, computed.end),
@@ -613,6 +655,11 @@ function AiSummary({
         learnings: review.learnings,
       })
       await onSave({ aiSummary: summary })
+    } catch (cause) {
+      setError({
+        message: toUserMessage(cause),
+        code: cause instanceof AiError ? cause.code : null,
+      })
     } finally {
       setLoading(false)
     }
@@ -627,6 +674,8 @@ function AiSummary({
           {review.aiSummary ? 'Gerar de novo' : 'Gerar com o Momentumm AI'}
         </Button>
       </div>
+
+      {error ? <AiErrorNote className="mt-3" message={error.message} code={error.code} /> : null}
 
       {review.aiSummary ? (
         <p className="mt-3 text-pretty rounded-lg bg-surface-hi px-3.5 py-3 text-sm text-ink-muted">

@@ -182,3 +182,15 @@ export const APP_NAV: readonly AppNavItem[] = [
 export const PRIMARY_NAV = APP_NAV.filter((item) => !item.secondary)
 
 export const SECONDARY_NAV = APP_NAV.filter((item) => item.secondary)
+
+/**
+ * O item de navegação que responde por uma rota. A mais específica ganha:
+ * `/app/objetivos/123` é "Objetivos", não "Hoje". Os dois cabeçalhos (desktop e
+ * celular) leem daqui pra dizer onde a pessoa está.
+ */
+export function navItemFor(pathname: string): AppNavItem | undefined {
+  const matches = APP_NAV.filter((item) =>
+    item.end ? pathname === item.to : pathname.startsWith(item.to),
+  )
+  return matches.sort((a, b) => b.to.length - a.to.length)[0]
+}

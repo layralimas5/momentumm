@@ -84,7 +84,7 @@ export function Activation({ firstName, today, control }: ActivationProps) {
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 py-4 sm:py-6">
       <header>
         <h2 className="text-2xl font-semibold tracking-tight text-balance text-ink lg:text-3xl">
-          {firstName ? `Bem-vinda, ${firstName}.` : 'Bem-vinda ao Momentumm.'} Vamos tirar isso da
+          {firstName ? `Que bom te ver, ${firstName}.` : 'Que bom te ver por aqui.'} Vamos tirar isso da
           intenção.
         </h2>
         <p className="mt-2 text-pretty text-ink-muted">

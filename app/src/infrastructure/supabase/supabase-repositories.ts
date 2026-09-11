@@ -130,10 +130,36 @@ export { SupabaseAuthService } from './supabase-auth'
   `auth.uid()` e deixa o cascade levar o resto: perfil, objetivos, hábitos,
   ações, registros, momentos e, pelo trigger de mídia, os arquivos.
 */
+/**
+ * Excluir a conta: os arquivos primeiro, pela Storage API, e só depois a
+ * linha em `auth.users`, que cascateia o resto.
+ *
+ * O Supabase recusa `delete from storage.objects` por SQL, então o trigger
+ * do banco não consegue mais apagar a pasta da pessoa (migration 0017). Quem
+ * pode é o próprio dono, daqui, pela política "dono apaga" — e é isso que faz
+ * a conta sair sem deixar arquivo órfão.
+ */
 async function deleteOwnAccount(): Promise<void> {
+  const {
+    data: { user },
+  } = await supabase().auth.getUser()
+  if (user) await purgeOwnMedia(user.id)
+
   const { error } = await supabase().rpc('delete_my_account')
   if (error) throw new DomainError('Não consegui excluir a conta agora.')
   await supabase().auth.signOut({ scope: 'global' })
+}
+
+async function purgeOwnMedia(userId: string): Promise<void> {
+  const bucket = supabase().storage.from('user-media')
+  const { data: files, error } = await bucket.list(userId)
+  if (error) throw new DomainError('Não consegui limpar teus arquivos antes de excluir a conta.')
+  if (!files || files.length === 0) return
+
+  const { error: removeError } = await bucket.remove(files.map((file) => `${userId}/${file.name}`))
+  if (removeError) {
+    throw new DomainError('Não consegui limpar teus arquivos antes de excluir a conta.')
+  }
 }
 
 export class SupabaseActivityRepository implements ActivityRepository {

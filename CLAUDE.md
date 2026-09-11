@@ -63,7 +63,7 @@ que existir base. Feed vazio afasta usuário.
 Fase 1 em pé, em `app/`. Roda em **modo demo** sem configurar nada (dados em
 `localStorage`) e vira contas reais ao preencher `.env.local` com o Supabase.
 
-Pronto: domínio completo com 622 testes, migrations com RLS até a 0011, repositórios demo e
+Pronto: domínio completo com 642 testes, migrations com RLS até a 0017, repositórios demo e
 Supabase, auth com rota protegida, registro rápido, cronômetro de sessão, streak
 dos últimos 7 dias, histórico com filtro por eixo, metas com progresso e perfil
 editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
@@ -745,6 +745,97 @@ que a pessoa já cumpre, e a tela existe pra combinar, conferir e encerrar.
 **Não implementado de propósito:** desafio público, descoberta, comunidade,
 grupo, chat, premiação e ranking global.
 
+### Momentumm AI de verdade
+
+A IA deixou de ser só simulada. A porta (`domain/ai/ai-service`) é a mesma;
+o que mudou é quem responde por ela:
+
+- **Modo demo:** `SimulatedAiService`, regras fixas, avisada na tela.
+- **Com Supabase:** `SupabaseAiService` → Edge Function `momentumm-ai`
+  (`supabase/functions/momentumm-ai`). A chave da Anthropic mora só no
+  segredo da função. Deploy e segredos em `supabase/functions/README.md`.
+
+**Todo pedido carrega o contexto inteiro da conta** (`domain/ai/ai-context`,
+`buildAiContext`, puro e testado): objetivos com etapas, gargalo, próxima ação
+e previsão; hábitos com constância e estado de hoje; ações do dia e atrasadas;
+os três últimos reviews escritos; vitórias recentes; o score aberto em
+fatores; a capacidade do check-in; as ações pendentes dos próximos 7 dias.
+Um contexto só, montado no `use-ai`, pra todos os pedidos, senão duas telas
+recebem leituras que se contradizem. Nenhum id atravessa a fronteira: a IA
+responde por posição (`stepIndex`) e por REF — apelido curto (`a1`, `o2`,
+`h1`) que `buildAiContextBundle` atribui e traduz de volta pra id do lado do
+app (`AiRefs`). Ref inventado não bate com nada e a linha aparece bloqueada,
+com o motivo, em vez de virar escrita. Não saem: e-mail, nome, observação do
+check-in, dados de amigos.
+
+**Cinco portas contextuais, nenhum chat** (`presentation/ai/`). Cada uma
+devolve estrutura acionável e nada é gravado sem confirmação:
+
+- Objetivos → **Criar plano com IA** (`/app/ia?funcao=plano`, kind `plan`):
+  etapas, hábitos e ações, prévia editável
+- Hoje → **Reorganizar meu dia** (`AiDayDialog`, kind `day`): o menor conjunto
+  de ajustes que faz o dia caber no tempo declarado
+- Progresso → **Interpretar meu momento** (`AiProgressPanel`, kind
+  `progress`): padrões, gargalos, sobrecarga, objetivos parados, e `proposals`
+  aplicáveis
+- Review semanal → **Preparar minha revisão** (`AiReviewDraftPanel`, kind
+  `review_draft`): as quatro respostas e as prioridades pré-escritas pelos
+  dados, na primeira pessoa, preservando o que ela já escreveu
+- Modo Retomada → **Criar plano de retorno** (`AiRecoveryDialog`, kind
+  `recovery`): leitura sem culpa, até três passos pequenos, hábitos a manter
+  na mínima
+
+**Todo ajuste é um `AiAdjustment`** (`domain/ai/ai-service`), tipo fechado com
+ref e `reason` obrigatório: `move_action`, `shrink_action`, `set_minutes`,
+`set_main_priority`, `extend_deadline`, `change_habit_frequency`,
+`create_action`. `AiProposals` mostra cada um com aceitar / editar (data,
+minutos) / rejeitar e um único botão de aplicar; `use-ai-adjustments` executa
+pelas MESMAS funções do provider (a IA não tem caminho próprio pro banco), um
+por vez, e devolve o que entrou e o que falhou com o motivo. Os limites do
+plano valem igual: `create_action` acima de 5 ações no dia é recusado.
+
+**Freio no cliente** (`useAiCall`): uma chamada por vez e 8s entre duas do
+mesmo tipo. A IA só existe no PRO (`limits.ai`): sem ela os botões viram o
+convite (`AiEntry`), e a função responde `plan_required`.
+
+**Prompt, formato de saída e validação vivem num lugar só**
+(`domain/ai/ai-prompts`), importado pelo app e pela função (import map em
+`deno.json` mapeia `@/` pra `src/`). A resposta é validada com zod nos DOIS
+lados; ícone, frequência ou prioridade fora do domínio falham antes de virar
+prévia. O modelo padrão é `claude-opus-5` (`MOMENTUMM_AI_MODEL` troca), com
+saída estruturada (`output_config.format`) e effort `medium`.
+
+**Franquia mensal no servidor** (`PLAN_LIMITS[tier].aiCallsPerMonth`: 0 no
+gratuito, 150 no PRO), contada em `ai_calls` (migrations 0016 e 0018, esta
+com os seis kinds), que só a função grava com service role. A resposta traz
+`usage` e o app mostra "3 de 150 leituras este mês". Sem política de insert pra API pública, pela mesma
+regra de `audit_logs`. `profiles.plan` é lido com service role: é a fonte que
+o cliente não consegue forjar.
+
+**Erros com código** (`domain/ai/ai-error`): `not_configured`,
+`plan_required`, `quota_exceeded`, `model_unavailable`, `invalid_output`,
+`unauthorized`, `invalid_request`. `AiErrorNote` mostra a mensagem e oferece o
+PRO só em `plan_required` e na cota fora do PRO. Função ausente chega ao navegador como falha de CORS
+(`FunctionsFetchError`), e a mensagem cobre as duas leituras possíveis.
+
+### Sincronização
+
+O provider recarrega em silêncio (`reload({ silent: true })`, dados atuais na
+tela, sem esqueleto) ao voltar a ficar online e ao voltar pra aba depois de
+um minuto parado (`RESYNC_AFTER_MS`). `syncing` sai no contexto e vira uma
+linha fina no topo. Não existe Realtime: a escrita continua otimista com
+rollback, e a releitura é o que traz o que foi marcado em outro aparelho.
+
+**Testado com conta real** (10/09/2026, auto-confirm ligado no projeto):
+cadastro pela tela → onboarding → objetivo com três etapas em `plan_stages`
+→ ações em `Hoje` → concluir → Momentum 0 → 49 → Progresso com número →
+review da semana anterior com aviso de "sem registro" → os três pedidos da
+IA saindo com JWT e contexto completo (função interceptada no teste, porque
+ela ainda não estava implantada) → plano da IA salvo com etapas de verdade.
+O que o teste achou e foi corrigido: Progresso ignorava ação concluída no
+empty state, "Voltei hoje" no primeiro dia de conta, e `delete_my_account`
+quebrado porque o Supabase passou a recusar delete em `storage.objects`
+(migration 0017 + cliente apaga a pasta pela Storage API).
 ### A jornada principal
 
 O produto é um ciclo de três telas, nessa ordem:
@@ -853,8 +944,17 @@ O dashboard do celular é uma **árvore de componentes própria**
 `useIsDesktop()`. Não é o desktop encolhido: a ordem muda pra registrar,
 decidir e começar, e a análise vem depois.
 
-- Barra inferior com cinco lugares (Hoje, Jornada, +, Foco, Perfil). Hábitos,
-  Metas, Review e Insights não cabem lá e ficam nos atalhos do Perfil
+- Barra inferior com cinco lugares (Hoje, Objetivos, +, Plano, Perfil). O resto
+  (Hábitos, Progresso, Review, IA, Círculo, Foco, Metas, Jornada, Insights,
+  Configurações) chega pelos atalhos do Perfil e pelos links do Hoje. `TAB_ROUTES`
+  em `MobileTabBar` é a fonte: o topo e os atalhos leem dela
+- O topo cumprimenta só em `Hoje`. Nas outras telas fica a marca, e quando a
+  tela não está na barra (ou é um detalhe) aparece o "voltar": histórico do
+  app quando existe, senão a tela pai
+- Trocar de rota volta pro topo (`ScrollToHash` no `App`): o router não mexe na
+  rolagem, e "Ver todos" no fim de Hoje abria Hábitos já rolado
+- Diálogo e bottom sheet levam o foco pro primeiro campo (`use-focus-trap`), não
+  pro botão de fechar
 - Em `Minha Jornada` a **sequência abre a página**. No desktop ela mora na
   coluna lateral, mas no celular, no fim da rolagem, ela simplesmente não é
   vista — e é ela a resposta que traz a pessoa àquela tela
@@ -887,6 +987,6 @@ Quando incomodar, trocar por import dinâmico dentro do `container`.
 cd app
 npm install
 npm run dev     # modo demo, sem configurar nada
-npm test        # 622 testes
+npm test        # 642 testes
 npm run build
 ```

@@ -24,6 +24,24 @@ const SIZES: Record<Size, string> = {
   lg: 'h-13 px-6 text-base rounded-xl gap-2',
 }
 
+/**
+ * As mesmas classes do botão, pra um `<Link>` que precisa parecer um.
+ * Navegação é link, não botão com `navigate` dentro: abre em nova aba, tem
+ * URL no hover e o leitor de tela anuncia como link.
+ */
+export function buttonClass({
+  variant = 'primary',
+  size = 'md',
+  className,
+}: { variant?: Variant; size?: Size; className?: string } = {}): string {
+  return cn(
+    'inline-flex select-none items-center justify-center font-medium transition-colors duration-150',
+    VARIANTS[variant],
+    SIZES[size],
+    className,
+  )
+}
+
 export function Button({
   variant = 'primary',
   size = 'md',
@@ -38,13 +56,11 @@ export function Button({
       {...rest}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className={cn(
-        'inline-flex select-none items-center justify-center font-medium transition-colors duration-150',
-        'disabled:cursor-not-allowed disabled:opacity-50',
-        VARIANTS[variant],
-        SIZES[size],
-        className,
-      )}
+      className={buttonClass({
+        variant,
+        size,
+        className: cn('disabled:cursor-not-allowed disabled:opacity-50', className),
+      })}
     >
       {loading ? <Spinner /> : null}
       {children}

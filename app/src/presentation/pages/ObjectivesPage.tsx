@@ -6,6 +6,7 @@ import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { Panel, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
+import { AiEntryLink } from '@/presentation/ai/AiBits'
 import { UpgradeHint } from '@/presentation/components/dashboard/UpgradeHint'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
@@ -42,15 +43,28 @@ export function ObjectivesPage() {
         title="Objetivos"
         description="Onde você quer chegar, com prazo. É daqui que sai o plano, e é contra isso que o app compara teu ritmo pra perceber quando alguma coisa parou de andar."
         action={
-          <Button onClick={() => composer.open('objetivo')} disabled={limit.reached}>
-            <Icon name="mais" className="size-4" />
-            Novo objetivo
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {planner.limits.ai && !limit.reached ? (
+              <AiEntryLink
+                enabled
+                label="Criar plano com IA"
+                hint="o objetivo vira etapas, hábitos e ações que cabem no teu tempo."
+                to="/app/ia?funcao=plano"
+              />
+            ) : null}
+            <Button onClick={() => composer.open('objetivo')} disabled={limit.reached}>
+              <Icon name="mais" className="size-4" />
+              Novo objetivo
+            </Button>
+          </div>
         }
       />
 
       {planner.error ? <ErrorNote message={planner.error} /> : null}
       {limit.message ? <UpgradeHint message={limit.message} /> : null}
+      {!planner.limits.ai && !limit.reached ? (
+        <UpgradeHint message="Criar plano com IA: o objetivo vira etapas, hábitos e ações que cabem no teu tempo. Faz parte do PRO." />
+      ) : null}
 
       {planner.loading && views.length === 0 ? (
         <LoadingBlock label="Carregando os objetivos" />

@@ -1,36 +1,21 @@
-import { Link } from "react-router-dom";
-import { activityType } from "@/domain/entities/activity-type";
-import { dayKeyToDate } from "@/domain/entities/day";
-import {
-  MOMENTUM_LEVEL_LABELS,
-  type DayDot,
-  type MomentumFactor,
-} from "@/domain/entities/momentum";
-import { deltaLabel } from "@/domain/entities/week";
-import { Button } from "@/presentation/components/ui/Button";
-import { Icon } from "@/presentation/components/ui/Icon";
-import {
-  EmptyState,
-  ErrorNote,
-  LoadingBlock,
-} from "@/presentation/components/ui/States";
-import {
-  Panel,
-  PanelHeader,
-  ProgressBar,
-  Tag,
-} from "@/presentation/components/ui/Surface";
-import { ProGate } from "@/presentation/plan/ProGate";
-import { usePlanner } from "@/presentation/planner/use-planner";
-import { useAsyncAction } from "@/presentation/hooks/use-async-action";
-import { useInsightActions } from "@/presentation/planner/use-insight-actions";
-import {
-  useProgress,
-  type PeriodTotals,
-  type Rate,
-} from "@/presentation/planner/use-progress";
-import { cn } from "@/shared/lib/cn";
-import { PageHeader } from "./PageHeader";
+import { Link } from 'react-router-dom'
+import { activityType } from '@/domain/entities/activity-type'
+import { dayKeyToDate } from '@/domain/entities/day'
+import { MOMENTUM_LEVEL_LABELS, type DayDot, type MomentumFactor } from '@/domain/entities/momentum'
+import { deltaLabel } from '@/domain/entities/week'
+import { Button, buttonClass } from '@/presentation/components/ui/Button'
+import { Icon } from '@/presentation/components/ui/Icon'
+import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
+import { Panel, PanelHeader, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
+import { AiProgressPanel } from '@/presentation/ai/AiProgressPanel'
+import { useAi } from '@/presentation/ai/use-ai'
+import { ProGate } from '@/presentation/plan/ProGate'
+import { usePlanner } from '@/presentation/planner/use-planner'
+import { useAsyncAction } from '@/presentation/hooks/use-async-action'
+import { useInsightActions } from '@/presentation/planner/use-insight-actions'
+import { useProgress, type PeriodTotals, type Rate } from '@/presentation/planner/use-progress'
+import { cn } from '@/shared/lib/cn'
+import { PageHeader } from './PageHeader'
 
 /**
  * Progresso.
@@ -40,22 +25,32 @@ import { PageHeader } from "./PageHeader";
  * de comportamento por causa de um oráculo.
  */
 export function ProgressPage() {
-  const planner = usePlanner();
-  const progress = useProgress();
+  const planner = usePlanner()
+  const progress = useProgress()
 
   /*
     A mesma execução do dashboard e da tela de Insights. Descrever o risco e
     não oferecer o ajuste é o que faz a pessoa ler três telas e não mudar
     nada no dia seguinte.
   */
-  const actions = useInsightActions(progress.insightContext);
-  const applyAdjustment = useAsyncAction(actions.apply);
+  const actions = useInsightActions(progress.insightContext)
+  const applyAdjustment = useAsyncAction(actions.apply)
 
-  const hasData = planner.activities.length > 0 || planner.habitLogs.length > 0;
+  // Ação concluída é movimento: o Momentum conta ela, então a tela que mostra
+  // o Momentum não pode dizer "nada pra medir" no dia em que a pessoa fechou
+  // a primeira prioridade da conta.
+  const hasData =
+    planner.activities.length > 0 ||
+    planner.habitLogs.length > 0 ||
+    planner.tasks.some((task) => task.status === 'feita')
 
   // Analisar é o PRO. O gratuito vê a pontuação de hoje e os objetivos; o
   // resto da tela é a parte que cruza períodos, e ela não tem versão menor.
-  const metrics = planner.limits.metrics;
+  const metrics = planner.limits.metrics
+
+  // "Interpretar meu momento": a IA lê o mesmo estado da tela e devolve o
+  // diagnóstico com os ajustes aplicáveis. Só existe onde a IA existe (PRO).
+  const ai = useAi()
 
   return (
     <div className="flex flex-col gap-5">
@@ -72,6 +67,12 @@ export function ProgressPage() {
         <EmptyState
           title="Ainda não há o que medir"
           description="O progresso começa a contar história no primeiro registro. Marca um hábito ou conclui uma ação e volta aqui."
+          action={
+            <Link to="/app" className={buttonClass()}>
+              <Icon name="hoje" className="size-4" />
+              Ir pro meu dia
+            </Link>
+          }
         />
       ) : (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -85,16 +86,10 @@ export function ProgressPage() {
                   <span className="text-2xl text-ink-faint">/100</span>
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <Tag tone="brand">
-                    {MOMENTUM_LEVEL_LABELS[progress.momentum.level]}
-                  </Tag>
+                  <Tag tone="brand">{MOMENTUM_LEVEL_LABELS[progress.momentum.level]}</Tag>
                   {metrics ? (
-                    <Tag
-                      tone={
-                        progress.momentum.delta >= 0 ? "positive" : "neutral"
-                      }
-                    >
-                      {progress.momentum.delta > 0 ? "+" : ""}
+                    <Tag tone={progress.momentum.delta >= 0 ? 'positive' : 'neutral'}>
+                      {progress.momentum.delta > 0 ? '+' : ''}
                       {progress.momentum.delta} vs. semana anterior
                     </Tag>
                   ) : null}
@@ -108,192 +103,169 @@ export function ProgressPage() {
 
             {metrics ? (
               <div className="mt-6 border-t border-line pt-5">
-                <h3 className="text-sm font-semibold tracking-wide text-ink-muted uppercase">
-                  De onde vieram os pontos
-                </h3>
-                <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                  {progress.factors.map((factor) => (
-                    <FactorBar
-                      key={factor.key}
-                      factor={factor}
-                      weakest={progress.weakest?.key === factor.key}
-                    />
-                  ))}
-                </ul>
+              <h3 className="text-sm font-semibold tracking-wide text-ink-muted uppercase">
+                De onde vieram os pontos
+              </h3>
+              <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                {progress.factors.map((factor) => (
+                  <FactorBar
+                    key={factor.key}
+                    factor={factor}
+                    weakest={progress.weakest?.key === factor.key}
+                  />
+                ))}
+              </ul>
 
-                {progress.weakest ? (
-                  <p className="mt-4 text-sm text-ink-muted">
-                    <span className="text-ink-faint">
-                      Onde há mais espaço:{" "}
-                    </span>
-                    {progress.weakest.label.toLowerCase()}, com{" "}
-                    {progress.weakest.maxPoints - progress.weakest.points}{" "}
-                    pontos na mesa.
-                  </p>
-                ) : null}
+              {progress.weakest ? (
+                <p className="mt-4 text-sm text-ink-muted">
+                  <span className="text-ink-faint">Onde há mais espaço: </span>
+                  {progress.weakest.label.toLowerCase()}, com{' '}
+                  {progress.weakest.maxPoints - progress.weakest.points} pontos na mesa.
+                </p>
+              ) : null}
               </div>
             ) : null}
           </Panel>
 
+          {ai.enabled ? <AiProgressPanel ai={ai} className="xl:col-span-2" /> : null}
+
           {metrics ? (
             <>
               <Panel>
-                <PanelHeader
-                  title="Últimos 7 dias"
-                  icon="progresso"
-                  hint={progress.week.conclusion}
-                />
-                <WeekChart series={progress.series} />
-                <div className="mt-4 grid grid-cols-3 gap-3 border-t border-line pt-4">
-                  <Stat
-                    label="Dias ativos"
-                    value={`${progress.last7.activeDays}/7`}
-                    hint={deltaLabel(
-                      progress.week.current.activeDays,
-                      progress.week.previous.activeDays,
-                      "dias",
-                    )}
-                  />
-                  <Stat
-                    label="Hábitos"
-                    value={rateText(progress.last7.habits)}
-                    hint={compareText(progress.last7.habits)}
-                  />
-                  <Stat
-                    label="Ações"
-                    value={rateText(progress.last7.tasks)}
-                    hint={compareText(progress.last7.tasks)}
-                  />
-                </div>
-              </Panel>
-
-              <Panel>
-                <PanelHeader title="Este mês" icon="calendario" />
-                <div className="mt-4 flex flex-col gap-4">
-                  <PeriodBlock totals={progress.month} />
-                  <div className="grid grid-cols-2 gap-3 border-t border-line pt-4">
-                    <Stat
-                      label="Objetivos ativos"
-                      value={String(progress.activeObjectives)}
-                    />
-                    <Stat
-                      label="Objetivos concluídos"
-                      value={String(progress.completedObjectives)}
-                    />
-                  </div>
-                </div>
-              </Panel>
-
-              <Panel>
-                <PanelHeader title="Onde você avançou" icon="trofeu" />
-                {progress.gains.length === 0 ? (
-                  <p className="mt-4 text-sm text-ink-muted">
-                    Ainda não há avanço mensurável nessa janela. Não é o mesmo
-                    que estar parado — é que uma semana é pouco pra mostrar
-                    tendência.
-                  </p>
-                ) : (
-                  <ul className="mt-4 flex flex-col gap-3">
-                    {progress.gains.map((gain) => (
-                      <li
-                        key={gain}
-                        className="flex gap-2.5 text-sm text-ink-muted"
-                      >
-                        <Icon
-                          name="check"
-                          className="mt-0.5 size-4 shrink-0 text-positive"
-                        />
-                        <span className="text-pretty">{gain}</span>
-                      </li>
-                    ))}
-                  </ul>
+            <PanelHeader
+              title="Últimos 7 dias"
+              icon="progresso"
+              hint={progress.week.conclusion}
+            />
+            <WeekChart series={progress.series} />
+            <div className="mt-4 grid grid-cols-3 gap-3 border-t border-line pt-4">
+              <Stat
+                label="Dias ativos"
+                value={`${progress.last7.activeDays}/7`}
+                hint={deltaLabel(
+                  progress.week.current.activeDays,
+                  progress.week.previous.activeDays,
+                  'dias',
                 )}
-              </Panel>
+              />
+              <Stat
+                label="Hábitos"
+                value={rateText(progress.last7.habits)}
+                hint={compareText(progress.last7.habits)}
+              />
+              <Stat
+                label="Ações"
+                value={rateText(progress.last7.tasks)}
+                hint={compareText(progress.last7.tasks)}
+              />
+            </div>
+          </Panel>
 
-              <Panel>
-                <PanelHeader title="O que precisa de atenção" icon="sino" />
-                {progress.risks.length === 0 ? (
-                  <p className="mt-4 text-sm text-ink-muted">
-                    Nada travado por aqui. Segue como está.
-                  </p>
-                ) : (
-                  <ul className="mt-4 flex flex-col gap-3">
-                    {progress.risks.map((risk) => (
-                      <li
-                        key={risk}
-                        className="flex gap-2.5 text-sm text-ink-muted"
-                      >
-                        <Icon
-                          name="raio"
-                          className="mt-0.5 size-4 shrink-0 text-flame"
-                        />
-                        <span className="text-pretty">{risk}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+          <Panel>
+            <PanelHeader title="Este mês" icon="calendario" />
+            <div className="mt-4 flex flex-col gap-4">
+              <PeriodBlock totals={progress.month} />
+              <div className="grid grid-cols-2 gap-3 border-t border-line pt-4">
+                <Stat label="Objetivos ativos" value={String(progress.activeObjectives)} />
+                <Stat label="Objetivos concluídos" value={String(progress.completedObjectives)} />
+              </div>
+            </div>
+          </Panel>
 
-                {/*
+          <Panel>
+            <PanelHeader title="Onde você avançou" icon="trofeu" />
+            {progress.gains.length === 0 ? (
+              <p className="mt-4 text-sm text-ink-muted">
+                Ainda não há avanço mensurável nessa janela. Não é o mesmo que estar parado — é
+                que uma semana é pouco pra mostrar tendência.
+              </p>
+            ) : (
+              <ul className="mt-4 flex flex-col gap-3">
+                {progress.gains.map((gain) => (
+                  <li key={gain} className="flex gap-2.5 text-sm text-ink-muted">
+                    <Icon name="check" className="mt-0.5 size-4 shrink-0 text-positive" />
+                    <span className="text-pretty">{gain}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+
+          <Panel>
+            <PanelHeader title="O que precisa de atenção" icon="sino" />
+            {progress.risks.length === 0 ? (
+              <p className="mt-4 text-sm text-ink-muted">
+                Nada travado por aqui. Segue como está.
+              </p>
+            ) : (
+              <ul className="mt-4 flex flex-col gap-3">
+                {progress.risks.map((risk) => (
+                  <li key={risk} className="flex gap-2.5 text-sm text-ink-muted">
+                    <Icon name="raio" className="mt-0.5 size-4 shrink-0 text-flame" />
+                    <span className="text-pretty">{risk}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {/*
               O ajuste vem colado no risco de propósito.
 
               Uma lista do que está travado e um link pra outra tela devolvem
               o trabalho pra pessoa. Aqui o botão executa a recomendação — a
               mesma que o dashboard executa, pelo mesmo hook.
             */}
-                {progress.nextAdjustment ? (
-                  <div className="mt-4 rounded-xl border border-brand/25 bg-brand-dim/25 px-3.5 py-3">
-                    <p className="text-xs font-medium tracking-wide text-brand-ink uppercase">
-                      O próximo ajuste
-                    </p>
-                    <p className="mt-1.5 text-sm font-medium text-balance text-ink">
-                      {progress.nextAdjustment.title}
-                    </p>
-                    <p className="mt-1 text-sm text-ink-muted">
-                      {progress.nextAdjustment.recommendation}
-                    </p>
+            {progress.nextAdjustment ? (
+              <div className="mt-4 rounded-xl border border-brand/25 bg-brand-dim/25 px-3.5 py-3">
+                <p className="text-xs font-medium tracking-wide text-brand-ink uppercase">
+                  O próximo ajuste
+                </p>
+                <p className="mt-1.5 text-sm font-medium text-balance text-ink">
+                  {progress.nextAdjustment.title}
+                </p>
+                <p className="mt-1 text-sm text-ink-muted">
+                  {progress.nextAdjustment.recommendation}
+                </p>
 
-                    {progress.nextAdjustment.action === "nenhuma" ? null : (
-                      <Button
-                        size="sm"
-                        className="mt-3"
-                        loading={applyAdjustment.running}
-                        onClick={() => {
-                          if (progress.nextAdjustment)
-                            void applyAdjustment.run(progress.nextAdjustment);
-                        }}
-                      >
-                        {progress.nextAdjustment.actionLabel}
-                      </Button>
-                    )}
-
-                    <div aria-live="polite" className="min-h-5">
-                      {applyAdjustment.error ? (
-                        <p className="mt-1 text-sm text-danger">
-                          {applyAdjustment.error}
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-                ) : null}
-
-                <Link
-                  to="/app/insights"
-                  className="mt-4 inline-flex items-center gap-1.5 text-sm text-brand-ink transition-colors hover:text-brand-hi"
-                >
-                  Ver todas as leituras do ritmo
-                  <Icon name="seta" className="size-4" />
-                </Link>
-
-                {progress.stalled.length > 0 ? (
-                  <Link
-                    to="/app/objetivos"
-                    className="mt-4 inline-flex items-center gap-1.5 text-sm text-brand-ink transition-colors hover:text-brand-hi"
+                {progress.nextAdjustment.action === 'nenhuma' ? null : (
+                  <Button
+                    size="sm"
+                    className="mt-3"
+                    loading={applyAdjustment.running}
+                    onClick={() => {
+                      if (progress.nextAdjustment) void applyAdjustment.run(progress.nextAdjustment)
+                    }}
                   >
-                    Rever objetivos parados
-                    <Icon name="seta" className="size-4" />
-                  </Link>
-                ) : null}
-              </Panel>
+                    {progress.nextAdjustment.actionLabel}
+                  </Button>
+                )}
+
+                <div aria-live="polite" className="min-h-5">
+                  {applyAdjustment.error ? (
+                    <p className="mt-1 text-sm text-danger">{applyAdjustment.error}</p>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            <Link
+              to="/app/insights"
+              className="mt-4 inline-flex items-center gap-1.5 text-sm text-brand-ink transition-colors hover:text-brand-hi"
+            >
+              Ver todas as leituras do ritmo
+              <Icon name="seta" className="size-4" />
+            </Link>
+
+            {progress.stalled.length > 0 ? (
+              <Link
+                to="/app/objetivos"
+                className="mt-4 inline-flex items-center gap-1.5 text-sm text-brand-ink transition-colors hover:text-brand-hi"
+              >
+                Rever objetivos parados
+                <Icon name="seta" className="size-4" />
+              </Link>
+            ) : null}
+          </Panel>
             </>
           ) : (
             <ProGate
@@ -317,14 +289,12 @@ export function ProgressPage() {
               hint="Onde cada um está, o que está travando e quando fecha no ritmo atual."
             />
             {progress.objectives.length === 0 ? (
-              <p className="mt-4 text-sm text-ink-muted">
-                Nenhum objetivo criado ainda.
-              </p>
+              <p className="mt-4 text-sm text-ink-muted">Nenhum objetivo criado ainda.</p>
             ) : (
               <ul className="mt-4 flex flex-col gap-5">
                 {progress.objectives.map((view) => {
-                  const axis = activityType(view.progress.objective.axis);
-                  const objective = view.progress.objective;
+                  const axis = activityType(view.progress.objective.axis)
+                  const objective = view.progress.objective
 
                   return (
                     <li
@@ -354,10 +324,7 @@ export function ProgressPage() {
                       {view.plan.hasPlan ? (
                         <ul className="mt-1 flex flex-col gap-1.5">
                           {view.plan.stages.map((stage) => (
-                            <li
-                              key={stage.stage.id}
-                              className="flex items-center gap-2.5"
-                            >
+                            <li key={stage.stage.id} className="flex items-center gap-2.5">
                               <span className="w-28 shrink-0 truncate text-xs text-ink-muted">
                                 {stage.stage.title}
                               </span>
@@ -366,50 +333,39 @@ export function ProgressPage() {
                                 value={stage.ratio}
                                 label={`Etapa ${stage.stage.title} de ${objective.title}`}
                                 color={
-                                  view.plan.bottleneck?.stage.id ===
-                                  stage.stage.id
-                                    ? "var(--color-flame)"
+                                  view.plan.bottleneck?.stage.id === stage.stage.id
+                                    ? 'var(--color-flame)'
                                     : axis.colorToken
                                 }
                               />
                               <span className="tabular w-16 shrink-0 text-right text-xs text-ink-faint">
-                                {stage.stage.weight}% ·{" "}
-                                {Math.round(stage.ratio * 100)}%
+                                {stage.stage.weight}% · {Math.round(stage.ratio * 100)}%
                               </span>
                             </li>
                           ))}
                         </ul>
                       ) : (
                         <p className="text-xs text-ink-faint">
-                          Sem etapas: a barra mede volume registrado, não
-                          execução.
+                          Sem etapas: a barra mede volume registrado, não execução.
                         </p>
                       )}
 
-                      <p className="text-xs text-ink-faint">
-                        {view.forecast.message}
-                      </p>
+                      <p className="text-xs text-ink-faint">{view.forecast.message}</p>
 
                       <div className="flex flex-wrap items-center gap-2">
                         {view.plan.bottleneck ? (
-                          <Tag tone="warn">
-                            Gargalo: {view.plan.bottleneck.stage.title}
-                          </Tag>
+                          <Tag tone="warn">Gargalo: {view.plan.bottleneck.stage.title}</Tag>
                         ) : null}
                         {view.plan.overdueCount > 0 ? (
                           <Tag tone="warn">
-                            {view.plan.overdueCount}{" "}
-                            {view.plan.overdueCount === 1
-                              ? "ação atrasada"
-                              : "ações atrasadas"}
+                            {view.plan.overdueCount}{' '}
+                            {view.plan.overdueCount === 1 ? 'ação atrasada' : 'ações atrasadas'}
                           </Tag>
                         ) : null}
                         {view.plan.habits.length > 0 ? (
                           <Tag>
-                            {view.plan.habits.length}{" "}
-                            {view.plan.habits.length === 1
-                              ? "hábito de apoio"
-                              : "hábitos de apoio"}
+                            {view.plan.habits.length}{' '}
+                            {view.plan.habits.length === 1 ? 'hábito de apoio' : 'hábitos de apoio'}
                           </Tag>
                         ) : null}
                       </div>
@@ -421,7 +377,7 @@ export function ProgressPage() {
                         </p>
                       ) : null}
                     </li>
-                  );
+                  )
                 })}
               </ul>
             )}
@@ -429,22 +385,20 @@ export function ProgressPage() {
         </div>
       )}
     </div>
-  );
+  )
 }
 
 function FactorBar({
   factor,
   weakest,
 }: {
-  readonly factor: MomentumFactor;
-  readonly weakest: boolean;
+  readonly factor: MomentumFactor
+  readonly weakest: boolean
 }) {
   return (
     <li>
       <div className="flex items-baseline justify-between gap-2">
-        <span
-          className={cn("text-xs", weakest ? "text-flame" : "text-ink-faint")}
-        >
+        <span className={cn('text-xs', weakest ? 'text-flame' : 'text-ink-faint')}>
           {factor.label}
         </span>
         <span className="tabular text-xs text-ink-muted">
@@ -455,10 +409,10 @@ function FactorBar({
         className="mt-1.5"
         value={factor.value}
         label={`${factor.label}: ${factor.points} de ${factor.maxPoints} pontos`}
-        color={weakest ? "var(--color-flame)" : "var(--color-brand)"}
+        color={weakest ? 'var(--color-flame)' : 'var(--color-brand)'}
       />
     </li>
-  );
+  )
 }
 
 /**
@@ -468,41 +422,32 @@ function FactorBar({
  */
 function WeekChart({ series }: { readonly series: readonly DayDot[] }) {
   return (
-    <ol
-      className="mt-4 flex items-end gap-1.5"
-      aria-label="Intensidade dos últimos 7 dias"
-    >
+    <ol className="mt-4 flex items-end gap-1.5" aria-label="Intensidade dos últimos 7 dias">
       {series.map((dot) => {
-        const label = dayKeyToDate(dot.day).toLocaleDateString("pt-BR", {
-          weekday: "narrow",
-        });
-        const height = Math.max(4, Math.round(dot.intensity * 100));
+        const label = dayKeyToDate(dot.day).toLocaleDateString('pt-BR', { weekday: 'narrow' })
+        const height = Math.max(4, Math.round(dot.intensity * 100))
 
         return (
-          <li
-            key={dot.day}
-            className="flex flex-1 flex-col items-center gap-1.5"
-          >
+          <li key={dot.day} className="flex flex-1 flex-col items-center gap-1.5">
             <span className="flex h-24 w-full items-end">
               <span
                 aria-hidden="true"
                 className={cn(
-                  "w-full rounded-t-md transition-[height] duration-500",
-                  dot.intensity > 0 ? "bg-brand" : "bg-surface-top",
+                  'w-full rounded-t-md transition-[height] duration-500',
+                  dot.intensity > 0 ? 'bg-brand' : 'bg-surface-top',
                 )}
                 style={{ height: `${height}%` }}
               />
             </span>
             <span className="text-xs text-ink-faint">{label}</span>
             <span className="sr-only">
-              {dot.day}: {dot.minutes} minutos, {dot.habitsDone} hábitos,{" "}
-              {dot.tasksDone} ações
+              {dot.day}: {dot.minutes} minutos, {dot.habitsDone} hábitos, {dot.tasksDone} ações
             </span>
           </li>
-        );
+        )
       })}
     </ol>
-  );
+  )
 }
 
 function PeriodBlock({ totals }: { readonly totals: PeriodTotals }) {
@@ -513,7 +458,7 @@ function PeriodBlock({ totals }: { readonly totals: PeriodTotals }) {
       <Stat label="Hábitos" value={rateText(totals.habits)} />
       <Stat label="Ações" value={rateText(totals.tasks)} />
     </div>
-  );
+  )
 }
 
 function Stat({
@@ -521,9 +466,9 @@ function Stat({
   value,
   hint,
 }: {
-  readonly label: string;
-  readonly value: string;
-  readonly hint?: string | undefined;
+  readonly label: string
+  readonly value: string
+  readonly hint?: string | undefined
 }) {
   return (
     <div>
@@ -531,17 +476,17 @@ function Stat({
       <p className="tabular mt-0.5 text-lg font-semibold text-ink">{value}</p>
       {hint ? <p className="mt-0.5 text-xs text-ink-faint">{hint}</p> : null}
     </div>
-  );
+  )
 }
 
 function rateText(rate: Rate): string {
-  if (rate.total === 0) return "—";
-  return `${Math.round(rate.ratio * 100)}%`;
+  if (rate.total === 0) return '—'
+  return `${Math.round(rate.ratio * 100)}%`
 }
 
 function compareText(rate: Rate): string | undefined {
-  if (rate.total === 0) return undefined;
-  const delta = Math.round((rate.ratio - rate.previousRatio) * 100);
-  if (delta === 0) return "igual ao período anterior";
-  return `${delta > 0 ? "+" : ""}${delta} pontos vs. anterior`;
+  if (rate.total === 0) return undefined
+  const delta = Math.round((rate.ratio - rate.previousRatio) * 100)
+  if (delta === 0) return 'igual ao período anterior'
+  return `${delta > 0 ? '+' : ''}${delta} pontos vs. anterior`
 }

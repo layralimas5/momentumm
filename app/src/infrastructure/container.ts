@@ -15,6 +15,7 @@ import type { TaskRepository } from '@/domain/repositories/task-repository'
 import type { WeeklyReviewRepository } from '@/domain/repositories/weekly-review-repository'
 import type { WinRepository } from '@/domain/repositories/win-repository'
 import { SimulatedAiService } from './ai/simulated-ai-service'
+import { SupabaseAiService } from './ai/supabase-ai-service'
 import { isDemoMode } from './config/env'
 import {
   DemoActivityRepository,
@@ -79,9 +80,9 @@ export interface Container {
    */
   readonly challenges: ChallengeRepository
   /**
-   * Momentumm AI. Hoje é sempre a implementação simulada: não existe endpoint
-   * de IA ainda, e chave de LLM não pode viver no frontend. Quando o endpoint
-   * existir, é aqui que a troca acontece — e `simulated` deixa de ser true.
+   * Momentumm AI. No modo demo é a implementação simulada (regras fixas,
+   * avisada na tela); com Supabase é a Edge Function `momentumm-ai`, que é
+   * onde a chave do modelo mora. Chave de LLM não passa pelo frontend.
    */
   readonly ai: AiService
   readonly demo: boolean
@@ -124,6 +125,6 @@ export const container: Container = isDemoMode
       journeyEvents: new SupabaseJourneyEventRepository(),
       friendships: new SupabaseFriendshipRepository(),
       challenges: new SupabaseChallengeRepository(),
-      ai: new SimulatedAiService(),
+      ai: new SupabaseAiService(),
       demo: false,
     }

@@ -11,16 +11,11 @@ import { useComposer } from '@/presentation/planner/ComposerProvider'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 import { CommandPalette } from './CommandPalette'
-import { APP_NAV } from './nav-items'
+import { navItemFor } from './nav-items'
 
 /** O nome da tela atual, pra barra dizer onde a pessoa está. */
 function titleOf(pathname: string): string {
-  const matches = APP_NAV.filter((item) =>
-    item.end ? pathname === item.to : pathname.startsWith(item.to),
-  )
-  // A rota mais específica ganha: /app/objetivos/123 é "Objetivos", não "Hoje".
-  const best = matches.sort((a, b) => b.to.length - a.to.length)[0]
-  return best?.label ?? 'Momentumm'
+  return navItemFor(pathname)?.label ?? 'Momentumm'
 }
 
 /**
@@ -151,7 +146,7 @@ function AddMenu() {
           <MenuItem icon="metas" onClick={() => pick('meta')}>
             Nova meta
           </MenuItem>
-          <MenuItem icon="trofeu" onClick={() => pick('objetivo')}>
+          <MenuItem icon="objetivo" onClick={() => pick('objetivo')}>
             Novo objetivo
           </MenuItem>
         </div>

@@ -101,7 +101,7 @@ export function PlanPage() {
       ) : planner.tasks.length === 0 ? (
         <EmptyState
           title="Nenhuma ação no plano"
-          description="O plano nasce de um objetivo. Cria um objetivo e o Momentumm já sugere os primeiros passos — ou escreve a primeira ação você mesma."
+          description="O plano nasce de um objetivo. Cria um objetivo e o Momentumm já sugere os primeiros passos — ou escreve a primeira ação por conta própria."
           action={
             <div className="flex flex-wrap justify-center gap-2">
               <Button onClick={() => composer.open('objetivo')}>

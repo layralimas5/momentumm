@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { MAX_AVAILABLE_MIN, MIN_AVAILABLE_MIN } from '@/domain/entities/adaptive-day'
 import type { CapacityProfile } from '@/domain/entities/checkin'
 import { Button } from '@/presentation/components/ui/Button'
@@ -30,6 +30,8 @@ interface AdaptiveDayCardProps {
   readonly openItems: number
   readonly capacity: CapacityProfile
   readonly onAdapt: (availableMin: number) => void
+  /** A porta da IA ("Reorganizar meu dia"). Fica ao lado da aritmética, não no lugar dela. */
+  readonly aiEntry?: ReactNode
 }
 
 export function AdaptiveDayCard({
@@ -37,6 +39,7 @@ export function AdaptiveDayCard({
   openItems,
   capacity,
   onAdapt,
+  aiEntry,
 }: AdaptiveDayCardProps) {
   const [custom, setCustom] = useState('')
 
@@ -110,6 +113,8 @@ export function AdaptiveDayCard({
       </div>
 
       <p className="mt-3 text-xs text-ink-faint">{capacity.guidance}</p>
+
+      {aiEntry ? <div className="mt-4 border-t border-line pt-4">{aiEntry}</div> : null}
     </Panel>
   )
 }

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { totalMinutes } from '@/domain/entities/activity'
-import { addDays } from '@/domain/entities/day'
+import { addDays, daysBetween } from '@/domain/entities/day'
 import { capacityOf, checkInOfDay, type CapacityProfile, type CheckIn } from '@/domain/entities/checkin'
 import { paceOf, type GoalPace, type GoalProgress } from '@/domain/entities/goal'
 import {
@@ -21,7 +21,7 @@ import {
   type InsightInput,
   type ObjectiveInsightInput,
 } from '@/domain/entities/insight'
-import { MOMENTUM_WINDOW_DAYS, momentumHistory } from '@/domain/entities/momentum'
+import { MOMENTUM_WINDOW_DAYS, momentumHistory, oldestDay } from '@/domain/entities/momentum'
 import {
   calculateMomentum,
   recommendationFor,
@@ -208,16 +208,22 @@ export function useDashboard(): DashboardView {
   const week = useMemo(() => summarizeWeek(momentumInput), [momentumInput])
 
   // Lê a série de trás pra frente, pulando o próprio dia: o buraco que
-  // interessa é o que veio ANTES de hoje.
+  // interessa é o que veio ANTES de hoje. E nunca antes do primeiro registro
+  // da conta: sem esse corte, quem cria a conta e conclui a primeira ação
+  // ganhava um "Voltei hoje" de seis dias no primeiro dia de uso.
   const daysAway = useMemo(() => {
+    const first = oldestDay(momentumInput)
+    if (first === null || first >= today) return 0
+    const sinceFirst = Math.max(0, daysBetween(first, today) - 1)
+
     let gap = 0
     for (let index = week.series.length - 2; index >= 0; index -= 1) {
       const day = week.series[index]
       if (!day || day.intensity > 0) break
       gap += 1
     }
-    return gap
-  }, [week.series])
+    return Math.min(gap, sinceFirst)
+  }, [momentumInput, today, week.series])
 
   const habitStates = useMemo(
     () => habitDayStates(habits, habitLogs, today),

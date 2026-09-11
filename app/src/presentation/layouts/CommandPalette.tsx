@@ -60,7 +60,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
         id: 'novo-objetivo',
         label: 'Criar objetivo',
         hint: 'Com prazo, e o plano sai pronto',
-        icon: 'trofeu',
+        icon: 'objetivo',
         run: () => composer.open('objetivo'),
       },
     ]

@@ -75,6 +75,9 @@ interface Snapshot {
   readonly journeyEvents: JourneyEvent[]
 }
 
+/** Aba parada por mais que isso volta lendo o servidor de novo. */
+const RESYNC_AFTER_MS = 60_000
+
 const EMPTY: Snapshot = {
   customAxes: [],
   activities: [],
@@ -101,8 +104,10 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   const { user, profile } = useAuth()
   const [data, setData] = useState<Snapshot>(EMPTY)
   const [loading, setLoading] = useState(true)
+  const [syncing, setSyncing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [online, setOnline] = useState(() => navigator.onLine)
+  const loadedAt = useRef<number | null>(null)
   const mounted = useRef(true)
 
   /*
@@ -139,14 +144,20 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const reload = useCallback(async () => {
+  /**
+   * Carrega tudo de uma vez. `silent` é a re-sincronização: os dados atuais
+   * continuam na tela enquanto os novos chegam, em vez de trocar o app por um
+   * esqueleto porque a pessoa voltou de outra aba.
+   */
+  const reload = useCallback(async ({ silent = false } = {}) => {
     if (!user) {
       setData(EMPTY)
       setLoading(false)
       return
     }
 
-    setLoading(true)
+    if (silent) setSyncing(true)
+    else setLoading(true)
     try {
       const [
         customAxes,
@@ -196,16 +207,46 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         weeklyReviews,
         journeyEvents: sortEventsByRecent(journeyEvents),
       })
+      loadedAt.current = Date.now()
       setError(null)
     } catch (cause) {
       if (mounted.current) setError(toUserMessage(cause))
     } finally {
-      if (mounted.current) setLoading(false)
+      if (mounted.current) {
+        setLoading(false)
+        setSyncing(false)
+      }
     }
   }, [user])
 
   useEffect(() => {
     void reload()
+  }, [reload])
+
+  /*
+    Re-sincronização. O provider carregava uma vez por sessão, e o app aberto
+    no celular desde ontem mostrava o dia de ontem: o que foi marcado em outro
+    aparelho, ou depois de a rede cair, só aparecia num F5. Duas portas:
+    voltar a ficar online, e voltar pra aba depois de um tempo parado.
+  */
+  useEffect(() => {
+    const resync = () => {
+      if (!navigator.onLine) return
+      void reload({ silent: true })
+    }
+
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      const age = loadedAt.current === null ? Infinity : Date.now() - loadedAt.current
+      if (age >= RESYNC_AFTER_MS) resync()
+    }
+
+    window.addEventListener('online', resync)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('online', resync)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [reload])
 
   /** Escrita otimista: aplica, e se o servidor recusar volta ao estado anterior. */
@@ -1126,6 +1167,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       limits,
       usage,
       loading,
+      syncing,
       error,
       online,
       isNewUser,
@@ -1174,6 +1216,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       limits,
       usage,
       loading,
+      syncing,
       error,
       online,
       isNewUser,
