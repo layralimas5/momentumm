@@ -29,7 +29,10 @@ import { Icon } from '@/presentation/components/ui/Icon'
 import { EmptyState, ErrorNote } from '@/presentation/components/ui/States'
 import { Panel, PanelHeader, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
 import { weeklyReviewEvent } from '@/domain/share/journey-event-builders'
+import { AiErrorNote } from '@/presentation/ai/AiErrorNote'
 import { useAi } from '@/presentation/ai/use-ai'
+import { AiError, type AiErrorCode } from '@/domain/ai/ai-error'
+import { toUserMessage } from '@/shared/errors'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { ShareButton } from '@/presentation/share/ShareButton'
 import { useDashboard } from '@/presentation/planner/use-dashboard'
@@ -591,9 +594,11 @@ function AiSummary({
 }) {
   const ai = useAi()
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<{ message: string; code: AiErrorCode | null } | null>(null)
 
   const generate = async () => {
     setLoading(true)
+    setError(null)
     try {
       const summary = await ai.summarizeReview({
         weekLabel: weekRangeLabel(computed.start, computed.end),
@@ -605,6 +610,11 @@ function AiSummary({
         learnings: review.learnings,
       })
       await onSave({ aiSummary: summary })
+    } catch (cause) {
+      setError({
+        message: toUserMessage(cause),
+        code: cause instanceof AiError ? cause.code : null,
+      })
     } finally {
       setLoading(false)
     }
@@ -619,6 +629,8 @@ function AiSummary({
           {review.aiSummary ? 'Gerar de novo' : 'Gerar com o Momentumm AI'}
         </Button>
       </div>
+
+      {error ? <AiErrorNote className="mt-3" message={error.message} code={error.code} /> : null}
 
       {review.aiSummary ? (
         <p className="mt-3 text-pretty rounded-lg bg-surface-hi px-3.5 py-3 text-sm text-ink-muted">

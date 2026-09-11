@@ -26,6 +26,8 @@ export interface PlanLimits {
   readonly advancedAnalytics: boolean
   readonly monthlyReport: boolean
   readonly adaptiveRecommendations: boolean
+  /** Chamadas à Momentumm AI por dia. O teto é aplicado no servidor. */
+  readonly aiCallsPerDay: number
 }
 
 const UNLIMITED = Number.POSITIVE_INFINITY
@@ -41,6 +43,7 @@ export const PLAN_LIMITS: Readonly<Record<PlanTier, PlanLimits>> = {
     advancedAnalytics: false,
     monthlyReport: false,
     adaptiveRecommendations: false,
+    aiCallsPerDay: 5,
   },
   pro: {
     tier: 'pro',
@@ -52,6 +55,7 @@ export const PLAN_LIMITS: Readonly<Record<PlanTier, PlanLimits>> = {
     advancedAnalytics: true,
     monthlyReport: true,
     adaptiveRecommendations: true,
+    aiCallsPerDay: 40,
   },
 }
 

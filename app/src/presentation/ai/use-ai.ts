@@ -11,6 +11,7 @@ import { activityType } from '@/domain/entities/activity-type'
 import { capacityOf, checkInOfDay } from '@/domain/entities/checkin'
 import { deadlineFrom } from '@/domain/entities/objective'
 import { estimatedMinutesOf, isPending, tasksOfDay } from '@/domain/entities/task'
+import { AiError, type AiErrorCode } from '@/domain/ai/ai-error'
 import { container } from '@/infrastructure/container'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { useProgress } from '@/presentation/planner/use-progress'
@@ -20,6 +21,8 @@ interface AiCall<TResult, TArgs extends unknown[]> {
   readonly result: TResult | null
   readonly loading: boolean
   readonly error: string | null
+  /** O código do erro da IA, quando é dela: a tela decide o que oferecer. */
+  readonly errorCode: AiErrorCode | null
   run(...args: TArgs): Promise<TResult | null>
   reset(): void
 }
@@ -30,17 +33,20 @@ function useAiCall<TResult, TArgs extends unknown[]>(
   const [result, setResult] = useState<TResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [errorCode, setErrorCode] = useState<AiErrorCode | null>(null)
 
   const run = useCallback(
     async (...args: TArgs) => {
       setLoading(true)
       setError(null)
+      setErrorCode(null)
       try {
         const value = await action(...args)
         setResult(value)
         return value
       } catch (cause) {
         setError(toUserMessage(cause))
+        setErrorCode(cause instanceof AiError ? cause.code : null)
         return null
       } finally {
         setLoading(false)
@@ -52,9 +58,10 @@ function useAiCall<TResult, TArgs extends unknown[]>(
   const reset = useCallback(() => {
     setResult(null)
     setError(null)
+    setErrorCode(null)
   }, [])
 
-  return { result, loading, error, run, reset }
+  return { result, loading, error, errorCode, run, reset }
 }
 
 export interface PlanRequestDraft {

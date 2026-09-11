@@ -10,6 +10,7 @@ import { Field, Select, TextInput } from '@/presentation/components/ui/Field'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { ErrorNote } from '@/presentation/components/ui/States'
 import { Panel, PanelHeader, Tag } from '@/presentation/components/ui/Surface'
+import { AiErrorNote } from '@/presentation/ai/AiErrorNote'
 import { useAi, type PlanRequestDraft } from '@/presentation/ai/use-ai'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 import { usePlanner } from '@/presentation/planner/use-planner'
@@ -190,7 +191,9 @@ function PlanBuilder() {
             )}
           </Field>
 
-          {ai.buildPlan.error ? <ErrorNote message={ai.buildPlan.error} /> : null}
+          {ai.buildPlan.error ? (
+            <AiErrorNote message={ai.buildPlan.error} code={ai.buildPlan.errorCode} />
+          ) : null}
 
           <Button type="submit" loading={ai.buildPlan.loading} disabled={draft.title.trim().length < 3}>
             <Icon name="ia" className="size-4" />
@@ -487,9 +490,11 @@ function ProgressReader() {
         />
 
         {ai.readProgress.error ? (
-          <div className="mt-4">
-            <ErrorNote message={ai.readProgress.error} />
-          </div>
+          <AiErrorNote
+            className="mt-4"
+            message={ai.readProgress.error}
+            code={ai.readProgress.errorCode}
+          />
         ) : null}
 
         <Button
