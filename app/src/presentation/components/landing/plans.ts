@@ -8,22 +8,31 @@ import { formatLimit, PLAN_LIMITS } from '@/domain/entities/plan'
  * aqui faria a landing prometer 5 hábitos no dia em que o app passasse a
  * guardar 3. O que mora neste arquivo é só o que o domínio não sabe: preço,
  * texto e o que o PRO acrescenta além dos limites.
+ *
+ * O PRO é um plano só com dois ciclos de cobrança. Dois cards pro mesmo
+ * produto dividiam a atenção e escondiam o desconto do anual.
  */
+
+export type BillingCycle = 'mensal' | 'anual'
 
 export interface SpecRow {
   readonly label: string
   readonly value: string
 }
 
+export interface Price {
+  readonly amount: string
+  readonly period: string
+  readonly strike?: string
+  readonly note?: string
+  readonly savings?: string
+}
+
 export interface PricingPlan {
   readonly id: string
   readonly badge: string
   readonly headline: string
-  readonly price: string
-  readonly period: string
-  readonly strikePrice?: string
-  readonly monthlyEquivalent?: string
-  readonly savings?: string
+  readonly prices: Readonly<Record<BillingCycle, Price>>
   readonly description: string
   readonly specs: readonly SpecRow[]
   readonly features: readonly string[]
@@ -53,17 +62,19 @@ const CORE_FEATURES = [
   'Objetivo, plano por etapas, dia e review semanal',
   'Momentum Score com os quatro fatores',
   'Check-in, prioridade principal e versão mínima',
+  'Dia Adaptável e Modo Retomada',
   'Momentumm AI pra montar o plano e ler o progresso',
   'Círculo de amigos e desafios, privado por padrão',
 ] as const
+
+const FREE_PRICE: Price = { amount: 'R$ 0', period: 'para sempre' }
 
 export const PRICING_PLANS: readonly PricingPlan[] = [
   {
     id: 'free',
     badge: 'Grátis',
     headline: 'O ciclo inteiro, sem cartão',
-    price: 'R$ 0',
-    period: 'para sempre',
+    prices: { mensal: FREE_PRICE, anual: FREE_PRICE },
     description:
       'Tudo que faz o método funcionar. Os limites são de quantidade e profundidade, nunca de acesso a uma tela.',
     specs: [
@@ -79,12 +90,19 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
     cta: 'Começar grátis',
   },
   {
-    id: 'pro-mensal',
+    id: 'pro',
     badge: 'PRO',
     headline: 'Profundidade pra quem já está no ritmo',
-    price: 'R$ 29,90',
-    period: '/mês',
-    strikePrice: 'R$ 79,90',
+    prices: {
+      mensal: { amount: 'R$ 29,90', period: '/mês', strike: 'R$ 79,90' },
+      anual: {
+        amount: 'R$ 179,90',
+        period: '/ano',
+        strike: 'R$ 358,80',
+        note: 'equivale a R$ 14,99/mês',
+        savings: 'Economize R$ 178,90',
+      },
+    },
     description:
       'Sem limite de objetivos e hábitos, histórico completo e as análises que só fazem sentido com mais dados.',
     specs: [
@@ -106,31 +124,15 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
     cta: 'Começar com PRO',
     highlight: true,
   },
-  {
-    id: 'pro-anual',
-    badge: 'PRO Anual',
-    headline: 'O ano inteiro pelo preço de seis meses',
-    price: 'R$ 179,90',
-    period: '/ano',
-    strikePrice: 'R$ 358,80',
-    monthlyEquivalent: 'equivale a R$ 14,99/mês',
-    savings: 'Economize R$ 178,90',
-    description: 'Tudo do PRO, com o preço protegido na renovação e as vantagens de quem chegou cedo.',
-    specs: [
-      { label: 'Objetivos ativos', value: limitLabel(pro.activeGoals) },
-      { label: 'Suporte', value: 'Prioritário' },
-      { label: 'Selo Fundador', value: 'Incluído' },
-    ],
-    features: [
-      'Tudo do PRO',
-      'Suporte prioritário',
-      'Preço protegido na renovação*',
-      'Selo de fundador no perfil',
-      'Acesso antecipado a novidades',
-    ],
-    cta: 'Quero o PRO anual',
-  },
 ]
+
+/** O que só o anual tem. Aparece no card do PRO quando o ciclo anual está selecionado. */
+export const ANNUAL_EXTRAS = [
+  'Preço protegido na renovação*',
+  'Suporte prioritário',
+  'Selo de fundador no perfil',
+  'Acesso antecipado a novidades',
+] as const
 
 export const PRICING_FOOTNOTE =
   '* O preço protegido vale enquanto a assinatura anual não for cancelada. Os recursos do PRO entram conforme forem ficando prontos.'

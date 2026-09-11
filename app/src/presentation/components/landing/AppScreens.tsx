@@ -346,3 +346,85 @@ export function ReviewScreen() {
     </>
   )
 }
+
+/**
+ * O dia ruim: a tela que nenhum concorrente consegue mostrar. Energia baixa,
+ * capacidade mínima e a revisão do Dia Adaptável com os três vereditos reais
+ * (`ADAPTIVE_VERDICTS`: manter, reduzir, reagendar). É o mockup do hero.
+ */
+export function AdaptiveDayScreen() {
+  return (
+    <>
+      <MockHeader title="Boa noite, Marina" subtitle="Quinta, 11 de setembro" />
+
+      <MockMomentum value={69} level="Constante" delta={-3} streak={14} />
+
+      <MockLabel>Como você está chegando hoje?</MockLabel>
+      <div className="flex gap-1.5">
+        <MockTag tone="warn">Energia 2/5</MockTag>
+        <MockTag>Capacidade mínima</MockTag>
+      </div>
+
+      <MockLabel>Vamos proteger seu Momentum</MockLabel>
+      <MockCard tone="brand">
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <Budget label="Você tem" value="40 min" />
+          <Budget label="Estava montado" value="95 min" />
+          <Budget label="Fica em" value="38 min" highlight />
+        </div>
+
+        <ul className="mt-3 space-y-2">
+          <Verdict
+            label="Seção de métodos"
+            verdict="Versão mínima"
+            detail="Protegido · 200 palavras"
+            tone="brand"
+          />
+          <Verdict label="Ler 20 páginas" verdict="Versão mínima" detail="Hábito · 5 páginas · 8 min" tone="brand" />
+          <Verdict label="Caminhar" verdict="Mantém" detail="Hábito · mínima · 8 min" tone="positive" />
+          <Verdict label="Tabela de resultados" verdict="Fica pra depois" detail="Segunda, dia mais vazio" tone="neutral" />
+        </ul>
+
+        <div className="mt-3 flex items-center gap-2">
+          <span className="whitespace-nowrap rounded-lg bg-brand px-2.5 py-1 text-[11px] font-medium text-white">
+            Confirmar 3 mudanças
+          </span>
+          <span className="text-[10px] leading-tight text-ink-faint">Nenhuma sequência é encerrada</span>
+        </div>
+      </MockCard>
+    </>
+  )
+}
+
+function Budget({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className="rounded-lg bg-canvas/60 px-1.5 py-1.5">
+      <p className="text-[9px] text-ink-faint">{label}</p>
+      <p className={`tabular text-xs font-semibold ${highlight ? 'text-brand-hi' : 'text-ink'}`}>{value}</p>
+    </div>
+  )
+}
+
+function Verdict({
+  label,
+  verdict,
+  detail,
+  tone,
+}: {
+  label: string
+  verdict: string
+  detail: string
+  tone: 'brand' | 'positive' | 'neutral'
+}) {
+  return (
+    <li className="flex items-start justify-between gap-2">
+      <span className="min-w-0">
+        <span className="block truncate text-[11px] text-ink">{label}</span>
+        <span className="block truncate text-[10px] text-ink-faint">{detail}</span>
+      </span>
+      <span className="shrink-0 whitespace-nowrap">
+        <MockTag tone={tone}>{verdict}</MockTag>
+      </span>
+    </li>
+  )
+}

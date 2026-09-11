@@ -190,7 +190,9 @@ export function MockMomentum({
         </span>
         <span className="text-[10px] text-ink-faint">Momentum</span>
       </span>
-      <MockTag tone={delta < 0 ? 'warn' : 'brand'}>{level}</MockTag>
+      <MockTag tone={level === 'Avançando' ? 'positive' : level === 'Desacelerando' ? 'warn' : 'brand'}>
+        {level}
+      </MockTag>
       <span className={cn('tabular text-[10px]', delta >= 0 ? 'text-positive' : 'text-flame')}>
         {delta >= 0 ? '+' : ''}
         {delta} nesta semana

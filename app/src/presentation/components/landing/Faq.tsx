@@ -43,11 +43,6 @@ const QUESTIONS = [
     answer:
       'Sim. O PRO é uma assinatura sem fidelidade: cancela em Configurações e continua com o PRO até o fim do período pago. Depois disso a conta volta pro gratuito com tudo que você criou; o que passa do limite fica guardado, só não dá pra criar novos até liberar espaço.',
   },
-  {
-    question: 'Funciona no celular?',
-    answer:
-      'Sim, e é ali que ele é afinado primeiro. Roda no navegador do celular e do computador, sem instalar nada. O dashboard do celular não é o do desktop encolhido: a ordem muda pra registrar, decidir e começar, e a análise vem depois.',
-  },
 ] as const
 
 export function Faq() {

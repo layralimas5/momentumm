@@ -40,7 +40,8 @@ const SCREENS: readonly Screen[] = [
     points: [
       'Check-in de dez segundos que define a capacidade do dia',
       'Uma prioridade principal, sempre com versão mínima',
-      'Hábitos e ações ligados ao objetivo que servem',
+      'Dia Adaptável: você diz quanto tempo tem e o plano encolhe, sem empilhar tudo em amanhã',
+      'Modo Retomada: depois de uma pausa, até três passos pequenos pra voltar, sem encerrar nenhuma sequência',
     ],
     render: () => <TodayScreen />,
   },

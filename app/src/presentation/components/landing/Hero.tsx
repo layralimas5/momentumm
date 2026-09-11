@@ -1,14 +1,15 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { TodayScreen } from './AppScreens'
+import { AdaptiveDayScreen } from './AppScreens'
 import { PhoneMockup } from './PhoneMockup'
 import { CTA } from './site'
 
 /**
  * A promessa em duas linhas: objetivo vira plano, plano vira o dia. É o
  * critério de aceite do produto ("percebe quando o plano deixou de funcionar")
- * dito do lado de quem usa. O mockup é a tela `Hoje`, porque é ela que a
- * pessoa vai abrir todo dia.
+ * dito do lado de quem usa. O mockup é a tela `Hoje` num dia RUIM, com o
+ * Dia Adaptável encolhendo o plano: o dia bom qualquer app mostra; o que a
+ * promessa do headline vende é o que acontece quando o plano não cabe.
  */
 const LINES = ['Objetivo vira plano.', 'Plano vira o que você faz hoje.'] as const
 
@@ -101,7 +102,7 @@ export function Hero() {
             className="pointer-events-none absolute inset-x-8 top-1/2 h-64 -translate-y-1/2 rounded-full bg-brand/25 blur-3xl"
           />
           <PhoneMockup tall className="relative">
-            <TodayScreen />
+            <AdaptiveDayScreen />
           </PhoneMockup>
         </motion.div>
       </div>

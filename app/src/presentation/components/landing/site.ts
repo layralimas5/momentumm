@@ -25,6 +25,6 @@ export const SITE = {
 export const CTA = {
   primary: { label: 'Começar grátis', to: '/entrar' },
   secondary: { label: 'Ver por dentro, sem criar conta', to: '/app' },
-  badge: 'Primeiras vagas abertas',
-  reassurance: 'Funciona no navegador. Sem cartão pra começar.',
+  badge: 'Acesso antecipado',
+  reassurance: 'Roda no navegador do celular e do computador. Sem cartão pra começar.',
 } as const

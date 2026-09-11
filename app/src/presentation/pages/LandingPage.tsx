@@ -1,8 +1,8 @@
-import { Benefits } from '@/presentation/components/landing/Benefits'
 import { Comparison } from '@/presentation/components/landing/Comparison'
 import { Faq } from '@/presentation/components/landing/Faq'
 import { FinalCta } from '@/presentation/components/landing/FinalCta'
 import { Hero } from '@/presentation/components/landing/Hero'
+import { InlineCta } from '@/presentation/components/landing/InlineCta'
 import { Method } from '@/presentation/components/landing/Method'
 import { MomentumAi } from '@/presentation/components/landing/MomentumAi'
 import { MomentumScore } from '@/presentation/components/landing/MomentumScore'
@@ -11,16 +11,20 @@ import { Problem } from '@/presentation/components/landing/Problem'
 import { Screens } from '@/presentation/components/landing/Screens'
 import { SiteFooter } from '@/presentation/components/landing/SiteFooter'
 import { SiteHeader } from '@/presentation/components/landing/SiteHeader'
+import { Trust } from '@/presentation/components/landing/Trust'
 
 /**
  * A ordem é um argumento, não um catálogo: promessa → a dor que ninguém
  * nomeia (o plano ideal não sobrevive ao dia real) → o método que responde a
- * isso → por que as outras ferramentas não respondem → as telas → o número
- * que mede ritmo → a IA que monta e lê → o que só existe aqui → preço →
- * dúvidas → o convite.
+ * isso → as telas → o número que mede ritmo → a IA que monta e lê → só
+ * ENTÃO a comparação, quando a pessoa já viu o produto e consegue comparar
+ * → o que sustenta a promessa → preço → dúvidas → o convite.
  *
- * Nada aqui é "resultados reais" com card vazio: seção de prova social entra
- * quando houver gente de verdade pra citar.
+ * Os CTAs no meio existem porque do hero aos planos são milhares de pixels:
+ * quem se convence nas telas ou no score não deveria precisar rolar até o fim.
+ *
+ * Nada aqui é depoimento inventado: `Trust` é prova de método, e dá lugar a
+ * gente de verdade quando ela existir.
  */
 export function LandingPage() {
   return (
@@ -38,11 +42,13 @@ export function LandingPage() {
         <Hero />
         <Problem />
         <Method />
-        <Comparison />
         <Screens />
+        <InlineCta prompt="Quer ver essas telas com o seu objetivo?" />
         <MomentumScore />
         <MomentumAi />
-        <Benefits />
+        <InlineCta prompt="O plano leva dois minutos pra montar." />
+        <Comparison />
+        <Trust />
         <Pricing />
         <Faq />
         <FinalCta />
