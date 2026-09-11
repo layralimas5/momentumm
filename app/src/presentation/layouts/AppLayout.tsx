@@ -85,7 +85,15 @@ function LayoutShell() {
           id="conteudo"
           className="w-full flex-1 px-4 pt-4 pb-tabbar sm:px-6 lg:px-8 lg:pt-7 lg:pb-10 2xl:px-10"
         >
-          <Outlet />
+          {/*
+            Abaixo de `lg` a tela é a árvore do celular ou a página em coluna
+            única, e num tablet de 820px as duas esticavam até a borda: card de
+            uma coluna com 800px de largura tem linha de texto longa demais pra
+            ler. O teto centraliza o conteúdo até virar dashboard de verdade.
+          */}
+          <div className="mx-auto w-full max-w-2xl lg:max-w-none">
+            <Outlet />
+          </div>
         </main>
       </div>
 
