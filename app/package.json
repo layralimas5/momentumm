@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "ai:bundle": "esbuild src/domain/ai/edge-shared.ts --bundle --format=esm --platform=neutral --target=es2022 --external:zod --alias:@=./src --banner:js=\"// GERADO por 'npm run ai:bundle' a partir de src/domain/ai/edge-shared.ts. Nao editar.\" --outfile=supabase/functions/momentumm-ai/shared.ts",
+    "ai:bundle": "esbuild src/domain/ai/edge-shared.ts --bundle --format=esm --platform=neutral --target=es2022 --external:zod --external:zod/* --alias:@=./src --banner:js=\"// GERADO por 'npm run ai:bundle' a partir de src/domain/ai/edge-shared.ts. Nao editar.\" --outfile=supabase/functions/momentumm-ai/shared.ts",
     "ai:deploy": "npm run ai:bundle && supabase functions deploy momentumm-ai"
   },
   "dependencies": {
@@ -18,7 +18,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.0.0",
-    "zod": "^3.23.8"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",

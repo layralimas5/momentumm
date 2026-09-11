@@ -1,4 +1,6 @@
-import { z } from 'zod'
+// `zod/v4`, não `zod`: o `zodOutputFormat` do SDK da Anthropic gera o JSON
+// Schema com `z.toJSONSchema` da v4, que recusa schema construído pela API v3.
+import { z } from 'zod/v4'
 import type { DayKey } from '@/domain/entities/day'
 import { DAY_PARTS, HABIT_FREQUENCIES, HABIT_ICONS } from '@/domain/entities/habit'
 import { MOMENTUM_RULES } from '@/domain/entities/momentum'
@@ -25,7 +27,9 @@ export const AI_KINDS = ['plan', 'progress', 'review'] as const
 export type AiKind = (typeof AI_KINDS)[number]
 
 const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/
-const dayKeySchema = z.string().regex(DAY_KEY).transform((value) => value as DayKey)
+// Sem `.transform`: a saída estruturada da Anthropic vira JSON Schema, e
+// transform não tem representação lá. O brand entra por tipo, não por runtime.
+const dayKeySchema = z.string().regex(DAY_KEY) as unknown as z.ZodType<DayKey, string>
 
 /** O que o endpoint aceita. O contexto é validado só na forma: ele é do app. */
 export const aiEndpointRequestSchema = z.object({

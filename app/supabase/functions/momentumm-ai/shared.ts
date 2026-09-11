@@ -1,7 +1,7 @@
 // GERADO por 'npm run ai:bundle' a partir de src/domain/ai/edge-shared.ts. Nao editar.
 
 // src/domain/ai/ai-prompts.ts
-import { z } from "zod";
+import { z } from "zod/v4";
 
 // src/domain/entities/activity-type.ts
 var BUILTIN_ACTIVITY_TYPE_SLUGS = ["leitura", "estudo", "treino", "meditacao"];
@@ -121,7 +121,7 @@ var MAX_ESTIMATED_MIN = 8 * 60;
 // src/domain/ai/ai-prompts.ts
 var AI_KINDS = ["plan", "progress", "review"];
 var DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
-var dayKeySchema = z.string().regex(DAY_KEY).transform((value) => value);
+var dayKeySchema = z.string().regex(DAY_KEY);
 var aiEndpointRequestSchema = z.object({
   kind: z.enum(AI_KINDS),
   request: z.object({ context: z.object({ today: dayKeySchema }).passthrough() }).passthrough()
