@@ -146,7 +146,7 @@ function AddMenu() {
           <MenuItem icon="metas" onClick={() => pick('meta')}>
             Nova meta
           </MenuItem>
-          <MenuItem icon="trofeu" onClick={() => pick('objetivo')}>
+          <MenuItem icon="objetivo" onClick={() => pick('objetivo')}>
             Novo objetivo
           </MenuItem>
         </div>

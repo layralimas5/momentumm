@@ -81,7 +81,7 @@ export function WinsCard({ wins, todayWin, today, onSave }: WinsCardProps) {
               value={text}
               maxLength={MAX_WIN_LENGTH}
               onChange={(event) => setText(event.target.value)}
-              placeholder="Abri o livro, mesmo cansada."
+              placeholder="Abri o livro, mesmo sem energia."
               className="h-11 min-w-0 flex-1 rounded-xl border border-line bg-surface-hi px-3.5 text-ink placeholder:text-ink-faint transition-colors focus:border-brand"
             />
             <Button type="submit" disabled={!canSave} loading={save.running}>

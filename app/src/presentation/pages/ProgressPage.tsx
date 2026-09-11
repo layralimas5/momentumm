@@ -3,7 +3,7 @@ import { activityType } from '@/domain/entities/activity-type'
 import { dayKeyToDate } from '@/domain/entities/day'
 import { MOMENTUM_LEVEL_LABELS, type DayDot, type MomentumFactor } from '@/domain/entities/momentum'
 import { deltaLabel } from '@/domain/entities/week'
-import { Button } from '@/presentation/components/ui/Button'
+import { Button, buttonClass } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { Panel, PanelHeader, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
@@ -50,6 +50,12 @@ export function ProgressPage() {
         <EmptyState
           title="Ainda não há o que medir"
           description="O progresso começa a contar história no primeiro registro. Marca um hábito ou conclui uma ação e volta aqui."
+          action={
+            <Link to="/app" className={buttonClass()}>
+              <Icon name="hoje" className="size-4" />
+              Ir pro meu dia
+            </Link>
+          }
         />
       ) : (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">

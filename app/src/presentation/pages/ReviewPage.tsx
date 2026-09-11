@@ -24,7 +24,7 @@ import {
   type WeeklyReview,
 } from '@/domain/entities/weekly-review'
 import { ObjectiveLink } from '@/presentation/components/shared/Meta'
-import { Button } from '@/presentation/components/ui/Button'
+import { Button, buttonClass } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { EmptyState, ErrorNote } from '@/presentation/components/ui/States'
 import { Panel, PanelHeader, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
@@ -140,6 +140,26 @@ export function ReviewPage() {
           <Icon name="check" className="size-4 shrink-0 text-positive" />
           Review dessa semana concluído. Dá pra continuar editando à vontade.
         </p>
+      ) : null}
+
+      {/*
+        Semana sem registro suficiente: o formulário continua aberto (dá pra
+        escrever o que aconteceu fora do app), mas a tela diz em voz alta que
+        os números abaixo estão vazios por falta de dado, e aponta a saída. Sem
+        isso, 0% em quatro caixas parece bug, não conta nova.
+      */}
+      {!done && !computed.ready ? (
+        <div className="flex flex-col gap-3 rounded-lg border border-dashed border-line px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-ink-muted">
+            <span className="font-medium text-ink">Essa semana ainda não tem registro. </span>
+            O review lê o que você marcou em Hoje: sem isso os números ficam em zero e a leitura
+            não escreve nada. Responder à mão continua valendo.
+          </p>
+          <Link to="/app" className={buttonClass({ variant: 'secondary', size: 'sm', className: 'shrink-0' })}>
+            <Icon name="hoje" className="size-4" />
+            Registrar o dia
+          </Link>
+        </div>
       ) : null}
 
       <Stepper current={index} filled={filled} onSelect={goTo} />

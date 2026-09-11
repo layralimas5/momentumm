@@ -71,7 +71,7 @@ export function MobileWins({ wins, todayWin, today, onSave }: MobileWinsProps) {
               value={text}
               maxLength={MAX_WIN_LENGTH}
               onChange={(event) => setText(event.target.value)}
-              placeholder="Abri o livro, mesmo cansada."
+              placeholder="Abri o livro, mesmo sem energia."
               className="mt-2.5 h-13 w-full rounded-xl border border-line bg-surface-hi px-4 text-ink placeholder:text-ink-faint focus:border-brand"
             />
 

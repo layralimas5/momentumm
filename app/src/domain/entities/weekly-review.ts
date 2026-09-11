@@ -213,7 +213,11 @@ export function reviewProgress(review: WeeklyReview): number {
 
 export function weekLabel(weekStart: DayKey): string {
   const end = addDays(weekStart, 6)
+  // O mês curto do pt-BR vem com ponto ("set."), e dentro de uma frase ele
+  // vira ponto duplo no fim ("de set..").
   const format = (day: DayKey) =>
-    dayKeyToDate(day).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+    dayKeyToDate(day)
+      .toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+      .replace(/\.$/, '')
   return `${format(weekStart)} a ${format(end)}`
 }

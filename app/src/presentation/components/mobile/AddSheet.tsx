@@ -53,7 +53,7 @@ export function AddSheet({ open, onClose }: { open: boolean; onClose: () => void
             onClick={() => pick('meta')}
           />
           <SheetAction
-            icon={<Icon name="trofeu" className="size-5" />}
+            icon={<Icon name="objetivo" className="size-5" />}
             label="Objetivo"
             hint="Com prazo, e o plano sai pronto"
             onClick={() => pick('objetivo')}
@@ -107,7 +107,7 @@ function WinSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
           value={text}
           maxLength={MAX_WIN_LENGTH}
           onChange={(event) => setText(event.target.value)}
-          placeholder="Abri o livro, mesmo cansada."
+          placeholder="Abri o livro, mesmo sem energia."
           aria-label="Vitória do dia"
           autoFocus
           className="h-13 w-full rounded-xl border border-line bg-surface-hi px-4 text-ink placeholder:text-ink-faint focus:border-brand"
