@@ -26,5 +26,5 @@ export const CTA = {
   primary: { label: 'Começar grátis', to: '/entrar' },
   secondary: { label: 'Ver por dentro, sem criar conta', to: '/app' },
   badge: 'Acesso antecipado',
-  reassurance: 'Roda no navegador do celular e do computador. Sem cartão pra começar.',
+  reassurance: 'Grátis, sem cartão. O primeiro plano fica pronto em dois minutos.',
 } as const

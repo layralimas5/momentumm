@@ -133,9 +133,8 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="mx-auto mt-6 max-w-2xl text-pretty text-lg text-ink-muted xl:text-xl"
           >
-            O Momentumm transforma o que você quer alcançar em ações diárias, mede se o seu ritmo
-            está de pé e ajusta o plano quando ele para de funcionar. Não é um app de hábitos: é um
-            sistema de progresso pessoal.
+            Diga o que quer alcançar. O Momentumm monta o plano, te entrega a ação de hoje e ajusta
+            o caminho quando a semana não sai como o planejado.
           </motion.p>
 
           <motion.div

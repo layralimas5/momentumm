@@ -21,7 +21,7 @@ export function Testimonials() {
         <SectionHeading
           eyebrow="Depoimentos"
           title="Quem trocou o plano ideal pelo dia real."
-          description="Gente que não precisava de mais motivação, precisava de um sistema que sobrevivesse à semana."
+          description="Gente que não precisava de mais motivação. Precisava de um sistema que sobrevivesse à semana."
         />
       </div>
 

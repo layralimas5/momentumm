@@ -40,7 +40,9 @@ export function Pricing() {
 
       <PlanMatrix className="mt-10" />
 
-      <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-ink-faint">{PRICING_FOOTNOTE}</p>
+      <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-ink-faint">
+        {PRICING_FOOTNOTE}
+      </p>
     </Section>
   )
 }
@@ -57,13 +59,21 @@ function CycleToggle({
   onChange: (cycle: BillingCycle) => void
 }) {
   const id = useId()
-  const options: readonly { readonly cycle: BillingCycle; readonly label: string; readonly hint?: string }[] = [
+  const options: readonly {
+    readonly cycle: BillingCycle
+    readonly label: string
+    readonly hint?: string
+  }[] = [
     { cycle: 'mensal', label: 'Mensal' },
     { cycle: 'anual', label: 'Anual', hint: 'metade do preço' },
   ]
 
   return (
-    <div role="group" aria-labelledby={id} className="inline-flex rounded-full border border-line bg-surface p-1">
+    <div
+      role="group"
+      aria-labelledby={id}
+      className="inline-flex rounded-full border border-line bg-surface p-1"
+    >
       <span id={id} className="sr-only">
         Ciclo de cobrança do PRO
       </span>
@@ -133,7 +143,9 @@ function PlanCard({ plan, cycle }: { plan: PricingPlan; cycle: BillingCycle }) {
           {price.strike ? (
             <>
               <span className="sr-only">, de</span>
-              <s className="tabular ml-2 text-sm text-ink-faint decoration-danger/70">{price.strike}</s>
+              <s className="tabular ml-2 text-sm text-ink-faint decoration-danger/70">
+                {price.strike}
+              </s>
             </>
           ) : null}
         </p>
@@ -146,7 +158,6 @@ function PlanCard({ plan, cycle }: { plan: PricingPlan; cycle: BillingCycle }) {
       </div>
 
       <p className="mt-2 text-pretty text-sm text-ink-muted">{plan.description}</p>
-
 
       <ul className="mt-6 flex flex-1 flex-col gap-2.5 border-t border-line pt-6">
         {plan.features.map((feature) => (
@@ -176,6 +187,11 @@ function PlanCard({ plan, cycle }: { plan: PricingPlan; cycle: BillingCycle }) {
       >
         {plan.cta}
       </Link>
+      <p className="mt-2.5 text-center text-xs text-ink-faint">
+        {plan.highlight
+          ? 'Sem fidelidade. Cancela quando quiser.'
+          : 'Sem cartão. Sem prazo pra decidir.'}
+      </p>
     </article>
   )
 }

@@ -1,5 +1,7 @@
+import { motion, useReducedMotion } from 'framer-motion'
 import type { ReactNode } from 'react'
 import { cn } from '@/shared/lib/cn'
+import { RevealWords } from './Reveal'
 
 interface SectionProps {
   readonly id?: string
@@ -33,17 +35,26 @@ export function SectionHeading({
   tone = 'default',
 }: SectionHeadingProps) {
   const onBrand = tone === 'brand'
+  const reduced = useReducedMotion()
+  const fade = (delay: number) => ({
+    initial: reduced ? false : { opacity: 0, y: 12 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true, margin: '-60px' },
+    transition: { duration: 0.5, delay },
+  })
+
   return (
     <div className={cn('max-w-2xl', align === 'center' && 'mx-auto text-center')}>
       {eyebrow ? (
-        <p
+        <motion.p
+          {...fade(0)}
           className={cn(
             'text-sm font-medium tracking-wide uppercase',
             onBrand ? 'text-white/80' : 'text-brand-hi',
           )}
         >
           {eyebrow}
-        </p>
+        </motion.p>
       ) : null}
       <h2
         className={cn(
@@ -51,12 +62,15 @@ export function SectionHeading({
           onBrand ? 'text-white' : 'text-ink',
         )}
       >
-        {title}
+        {typeof title === 'string' ? <RevealWords text={title} delay={0.1} /> : title}
       </h2>
       {description ? (
-        <p className={cn('mt-4 text-pretty text-lg', onBrand ? 'text-white/85' : 'text-ink-muted')}>
+        <motion.p
+          {...fade(0.35)}
+          className={cn('mt-4 text-pretty text-lg', onBrand ? 'text-white/85' : 'text-ink-muted')}
+        >
           {description}
-        </p>
+        </motion.p>
       ) : null}
     </div>
   )

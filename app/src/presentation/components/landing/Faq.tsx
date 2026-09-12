@@ -15,6 +15,11 @@ const QUESTIONS = [
       'Você cria um objetivo com prazo, o app monta um plano por etapas e cada etapa vira ações com data. Todo dia você abre a tela Hoje, faz um check-in de dez segundos, cumpre a prioridade principal e marca os hábitos. No fim da semana, o review mostra onde evoluiu, onde o ritmo caiu e o que ajustar.',
   },
   {
+    question: 'Quanto tempo por dia isso toma?',
+    answer:
+      'O check-in leva dez segundos e a prioridade do dia é uma só. O resto é o tempo que você já ia dedicar ao objetivo: o app organiza esse tempo, não cria mais. Em dia apertado, o Dia Adaptável encolhe o plano pro tempo que você tem.',
+  },
+  {
     question: 'Qual a diferença pra um app de hábitos, uma agenda ou o Notion?',
     answer:
       'Essas ferramentas registram o que você planejou. O Momentumm liga cada ação a um objetivo, mede quanto do objetivo já andou de verdade e percebe quando o plano parou de funcionar: dia adaptável quando a energia cai, modo retomada quando você some, e ajuste com botão pra aplicar. A pergunta que ele responde não é "fiz ou não fiz", é "estou avançando, e o que mudo se não estiver".',

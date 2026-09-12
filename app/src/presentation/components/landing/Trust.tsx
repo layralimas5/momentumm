@@ -42,6 +42,13 @@ const PROOFS: readonly Proof[] = [
   },
 ]
 
+/** Números que dá pra checar, no lugar de "milhares de usuários". */
+const NUMBERS = [
+  { value: '600+', label: 'testes automatizados nas regras' },
+  { value: '10 s', label: 'de check-in por dia' },
+  { value: '28 dias', label: 'de janela no Momentum Score' },
+] as const
+
 export function Trust() {
   return (
     <Section id="confianca" className="bg-brand-hi">
@@ -52,7 +59,20 @@ export function Trust() {
         description="Além do que as pessoas dizem, o que dá pra verificar são as decisões do produto."
       />
 
-      <ul className="mt-12 grid gap-4 sm:grid-cols-2">
+      <Reveal>
+        <dl className="mx-auto mt-12 grid max-w-3xl grid-cols-3 gap-3 text-center">
+          {NUMBERS.map((item) => (
+            <div key={item.label} className="rounded-card bg-black/20 px-3 py-4">
+              <dd className="tabular text-2xl font-semibold text-white sm:text-3xl">
+                {item.value}
+              </dd>
+              <dt className="mt-1 text-xs text-white/80 sm:text-sm">{item.label}</dt>
+            </div>
+          ))}
+        </dl>
+      </Reveal>
+
+      <ul className="mt-6 grid gap-4 sm:grid-cols-2">
         {PROOFS.map((proof, index) => (
           <Reveal key={proof.title} delay={index * 0.05} className="h-full">
             <li className="flex h-full gap-4 rounded-card border border-line bg-surface p-6">
