@@ -31,7 +31,7 @@ const CAPABILITIES = [
 
 export function MomentumAi() {
   return (
-    <Section id="ia" className="border-t border-line bg-surface/30">
+    <Section id="ia" className="border-t border-line bg-surface-hi">
       <SectionHeading
         eyebrow="Momentumm AI"
         title="A IA que conhece o seu plano, não uma que responde qualquer coisa."
