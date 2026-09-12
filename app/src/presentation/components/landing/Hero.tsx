@@ -34,28 +34,28 @@ const CARDS = [
     node: <ScoreCard />,
     tilt: -6,
     delay: 0.5,
-    float: 'left-0 top-32 xl:left-2',
+    float: 'left-4 top-32 2xl:left-8',
   },
   {
     key: 'week',
     node: <WeekCard />,
     tilt: 4,
     delay: 0.65,
-    float: 'left-6 top-[23rem] xl:left-10',
+    float: 'left-10 top-[24rem] 2xl:left-24',
   },
   {
     key: 'minutes',
     node: <MinutesCard />,
     tilt: 5,
     delay: 0.55,
-    float: 'right-0 top-28 xl:right-2',
+    float: 'right-4 top-28 2xl:right-8',
   },
   {
     key: 'today',
     node: <TodayCard />,
     tilt: -4,
     delay: 0.7,
-    float: 'right-8 top-[22.5rem] xl:right-12',
+    float: 'right-12 top-[23.5rem] 2xl:right-28',
   },
 ] as const
 
@@ -67,7 +67,7 @@ export function Hero() {
         className="pointer-events-none absolute -top-40 left-1/2 size-[48rem] -translate-x-1/2 rounded-full bg-brand/20 blur-[120px]"
       />
 
-      <div className="relative mx-auto max-w-6xl px-4 pb-16 pt-32 sm:pt-40 lg:pb-24 xl:pt-44">
+      <div className="relative mx-auto max-w-[90rem] px-4 pb-16 pt-32 sm:px-8 sm:pt-40 lg:pb-24 xl:pt-44">
         {CARDS.map((card) => (
           <FloatingCard
             key={card.key}
@@ -79,7 +79,7 @@ export function Hero() {
           </FloatingCard>
         ))}
 
-        <div className="mx-auto max-w-2xl text-center">
+        <div className="mx-auto max-w-3xl text-center">
           <motion.p
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -105,7 +105,7 @@ export function Hero() {
             </span>
           </motion.p>
 
-          <h1 className="mt-7 text-balance text-4xl font-semibold tracking-tight text-ink sm:text-5xl xl:text-6xl">
+          <h1 className="mt-7 text-balance text-4xl font-semibold tracking-tight text-ink sm:text-5xl xl:text-7xl">
             {LINES.map((line, index) => (
               <motion.span
                 key={line}
@@ -129,7 +129,7 @@ export function Hero() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="mx-auto mt-6 max-w-xl text-pretty text-lg text-ink-muted"
+            className="mx-auto mt-6 max-w-2xl text-pretty text-lg text-ink-muted xl:text-xl"
           >
             O Momentumm transforma o que você quer alcançar em ações diárias, mede se o seu ritmo
             está de pé e ajusta o plano quando ele para de funcionar. Não é um app de hábitos: é um

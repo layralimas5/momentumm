@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { planMatrix, type PlanMatrixRow } from '@/domain/entities/plan'
 import { cn } from '@/shared/lib/cn'
 import {
   ANNUAL_EXTRAS,
@@ -8,13 +9,20 @@ import {
   type BillingCycle,
   type PricingPlan,
 } from './plans'
-import { PlanMatrix } from './PlanMatrix'
 import { Reveal } from './Reveal'
 import { Section, SectionHeading } from './Section'
 import { CTA } from './site'
 
+/**
+ * Uma tabela só, no lugar de cards mais matriz: o cabeçalho de cada coluna
+ * já é o plano com preço e botão, e as linhas dizem recurso a recurso o que
+ * muda. As linhas saem do domínio (`planMatrix`), então o que está escrito
+ * aqui é o que o app aplica. "Não disponível" vira traço e "Disponível" vira
+ * check, porque é assim que o olho compara duas colunas sem ler tudo.
+ */
 export function Pricing() {
   const [cycle, setCycle] = useState<BillingCycle>('anual')
+  const rows = planMatrix()
 
   return (
     <Section id="planos" className="border-t border-line">
@@ -28,21 +36,156 @@ export function Pricing() {
         <CycleToggle value={cycle} onChange={setCycle} />
       </div>
 
-      <ul className="mx-auto mt-8 grid max-w-4xl items-stretch gap-4 md:grid-cols-2">
-        {PRICING_PLANS.map((plan, index) => (
-          <li key={plan.id} className="h-full">
-            <Reveal delay={index * 0.08} className="h-full">
-              <PlanCard plan={plan} cycle={cycle} />
-            </Reveal>
-          </li>
-        ))}
-      </ul>
+      <Reveal className="mt-8">
+        <div className="relative overflow-x-auto rounded-card border border-line bg-surface">
+          <table className="w-full min-w-[40rem] border-collapse text-sm">
+            <caption className="sr-only">
+              Comparação de preço e recursos entre o plano gratuito e o PRO
+            </caption>
+            <thead>
+              <tr className="border-b border-line align-top">
+                <th scope="col" className="px-5 py-6 text-left sm:px-6">
+                  <p className="text-base font-semibold text-ink">Compare os planos</p>
+                  <p className="mt-1 text-sm font-normal text-ink-faint">
+                    Encontre o que serve pro teu momento
+                  </p>
+                </th>
+                {PRICING_PLANS.map((plan) => (
+                  <th
+                    key={plan.id}
+                    scope="col"
+                    className={cn(
+                      'w-[28%] px-5 py-6 text-left sm:px-6',
+                      plan.highlight && 'bg-brand-dim/25',
+                    )}
+                  >
+                    <PlanHeader plan={plan} cycle={cycle} />
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <FeatureRow key={row.feature} row={row} />
+              ))}
+              {cycle === 'anual' ? (
+                <>
+                  <tr className="border-t border-line">
+                    <th
+                      scope="rowgroup"
+                      colSpan={3}
+                      className="px-5 pb-2 pt-5 text-left text-xs font-medium uppercase tracking-wide text-brand-hi sm:px-6"
+                    >
+                      Só no PRO anual
+                    </th>
+                  </tr>
+                  {ANNUAL_EXTRAS.map((feature) => (
+                    <FeatureRow
+                      key={feature}
+                      row={{ feature, free: 'Não disponível', pro: 'Disponível' }}
+                    />
+                  ))}
+                </>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </Reveal>
 
-      <PlanMatrix className="mt-10" />
-
-      <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-ink-faint">{PRICING_FOOTNOTE}</p>
+      <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-ink-faint">
+        {PRICING_FOOTNOTE}
+      </p>
     </Section>
   )
+}
+
+function PlanHeader({ plan, cycle }: { plan: PricingPlan; cycle: BillingCycle }) {
+  const price = plan.prices[cycle]
+
+  return (
+    <div className="flex h-full flex-col">
+      <p className={cn('text-base font-semibold', plan.highlight ? 'text-brand-ink' : 'text-ink')}>
+        {plan.badge}
+      </p>
+      <p className="mt-1 text-xs font-normal text-ink-faint">{plan.headline}</p>
+
+      <div className="mt-4 min-h-[4.75rem]" aria-live="polite">
+        <p className="flex flex-wrap items-baseline gap-x-1">
+          <span className="tabular text-2xl font-semibold text-ink">{price.amount}</span>
+          <span className="text-xs font-normal text-ink-muted">{price.period}</span>
+          {price.strike ? (
+            <>
+              <span className="sr-only">, de</span>
+              <s className="tabular ml-1 text-xs font-normal text-ink-faint decoration-danger/70">
+                {price.strike}
+              </s>
+            </>
+          ) : null}
+        </p>
+        {price.note ? (
+          <p className="tabular mt-0.5 text-xs font-normal text-ink-muted">{price.note}</p>
+        ) : null}
+        {price.savings ? (
+          <p className="mt-1.5 inline-flex rounded-full bg-positive/15 px-2 py-0.5 text-[11px] font-medium text-positive">
+            {price.savings}
+          </p>
+        ) : null}
+      </div>
+
+      <Link
+        to={CTA.primary.to}
+        className={cn(
+          'mt-4 inline-flex h-10 items-center justify-center rounded-full px-4 text-sm font-medium transition-colors',
+          plan.highlight
+            ? 'bg-brand text-white hover:bg-brand-hi'
+            : 'border border-line-hi text-ink hover:bg-surface-hi',
+        )}
+      >
+        {plan.cta}
+      </Link>
+    </div>
+  )
+}
+
+function FeatureRow({ row }: { readonly row: PlanMatrixRow }) {
+  return (
+    <tr className="border-t border-line">
+      <th scope="row" className="px-5 py-3.5 text-left font-normal text-ink sm:px-6">
+        {row.feature}
+      </th>
+      <td className="px-5 py-3.5 text-ink-muted sm:px-6">
+        <CellValue value={row.free} />
+      </td>
+      <td className="bg-brand-dim/25 px-5 py-3.5 text-ink sm:px-6">
+        <CellValue value={row.pro} highlight />
+      </td>
+    </tr>
+  )
+}
+
+/** Traço pra "não tem", check pra "tem", texto quando o valor é um número ou um limite. */
+function CellValue({ value, highlight = false }: { value: string; highlight?: boolean }) {
+  if (value === 'Não disponível') {
+    return (
+      <span className="text-ink-faint">
+        <span aria-hidden="true">—</span>
+        <span className="sr-only">Não disponível</span>
+      </span>
+    )
+  }
+
+  if (value.startsWith('Disponível')) {
+    const detail = value.slice('Disponível'.length).trim()
+    return (
+      <span className="inline-flex items-center gap-2">
+        <CheckIcon highlight={highlight} />
+        <span className="sr-only">Disponível</span>
+        {detail ? <span className="text-ink-muted">{detail}</span> : null}
+      </span>
+    )
+  }
+
+  return <>{value}</>
 }
 
 /**
@@ -57,13 +200,21 @@ function CycleToggle({
   onChange: (cycle: BillingCycle) => void
 }) {
   const id = useId()
-  const options: readonly { readonly cycle: BillingCycle; readonly label: string; readonly hint?: string }[] = [
+  const options: readonly {
+    readonly cycle: BillingCycle
+    readonly label: string
+    readonly hint?: string
+  }[] = [
     { cycle: 'mensal', label: 'Mensal' },
     { cycle: 'anual', label: 'Anual', hint: 'metade do preço' },
   ]
 
   return (
-    <div role="group" aria-labelledby={id} className="inline-flex rounded-full border border-line bg-surface p-1">
+    <div
+      role="group"
+      aria-labelledby={id}
+      className="inline-flex rounded-full border border-line bg-surface p-1"
+    >
       <span id={id} className="sr-only">
         Ciclo de cobrança do PRO
       </span>
@@ -98,109 +249,26 @@ function CycleToggle({
   )
 }
 
-function PlanCard({ plan, cycle }: { plan: PricingPlan; cycle: BillingCycle }) {
-  const price = plan.prices[cycle]
-  const showAnnualExtras = plan.highlight === true && cycle === 'anual'
-
-  return (
-    <article
-      aria-labelledby={`plano-${plan.id}`}
-      className={cn(
-        'pulse-on-hover flex h-full flex-col rounded-card border p-6',
-        plan.highlight
-          ? 'border-brand bg-brand-dim/30 shadow-xl shadow-brand/10'
-          : 'border-line bg-surface',
-      )}
-    >
-      <p
-        className={cn(
-          'inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wide',
-          plan.highlight ? 'bg-brand text-white' : 'border border-line text-ink-muted',
-        )}
-      >
-        {plan.highlight ? <BoltIcon /> : null}
-        {plan.badge}
-      </p>
-
-      <h3 id={`plano-${plan.id}`} className="mt-4 text-balance text-lg font-semibold text-ink">
-        {plan.headline}
-      </h3>
-
-      <div className="mt-4 min-h-[5.5rem]" aria-live="polite">
-        <p className="flex flex-wrap items-baseline gap-x-1">
-          <span className="tabular text-3xl font-semibold text-ink">{price.amount}</span>
-          <span className="text-sm text-ink-muted">{price.period}</span>
-          {price.strike ? (
-            <>
-              <span className="sr-only">, de</span>
-              <s className="tabular ml-2 text-sm text-ink-faint decoration-danger/70">{price.strike}</s>
-            </>
-          ) : null}
-        </p>
-        {price.note ? <p className="tabular mt-1 text-sm text-ink-muted">{price.note}</p> : null}
-        {price.savings ? (
-          <p className="mt-2 inline-flex rounded-full bg-positive/15 px-2.5 py-1 text-xs font-medium text-positive">
-            {price.savings}
-          </p>
-        ) : null}
-      </div>
-
-      <p className="mt-2 text-pretty text-sm text-ink-muted">{plan.description}</p>
-
-
-      <ul className="mt-6 flex flex-1 flex-col gap-2.5 border-t border-line pt-6">
-        {plan.features.map((feature) => (
-          <li key={feature} className="flex gap-2.5 text-sm text-ink-muted">
-            <CheckIcon />
-            {feature}
-          </li>
-        ))}
-        {showAnnualExtras
-          ? ANNUAL_EXTRAS.map((feature) => (
-              <li key={feature} className="flex gap-2.5 text-sm text-ink">
-                <CheckIcon highlight />
-                {feature}
-              </li>
-            ))
-          : null}
-      </ul>
-
-      <Link
-        to={CTA.primary.to}
-        className={cn(
-          'mt-6 inline-flex h-11 items-center justify-center rounded-xl px-4 text-sm font-medium transition-colors',
-          plan.highlight
-            ? 'bg-brand text-white hover:bg-brand-hi'
-            : 'border border-line text-ink hover:border-line-hi',
-        )}
-      >
-        {plan.cta}
-      </Link>
-    </article>
-  )
-}
-
 function CheckIcon({ highlight = false }: { highlight?: boolean }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
+    <span
       aria-hidden="true"
-      className={cn('mt-0.5 inline size-4 shrink-0', highlight ? 'text-brand-hi' : 'text-positive')}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      className={cn(
+        'grid size-5 shrink-0 place-items-center rounded-full',
+        highlight ? 'bg-brand text-white' : 'bg-positive/20 text-positive',
+      )}
     >
-      <path d="m5 13 4 4L19 7" />
-    </svg>
-  )
-}
-
-function BoltIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="size-3.5" fill="currentColor">
-      <path d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5Z" />
-    </svg>
+      <svg
+        viewBox="0 0 24 24"
+        className="size-3"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="m5 13 4 4L19 7" />
+      </svg>
+    </span>
   )
 }

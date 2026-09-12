@@ -23,77 +23,76 @@ const LEGAL = [
 ] as const
 
 /**
- * O rodapé é um bloco arredondado que sobe por baixo de uma faixa curvada
- * da marca, como uma onda encostando na última seção. A faixa é SVG puro
- * (duas passadas, a de trás mais escura pra dar volume), e o brilho difuso
- * atrás dela é o que faz a curva parecer luz, não um recorte.
+ * O rodapé vai de ponta a ponta. O efeito fica na SEÇÃO ANTERIOR: a página
+ * termina num bloco de cantos arredondados embaixo, com uma névoa da marca
+ * subindo pela borda e a fita curvada atravessando a emenda, como uma onda
+ * encostando no fim da página. A fita é SVG puro (duas passadas, a de trás
+ * mais escura pra dar volume).
  */
 export function SiteFooter() {
   return (
-    <footer className="px-3 pb-3 pt-14 sm:px-6 sm:pb-6 sm:pt-20">
-      <div className="relative mx-auto max-w-6xl">
-        <WaveRibbon />
+    <footer className="relative bg-surface">
+      <PreviousSectionTail />
 
-        <div className="relative overflow-hidden rounded-[2rem] border border-line bg-surface">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_20%_0%,rgb(109_92_255_/_0.22),transparent_70%),radial-gradient(40%_40%_at_90%_100%,rgb(109_92_255_/_0.12),transparent_70%)]"
-          />
+      <div className="relative">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_60%_at_15%_0%,rgb(109_92_255_/_0.18),transparent_70%),radial-gradient(40%_50%_at_90%_100%,rgb(109_92_255_/_0.1),transparent_70%)]"
+        />
 
-          <div className="relative grid gap-10 px-6 pb-10 pt-20 sm:px-10 sm:pt-28 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
-            <div>
-              <Wordmark />
-              <p className="mt-4 max-w-xs text-pretty text-sm text-ink-muted">
-                Objetivo vira plano. Plano vira o que você faz hoje. Um sistema de progresso
-                pessoal, não mais um app de hábitos.
-              </p>
-              <Link
-                to={CTA.primary.to}
-                className="mt-6 inline-flex h-11 items-center justify-center rounded-full bg-brand px-5 text-sm font-medium text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-hi"
-              >
-                {CTA.primary.label}
-              </Link>
-            </div>
-
-            <FooterNav title="Produto" links={PRODUCT} />
-            <FooterNav title="Recursos" links={RESOURCES} />
-
-            <div>
-              <h2 className="text-sm font-medium text-ink">
-                {SITE.contactEmail ? 'Contato e legal' : 'Legal'}
-              </h2>
-              <ul className="mt-3 flex flex-col gap-2">
-                {SITE.contactEmail ? (
-                  <li>
-                    <a
-                      href={`mailto:${SITE.contactEmail}`}
-                      className="text-sm text-ink-muted transition-colors hover:text-ink"
-                    >
-                      {SITE.contactEmail}
-                    </a>
-                  </li>
-                ) : null}
-                {LEGAL.map((link) => (
-                  <li key={link.href}>
-                    <Link
-                      to={link.href}
-                      className="text-sm text-ink-muted transition-colors hover:text-ink"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
+        <div className="relative mx-auto grid max-w-6xl gap-10 px-4 pb-12 pt-20 sm:px-6 sm:pt-24 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+          <div>
+            <Wordmark />
+            <p className="mt-4 max-w-xs text-pretty text-sm text-ink-muted">
+              Objetivo vira plano. Plano vira o que você faz hoje. Um sistema de progresso pessoal,
+              não mais um app de hábitos.
+            </p>
+            <Link
+              to={CTA.primary.to}
+              className="mt-6 inline-flex h-11 items-center justify-center rounded-full bg-brand px-5 text-sm font-medium text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-hi"
+            >
+              {CTA.primary.label}
+            </Link>
           </div>
 
-          <div className="relative border-t border-line/70">
-            <div className="flex flex-col items-center justify-between gap-2 px-6 py-5 text-center text-sm text-ink-faint sm:flex-row sm:px-10 sm:text-left">
-              <p>
-                © {new Date().getFullYear()} {SITE.name}. Todos os direitos reservados.
-              </p>
-              <p>Roda no navegador do celular e do computador. Sem instalar nada.</p>
-            </div>
+          <FooterNav title="Produto" links={PRODUCT} />
+          <FooterNav title="Recursos" links={RESOURCES} />
+
+          <div>
+            <h2 className="text-sm font-medium text-ink">
+              {SITE.contactEmail ? 'Contato e legal' : 'Legal'}
+            </h2>
+            <ul className="mt-3 flex flex-col gap-2">
+              {SITE.contactEmail ? (
+                <li>
+                  <a
+                    href={`mailto:${SITE.contactEmail}`}
+                    className="text-sm text-ink-muted transition-colors hover:text-ink"
+                  >
+                    {SITE.contactEmail}
+                  </a>
+                </li>
+              ) : null}
+              {LEGAL.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    to={link.href}
+                    className="text-sm text-ink-muted transition-colors hover:text-ink"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div className="relative border-t border-line/70">
+          <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-5 text-center text-sm text-ink-faint sm:flex-row sm:px-6 sm:text-left">
+            <p>
+              © {new Date().getFullYear()} {SITE.name}. Todos os direitos reservados.
+            </p>
+            <p>Roda no navegador do celular e do computador. Sem instalar nada.</p>
           </div>
         </div>
       </div>
@@ -102,32 +101,43 @@ export function SiteFooter() {
 }
 
 /**
- * Faixa curvada que encosta no topo do bloco. `preserveAspectRatio="none"`
+ * Cauda da seção anterior: continua o fundo da página num bloco de cantos
+ * arredondados, por cima do rodapé. A névoa sobe do canto de baixo e a fita
+ * cruza a emenda entre os dois.
+ */
+function PreviousSectionTail() {
+  return (
+    <div aria-hidden="true" className="relative mx-3 sm:mx-6">
+      <div className="relative h-24 overflow-hidden rounded-b-[2rem] bg-canvas sm:h-32">
+        <div className="absolute inset-x-0 bottom-0 h-full bg-[radial-gradient(70%_100%_at_50%_100%,rgb(109_92_255_/_0.28),transparent_70%)]" />
+        <div className="absolute inset-x-[15%] -bottom-10 h-20 rounded-full bg-brand/30 blur-3xl" />
+      </div>
+      <WaveRibbon />
+    </div>
+  )
+}
+
+/**
+ * Faixa curvada que cruza a borda de baixo da cauda. `preserveAspectRatio="none"`
  * deixa a onda esticar com a largura sem mudar de altura; as duas passadas
  * têm curvas ligeiramente diferentes pra parecer uma fita dobrada.
  */
 function WaveRibbon() {
   return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute -inset-x-2 -top-10 z-10 h-24 sm:-inset-x-4 sm:-top-12 sm:h-32"
+    <svg
+      viewBox="0 0 1440 160"
+      preserveAspectRatio="none"
+      className="pointer-events-none absolute -inset-x-2 bottom-0 h-24 w-[calc(100%+1rem)] translate-y-[45%] sm:-inset-x-4 sm:h-32 sm:w-[calc(100%+2rem)]"
     >
-      <div className="absolute inset-x-[10%] top-1/2 h-24 -translate-y-1/2 rounded-full bg-brand/30 blur-3xl" />
-      <svg
-        viewBox="0 0 1440 160"
-        preserveAspectRatio="none"
-        className="absolute inset-x-0 bottom-0 h-full w-full"
-      >
-        <path
-          className="fill-brand-deep"
-          d="M0 106 C200 46 420 40 720 84 C1020 128 1240 138 1440 72 L1440 106 C1240 172 1020 162 720 118 C420 74 200 80 0 140 Z"
-        />
-        <path
-          className="fill-brand"
-          d="M0 120 C260 64 520 58 800 98 C1080 138 1220 144 1440 92 L1440 122 C1220 174 1080 168 800 128 C520 88 260 94 0 150 Z"
-        />
-      </svg>
-    </div>
+      <path
+        className="fill-brand-deep"
+        d="M0 106 C200 46 420 40 720 84 C1020 128 1240 138 1440 72 L1440 106 C1240 172 1020 162 720 118 C420 74 200 80 0 140 Z"
+      />
+      <path
+        className="fill-brand"
+        d="M0 120 C260 64 520 58 800 98 C1080 138 1220 144 1440 92 L1440 122 C1220 174 1080 168 800 128 C520 88 260 94 0 150 Z"
+      />
+    </svg>
   )
 }
 
