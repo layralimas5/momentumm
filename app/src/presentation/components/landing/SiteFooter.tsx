@@ -23,15 +23,11 @@ const LEGAL = [
 ] as const
 
 /**
- * O rodapé vai de ponta a ponta. O efeito fica na SEÇÃO ANTERIOR: ela tem
- * o fundo no roxo da marca (o mesmo do "Plano" do hero) e termina em cantos
- * arredondados por cima do rodapé, sem nada no vão da curva.
+ * O rodapé vai de ponta a ponta, escuro, logo abaixo da seção final roxa.
  */
 export function SiteFooter() {
   return (
     <footer className="relative bg-surface">
-      <PreviousSectionTail />
-
       <div className="relative">
         <div className="relative mx-auto grid max-w-6xl gap-10 px-4 pb-12 pt-20 sm:px-6 sm:pt-24 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
@@ -90,19 +86,6 @@ export function SiteFooter() {
         </div>
       </div>
     </footer>
-  )
-}
-
-/**
- * Cauda da seção anterior: continua o fundo dela (`brand-hi`) num bloco de
- * cantos arredondados por cima do rodapé. É o fechamento do bloco roxo que
- * abre com a mesma curva no topo de "Por que confiar".
- */
-function PreviousSectionTail() {
-  return (
-    <div aria-hidden="true" className="relative">
-      <div className="h-16 rounded-b-[3rem] bg-brand-hi sm:h-24 sm:rounded-b-[4rem]" />
-    </div>
   )
 }
 

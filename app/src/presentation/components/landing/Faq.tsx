@@ -47,8 +47,8 @@ const QUESTIONS = [
 
 export function Faq() {
   return (
-    <Section id="faq" className="bg-brand-hi">
-      <SectionHeading tone="brand" eyebrow="Dúvidas" title="O que perguntam antes de começar" />
+    <Section id="faq" className="border-t border-line bg-surface/30">
+      <SectionHeading eyebrow="Dúvidas" title="O que perguntam antes de começar" />
 
       <div className="mx-auto mt-12 flex max-w-2xl flex-col gap-3">
         {QUESTIONS.map((item, index) => (
