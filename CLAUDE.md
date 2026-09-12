@@ -63,7 +63,7 @@ que existir base. Feed vazio afasta usuário.
 Fase 1 em pé, em `app/`. Roda em **modo demo** sem configurar nada (dados em
 `localStorage`) e vira contas reais ao preencher `.env.local` com o Supabase.
 
-Pronto: domínio completo com 675 testes, migrations com RLS até a 0020, repositórios demo e
+Pronto: domínio completo com 675 testes, migrations com RLS até a 0021, repositórios demo e
 Supabase, auth com rota protegida, registro rápido, cronômetro de sessão, streak
 dos últimos 7 dias, histórico com filtro por eixo, metas com progresso e perfil
 editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
@@ -468,6 +468,15 @@ minutos. IA: além da franquia mensal, `ai_calls_last_minute()` (só
 service_role) limita a 5 por minuto (`rate_limited`). Tetos de login, cadastro
 e recuperação no servidor ficam em `supabase/config.toml`
 (`[auth.rate_limit]`), aplicados com `supabase config push`.
+
+**Nenhuma política vale pro anônimo (0021).** A suíte rodada contra o banco
+real achou `follows` legível sem login (resto da 0001) e políticas no papel
+`public` que explodiam pra `anon` em vez de devolver zero linhas. Agora toda
+política é `to authenticated`. A suíte roda pela Management API
+(`supabase db query --linked -f`, sem as linhas `\echo`): 57 casos, tudo em
+transação com rollback. O Storage barra `delete` por SQL pra qualquer papel
+(`storage.protect_delete`), então os casos de exclusão de arquivo provam que o
+SQL não é porta, e a limpeza da pasta fica com o cliente (`purgeOwnMedia`).
 
 **O teste que roda sempre:** `infrastructure/config/secrets.test.ts` varre
 `src`, `supabase` e o bundle atrás de `service_role`, `sb_secret_`, chave de

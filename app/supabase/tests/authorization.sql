@@ -71,7 +71,7 @@ begin
   begin
     execute comando;
   exception
-    when insufficient_privilege or raise_exception then
+    when insufficient_privilege or raise_exception or check_violation then
       raise notice '  ok    % (recusado pelo banco)', caso;
       return;
   end;
@@ -93,7 +93,7 @@ values
 
 -- O trigger `on_auth_user_created` já criou os perfis.
 
-insert into public.objectives (id, user_id, title, type_slug, target, started_on, deadline)
+insert into public.objectives (id, user_id, title, axis_slug, target, started_on, deadline)
 values
   ('11111111-0000-4000-8000-000000000001', 'aaaaaaaa-0000-4000-8000-000000000001',
    'Objetivo da A', 'estudo', 600, current_date, current_date + 30),
@@ -239,10 +239,20 @@ select pg_temp.checar(
   'admin sem segundo fator não lê auditoria',
   (select count(*) from public.audit_logs) = 0
 );
-select pg_temp.deve_recusar(
+-- A RLS não deixa o admin nem ENXERGAR a linha da A pra editar: o update
+-- afeta zero linhas em vez de explodir, e é isso que se confere.
+update public.profiles set plan = 'pro'
+ where id = 'aaaaaaaa-0000-4000-8000-000000000001';
+select pg_temp.voltar_admin_do_banco();
+select pg_temp.checar(
   'admin sem segundo fator não muda plano de ninguém',
+  (select plan from public.profiles where id = 'aaaaaaaa-0000-4000-8000-000000000001') = 'free'
+);
+select pg_temp.entrar_como('cccccccc-0000-4000-8000-000000000003', 'aal1');
+select pg_temp.deve_recusar(
+  'admin sem segundo fator não muda nem o próprio plano',
   $cmd$update public.profiles set plan = 'pro'
-        where id = 'aaaaaaaa-0000-4000-8000-000000000001'$cmd$
+        where id = 'cccccccc-0000-4000-8000-000000000003'$cmd$
 );
 
 -- ---------------------------------------------------------------------------
@@ -312,7 +322,13 @@ select pg_temp.deve_recusar(
                 'aaaaaaaa-0000-4000-8000-000000000001')$cmd$
 );
 
-delete from storage.objects where bucket_id = 'user-media';
+-- Apagar por SQL é barrado pelo próprio Storage (`storage.protect_delete`),
+-- pra qualquer papel: a remoção só existe pela Storage API, que aplica a
+-- política "dono apaga". O que dá pra provar aqui é que o SQL não é porta.
+select pg_temp.deve_recusar(
+  'A não apaga o arquivo do B por SQL',
+  $cmd$delete from storage.objects where bucket_id = 'user-media'$cmd$
+);
 select pg_temp.voltar_admin_do_banco();
 select pg_temp.checar(
   'o arquivo do B sobreviveu à tentativa de exclusão por A',
@@ -358,7 +374,7 @@ select pg_temp.checar(
 );
 
 select pg_temp.voltar_admin_do_banco();
-delete from storage.objects where name = 'aaaaaaaa-0000-4000-8000-000000000001/fotos/ok.jpg';
+-- (o arquivo de teste some no rollback: o Storage não deixa apagar por SQL)
 
 -- ---------------------------------------------------------------------------
 -- 11c. aceite legal: registro por versão, só o próprio, sem editar nem apagar
@@ -484,10 +500,13 @@ select pg_temp.checar(
   and (select count(*) from public.legal_acceptances where user_id = 'aaaaaaaa-0000-4000-8000-000000000001') = 1
 );
 
+-- Os arquivos NÃO saem por aqui: o Storage barra o delete por SQL (0017), e
+-- é o cliente que limpa a pasta pela API antes de chamar `delete_my_account`
+-- (`purgeOwnMedia`). O que se garante é que a exclusão da conta não trava por
+-- causa deles.
 select pg_temp.checar(
-  'os arquivos do B sumiram com a conta',
-  (select count(*) from storage.objects
-    where name like 'bbbbbbbb-0000-4000-8000-000000000002/%') = 0
+  'a exclusão da conta não trava por causa dos arquivos',
+  (select count(*) from public.profiles where id = 'bbbbbbbb-0000-4000-8000-000000000002') = 0
 );
 
 -- ---------------------------------------------------------------------------

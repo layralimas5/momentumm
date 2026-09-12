@@ -43,5 +43,5 @@ sign_in_sign_ups = 30
 token_verifications = 30
 # Refresh de sessão por 5 minutos, por IP.
 token_refresh = 150
-anonymous_users = 0
-sms_sent = 0
+anonymous_users = 1
+sms_sent = 1
