@@ -50,25 +50,30 @@ export function Faq() {
     <Section id="faq" className="border-t border-line bg-surface/30">
       <SectionHeading eyebrow="Dúvidas" title="O que perguntam antes de começar" />
 
-      <div className="mx-auto mt-12 max-w-2xl">
+      <div className="mx-auto mt-12 flex max-w-2xl flex-col gap-3">
         {QUESTIONS.map((item, index) => (
           <Reveal key={item.question} delay={index * 0.03}>
-            <details className="group border-b border-line">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-left font-medium text-ink marker:hidden">
+            <details className="group rounded-card border border-line bg-surface transition-colors open:border-line-hi open:bg-surface-hi">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-left font-medium text-ink marker:hidden">
                 {item.question}
-                <svg
-                  viewBox="0 0 24 24"
+                <span
                   aria-hidden="true"
-                  className="size-5 shrink-0 text-ink-muted transition-transform duration-200 group-open:rotate-45"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
+                  className="grid size-8 shrink-0 place-items-center rounded-lg bg-brand text-white transition-transform duration-200 group-open:rotate-180"
                 >
-                  <path d="M12 5v14M5 12h14" />
-                </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="size-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </span>
               </summary>
-              <p className="pb-5 text-pretty text-sm text-ink-muted">{item.answer}</p>
+              <p className="px-5 pb-5 text-pretty text-sm text-ink-muted">{item.answer}</p>
             </details>
           </Reveal>
         ))}
