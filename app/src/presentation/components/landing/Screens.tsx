@@ -138,8 +138,9 @@ export function Screens() {
   }
 
   return (
-    <Section id="telas" className="border-t border-line">
+    <Section id="telas" className="bg-gradient-to-b from-brand-deep via-brand to-brand-hi">
       <SectionHeading
+        tone="brand"
         eyebrow="Por dentro"
         title="Seis telas. Um exemplo só atravessa todas."
         description="O mesmo objetivo visto do dia, do plano, do progresso e do review. Nenhum número aparece diferente em duas telas."
@@ -166,11 +167,14 @@ export function Screens() {
               className={cn(
                 'inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm transition-colors',
                 selected
-                  ? 'border-brand/50 bg-brand-dim/40 text-ink'
-                  : 'border-line text-ink-muted hover:border-line-hi hover:text-ink',
+                  ? 'border-white/70 bg-white text-brand-deep'
+                  : 'border-white/30 text-white/85 hover:border-white/60 hover:text-white',
               )}
             >
-              <Icon name={screen.icon} className={cn('size-4', selected ? 'text-brand-hi' : 'text-ink-faint')} />
+              <Icon
+                name={screen.icon}
+                className={cn('size-4', selected ? 'text-brand' : 'text-white/70')}
+              />
               {screen.label}
             </button>
           )
@@ -192,14 +196,16 @@ export function Screens() {
             transition={{ duration: 0.3, ease: EASE }}
             className="order-2 md:order-1"
           >
-            <p className="text-sm font-medium uppercase tracking-wide text-brand-hi">{active.label}</p>
-            <h3 className="mt-3 text-balance text-2xl font-semibold tracking-tight text-ink">
+            <p className="text-sm font-medium uppercase tracking-wide text-white/80">
+              {active.label}
+            </p>
+            <h3 className="mt-3 text-balance text-2xl font-semibold tracking-tight text-white">
               {active.title}
             </h3>
-            <p className="mt-4 text-pretty text-ink-muted">{active.description}</p>
+            <p className="mt-4 text-pretty text-white/85">{active.description}</p>
             <ul className="mt-6 space-y-3">
               {active.points.map((point) => (
-                <li key={point} className="flex items-start gap-2.5 text-sm text-ink-muted">
+                <li key={point} className="flex items-start gap-2.5 text-sm text-white/85">
                   <CheckIcon />
                   {point}
                 </li>
@@ -212,7 +218,7 @@ export function Screens() {
           <div className="relative">
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-x-10 top-1/2 h-56 -translate-y-1/2 rounded-full bg-brand/20 blur-3xl"
+              className="pointer-events-none absolute inset-x-10 top-1/2 h-56 -translate-y-1/2 rounded-full bg-black/30 blur-3xl"
             />
             <PhoneMockup className="relative">
               <AnimatePresence mode="wait" initial={false}>
@@ -236,7 +242,16 @@ export function Screens() {
 
 function CheckIcon() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-brand-hi" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="mt-0.5 size-4 shrink-0 text-white"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="m4.5 12.5 5 5 10-11" />
     </svg>
   )

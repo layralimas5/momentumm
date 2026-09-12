@@ -15,7 +15,7 @@ export function InlineCta({ prompt }: { readonly prompt: string }) {
         <p className="text-base font-medium text-ink sm:text-lg">{prompt}</p>
         <Link
           to={CTA.primary.to}
-          className="inline-flex h-13 shrink-0 items-center justify-center rounded-full bg-brand px-8 text-base font-medium text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-hi"
+          className="pulse-ring inline-flex h-13 shrink-0 items-center justify-center rounded-full bg-brand px-8 text-base font-medium text-white transition-colors hover:bg-brand-hi"
         >
           {CTA.primary.label}
         </Link>

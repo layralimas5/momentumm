@@ -53,7 +53,6 @@ export function LandingPage() {
         <InlineCta prompt="Quer ver essas telas com o seu objetivo?" />
         <MomentumScore />
         <MomentumAi />
-        <InlineCta prompt="O plano leva dois minutos pra montar." />
         <Comparison />
         <Trust />
         <Pricing />
