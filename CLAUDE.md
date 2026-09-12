@@ -63,7 +63,7 @@ que existir base. Feed vazio afasta usuário.
 Fase 1 em pé, em `app/`. Roda em **modo demo** sem configurar nada (dados em
 `localStorage`) e vira contas reais ao preencher `.env.local` com o Supabase.
 
-Pronto: domínio completo com 668 testes, migrations com RLS até a 0019, repositórios demo e
+Pronto: domínio completo com 675 testes, migrations com RLS até a 0020, repositórios demo e
 Supabase, auth com rota protegida, registro rápido, cronômetro de sessão, streak
 dos últimos 7 dias, histórico com filtro por eixo, metas com progresso e perfil
 editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
@@ -443,6 +443,31 @@ conta — o `error.message` do GoTrue diz "User already registered" com todas as
 letras, e ele subia direto pra tela. O freio de tentativas (`auth-throttle`) é
 do navegador e não substitui o limite do servidor: ele impede o formulário de
 virar ferramenta de teste de senha.
+
+**Privacidade e limites (migration 0020).** `legal_acceptances` registra o
+aceite dos Termos e da Política por (pessoa, documento, versão): só o dono lê
+e grava, ninguém edita nem apaga. A versão vigente mora em
+`domain/legal/legal-documents` (`LEGAL_VERSIONS`, a data de publicação) e o
+`LegalGate` do `AppLayout` abre o diálogo quando falta a linha da versão
+atual; fechar sem aceitar encerra a sessão. O cadastro pede o "li e aceito"
+(consentimento), mas o REGISTRO é gravado na primeira entrada, porque no
+cadastro por e-mail a sessão nasce depois da confirmação.
+
+`export_my_data()` é `security invoker`: monta o JSON com a RLS de quem pede
+(`momentumm.export.v1`, sem `user_id` nas linhas, sem dado de amigo) e a tela
+baixa o arquivo no aparelho, sem link permanente. `delete_my_account()` (0015)
+continua o caminho de exclusão; o cliente limpa antes as subpastas
+`fotos/audios/anexos` do bucket.
+
+Uploads: bucket `user-media` privado, 10MB, tipos de imagem, áudio e PDF; a
+política de insert confere pasta (`<uid>/fotos|audios|anexos/`), mimetype e
+ritmo (`user_media_uploads_last_hour()` < 60). O cliente
+(`infrastructure/supabase/supabase-media`) valida antes pela mesma tabela
+(`domain/media/media-policy`) e só entrega o arquivo por link assinado de 5
+minutos. IA: além da franquia mensal, `ai_calls_last_minute()` (só
+service_role) limita a 5 por minuto (`rate_limited`). Tetos de login, cadastro
+e recuperação no servidor ficam em `supabase/config.toml`
+(`[auth.rate_limit]`), aplicados com `supabase config push`.
 
 **O teste que roda sempre:** `infrastructure/config/secrets.test.ts` varre
 `src`, `supabase` e o bundle atrás de `service_role`, `sb_secret_`, chave de
@@ -1025,7 +1050,7 @@ Quando incomodar, trocar por import dinâmico dentro do `container`.
 cd app
 npm install
 npm run dev     # modo demo, sem configurar nada
-npm test        # 668 testes
+npm test        # 675 testes
 npm test        # 643 testes
 npm run build
 ```

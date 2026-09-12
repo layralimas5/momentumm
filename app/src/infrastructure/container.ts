@@ -15,6 +15,10 @@ import type { TaskRepository } from '@/domain/repositories/task-repository'
 import type { WeeklyReviewRepository } from '@/domain/repositories/weekly-review-repository'
 import type { WinRepository } from '@/domain/repositories/win-repository'
 import { SimulatedAiService } from './ai/simulated-ai-service'
+import type { LegalAcceptanceRepository } from '@/domain/repositories/legal-acceptance-repository'
+import type { MediaRepository } from '@/domain/repositories/media-repository'
+import { SupabaseLegalAcceptanceRepository } from './supabase/supabase-legal'
+import { SupabaseMediaRepository } from './supabase/supabase-media'
 import { SupabaseAiService } from './ai/supabase-ai-service'
 import { isDemoMode } from './config/env'
 import {
@@ -31,6 +35,8 @@ import {
   DemoPlanStageRepository,
   DemoProfileRepository,
   DemoTaskRepository,
+  DemoLegalAcceptanceRepository,
+  DemoMediaRepository,
   DemoWeeklyReviewRepository,
   DemoWinRepository,
 } from './demo/demo-repositories'
@@ -85,6 +91,10 @@ export interface Container {
    * onde a chave do modelo mora. Chave de LLM não passa pelo frontend.
    */
   readonly ai: AiService
+  /** Aceite dos Termos e da Política, por versão. Só leitura e gravação do próprio. */
+  readonly legal: LegalAcceptanceRepository
+  /** Fotos, áudios e anexos, em bucket privado com link assinado. */
+  readonly media: MediaRepository
   readonly demo: boolean
 }
 
@@ -107,6 +117,8 @@ export const container: Container = isDemoMode
       friendships: new DemoFriendshipRepository(),
       challenges: new DemoChallengeRepository(),
       ai: new SimulatedAiService(),
+      legal: new DemoLegalAcceptanceRepository(),
+      media: new DemoMediaRepository(),
       demo: true,
     }
   : {
@@ -126,5 +138,7 @@ export const container: Container = isDemoMode
       friendships: new SupabaseFriendshipRepository(),
       challenges: new SupabaseChallengeRepository(),
       ai: new SupabaseAiService(),
+      legal: new SupabaseLegalAcceptanceRepository(),
+      media: new SupabaseMediaRepository(),
       demo: false,
     }

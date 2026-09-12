@@ -53,7 +53,11 @@ import type {
 } from '@/domain/repositories/objective-repository'
 import type { CheckInRepository } from '@/domain/repositories/checkin-repository'
 import type { HabitRepository, HabitUpdate } from '@/domain/repositories/habit-repository'
-import type { ProfileRepository, ProfileUpdate } from '@/domain/repositories/profile-repository'
+import type {
+  AccountExport,
+  ProfileRepository,
+  ProfileUpdate,
+} from '@/domain/repositories/profile-repository'
 import type {
   TaskReorder,
   TaskRepository,
@@ -74,6 +78,10 @@ import type {
   PlanStageReweight,
   PlanStageUpdate,
 } from '@/domain/repositories/plan-stage-repository'
+import { LEGAL_VERSIONS, type LegalAcceptance, type LegalDocument } from '@/domain/legal/legal-documents'
+import { assertMediaAllowed, assertOwnsMediaPath, mediaPath, type MediaKind } from '@/domain/media/media-policy'
+import type { LegalAcceptanceRepository } from '@/domain/repositories/legal-acceptance-repository'
+import type { MediaRepository, StoredMedia } from '@/domain/repositories/media-repository'
 import { DEMO_USER, demoStore } from './demo-store'
 
 const SESSION_KEY = 'momentumm.demo.session'
@@ -276,6 +284,10 @@ export class DemoProfileRepository implements ProfileRepository {
   */
   async deleteAccount(): Promise<void> {
     demoStore.clear()
+  }
+
+  async exportData(): Promise<AccountExport> {
+    return { exported_at: new Date().toISOString(), format: 'momentumm.export.v1', ...demoStore.snapshot() }
   }
 
   async findById(): Promise<Profile | null> {
@@ -568,5 +580,68 @@ export class DemoChallengeRepository implements ChallengeRepository {
       doneDays: Math.max(0, Math.round(doneDays)),
       completedAt: completed ? new Date() : null,
     })
+  }
+}
+
+/**
+ * Aceite legal no modo demo: fica no `localStorage`, ao lado do resto. O
+ * fluxo da tela é o mesmo do Supabase, que é o que importa conferir aqui.
+ */
+export class DemoLegalAcceptanceRepository implements LegalAcceptanceRepository {
+  private static readonly KEY = 'momentumm.demo.legal.v1'
+
+  async listMine(): Promise<LegalAcceptance[]> {
+    try {
+      const raw = localStorage.getItem(DemoLegalAcceptanceRepository.KEY)
+      const parsed = raw ? (JSON.parse(raw) as { document: LegalDocument; version: string; acceptedAt: string }[]) : []
+      return parsed.map((item) => ({ ...item, acceptedAt: new Date(item.acceptedAt) }))
+    } catch {
+      return []
+    }
+  }
+
+  async accept(_userId: string, documents: readonly LegalDocument[]): Promise<void> {
+    const current = await this.listMine()
+    const next = [
+      ...current,
+      ...documents
+        .filter((document) => !current.some((item) => item.document === document && item.version === LEGAL_VERSIONS[document]))
+        .map((document) => ({ document, version: LEGAL_VERSIONS[document], acceptedAt: new Date() })),
+    ]
+    localStorage.setItem(DemoLegalAcceptanceRepository.KEY, JSON.stringify(next))
+  }
+}
+
+/**
+ * Mídia no modo demo: o arquivo vira uma URL de objeto na memória da aba.
+ * Some ao recarregar, e é isso mesmo: modo demo não guarda arquivo de ninguém.
+ */
+export class DemoMediaRepository implements MediaRepository {
+  private readonly files = new Map<string, { blob: Blob; media: StoredMedia }>()
+
+  async upload(userId: string, kind: MediaKind, file: Blob): Promise<StoredMedia> {
+    assertMediaAllowed({ kind, mimeType: file.type, size: file.size })
+    const path = mediaPath(userId, kind, file.type, crypto.randomUUID())
+    const media = { path, kind, mimeType: file.type, size: file.size }
+    this.files.set(path, { blob: file, media })
+    return media
+  }
+
+  async signedUrl(userId: string, path: string): Promise<string> {
+    assertOwnsMediaPath(userId, path)
+    const entry = this.files.get(path)
+    if (!entry) throw new DomainError('Esse arquivo não existe mais.')
+    return URL.createObjectURL(entry.blob)
+  }
+
+  async remove(userId: string, path: string): Promise<void> {
+    assertOwnsMediaPath(userId, path)
+    this.files.delete(path)
+  }
+
+  async list(userId: string, kind: MediaKind): Promise<StoredMedia[]> {
+    return [...this.files.values()]
+      .map((entry) => entry.media)
+      .filter((media) => media.kind === kind && media.path.startsWith(`${userId}/`))
   }
 }

@@ -5,6 +5,7 @@ export const AI_ERROR_CODES = [
   'unauthorized',
   'invalid_request',
   'quota_exceeded',
+  'rate_limited',
   'plan_required',
   'not_configured',
   'model_unavailable',

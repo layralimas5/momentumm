@@ -37,13 +37,16 @@ export function SecurityPanel() {
   // sempre falham, o painel diz o que está faltando.
   if (container.demo) {
     return (
-      <Panel>
-        <PanelHeader title="Segurança da conta" icon="cadeado" />
-        <p className="mt-4 text-sm text-ink-muted">
-          No modo demo não existe conta de verdade: senha, verificação em duas etapas e sessões
-          só aparecem com o Supabase configurado.
-        </p>
-      </Panel>
+      <div className="flex flex-col gap-5">
+        <Panel>
+          <PanelHeader title="Segurança da conta" icon="cadeado" />
+          <p className="mt-4 text-sm text-ink-muted">
+            No modo demo não existe conta de verdade: senha, verificação em duas etapas e sessões
+            só aparecem com o Supabase configurado.
+          </p>
+        </Panel>
+        <ExportBlock />
+      </div>
     )
   }
 
@@ -52,8 +55,54 @@ export function SecurityPanel() {
       <PasswordBlock />
       <MfaBlock factors={factors} onChanged={load} />
       <SessionsBlock />
+      <ExportBlock />
       <DangerBlock />
     </div>
+  )
+}
+
+/**
+ * Os dados da conta, num JSON só.
+ *
+ * A montagem é do servidor (`export_my_data`, com a RLS de quem pede) e o
+ * arquivo nasce no aparelho: nada passa por terceiro nem fica guardado em
+ * lugar nenhum. O botão gera e baixa na hora, sem link permanente.
+ */
+function ExportBlock() {
+  const [done, setDone] = useState(false)
+
+  const download = useAsyncAction(async () => {
+    const data = await container.profiles.exportData()
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `momentumm-${new Date().toISOString().slice(0, 10)}.json`
+    anchor.click()
+    URL.revokeObjectURL(url)
+    setDone(true)
+  })
+
+  return (
+    <Panel>
+      <PanelHeader
+        title="Exportar meus dados"
+        icon="arquivar"
+        hint="Objetivos, planos, hábitos, ações, registros, reviews, momentos e a lista dos teus arquivos, em JSON. Só o que é teu: o que você vê de amigos fica com eles."
+      />
+
+      <Button className="mt-4" variant="secondary" loading={download.running} onClick={() => void download.run()}>
+        <Icon name="arquivar" className="size-4" />
+        Baixar arquivo
+      </Button>
+
+      <div aria-live="polite" className="min-h-5">
+        {download.error ? <p className="mt-1 text-sm text-danger">{download.error}</p> : null}
+        {done && !download.error ? (
+          <p className="mt-1 text-sm text-ink-muted">Arquivo gerado. Ele fica só no teu aparelho.</p>
+        ) : null}
+      </div>
+    </Panel>
   )
 }
 

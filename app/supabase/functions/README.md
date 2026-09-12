@@ -12,7 +12,7 @@ npm i -g supabase
 supabase login
 supabase link --project-ref hsgjlxetdopomeibdbho
 
-# aplicar as migrations 0016 e 0019 (SQL editor ou `supabase db push`)
+# aplicar as migrations 0016, 0019 e 0020 (SQL editor ou `supabase db push`)
 
 # segredos da função
 supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
@@ -36,6 +36,9 @@ continua com a implementação simulada, avisada na tela.
 Franquia mensal: `PLAN_LIMITS[tier].aiCallsPerMonth` (0 no gratuito, 150 no
 PRO), contada em `ai_calls`, que só a função escreve. Sem franquia a função
 responde `plan_required` antes de chamar o modelo.
+
+Ritmo: `ai_calls_last_minute()` (migration 0020) limita a 5 chamadas por
+minuto por pessoa (`rate_limited`), por cima da franquia mensal.
 
 Kinds aceitos: `plan`, `day`, `progress`, `review`, `review_draft`,
 `recovery` (a 0019 abre a constraint de `ai_calls.kind` pra eles).

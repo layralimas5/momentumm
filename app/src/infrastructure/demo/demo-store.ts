@@ -1503,6 +1503,13 @@ export const demoStore = {
   },
 
   /** Zera tudo, sem seed: é o caminho pra testar o onboarding de conta nova. */
+  /** A conta inteira, do jeito que está guardada: é o que a exportação devolve. */
+  snapshot(): Omit<DemoState, 'profile'> & { profile: Omit<Profile, 'id'> } {
+    const current = load()
+    const { id: _id, ...profile } = current.profile
+    return { ...current, profile }
+  },
+
   clear(): void {
     const profile = load().profile
     state = {

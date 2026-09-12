@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Navigate, useLocation } from 'react-router-dom'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { Wordmark } from '@/presentation/components/brand/Logo'
@@ -19,6 +19,8 @@ export function AuthPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  // O aceite de verdade é gravado na primeira entrada (LegalGate): aqui é o consentimento na hora de criar.
+  const [consent, setConsent] = useState(false)
 
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false)
   const [resetSent, setResetSent] = useState(false)
@@ -221,7 +223,30 @@ export function AuthPage() {
           </Field>
         )}
 
-        <Button type="submit" size="lg" loading={submit.running}>
+        {mode === 'criar' ? (
+          <label className="flex cursor-pointer items-start gap-2.5 text-sm text-ink-muted">
+            <input
+              type="checkbox"
+              required
+              checked={consent}
+              onChange={(event) => setConsent(event.target.checked)}
+              className="mt-0.5 size-4 shrink-0 accent-[var(--color-brand)]"
+            />
+            <span>
+              Li e aceito os{' '}
+              <Link to="/termos" target="_blank" rel="noreferrer" className="text-brand-hi hover:underline">
+                Termos de uso
+              </Link>{' '}
+              e a{' '}
+              <Link to="/privacidade" target="_blank" rel="noreferrer" className="text-brand-hi hover:underline">
+                Política de privacidade
+              </Link>
+              .
+            </span>
+          </label>
+        ) : null}
+
+        <Button type="submit" size="lg" loading={submit.running} disabled={mode === 'criar' && !consent}>
           {mode === 'criar' ? 'Criar conta' : mode === 'recuperar' ? 'Mandar o link' : 'Entrar'}
         </Button>
 

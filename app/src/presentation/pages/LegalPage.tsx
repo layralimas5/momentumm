@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { SiteFooter } from '@/presentation/components/landing/SiteFooter'
 import { SiteHeader } from '@/presentation/components/landing/SiteHeader'
 import { SITE } from '@/presentation/components/landing/site'
+import { formatLegalVersion, LEGAL_VERSIONS } from '@/domain/legal/legal-documents'
 
 /**
  * Termos de uso e política de privacidade, na mesma página com conteúdo
@@ -20,7 +21,6 @@ interface LegalSection {
 interface LegalDocument {
   readonly title: string
   readonly intro: string
-  readonly updatedOn: string
   readonly sections: readonly LegalSection[]
 }
 
@@ -29,7 +29,6 @@ const DOCUMENTS: Readonly<Record<LegalKind, LegalDocument>> = {
     title: 'Termos de uso',
     intro:
       'Estes termos regulam o uso do Momentumm. Ao criar uma conta, você concorda com o que está aqui. Escrevemos em linguagem direta de propósito: termo que ninguém lê não protege ninguém.',
-    updatedOn: '10 de setembro de 2026',
     sections: [
       {
         title: '1. O serviço',
@@ -93,7 +92,6 @@ const DOCUMENTS: Readonly<Record<LegalKind, LegalDocument>> = {
     title: 'Política de privacidade',
     intro:
       'O Momentumm guarda o que você faz pra crescer. Isso é dado sensível pra você, e tratamos assim: tudo nasce privado, e a regra de quem vê o quê é aplicada no banco de dados, não só na tela.',
-    updatedOn: '10 de setembro de 2026',
     sections: [
       {
         title: '1. O que coletamos',
@@ -113,7 +111,8 @@ const DOCUMENTS: Readonly<Record<LegalKind, LegalDocument>> = {
       {
         title: '3. Momentumm AI',
         paragraphs: [
-          'Quando você pede um plano ou uma leitura, enviamos ao provedor de IA apenas os dados necessários pra aquela resposta (objetivo, prazo, minutos por dia, números de execução). O processamento acontece no nosso servidor; nenhuma chave de IA roda no seu navegador. Não usamos os seus dados pra treinar modelos.',
+          'Quando você pede um plano, uma reorganização do dia, uma leitura do progresso, o rascunho da review ou um plano de retorno, enviamos ao provedor de IA um recorte fechado da sua conta: objetivos e etapas, hábitos, ações, capacidade do dia, Momentum Score, os últimos reviews e vitórias recentes. Não enviamos e-mail, nome, observações do check-in nem dados de outras pessoas. O processamento acontece no nosso servidor; nenhuma chave de IA roda no seu navegador. Guardamos apenas o tipo da chamada, o modelo e a contagem de tokens, nunca o conteúdo. Não usamos os seus dados pra treinar modelos.',
+          'A IA propõe; você decide. Nenhuma sugestão altera dados, datas ou planejamentos sem a sua confirmação.',
         ],
       },
       {
@@ -133,7 +132,7 @@ const DOCUMENTS: Readonly<Record<LegalKind, LegalDocument>> = {
       {
         title: '6. Seus direitos',
         paragraphs: [
-          'Você pode acessar e corrigir os seus dados no próprio app, e apagar a conta em Configurações, a qualquer momento. Apagar a conta remove os seus dados dos nossos sistemas, incluindo os arquivos associados. Pra exercer qualquer direito previsto na LGPD que não esteja disponível na tela, use o canal de contato indicado no rodapé do site.',
+          'Você pode acessar e corrigir os seus dados no próprio app, exportar tudo em um arquivo estruturado (JSON) e apagar a conta em Configurações, a qualquer momento. Apagar a conta remove os seus dados dos nossos sistemas na hora, incluindo registros, reviews, fotos, áudios e anexos. Pra exercer qualquer direito previsto na LGPD que não esteja disponível na tela, use o canal de contato indicado no rodapé do site.',
         ],
       },
       {
@@ -146,12 +145,13 @@ const DOCUMENTS: Readonly<Record<LegalKind, LegalDocument>> = {
         title: '8. Cookies e armazenamento local',
         paragraphs: [
           'Usamos armazenamento local do navegador pra manter a sessão, guardar preferências e, no modo demo, os dados de teste. Não usamos cookies de rastreamento de terceiros.',
+          'Fotos, áudios e anexos ficam em armazenamento privado: só você acessa, por links temporários que expiram em minutos.',
         ],
       },
       {
         title: '9. Mudanças e contato',
         paragraphs: [
-          'Podemos atualizar esta política; mudanças relevantes são avisadas no app ou por e-mail.',
+          'Podemos atualizar esta política; toda versão tem uma data, e o app pede o aceite de novo quando ela muda. O aceite fica registrado com a versão e a data, na sua conta.',
           'Dúvidas ou pedidos sobre privacidade podem ser enviados pelo canal de contato indicado no rodapé do site.',
         ],
       },
@@ -188,7 +188,7 @@ export function LegalPage({ kind }: { readonly kind: LegalKind }) {
             {document.title}
           </h1>
           <p className="mt-4 max-w-xl text-pretty text-lg text-ink-muted">{document.intro}</p>
-          <p className="mt-4 text-sm text-ink-faint">Última atualização: {document.updatedOn}</p>
+          <p className="mt-4 text-sm text-ink-faint">Versão de {formatLegalVersion(LEGAL_VERSIONS[kind])}. O aceite fica registrado na tua conta com essa data.</p>
         </header>
 
         <div className="mt-12 flex flex-col gap-10">

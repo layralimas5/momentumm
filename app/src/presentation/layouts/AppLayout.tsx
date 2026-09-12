@@ -10,6 +10,7 @@ import { Icon } from '@/presentation/components/ui/Icon'
 import { FocusProvider } from '@/presentation/focus/FocusProvider'
 import { FocusSession } from '@/presentation/focus/FocusSession'
 import { ComposerProvider } from '@/presentation/planner/ComposerProvider'
+import { LegalGate } from '@/presentation/legal/LegalGate'
 import { PlannerProvider } from '@/presentation/planner/PlannerProvider'
 import { ShareStudioProvider } from '@/presentation/share/ShareStudioProvider'
 import { useIsDesktop } from '@/presentation/hooks/use-media-query'
@@ -41,6 +42,7 @@ export function AppLayout() {
           <ShareStudioProvider>
             <LayoutShell />
             <FocusSession />
+            <LegalGate />
           </ShareStudioProvider>
         </FocusProvider>
       </ComposerProvider>

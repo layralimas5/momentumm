@@ -11,6 +11,9 @@
 //   4. chama o modelo com saída estruturada e valida a resposta com o zod
 //   5. registra a chamada em `ai_calls` (tokens, tipo, modelo; nunca conteúdo)
 //
+// Nada do pedido ou da resposta vai pra log: nem prompt, nem contexto, nem
+// JWT. O que a função escreve em `ai_calls` é o suficiente pra teto e custo.
+//
 // Deploy:
 //   supabase functions deploy momentumm-ai
 //   supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
@@ -37,6 +40,8 @@ import {
 } from './shared.ts'
 
 const DEFAULT_MODEL = 'claude-opus-5'
+/** Por pessoa. Cinco leituras num minuto já é mais do que qualquer tela pede. */
+const MAX_CALLS_PER_MINUTE = 5
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -126,6 +131,12 @@ Deno.serve(async (request) => {
       'quota_exceeded',
       `Você já usou as ${limit} leituras da IA deste mês. A franquia renova no dia 1.`,
     )
+  }
+
+  // Ritmo: a franquia segura o custo do mês; isto segura script e duplo toque.
+  const { data: lastMinute } = await admin.rpc('ai_calls_last_minute', { p_user: user.id })
+  if ((lastMinute ?? 0) >= MAX_CALLS_PER_MINUTE) {
+    return fail(429, 'rate_limited', 'Muitas leituras seguidas. Espera um minuto e tenta de novo.')
   }
 
   // 4. O modelo. Saída estruturada validada pelo mesmo schema que o app usa

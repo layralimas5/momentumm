@@ -37,4 +37,16 @@ export interface ProfileRepository {
    * outra pessoa, e a checagem passaria a depender de quem chama.
    */
   deleteAccount(): Promise<void>
+  /**
+   * Tudo que a conta registrou, num JSON só (`momentumm.export.v1`). É o
+   * direito de portabilidade: a pessoa leva o que é dela, e só o que é dela —
+   * o dado do amigo que ela enxerga pelo Círculo não entra.
+   */
+  exportData(): Promise<AccountExport>
+}
+
+export interface AccountExport {
+  readonly exported_at: string
+  readonly format: 'momentumm.export.v1'
+  readonly [section: string]: unknown
 }

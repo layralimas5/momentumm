@@ -321,6 +321,148 @@ select pg_temp.checar(
 );
 
 -- ---------------------------------------------------------------------------
+-- 11b. upload: tipo, pasta e ritmo checados na política (migration 0020)
+-- ---------------------------------------------------------------------------
+
+select pg_temp.entrar_como('aaaaaaaa-0000-4000-8000-000000000001');
+
+insert into storage.objects (bucket_id, name, owner, metadata)
+values ('user-media', 'aaaaaaaa-0000-4000-8000-000000000001/fotos/ok.jpg',
+        'aaaaaaaa-0000-4000-8000-000000000001', '{"mimetype":"image/jpeg","size":1000}'::jsonb);
+
+select pg_temp.checar(
+  'A envia foto jpeg na própria pasta de fotos',
+  (select count(*) from storage.objects
+    where name = 'aaaaaaaa-0000-4000-8000-000000000001/fotos/ok.jpg') = 1
+);
+
+select pg_temp.deve_recusar(
+  'A não envia executável disfarçado (mimetype fora da lista)',
+  $cmd$insert into storage.objects (bucket_id, name, owner, metadata)
+        values ('user-media', 'aaaaaaaa-0000-4000-8000-000000000001/anexos/x.exe',
+                'aaaaaaaa-0000-4000-8000-000000000001',
+                '{"mimetype":"application/x-msdownload","size":10}'::jsonb)$cmd$
+);
+
+select pg_temp.deve_recusar(
+  'A não envia fora das pastas fotos/audios/anexos',
+  $cmd$insert into storage.objects (bucket_id, name, owner, metadata)
+        values ('user-media', 'aaaaaaaa-0000-4000-8000-000000000001/qualquer/x.jpg',
+                'aaaaaaaa-0000-4000-8000-000000000001',
+                '{"mimetype":"image/jpeg","size":10}'::jsonb)$cmd$
+);
+
+select pg_temp.checar(
+  'a contagem de uploads da hora enxerga só a pasta de A',
+  public.user_media_uploads_last_hour() = 1
+);
+
+select pg_temp.voltar_admin_do_banco();
+delete from storage.objects where name = 'aaaaaaaa-0000-4000-8000-000000000001/fotos/ok.jpg';
+
+-- ---------------------------------------------------------------------------
+-- 11c. aceite legal: registro por versão, só o próprio, sem editar nem apagar
+-- ---------------------------------------------------------------------------
+
+select pg_temp.entrar_como('aaaaaaaa-0000-4000-8000-000000000001');
+
+insert into public.legal_acceptances (user_id, document, version)
+values ('aaaaaaaa-0000-4000-8000-000000000001', 'termos', '2026-09-11');
+
+select pg_temp.checar(
+  'A registra o próprio aceite',
+  (select count(*) from public.legal_acceptances
+    where user_id = 'aaaaaaaa-0000-4000-8000-000000000001') = 1
+);
+
+select pg_temp.deve_recusar(
+  'A não registra aceite em nome do B',
+  $cmd$insert into public.legal_acceptances (user_id, document, version)
+        values ('bbbbbbbb-0000-4000-8000-000000000002', 'termos', '2026-09-11')$cmd$
+);
+
+select pg_temp.deve_recusar(
+  'aceite exige versão no formato de data',
+  $cmd$insert into public.legal_acceptances (user_id, document, version)
+        values ('aaaaaaaa-0000-4000-8000-000000000001', 'privacidade', 'v1')$cmd$
+);
+
+update public.legal_acceptances set version = '2030-01-01'
+ where user_id = 'aaaaaaaa-0000-4000-8000-000000000001';
+delete from public.legal_acceptances
+ where user_id = 'aaaaaaaa-0000-4000-8000-000000000001';
+
+select pg_temp.checar(
+  'aceite não se edita nem se apaga pela API',
+  (select count(*) from public.legal_acceptances
+    where user_id = 'aaaaaaaa-0000-4000-8000-000000000001' and version = '2026-09-11') = 1
+);
+
+select pg_temp.entrar_como('bbbbbbbb-0000-4000-8000-000000000002');
+select pg_temp.checar(
+  'B não lê o aceite da A',
+  (select count(*) from public.legal_acceptances) = 0
+);
+
+-- ---------------------------------------------------------------------------
+-- 11d. exportação: só o que é da pessoa, com a RLS dela
+-- ---------------------------------------------------------------------------
+
+select pg_temp.entrar_como('aaaaaaaa-0000-4000-8000-000000000001');
+
+select pg_temp.checar(
+  'a exportação da A traz o objetivo dela e nenhum do B',
+  (select jsonb_array_length(public.export_my_data() -> 'objectives')) = 1
+  and (select public.export_my_data() -> 'objectives' -> 0 ->> 'title') = 'Objetivo da A'
+  and (select public.export_my_data() -> 'objectives')::text not like '%Objetivo do B%'
+);
+
+select pg_temp.checar(
+  'a exportação não carrega o id da conta em cada linha',
+  (select public.export_my_data() -> 'objectives' -> 0 ? 'user_id') = false
+  and (select public.export_my_data() -> 'profile' ? 'id') = false
+);
+
+select pg_temp.checar(
+  'a exportação inclui o aceite legal e o formato versionado',
+  (select public.export_my_data() ->> 'format') = 'momentumm.export.v1'
+  and (select jsonb_array_length(public.export_my_data() -> 'legal_acceptances')) = 1
+);
+
+select pg_temp.entrar_anonimo();
+select pg_temp.deve_recusar(
+  'anônimo não exporta nada',
+  $cmd$select public.export_my_data()$cmd$
+);
+select pg_temp.deve_recusar(
+  'anônimo não exclui conta',
+  $cmd$select public.delete_my_account()$cmd$
+);
+
+-- ---------------------------------------------------------------------------
+-- 11e. registro da IA: a pessoa lê o próprio uso, ninguém grava pela API
+-- ---------------------------------------------------------------------------
+
+select pg_temp.voltar_admin_do_banco();
+insert into public.ai_calls (user_id, kind, model)
+values ('bbbbbbbb-0000-4000-8000-000000000002', 'day', 'teste');
+
+select pg_temp.entrar_como('aaaaaaaa-0000-4000-8000-000000000001');
+select pg_temp.checar(
+  'A não vê as chamadas de IA do B',
+  (select count(*) from public.ai_calls) = 0
+);
+select pg_temp.deve_recusar(
+  'A não grava chamada de IA pela API (só a função, com service role)',
+  $cmd$insert into public.ai_calls (user_id, kind, model)
+        values ('aaaaaaaa-0000-4000-8000-000000000001', 'plan', 'forjado')$cmd$
+);
+select pg_temp.deve_recusar(
+  'a contagem por minuto da IA não é chamável por usuário',
+  $cmd$select public.ai_calls_last_minute('aaaaaaaa-0000-4000-8000-000000000001')$cmd$
+);
+
+-- ---------------------------------------------------------------------------
 -- 12. excluir a conta leva os dados e os arquivos junto
 -- ---------------------------------------------------------------------------
 
@@ -332,6 +474,14 @@ select pg_temp.checar(
   (select count(*) from public.tasks where user_id = 'bbbbbbbb-0000-4000-8000-000000000002') = 0
   and (select count(*) from public.objectives where user_id = 'bbbbbbbb-0000-4000-8000-000000000002') = 0
   and (select count(*) from public.profiles where id = 'bbbbbbbb-0000-4000-8000-000000000002') = 0
+
+  and (select count(*) from public.ai_calls where user_id = 'bbbbbbbb-0000-4000-8000-000000000002') = 0
+);
+
+select pg_temp.checar(
+  'os dados da A continuam depois da exclusão do B',
+  (select count(*) from public.objectives where user_id = 'aaaaaaaa-0000-4000-8000-000000000001') = 1
+  and (select count(*) from public.legal_acceptances where user_id = 'aaaaaaaa-0000-4000-8000-000000000001') = 1
 );
 
 select pg_temp.checar(

@@ -62,7 +62,12 @@ import type {
 } from '@/domain/repositories/objective-repository'
 import type { CheckInRepository } from '@/domain/repositories/checkin-repository'
 import type { HabitRepository, HabitUpdate } from '@/domain/repositories/habit-repository'
-import type { ProfileRepository, ProfileUpdate } from '@/domain/repositories/profile-repository'
+import type {
+  AccountExport,
+  ProfileRepository,
+  ProfileUpdate,
+} from '@/domain/repositories/profile-repository'
+import { MEDIA_KINDS } from '@/domain/media/media-policy'
 import type {
   PlanStageRepository,
   PlanStageReweight,
@@ -158,14 +163,25 @@ async function deleteOwnAccount(): Promise<void> {
 
 async function purgeOwnMedia(userId: string): Promise<void> {
   const bucket = supabase().storage.from('user-media')
-  const { data: files, error } = await bucket.list(userId)
-  if (error) throw new DomainError('Não consegui limpar teus arquivos antes de excluir a conta.')
-  if (!files || files.length === 0) return
+  const failure = new DomainError('Não consegui limpar teus arquivos antes de excluir a conta.')
 
-  const { error: removeError } = await bucket.remove(files.map((file) => `${userId}/${file.name}`))
-  if (removeError) {
-    throw new DomainError('Não consegui limpar teus arquivos antes de excluir a conta.')
+  // A pasta da pessoa tem uma subpasta por tipo (fotos, audios, anexos) e
+  // pode ter arquivos soltos de antes disso. `list` não desce sozinho.
+  const folders = ['', ...MEDIA_KINDS]
+  const paths: string[] = []
+  for (const folder of folders) {
+    const prefix = folder ? `${userId}/${folder}` : userId
+    const { data: files, error } = await bucket.list(prefix, { limit: 1000 })
+    if (error) throw failure
+    for (const file of files ?? []) {
+      // Pasta vem sem `id`; arquivo vem com. Só arquivo entra na remoção.
+      if (file.id) paths.push(`${prefix}/${file.name}`)
+    }
   }
+  if (paths.length === 0) return
+
+  const { error: removeError } = await bucket.remove(paths)
+  if (removeError) throw failure
 }
 
 export class SupabaseActivityRepository implements ActivityRepository {
@@ -437,6 +453,12 @@ export class SupabaseProfileRepository implements ProfileRepository {
 
   async deleteAccount(): Promise<void> {
     await deleteOwnAccount()
+  }
+
+  async exportData(): Promise<AccountExport> {
+    const { data, error } = await supabase().rpc('export_my_data')
+    if (error) throw new DomainError('Não consegui montar a exportação agora.')
+    return data as AccountExport
   }
 }
 
