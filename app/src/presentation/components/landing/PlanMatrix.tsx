@@ -20,14 +20,19 @@ export function PlanMatrix({ className }: { readonly className?: string }) {
     <Reveal className={cn('mx-auto w-full max-w-4xl', className)}>
       <div className="overflow-hidden rounded-card border border-line bg-surface">
         <table className="w-full text-sm">
-          <caption className="sr-only">Comparação de recursos entre o plano gratuito e o PRO</caption>
+          <caption className="sr-only">
+            Comparação de recursos entre o plano gratuito e o PRO
+          </caption>
           <thead>
             <tr className="border-b border-line">
               <th scope="col" className="px-4 py-3.5 text-left font-medium text-ink-muted sm:px-5">
                 Recurso
               </th>
-              <th scope="col" className="hidden px-4 py-3.5 text-left font-medium text-ink-muted sm:table-cell">
-                Gratuito
+              <th
+                scope="col"
+                className="hidden px-4 py-3.5 text-left font-medium text-ink-muted sm:table-cell"
+              >
+                FREE
               </th>
               <th
                 scope="col"
@@ -40,12 +45,15 @@ export function PlanMatrix({ className }: { readonly className?: string }) {
           <tbody>
             {rows.map((row) => (
               <tr key={row.feature} className="border-b border-line last:border-b-0">
-                <th scope="row" className="px-4 py-3 text-left align-top font-normal text-ink sm:px-5">
+                <th
+                  scope="row"
+                  className="px-4 py-3 text-left align-top font-normal text-ink sm:px-5"
+                >
                   {row.feature}
                   {/* Celular: os dois valores embaixo do nome, com rótulo. */}
                   <dl className="mt-1.5 flex flex-col gap-0.5 text-xs sm:hidden">
                     <div className="flex gap-2">
-                      <dt className="w-14 shrink-0 text-ink-faint">Grátis</dt>
+                      <dt className="w-14 shrink-0 text-ink-faint">FREE</dt>
                       <dd className="text-ink-muted">{row.free}</dd>
                     </div>
                     <div className="flex gap-2">
@@ -54,7 +62,9 @@ export function PlanMatrix({ className }: { readonly className?: string }) {
                     </div>
                   </dl>
                 </th>
-                <td className="hidden px-4 py-3 align-top text-ink-muted sm:table-cell">{row.free}</td>
+                <td className="hidden px-4 py-3 align-top text-ink-muted sm:table-cell">
+                  {row.free}
+                </td>
                 <td className="hidden bg-brand-dim/30 px-4 py-3 align-top text-ink sm:table-cell">
                   {row.pro}
                 </td>

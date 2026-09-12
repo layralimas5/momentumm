@@ -49,7 +49,7 @@ const FREE_PRICE: Price = { amount: 'R$ 0', period: 'para sempre' }
 export const PRICING_PLANS: readonly PricingPlan[] = [
   {
     id: 'free',
-    badge: 'Grátis',
+    badge: 'FREE',
     headline: 'Organize e execute',
     prices: { mensal: FREE_PRICE, anual: FREE_PRICE },
     description:
@@ -62,7 +62,6 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
       'Momentum Score de hoje',
       'Check-in semanal manual',
       'Dia Adaptável e Modo Retomada',
-      'Círculo de amigos e desafios, privado por padrão',
     ],
     cta: 'Começar grátis',
   },
@@ -71,7 +70,7 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
     badge: 'PRO',
     headline: 'Registre, analise e evolua',
     prices: {
-      mensal: { amount: 'R$ 29,90', period: '/mês', strike: 'R$ 79,90' },
+      mensal: { amount: 'R$ 39,90', period: '/mês', strike: 'R$ 79,90' },
       anual: {
         amount: 'R$ 179,90',
         period: '/ano',

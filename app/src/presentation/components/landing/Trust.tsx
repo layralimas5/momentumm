@@ -51,7 +51,7 @@ const NUMBERS = [
 
 export function Trust() {
   return (
-    <Section id="confianca" className="bg-brand-hi">
+    <Section id="confianca" className="bg-gradient-to-b from-brand-deep via-brand to-brand-hi">
       <SectionHeading
         tone="brand"
         eyebrow="Por que confiar"

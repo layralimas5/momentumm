@@ -11,7 +11,7 @@ import { TESTIMONIALS_BOTTOM, TESTIMONIALS_TOP, type Testimonial } from './testi
  */
 export function Testimonials() {
   return (
-    <Section id="depoimentos" className="relative overflow-hidden border-t border-line" bleed>
+    <Section id="depoimentos" className="relative overflow-hidden" bleed>
       {/* Aviso do bloco roxo que vem a seguir: a luz sobe antes da cor chegar. */}
       <div
         aria-hidden="true"
