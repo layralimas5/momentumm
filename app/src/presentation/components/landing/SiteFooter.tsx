@@ -23,11 +23,9 @@ const LEGAL = [
 ] as const
 
 /**
- * O rodapé vai de ponta a ponta. O efeito fica na SEÇÃO ANTERIOR: a página
- * termina num bloco de cantos arredondados embaixo, com uma névoa da marca
- * subindo pela borda e a fita curvada atravessando a emenda, como uma onda
- * encostando no fim da página. A fita é SVG puro (duas passadas, a de trás
- * mais escura pra dar volume).
+ * O rodapé vai de ponta a ponta. O efeito fica na SEÇÃO ANTERIOR: ela tem
+ * um fundo roxo um degrau acima do canvas e termina em cantos arredondados
+ * por cima do rodapé, com uma névoa subindo pela borda de baixo.
  */
 export function SiteFooter() {
   return (
@@ -101,43 +99,17 @@ export function SiteFooter() {
 }
 
 /**
- * Cauda da seção anterior: continua o fundo da página num bloco de cantos
- * arredondados, por cima do rodapé. A névoa sobe do canto de baixo e a fita
- * cruza a emenda entre os dois.
+ * Cauda da seção anterior: continua o fundo dela (`canvas-brand`) num bloco
+ * de cantos arredondados por cima do rodapé, com a névoa no canto de baixo.
  */
 function PreviousSectionTail() {
   return (
-    <div aria-hidden="true" className="relative mx-3 sm:mx-6">
-      <div className="relative h-24 overflow-hidden rounded-b-[2rem] bg-canvas sm:h-32">
-        <div className="absolute inset-x-0 bottom-0 h-full bg-[radial-gradient(70%_100%_at_50%_100%,rgb(109_92_255_/_0.28),transparent_70%)]" />
-        <div className="absolute inset-x-[15%] -bottom-10 h-20 rounded-full bg-brand/30 blur-3xl" />
+    <div aria-hidden="true" className="relative">
+      <div className="relative h-24 overflow-hidden rounded-b-[2rem] bg-canvas-brand sm:h-32">
+        <div className="absolute inset-x-0 bottom-0 h-full bg-[radial-gradient(70%_100%_at_50%_100%,rgb(109_92_255_/_0.3),transparent_70%)]" />
+        <div className="absolute inset-x-[15%] -bottom-10 h-20 rounded-full bg-brand/35 blur-3xl" />
       </div>
-      <WaveRibbon />
     </div>
-  )
-}
-
-/**
- * Faixa curvada que cruza a borda de baixo da cauda. `preserveAspectRatio="none"`
- * deixa a onda esticar com a largura sem mudar de altura; as duas passadas
- * têm curvas ligeiramente diferentes pra parecer uma fita dobrada.
- */
-function WaveRibbon() {
-  return (
-    <svg
-      viewBox="0 0 1440 160"
-      preserveAspectRatio="none"
-      className="pointer-events-none absolute -inset-x-2 bottom-0 h-24 w-[calc(100%+1rem)] translate-y-[45%] sm:-inset-x-4 sm:h-32 sm:w-[calc(100%+2rem)]"
-    >
-      <path
-        className="fill-brand-deep"
-        d="M0 106 C200 46 420 40 720 84 C1020 128 1240 138 1440 72 L1440 106 C1240 172 1020 162 720 118 C420 74 200 80 0 140 Z"
-      />
-      <path
-        className="fill-brand"
-        d="M0 120 C260 64 520 58 800 98 C1080 138 1220 144 1440 92 L1440 122 C1220 174 1080 168 800 128 C520 88 260 94 0 150 Z"
-      />
-    </svg>
   )
 }
 

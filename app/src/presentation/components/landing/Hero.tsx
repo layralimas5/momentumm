@@ -9,8 +9,8 @@ import { TESTIMONIALS_BOTTOM, TESTIMONIALS_TOP } from './testimonials-data'
  * A promessa no centro, com recortes do app flutuando em volta: o score, a
  * semana, os minutos e o dia de hoje. Em vez de um celular de lado, a pessoa
  * vê de cara os quatro números que o produto entrega, cada um num card
- * inclinado como se tivesse sido tirado da tela. Abaixo de xl os cards descem
- * pra uma grade, porque flutuando por cima do texto eles não cabem.
+ * inclinado como se tivesse sido tirado da tela. No tablet os cards descem
+ * pra uma grade, e no celular somem: ali eles só empurravam o CTA pra baixo.
  */
 const LINES = ['Objetivo vira plano.', 'Plano vira o que você faz hoje.'] as const
 
@@ -162,15 +162,10 @@ export function Hero() {
           <p className="mt-6 text-sm text-ink-faint">{CTA.reassurance}</p>
         </div>
 
-        {/* Abaixo de xl: fita rolável no celular, grade de quatro no tablet. */}
-        <div className="-mx-4 mt-14 flex snap-x snap-mandatory gap-5 overflow-x-auto px-6 pb-4 pt-2 lg:mx-0 lg:grid lg:grid-cols-4 lg:justify-items-center lg:overflow-visible lg:px-0 xl:hidden">
+        {/* No tablet os cards viram grade de quatro; no celular somem, que ali eles só empurram o CTA pra baixo. */}
+        <div className="mt-14 hidden grid-cols-4 justify-items-center gap-5 lg:grid xl:hidden">
           {CARDS.map((card) => (
-            <FloatingCard
-              key={card.key}
-              tilt={card.tilt / 2}
-              delay={card.delay}
-              className="shrink-0 snap-center"
-            >
+            <FloatingCard key={card.key} tilt={card.tilt / 2} delay={card.delay}>
               {card.node}
             </FloatingCard>
           ))}

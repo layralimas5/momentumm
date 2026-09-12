@@ -9,7 +9,7 @@ import { CTA } from './site'
  */
 export function FinalCta() {
   return (
-    <section id="comecar" className="scroll-mt-20 border-t border-line">
+    <section id="comecar" className="scroll-mt-20 border-t border-line bg-canvas-brand">
       <div className="mx-auto max-w-5xl px-4 py-20 sm:py-28">
         <Reveal>
           <div className="surface-brand edge-light surface-brand-glow relative overflow-hidden rounded-card px-6 py-14 text-center sm:px-12 sm:py-20">
@@ -22,8 +22,8 @@ export function FinalCta() {
                 Você não precisa resolver o objetivo inteiro hoje.
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-pretty text-lg text-ink-muted">
-                Precisa do próximo passo, do tamanho do dia que você tem. O Momentumm monta o
-                plano, protege o seu ritmo e ajusta quando a semana muda.
+                Precisa do próximo passo, do tamanho do dia que você tem. O Momentumm monta o plano,
+                protege o seu ritmo e ajusta quando a semana muda.
               </p>
 
               <div className="mt-9 flex flex-col items-center gap-4">
