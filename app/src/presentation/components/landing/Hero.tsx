@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { Icon, type IconName } from '@/presentation/components/ui/Icon'
 import { cn } from '@/shared/lib/cn'
 import { FloatingCard, MinutesCard, ScoreCard, TodayCard, WeekCard } from './HeroCards'
 import { CTA } from './site'
@@ -18,15 +19,16 @@ const EASE = [0.22, 1, 0.36, 1] as const
 
 const AVATARS = [...TESTIMONIALS_TOP.slice(0, 2), ...TESTIMONIALS_BOTTOM.slice(0, 2)]
 
-const AREAS = [
-  { label: 'Estudo', color: 'bg-axis-estudo' },
-  { label: 'Leitura', color: 'bg-axis-leitura' },
-  { label: 'Treino', color: 'bg-axis-treino' },
-  { label: 'Meditação', color: 'bg-axis-meditacao' },
-  { label: 'Concurso', color: 'bg-axis-custom-1' },
-  { label: 'Projeto pessoal', color: 'bg-axis-custom-2' },
-  { label: 'Idioma', color: 'bg-axis-custom-3' },
-] as const
+/** A fila de "logos" do hero: aqui são as áreas que o app atende, cada uma com o próprio ícone. */
+const AREAS: readonly { readonly label: string; readonly icon: IconName }[] = [
+  { label: 'Estudo', icon: 'formatura' },
+  { label: 'Leitura', icon: 'livro' },
+  { label: 'Treino', icon: 'halter' },
+  { label: 'Meditação', icon: 'lotus' },
+  { label: 'Concurso', icon: 'trofeu' },
+  { label: 'Projeto pessoal', icon: 'objetivo' },
+  { label: 'Idioma', icon: 'globo' },
+]
 
 const CARDS = [
   {
@@ -175,16 +177,19 @@ export function Hero() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.9 }}
-          className="mx-auto mt-16 max-w-3xl text-center xl:mt-24"
+          className="mx-auto mt-16 max-w-4xl text-center xl:mt-24"
         >
-          <p className="text-sm text-ink-faint">Serve pra qualquer objetivo com prazo</p>
-          <ul className="mt-4 flex flex-wrap items-center justify-center gap-2">
+          <p className="text-sm font-medium text-ink">Serve pra qualquer objetivo com prazo</p>
+          <p className="mt-1 text-sm text-ink-faint">
+            de estudo e treino a concurso e projeto pessoal
+          </p>
+          <ul className="mt-7 flex flex-wrap items-center justify-center gap-x-9 gap-y-4">
             {AREAS.map((area) => (
               <li
                 key={area.label}
-                className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1.5 text-sm text-ink-muted"
+                className="inline-flex items-center gap-2 text-base font-medium text-ink-muted transition-colors hover:text-ink"
               >
-                <span aria-hidden="true" className={cn('size-1.5 rounded-full', area.color)} />
+                <Icon name={area.icon} className="size-5" />
                 {area.label}
               </li>
             ))}

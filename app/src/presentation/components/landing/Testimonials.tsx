@@ -11,7 +11,12 @@ import { TESTIMONIALS_BOTTOM, TESTIMONIALS_TOP, type Testimonial } from './testi
  */
 export function Testimonials() {
   return (
-    <Section id="depoimentos" className="overflow-hidden border-t border-line" bleed>
+    <Section id="depoimentos" className="relative overflow-hidden border-t border-line" bleed>
+      {/* Aviso do bloco roxo que vem a seguir: a luz sobe antes da cor chegar. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-72 bg-[radial-gradient(70%_100%_at_50%_100%,rgb(136_120_255_/_0.45),transparent_70%)]"
+      />
       <div className="mx-auto max-w-5xl px-4">
         <SectionHeading
           eyebrow="Depoimentos"
@@ -94,7 +99,11 @@ function TestimonialCard({ item }: { readonly item: Testimonial }) {
 
 function Stars({ rating }: { readonly rating: Testimonial['rating'] }) {
   return (
-    <div className="flex gap-0.5 text-axis-leitura" role="img" aria-label={`${rating} de 5 estrelas`}>
+    <div
+      className="flex gap-0.5 text-axis-leitura"
+      role="img"
+      aria-label={`${rating} de 5 estrelas`}
+    >
       {Array.from({ length: 5 }, (_, index) => (
         <svg
           key={index}
