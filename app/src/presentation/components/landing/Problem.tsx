@@ -39,7 +39,7 @@ export function Problem() {
       <ol className="mt-12 grid gap-4 md:grid-cols-3">
         {TIMELINE.map((step, index) => (
           <Reveal key={step.day} delay={index * 0.08}>
-            <li className="relative h-full rounded-card border border-line bg-surface p-6">
+            <li className="pulse-on-hover relative h-full rounded-card border border-line bg-surface p-6">
               <span className="text-sm font-medium tabular text-brand-hi">{step.day}</span>
               <h3 className="mt-2 text-balance font-medium text-ink">{step.title}</h3>
               <p className="mt-2 text-pretty text-sm text-ink-muted">{step.description}</p>
@@ -52,8 +52,7 @@ export function Problem() {
         <p className="mx-auto mt-10 max-w-2xl text-balance text-center text-lg text-ink-muted">
           Agenda, lista e habit tracker registram o que você planejou.{' '}
           <span className="text-ink">
-            Nenhum deles percebe quando o plano deixou de funcionar, e é nesse dia que você
-            desiste.
+            Nenhum deles percebe quando o plano deixou de funcionar, e é nesse dia que você desiste.
           </span>
         </p>
       </Reveal>

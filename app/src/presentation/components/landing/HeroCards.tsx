@@ -35,8 +35,8 @@ export function FloatingCard({ children, className, tilt, delay }: FloatingCardP
         children
       ) : (
         <motion.div
-          animate={{ y: [0, -6, 0] }}
-          transition={{ duration: 6, delay, repeat: Infinity, ease: 'easeInOut' }}
+          animate={{ y: [0, -9, 0] }}
+          transition={{ duration: 3.2, delay, repeat: Infinity, ease: 'easeInOut' }}
         >
           {children}
         </motion.div>

@@ -86,33 +86,24 @@ export function Hero() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="inline-flex flex-wrap items-center justify-center gap-2 sm:gap-3"
+            className="inline-flex items-center gap-3 rounded-full border border-line bg-surface/80 py-1.5 pl-1.5 pr-4 text-sm text-ink-muted backdrop-blur"
           >
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-axis-estudo/15 px-3 py-1.5 text-xs font-medium text-axis-estudo ring-1 ring-axis-estudo/40">
-              <span className="relative flex size-2" aria-hidden="true">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-axis-estudo opacity-75" />
-                <span className="relative inline-flex size-2 rounded-full bg-axis-estudo" />
-              </span>
-              No ar
+            <span className="flex -space-x-2">
+              {AVATARS.map((person) => (
+                <img
+                  key={person.name}
+                  src={person.photo}
+                  alt=""
+                  width={28}
+                  height={28}
+                  decoding="async"
+                  className="size-7 rounded-full object-cover ring-2 ring-canvas"
+                />
+              ))}
             </span>
-            <span className="inline-flex items-center gap-3 rounded-full border border-line bg-surface/80 py-1.5 pl-1.5 pr-4 text-sm text-ink-muted backdrop-blur">
-              <span className="flex -space-x-2">
-                {AVATARS.map((person) => (
-                  <img
-                    key={person.name}
-                    src={person.photo}
-                    alt=""
-                    width={28}
-                    height={28}
-                    decoding="async"
-                    className="size-7 rounded-full object-cover ring-2 ring-canvas"
-                  />
-                ))}
-              </span>
-              <span>
-                <span className="font-medium text-ink">{CTA.badge}</span>: as primeiras pessoas já
-                estão dentro
-              </span>
+            <span>
+              <span className="font-medium text-ink">{CTA.badge}</span>: as primeiras pessoas já
+              estão dentro
             </span>
           </motion.p>
 

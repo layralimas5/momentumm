@@ -41,12 +41,7 @@ interface MarqueeRowProps {
 function MarqueeRow({ items, reverse = false }: MarqueeRowProps) {
   return (
     <div className="marquee-fade overflow-hidden">
-      <div
-        className={cn(
-          'flex w-max gap-4 animate-marquee',
-          reverse && '[animation-direction:reverse]',
-        )}
-      >
+      <div className={cn('flex w-max animate-marquee', reverse && '[animation-direction:reverse]')}>
         <TestimonialList items={items} />
         <TestimonialList items={items} ariaHidden />
       </div>
@@ -61,7 +56,7 @@ interface TestimonialListProps {
 
 function TestimonialList({ items, ariaHidden = false }: TestimonialListProps) {
   return (
-    <ul className="flex shrink-0 gap-4" aria-hidden={ariaHidden || undefined}>
+    <ul className="flex shrink-0 gap-4 pr-4" aria-hidden={ariaHidden || undefined}>
       {items.map((item) => (
         <TestimonialCard key={item.name} item={item} />
       ))}

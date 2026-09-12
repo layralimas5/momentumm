@@ -1,10 +1,13 @@
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
+import { cn } from '@/shared/lib/cn'
 import { Reveal } from './Reveal'
 import { Section, SectionHeading } from './Section'
 
 /**
- * O ciclo do produto, na ordem em que ele roda. Os ícones são os mesmos da
- * navegação do app: a pessoa vê aqui o que vai encontrar na barra lateral.
+ * O ciclo do produto como linha do tempo: um passo embaixo do outro, cada
+ * um do lado oposto ao anterior, ligados por uma linha que sai do objetivo
+ * e volta pra ele no fim. Os ícones são os mesmos da navegação do app: a
+ * pessoa vê aqui o que vai encontrar na barra lateral.
  */
 interface Step {
   readonly icon: IconName
@@ -71,57 +74,67 @@ export function Method() {
         description="Objetivo, plano, dia, progresso, review e ajuste são a mesma coisa vista de seis ângulos. É por isso que um número nunca aparece diferente em duas telas."
       />
 
-      <ol className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {STEPS.map((step, index) => (
-          <Reveal key={step.title} delay={index * 0.06} className="h-full">
-            <li className="group relative flex h-full flex-col rounded-card border border-line bg-surface p-6 transition-colors hover:border-line-hi">
-              <div className="flex items-center gap-3">
-                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-dim text-brand-hi">
+      <ol className="relative mx-auto mt-14 max-w-4xl">
+        {/* A linha: na esquerda no celular, no centro no desktop. */}
+        <div
+          aria-hidden="true"
+          className="absolute bottom-6 left-6 top-6 w-px bg-gradient-to-b from-brand-hi via-brand/60 to-brand-hi md:left-1/2 md:-translate-x-1/2"
+        />
+
+        {STEPS.map((step, index) => {
+          const right = index % 2 === 1
+          return (
+            <li key={step.title} className="relative pb-10 md:pb-6">
+              <Reveal
+                delay={0.05}
+                className={cn(
+                  'relative flex gap-5 pl-16 md:w-1/2 md:pl-0',
+                  right ? 'md:ml-auto md:pl-14' : 'md:pr-14 md:text-right',
+                )}
+              >
+                {/* Nó numerado em cima da linha. */}
+                <span
+                  className={cn(
+                    'absolute top-1 grid size-12 -translate-x-1/2 place-items-center rounded-full border border-brand/50 bg-canvas text-brand-hi shadow-glow',
+                    'left-6 md:translate-x-0',
+                    right ? 'md:-left-6' : 'md:left-auto md:-right-6',
+                  )}
+                >
                   <Icon name={step.icon} className="size-5" />
                 </span>
-                <span className="tabular text-sm text-ink-faint">
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-                {index < STEPS.length - 1 ? (
-                  <ArrowIcon className="ml-auto hidden text-ink-faint lg:block" />
-                ) : (
-                  <LoopIcon className="ml-auto hidden text-brand-hi lg:block" />
-                )}
-              </div>
-              <h3 className="mt-4 text-lg font-semibold text-ink">{step.title}</h3>
-              <p className="mt-1 text-pretty text-sm font-medium text-ink-muted">
-                {step.description}
-              </p>
-              <p className="mt-3 text-pretty text-sm text-ink-faint">{step.detail}</p>
+
+                <div className="min-w-0 flex-1">
+                  <p className="tabular text-xs font-medium tracking-wide text-brand-hi uppercase">
+                    Passo {String(index + 1).padStart(2, '0')}
+                  </p>
+                  <h3 className="mt-1.5 text-xl font-semibold text-ink">{step.title}</h3>
+                  <p className="mt-1.5 text-pretty text-sm font-medium text-ink-muted">
+                    {step.description}
+                  </p>
+                  <p className="mt-2 text-pretty text-sm text-ink-faint">{step.detail}</p>
+                </div>
+              </Reveal>
             </li>
+          )
+        })}
+
+        {/* Fechamento do ciclo: a linha volta pro objetivo. */}
+        <li className="relative mt-10 pl-16 md:flex md:flex-col md:items-center md:pl-0 md:text-center">
+          <span
+            aria-hidden="true"
+            className="absolute left-6 top-1/2 grid size-8 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-brand text-white md:static md:translate-x-0 md:translate-y-0"
+          >
+            <LoopIcon className="size-4" />
+          </span>
+          <Reveal>
+            <p className="text-pretty text-sm text-ink-muted md:mt-4 md:max-w-md">
+              Depois do ajuste, o ciclo volta pro objetivo. O plano do dia 30 não é o que a
+              motivação montou no dia 1: é o que a sua semana real mostrou que funciona.
+            </p>
           </Reveal>
-        ))}
+        </li>
       </ol>
-
-      <Reveal delay={0.3}>
-        <p className="mx-auto mt-10 max-w-2xl text-balance text-center text-sm text-ink-muted">
-          Depois do ajuste, o ciclo volta pro objetivo. O plano que você tem no dia 30 não é o que a
-          motivação montou no dia 1: é o que a sua semana real mostrou que funciona.
-        </p>
-      </Reveal>
     </Section>
-  )
-}
-
-function ArrowIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      className={`size-4 ${className ?? ''}`}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M5 12h14M13 6l6 6-6 6" />
-    </svg>
   )
 }
 
@@ -130,7 +143,7 @@ function LoopIcon({ className }: { className?: string }) {
     <svg
       viewBox="0 0 24 24"
       aria-hidden="true"
-      className={`size-4 ${className ?? ''}`}
+      className={className}
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
