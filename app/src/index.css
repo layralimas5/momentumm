@@ -15,9 +15,6 @@
   --color-surface-top: #212128;
   --color-line: #26262c;
   --color-line-hi: #34343d;
-  /* Fundo da ultima secao antes do rodape: um degrau roxo acima do canvas,
-     pra borda curvada dela aparecer em cima do rodape. */
-  --color-canvas-brand: #15122b;
 
   --color-ink: #f4f4f5;
   --color-ink-muted: #a1a1aa;

@@ -24,8 +24,8 @@ const LEGAL = [
 
 /**
  * O rodapé vai de ponta a ponta. O efeito fica na SEÇÃO ANTERIOR: ela tem
- * um fundo roxo um degrau acima do canvas e termina em cantos arredondados
- * por cima do rodapé, com uma névoa subindo pela borda de baixo.
+ * o fundo no roxo da marca (o mesmo do "Plano" do hero) e termina em cantos
+ * arredondados por cima do rodapé, com uma luz subindo pela borda de baixo.
  */
 export function SiteFooter() {
   return (
@@ -99,15 +99,15 @@ export function SiteFooter() {
 }
 
 /**
- * Cauda da seção anterior: continua o fundo dela (`canvas-brand`) num bloco
- * de cantos arredondados por cima do rodapé, com a névoa no canto de baixo.
+ * Cauda da seção anterior: continua o fundo dela (`brand-hi`) num bloco de
+ * cantos arredondados por cima do rodapé, com a luz no canto de baixo.
  */
 function PreviousSectionTail() {
   return (
     <div aria-hidden="true" className="relative">
-      <div className="relative h-24 overflow-hidden rounded-b-[2rem] bg-canvas-brand sm:h-32">
-        <div className="absolute inset-x-0 bottom-0 h-full bg-[radial-gradient(70%_100%_at_50%_100%,rgb(109_92_255_/_0.3),transparent_70%)]" />
-        <div className="absolute inset-x-[15%] -bottom-10 h-20 rounded-full bg-brand/35 blur-3xl" />
+      <div className="relative h-24 overflow-hidden rounded-b-[2rem] bg-brand-hi sm:h-32">
+        <div className="absolute inset-x-0 bottom-0 h-full bg-[radial-gradient(70%_100%_at_50%_100%,rgb(255_255_255_/_0.22),transparent_70%)]" />
+        <div className="absolute inset-x-[15%] -bottom-10 h-20 rounded-full bg-white/25 blur-3xl" />
       </div>
     </div>
   )
