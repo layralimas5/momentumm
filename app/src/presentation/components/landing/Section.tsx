@@ -21,6 +21,8 @@ interface SectionHeadingProps {
   readonly title: ReactNode
   readonly description?: string
   readonly align?: 'left' | 'center'
+  /** `brand` é pra seção com fundo roxo: texto branco, sem depender dos tokens de tinta. */
+  readonly tone?: 'default' | 'brand'
 }
 
 export function SectionHeading({
@@ -28,17 +30,33 @@ export function SectionHeading({
   title,
   description,
   align = 'center',
+  tone = 'default',
 }: SectionHeadingProps) {
+  const onBrand = tone === 'brand'
   return (
     <div className={cn('max-w-2xl', align === 'center' && 'mx-auto text-center')}>
       {eyebrow ? (
-        <p className="text-sm font-medium tracking-wide text-brand-hi uppercase">{eyebrow}</p>
+        <p
+          className={cn(
+            'text-sm font-medium tracking-wide uppercase',
+            onBrand ? 'text-white/80' : 'text-brand-hi',
+          )}
+        >
+          {eyebrow}
+        </p>
       ) : null}
-      <h2 className="mt-3 text-balance text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
+      <h2
+        className={cn(
+          'mt-3 text-balance text-3xl font-semibold tracking-tight sm:text-4xl',
+          onBrand ? 'text-white' : 'text-ink',
+        )}
+      >
         {title}
       </h2>
       {description ? (
-        <p className="mt-4 text-pretty text-lg text-ink-muted">{description}</p>
+        <p className={cn('mt-4 text-pretty text-lg', onBrand ? 'text-white/85' : 'text-ink-muted')}>
+          {description}
+        </p>
       ) : null}
     </div>
   )

@@ -44,8 +44,9 @@ const PROOFS: readonly Proof[] = [
 
 export function Trust() {
   return (
-    <Section id="confianca" className="border-t border-line">
+    <Section id="confianca" className="rounded-t-[3rem] bg-brand-hi sm:rounded-t-[4rem]">
       <SectionHeading
+        tone="brand"
         eyebrow="Por que confiar"
         title="O que sustenta a promessa."
         description="Além do que as pessoas dizem, o que dá pra verificar são as decisões do produto."

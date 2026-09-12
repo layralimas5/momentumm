@@ -18,20 +18,25 @@ export function PlanMatrix({ className }: { readonly className?: string }) {
 
   return (
     <Reveal className={cn('mx-auto w-full max-w-4xl', className)}>
-      <div className="overflow-hidden rounded-card border border-line bg-surface">
+      <div className="overflow-hidden rounded-card border border-brand-deep/60 bg-brand-dim">
         <table className="w-full text-sm">
-          <caption className="sr-only">Comparação de recursos entre o plano gratuito e o PRO</caption>
+          <caption className="sr-only">
+            Comparação de recursos entre o plano gratuito e o PRO
+          </caption>
           <thead>
-            <tr className="border-b border-line">
+            <tr className="border-b border-white/10">
               <th scope="col" className="px-4 py-3.5 text-left font-medium text-ink-muted sm:px-5">
                 Recurso
               </th>
-              <th scope="col" className="hidden px-4 py-3.5 text-left font-medium text-ink-muted sm:table-cell">
+              <th
+                scope="col"
+                className="hidden px-4 py-3.5 text-left font-medium text-ink-muted sm:table-cell"
+              >
                 Gratuito
               </th>
               <th
                 scope="col"
-                className="hidden bg-brand-dim/30 px-4 py-3.5 text-left font-medium text-brand-ink sm:table-cell"
+                className="hidden bg-brand-deep/40 px-4 py-3.5 text-left font-medium text-brand-ink sm:table-cell"
               >
                 PRO
               </th>
@@ -39,8 +44,11 @@ export function PlanMatrix({ className }: { readonly className?: string }) {
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.feature} className="border-b border-line last:border-b-0">
-                <th scope="row" className="px-4 py-3 text-left align-top font-normal text-ink sm:px-5">
+              <tr key={row.feature} className="border-b border-white/10 last:border-b-0">
+                <th
+                  scope="row"
+                  className="px-4 py-3 text-left align-top font-normal text-ink sm:px-5"
+                >
                   {row.feature}
                   {/* Celular: os dois valores embaixo do nome, com rótulo. */}
                   <dl className="mt-1.5 flex flex-col gap-0.5 text-xs sm:hidden">
@@ -54,8 +62,10 @@ export function PlanMatrix({ className }: { readonly className?: string }) {
                     </div>
                   </dl>
                 </th>
-                <td className="hidden px-4 py-3 align-top text-ink-muted sm:table-cell">{row.free}</td>
-                <td className="hidden bg-brand-dim/30 px-4 py-3 align-top text-ink sm:table-cell">
+                <td className="hidden px-4 py-3 align-top text-ink-muted sm:table-cell">
+                  {row.free}
+                </td>
+                <td className="hidden bg-brand-deep/40 px-4 py-3 align-top text-ink sm:table-cell">
                   {row.pro}
                 </td>
               </tr>

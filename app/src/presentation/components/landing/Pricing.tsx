@@ -17,8 +17,9 @@ export function Pricing() {
   const [cycle, setCycle] = useState<BillingCycle>('anual')
 
   return (
-    <Section id="planos" className="border-t border-line">
+    <Section id="planos" className="bg-brand-hi">
       <SectionHeading
+        tone="brand"
         eyebrow="Planos"
         title="O gratuito organiza e executa. O PRO registra, analisa e evolui."
         description="No gratuito você cria objetivo, organiza hábitos, acompanha o dia e vê o Momentum Score de hoje. O PRO libera entender os próprios padrões, registrar a jornada, ver métricas e ajustar o plano com a leitura da IA."
@@ -40,7 +41,7 @@ export function Pricing() {
 
       <PlanMatrix className="mt-10" />
 
-      <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-ink-faint">{PRICING_FOOTNOTE}</p>
+      <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-white/75">{PRICING_FOOTNOTE}</p>
     </Section>
   )
 }
@@ -57,13 +58,21 @@ function CycleToggle({
   onChange: (cycle: BillingCycle) => void
 }) {
   const id = useId()
-  const options: readonly { readonly cycle: BillingCycle; readonly label: string; readonly hint?: string }[] = [
+  const options: readonly {
+    readonly cycle: BillingCycle
+    readonly label: string
+    readonly hint?: string
+  }[] = [
     { cycle: 'mensal', label: 'Mensal' },
     { cycle: 'anual', label: 'Anual', hint: 'metade do preço' },
   ]
 
   return (
-    <div role="group" aria-labelledby={id} className="inline-flex rounded-full border border-line bg-surface p-1">
+    <div
+      role="group"
+      aria-labelledby={id}
+      className="inline-flex rounded-full border border-brand-deep/60 bg-brand-dim p-1"
+    >
       <span id={id} className="sr-only">
         Ciclo de cobrança do PRO
       </span>
@@ -108,14 +117,14 @@ function PlanCard({ plan, cycle }: { plan: PricingPlan; cycle: BillingCycle }) {
       className={cn(
         'pulse-on-hover flex h-full flex-col rounded-card border p-6',
         plan.highlight
-          ? 'border-brand bg-brand-dim/30 shadow-xl shadow-brand/10'
-          : 'border-line bg-surface',
+          ? 'border-white/40 bg-brand-dim shadow-xl shadow-black/25'
+          : 'border-brand-deep/60 bg-brand-dim',
       )}
     >
       <p
         className={cn(
           'inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wide',
-          plan.highlight ? 'bg-brand text-white' : 'border border-line text-ink-muted',
+          plan.highlight ? 'bg-brand text-white' : 'border border-white/20 text-ink-muted',
         )}
       >
         {plan.highlight ? <BoltIcon /> : null}
@@ -133,7 +142,9 @@ function PlanCard({ plan, cycle }: { plan: PricingPlan; cycle: BillingCycle }) {
           {price.strike ? (
             <>
               <span className="sr-only">, de</span>
-              <s className="tabular ml-2 text-sm text-ink-faint decoration-danger/70">{price.strike}</s>
+              <s className="tabular ml-2 text-sm text-ink-faint decoration-danger/70">
+                {price.strike}
+              </s>
             </>
           ) : null}
         </p>
@@ -147,8 +158,7 @@ function PlanCard({ plan, cycle }: { plan: PricingPlan; cycle: BillingCycle }) {
 
       <p className="mt-2 text-pretty text-sm text-ink-muted">{plan.description}</p>
 
-
-      <ul className="mt-6 flex flex-1 flex-col gap-2.5 border-t border-line pt-6">
+      <ul className="mt-6 flex flex-1 flex-col gap-2.5 border-t border-white/10 pt-6">
         {plan.features.map((feature) => (
           <li key={feature} className="flex gap-2.5 text-sm text-ink-muted">
             <CheckIcon />
@@ -171,7 +181,7 @@ function PlanCard({ plan, cycle }: { plan: PricingPlan; cycle: BillingCycle }) {
           'mt-6 inline-flex h-11 items-center justify-center rounded-xl px-4 text-sm font-medium transition-colors',
           plan.highlight
             ? 'bg-brand text-white hover:bg-brand-hi'
-            : 'border border-line text-ink hover:border-line-hi',
+            : 'border border-white/25 text-ink hover:border-white/50',
         )}
       >
         {plan.cta}

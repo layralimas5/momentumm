@@ -25,7 +25,7 @@ const LEGAL = [
 /**
  * O rodapé vai de ponta a ponta. O efeito fica na SEÇÃO ANTERIOR: ela tem
  * o fundo no roxo da marca (o mesmo do "Plano" do hero) e termina em cantos
- * arredondados por cima do rodapé, com uma luz subindo pela borda de baixo.
+ * arredondados por cima do rodapé, sem nada no vão da curva.
  */
 export function SiteFooter() {
   return (
@@ -33,11 +33,6 @@ export function SiteFooter() {
       <PreviousSectionTail />
 
       <div className="relative">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_60%_at_15%_0%,rgb(109_92_255_/_0.18),transparent_70%),radial-gradient(40%_50%_at_90%_100%,rgb(109_92_255_/_0.1),transparent_70%)]"
-        />
-
         <div className="relative mx-auto grid max-w-6xl gap-10 px-4 pb-12 pt-20 sm:px-6 sm:pt-24 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
             <Wordmark />
@@ -100,15 +95,13 @@ export function SiteFooter() {
 
 /**
  * Cauda da seção anterior: continua o fundo dela (`brand-hi`) num bloco de
- * cantos arredondados por cima do rodapé, com a luz no canto de baixo.
+ * cantos arredondados por cima do rodapé. É o fechamento do bloco roxo que
+ * abre com a mesma curva no topo de "Por que confiar".
  */
 function PreviousSectionTail() {
   return (
     <div aria-hidden="true" className="relative">
-      <div className="relative h-24 overflow-hidden rounded-b-[2rem] bg-brand-hi sm:h-32">
-        <div className="absolute inset-x-0 bottom-0 h-full bg-[radial-gradient(70%_100%_at_50%_100%,rgb(255_255_255_/_0.22),transparent_70%)]" />
-        <div className="absolute inset-x-[15%] -bottom-10 h-20 rounded-full bg-white/25 blur-3xl" />
-      </div>
+      <div className="h-16 rounded-b-[3rem] bg-brand-hi sm:h-24 sm:rounded-b-[4rem]" />
     </div>
   )
 }
