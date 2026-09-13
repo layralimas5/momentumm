@@ -33,7 +33,7 @@ import {
  * promessa "o que você vê é o que sai" fica garantida por construção em vez de
  * por disciplina.
  *
- * O layout é um só pros cinco templates: uma pilha vertical de blocos medida
+ * O layout é um só pras oito composições: uma pilha vertical de blocos medida
  * antes de ser desenhada, e depois centrada no espaço que sobra entre o
  * cabeçalho e o rodapé. O que cada template muda é paleta, alinhamento e
  * densidade — nunca a estrutura.
@@ -56,7 +56,7 @@ export interface SharePhoto {
 export interface RenderOptions {
   /** A cor: preto, neon, branco ou PNG. */
   readonly template: ShareTemplateId
-  /** O arranjo: destaque, cartaz, editorial, tópicos, gráfico ou mapa. */
+  /** O arranjo: selo, resumo, lista, anel, figura, grade, pilha ou recap. */
   readonly composition?: ShareCompositionId
   readonly format: ShareFormat
   /** Nula quando a pessoa não escolheu foto: o template pinta o próprio fundo. */
@@ -97,8 +97,7 @@ function metricsFor(width: number, composition: ShareComposition): Metrics {
     pad,
     contentWidth: width - pad * 2,
     x: composition.align === 'center' ? width / 2 : pad,
-    // No editorial a frase é o assunto, então o título cresce e o número recua.
-    titleSize: composition.id === 'editorial' ? 84 : 68,
+    titleSize: composition.titleSize,
     metricSize: 300 * composition.metricScale,
     maxItems: composition.maxItems ?? 6,
   }
@@ -112,7 +111,7 @@ export function renderShareCard(
   const spec = SHARE_FORMAT_SPECS[options.format]
   const photo = options.photo ?? null
   const theme = photo ? overPhoto(SHARE_THEMES[options.template]) : SHARE_THEMES[options.template]
-  const composition = SHARE_COMPOSITIONS_BY_ID[options.composition ?? 'destaque']
+  const composition = SHARE_COMPOSITIONS_BY_ID[options.composition ?? 'selo']
   const { width, height } = spec
   const accent = resolveColor(data.accent)
   const m = metricsFor(width, composition)
@@ -378,7 +377,6 @@ function buildBody(
   accent: string,
 ): Block[] {
   const blocks: Block[] = []
-  const full = composition.density === 'full'
   const showsMomentum = data.momentumAfter !== null && data.eventType !== 'momentum_record'
 
   const kicker = () => (data.kicker ? kickerBlock(ctx, data.kicker, theme, composition, m, accent) : null)
@@ -394,9 +392,13 @@ function buildBody(
   const stats = () =>
     data.stats.length > 0 ? statsBlock(ctx, data, theme, composition, m, accent) : null
   const items = () =>
-    full && data.items.length > 0 ? itemsBlock(ctx, data, theme, composition, m, accent) : null
+    data.items.length > 0 ? itemsBlock(ctx, data, theme, composition, m, accent) : null
   const momentum = () =>
     showsMomentum ? momentumBlock(ctx, data, theme, composition, m, accent) : null
+  const figures = figuresOf(data)
+  const statsRow = () =>
+    figures.length > 0 ? statsRowBlock(ctx, figures.slice(0, 3), theme, composition, m) : null
+  const ring = () => ringBlock(ctx, data, theme, m, accent)
 
   const push = (...candidates: readonly (Block | null)[]) => {
     for (const block of candidates) if (block) blocks.push(block)
@@ -405,82 +407,473 @@ function buildBody(
   /*
     Cada composição é uma ORDEM de blocos, e é só isso.
 
-    Nenhuma delas tem função de desenho própria: gráfico e mapa acrescentam um
-    bloco novo, e o resto é a mesma pilha em sequências diferentes. Foi assim
-    que quatro cores e seis arranjos couberam num renderizador só — e é por isso
-    que uma correção no bloco do momentum vale pros vinte e quatro cards.
+    Nenhuma delas tem função de desenho própria: selo, grade, pilha e a coluna
+    da semana acrescentam um bloco novo, e o resto é a mesma pilha em
+    sequências diferentes. Foi assim que quatro cores e oito arranjos couberam
+    num renderizador só — e é por isso que uma correção no bloco do momentum
+    vale pros trinta e dois cards.
   */
   switch (composition.id) {
-    case 'cartaz':
-      push(kicker(), metric(), stats(), title(), subtitle(), secondary(), momentum())
-      return blocks
-
-    case 'editorial':
+    case 'selo':
       push(
-        kicker(),
-        title(),
-        ruleBlock(ctx, theme, composition, m, accent),
+        badgeBlock(ctx, data, theme, composition, m, accent),
         metric(),
-        stats(),
+        title(),
         subtitle(),
-        secondary(),
-        items(),
-        momentum(),
-      )
-      return blocks
-
-    case 'topicos':
-      push(
-        kicker(),
-        title(),
-        bulletsBlock(ctx, data, theme, m, accent),
-        items(),
-        momentum(),
-      )
-      return blocks
-
-    case 'grafico':
-      push(
-        kicker(),
-        title(),
-        ringBlock(ctx, data, theme, m, accent),
-        barsBlock(ctx, data, theme, m, accent),
         stats(),
-        items(),
         momentum(),
       )
       return blocks
 
-    case 'mapa':
-      push(kicker(), mapBlock(ctx, data, theme, m, accent), subtitle(), momentum())
+    case 'resumo':
+      push(kicker(), title(), statsRow(), items(), momentum())
       return blocks
 
-    case 'destaque':
-      push(kicker(), title(), subtitle(), metric(), secondary(), stats(), items(), momentum())
+    case 'lista':
+      push(kicker(), title(), listWithWeekBlock(ctx, data, theme, m, accent), stats(), momentum())
+      return blocks
+
+    case 'anel':
+      push(statsRow(), ring() ?? metric(), barsBlock(ctx, data, theme, m, accent), momentum())
+      return blocks
+
+    case 'figura':
+      push(kicker(), title(), ring() ?? metric(), statsRow(), momentum())
+      return blocks
+
+    case 'grade':
+      push(kicker(), title(), gridBlock(ctx, figures.slice(0, 4), theme, m), momentum())
+      return blocks
+
+    case 'pilha':
+      push(stackBlock(ctx, figures.slice(0, 4), theme, m), momentum())
+      return blocks
+
+    case 'recap':
+      push(
+        iconBlock(ctx, composition, m, accent, theme),
+        metric(),
+        sentenceBlock(ctx, data, theme, composition, m),
+        secondary(),
+        momentum(),
+      )
       return blocks
   }
 }
 
-/** A régua do editorial: um traço curto na cor do eixo, e nada mais. */
-function ruleBlock(
+/** Um número com rótulo, como a grade e a pilha desenham. */
+interface Figure {
+  readonly value: string
+  readonly label: string | null
+}
+
+/**
+ * Os números do card, em ordem de importância: a estrela, a secundária e a
+ * linha de apoio. É a lista que a grade, a pilha e a linha de números leem —
+ * a mesma pra as três, pra que o card não mostre "5 hábitos" numa e "5" na
+ * outra.
+ */
+function figuresOf(data: ShareCardData): readonly Figure[] {
+  const figures: Figure[] = []
+  if (data.primaryMetric.value) {
+    figures.push({ value: data.primaryMetric.value, label: data.primaryMetric.label })
+  }
+  if (data.secondaryMetric) {
+    figures.push({ value: data.secondaryMetric.value, label: data.secondaryMetric.label })
+  }
+  for (const stat of data.stats) figures.push({ value: stat.value, label: stat.label })
+  return figures
+}
+
+/**
+ * O selo do momento: um círculo na cor do eixo com a palavra que resume o
+ * que aconteceu. É o "PR" do app de treino traduzido: recorde, marco, volta,
+ * feito. Sobre foto o círculo fica branco, pela mesma razão do kicker.
+ */
+function badgeBlock(
   ctx: CanvasRenderingContext2D,
+  data: ShareCardData,
   theme: ShareTheme,
   composition: ShareComposition,
   m: Metrics,
   accent: string,
 ): Block {
-  const width = 140
-  const thickness = 5
+  const size = 180
+  const word = badgeWordOf(data.eventType)
+  const fill = theme.shadow ? theme.ink : accent
+  const inkOnFill = theme.shadow ? '#0a0a0b' : '#ffffff'
+  const style: TextStyle = {
+    // "Recorde" tem sete letras e precisa caber dentro do círculo com folga.
+    size: word.length > 5 ? 32 : 44,
+    weight: 800,
+    color: inkOnFill,
+    tracking: 2,
+    uppercase: true,
+  }
 
   return {
-    gap: 34,
-    height: thickness,
+    gap: 0,
+    height: size + 30,
     draw(y) {
-      ctx.fillStyle = theme.shadow ? theme.ink : accent
-      const startX = composition.align === 'center' ? m.x - width / 2 : m.x
-      ctx.fillRect(startX, y, width, thickness)
+      const cx = composition.align === 'center' ? m.x : m.x + size / 2
+      const cy = y + size / 2
+
+      ctx.save()
+      ctx.fillStyle = fill
+      ctx.beginPath()
+      ctx.arc(cx, cy, size / 2, 0, Math.PI * 2)
+      ctx.fill()
+      // Duas fitas embaixo, como uma medalha: é o que faz o círculo ler como
+      // selo e não como um botão.
+      ctx.fillStyle = withAlpha(fill, 0.55)
+      ctx.beginPath()
+      ctx.moveTo(cx - 52, cy + size * 0.36)
+      ctx.lineTo(cx - 22, cy + size / 2 + 30)
+      ctx.lineTo(cx - 4, cy + size * 0.44)
+      ctx.closePath()
+      ctx.fill()
+      ctx.beginPath()
+      ctx.moveTo(cx + 52, cy + size * 0.36)
+      ctx.lineTo(cx + 22, cy + size / 2 + 30)
+      ctx.lineTo(cx + 4, cy + size * 0.44)
+      ctx.closePath()
+      ctx.fill()
+      ctx.restore()
+
+      drawLine(ctx, word, cx, cy + style.size * 0.36, style, 'center')
     },
   }
+}
+
+function badgeWordOf(type: ShareCardData['eventType']): string {
+  switch (type) {
+    case 'momentum_record':
+      return 'Recorde'
+    case 'milestone':
+    case 'challenge_milestone':
+      return 'Marco'
+    case 'comeback':
+      return 'Voltei'
+    case 'goal_completed':
+    case 'challenge_completed':
+      return 'Feito'
+    case 'weekly_review':
+      return 'Semana'
+    case 'challenge_joined':
+      return 'Dentro'
+    default:
+      return 'Hoje'
+  }
+}
+
+/**
+ * Números em linha: rótulo em cima, valor embaixo, até três colunas.
+ *
+ * É a linha "Duração · Volume · Recorde" do app de treino. Cada coluna tem a
+ * mesma largura, então o card não muda de forma quando um valor é "1h30" e o
+ * outro é "84".
+ */
+function statsRowBlock(
+  ctx: CanvasRenderingContext2D,
+  figures: readonly Figure[],
+  theme: ShareTheme,
+  composition: ShareComposition,
+  m: Metrics,
+): Block {
+  const labelStyle: TextStyle = { size: 30, weight: 500, color: theme.inkMuted }
+  const valueStyle: TextStyle = { size: 60, weight: 700, color: theme.ink, tracking: -1 }
+  const columnWidth = m.contentWidth / 3
+  const centered = composition.align === 'center'
+  const startX = centered ? m.x - (columnWidth * figures.length) / 2 : m.x
+
+  return {
+    gap: 36,
+    drop: 45,
+    height: labelStyle.size + 14 + valueStyle.size,
+    draw(y) {
+      figures.forEach((figure, index) => {
+        // Centrado, cada coluna centra o seu texto; à esquerda, as colunas
+        // alinham pela margem, como o título acima delas.
+        const x = startX + columnWidth * index + (centered ? columnWidth / 2 : 0)
+        const align = centered ? 'center' : 'left'
+        const base = figure.value.length > 6 ? { ...valueStyle, size: 46 } : valueStyle
+        if (figure.label) drawLine(ctx, figure.label, x, y + labelStyle.size * 0.8, labelStyle, align)
+        drawLine(ctx, figure.value, x, y + labelStyle.size + 14 + base.size * 0.78, base, align)
+      })
+    },
+  }
+}
+
+/**
+ * A lista do que saiu e, à direita, a semana em pontos.
+ *
+ * Os sete pontos fazem o papel da figura do corpo no card de treino: dizem,
+ * sem palavra, quanto da janela já tem movimento. Preferem os dias ativos;
+ * sem eles, a sequência, até sete. Sem nenhum dos dois, a coluna some e a
+ * lista ocupa a largura inteira.
+ */
+function listWithWeekBlock(
+  ctx: CanvasRenderingContext2D,
+  data: ShareCardData,
+  theme: ShareTheme,
+  m: Metrics,
+  accent: string,
+): Block | null {
+  const week = weekDotsOf(data)
+  const style: TextStyle = { size: 36, weight: 500, color: theme.ink }
+  const rowHeight = 62
+  const dot = 30
+  const gapAfterDot = 22
+  const shown = data.items.slice(0, m.maxItems)
+  const hidden = data.items.length - shown.length
+  if (shown.length === 0 && !week) return null
+
+  const columnWidth = week ? 150 : 0
+  const listWidth = m.contentWidth - columnWidth
+  const overflowStyle: TextStyle = { size: 30, weight: 500, color: theme.inkFaint }
+  const dotsHeight = week ? 7 * 68 : 0
+  const listHeight = shown.length * rowHeight + (hidden > 0 ? 40 : 0)
+  const height = Math.max(listHeight, dotsHeight)
+
+  return {
+    gap: 36,
+    drop: 60,
+    height,
+    draw(y) {
+      shown.forEach((item, index) => {
+        const rowY = y + index * rowHeight
+        drawCheckDot(ctx, m.x, rowY + 4, dot, item.done, accent, theme.line)
+        const label = truncateToWidth(ctx, item.label, style, listWidth - dot - gapAfterDot)
+        drawLine(
+          ctx,
+          label,
+          m.x + dot + gapAfterDot,
+          rowY + dot * 0.86,
+          { ...style, color: item.done ? theme.ink : theme.inkFaint },
+          'left',
+        )
+      })
+      if (hidden > 0) {
+        drawLine(
+          ctx,
+          `+${hidden} ${hidden === 1 ? 'outra' : 'outras'}`,
+          m.x,
+          y + shown.length * rowHeight + 28,
+          overflowStyle,
+          'left',
+        )
+      }
+
+      if (!week) return
+      const cx = m.x + m.contentWidth - 40
+      const labelStyle: TextStyle = {
+        size: 22,
+        weight: 700,
+        color: theme.inkFaint,
+        tracking: 3,
+        uppercase: true,
+      }
+      week.labels.forEach((letter, index) => {
+        const cy = y + 34 + index * 68
+        const active = index < week.active
+        ctx.save()
+        ctx.fillStyle = active ? (theme.shadow ? theme.ink : accent) : 'transparent'
+        ctx.strokeStyle = active ? 'transparent' : theme.line
+        ctx.lineWidth = 3
+        ctx.beginPath()
+        ctx.arc(cx, cy, 22, 0, Math.PI * 2)
+        if (active) ctx.fill()
+        else ctx.stroke()
+        ctx.restore()
+        drawLine(ctx, letter, cx - 48, cy + labelStyle.size * 0.36, labelStyle, 'center')
+      })
+    },
+  }
+}
+
+const WEEKDAY_LETTERS = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'] as const
+
+function weekDotsOf(
+  data: ShareCardData,
+): { readonly active: number; readonly labels: readonly string[] } | null {
+  const activeDays = data.stats.find((stat) => stat.label === 'dias ativos')
+  if (activeDays) {
+    const active = Number.parseInt(activeDays.value, 10)
+    if (Number.isFinite(active)) return { active: Math.min(7, active), labels: WEEKDAY_LETTERS }
+  }
+  const streak = data.stats.find(
+    (stat) => stat.label === 'dia seguido' || stat.label === 'dias seguidos',
+  )
+  if (streak) {
+    const days = Number.parseInt(streak.value, 10)
+    if (Number.isFinite(days) && days > 0) {
+      return {
+        active: Math.min(7, days),
+        labels: Array.from({ length: 7 }, (_, index) => `${index + 1}`),
+      }
+    }
+  }
+  return null
+}
+
+function truncateToWidth(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  style: TextStyle,
+  maxWidth: number,
+): string {
+  if (measureText(ctx, text, style) <= maxWidth) return text
+  let cut = text
+  while (cut.length > 1 && measureText(ctx, `${cut}…`, style) > maxWidth) cut = cut.slice(0, -1)
+  return `${cut.trimEnd()}…`
+}
+
+/** A grade: até quatro números grandes, dois por linha, rótulo embaixo. */
+function gridBlock(
+  ctx: CanvasRenderingContext2D,
+  figures: readonly Figure[],
+  theme: ShareTheme,
+  m: Metrics,
+): Block | null {
+  if (figures.length === 0) return null
+  const valueStyle: TextStyle = { size: 96, weight: 700, color: theme.ink, tracking: -2 }
+  const labelStyle: TextStyle = { size: 34, weight: 400, color: theme.inkMuted }
+  const cellHeight = valueStyle.size + 12 + labelStyle.size
+  const rowGap = 64
+  const rows = Math.ceil(figures.length / 2)
+  const columnWidth = m.contentWidth / 2
+
+  return {
+    gap: 44,
+    height: rows * cellHeight + (rows - 1) * rowGap,
+    draw(y) {
+      figures.forEach((figure, index) => {
+        const column = index % 2
+        const row = Math.floor(index / 2)
+        const x = m.x + column * columnWidth
+        const top = y + row * (cellHeight + rowGap)
+        const maxWidth = columnWidth - 24
+        const measured = measureText(ctx, figure.value, valueStyle)
+        const style =
+          measured > maxWidth
+            ? { ...valueStyle, size: valueStyle.size * (maxWidth / measured) }
+            : valueStyle
+        drawLine(ctx, figure.value, x, top + valueStyle.size * 0.78, style, 'left')
+        if (figure.label) {
+          drawLine(ctx, figure.label, x, top + valueStyle.size + 12 + labelStyle.size * 0.8, labelStyle, 'left')
+        }
+      })
+    },
+  }
+}
+
+/** A pilha: valor e rótulo centrados, um par embaixo do outro. */
+function stackBlock(
+  ctx: CanvasRenderingContext2D,
+  figures: readonly Figure[],
+  theme: ShareTheme,
+  m: Metrics,
+): Block | null {
+  if (figures.length === 0) return null
+  const valueStyle: TextStyle = { size: 72, weight: 700, color: theme.ink, tracking: -1 }
+  const labelStyle: TextStyle = { size: 34, weight: 400, color: theme.inkMuted }
+  const pairHeight = valueStyle.size + 8 + labelStyle.size
+  const pairGap = 44
+
+  return {
+    gap: 40,
+    height: figures.length * pairHeight + (figures.length - 1) * pairGap,
+    draw(y) {
+      figures.forEach((figure, index) => {
+        const top = y + index * (pairHeight + pairGap)
+        drawLine(ctx, figure.value, m.x, top + valueStyle.size * 0.78, valueStyle, 'center')
+        if (figure.label) {
+          drawLine(ctx, figure.label, m.x, top + valueStyle.size + 8 + labelStyle.size * 0.8, labelStyle, 'center')
+        }
+      })
+    },
+  }
+}
+
+/** O raio da marca, na cor do eixo. É o "halter" do card de treino. */
+function iconBlock(
+  ctx: CanvasRenderingContext2D,
+  composition: ShareComposition,
+  m: Metrics,
+  accent: string,
+  theme: ShareTheme,
+): Block {
+  const size = 120
+  // O raio da marca (o mesmo do ícone `raio`), em pontos de um quadrado de 24.
+  const points: readonly (readonly [number, number])[] = [
+    [13, 3],
+    [5, 14],
+    [11, 14],
+    [10, 21],
+    [18, 10],
+    [12, 10],
+  ]
+
+  return {
+    gap: 0,
+    height: size + 20,
+    draw(y) {
+      const x = composition.align === 'center' ? m.x - size / 2 : m.x
+      const unit = size / 24
+      ctx.save()
+      ctx.fillStyle = theme.shadow ? theme.ink : accent
+      ctx.beginPath()
+      points.forEach(([px, py], index) => {
+        if (index === 0) ctx.moveTo(x + px * unit, y + py * unit)
+        else ctx.lineTo(x + px * unit, y + py * unit)
+      })
+      ctx.closePath()
+      ctx.fill()
+      ctx.restore()
+    },
+  }
+}
+
+/**
+ * A frase do recap, escrita a partir da linha de apoio: "São 12 dias
+ * seguidos, 5 hábitos e 3 ações." Sem dados de apoio, entra o subtítulo.
+ */
+function sentenceBlock(
+  ctx: CanvasRenderingContext2D,
+  data: ShareCardData,
+  theme: ShareTheme,
+  composition: ShareComposition,
+  m: Metrics,
+): Block | null {
+  const text = sentenceOf(data)
+  if (!text) return null
+  const style: TextStyle = { size: 40, weight: 400, color: theme.inkMuted, leading: 1.34 }
+  const lines = wrapLines(ctx, text, style, m.contentWidth, 4)
+  const lineHeight = lineHeightOf(style)
+
+  return {
+    gap: 24,
+    drop: 20,
+    height: lines.length * lineHeight,
+    draw(y) {
+      lines.forEach((line, index) => {
+        drawLine(ctx, line, m.x, y + lineHeight * (index + 0.78), style, composition.align)
+      })
+    },
+  }
+}
+
+function sentenceOf(data: ShareCardData): string | null {
+  // Só o que é quantidade entra na frase: "Leitura" solto no meio de "12 dias
+  // seguidos e 5 hábitos" não é uma soma, é um nome.
+  const parts = data.stats.filter((stat) => stat.label).map((stat) => `${stat.value} ${stat.label}`)
+  if (parts.length === 0) return data.subtitle
+  const joined =
+    parts.length === 1
+      ? parts[0]
+      : `${parts.slice(0, -1).join(', ')} e ${parts[parts.length - 1]}`
+  const opening = data.title ? `${data.title}. ` : ''
+  return `${opening}São ${joined}.`
 }
 
 function kickerBlock(
@@ -736,79 +1129,6 @@ function statsBlock(
 }
 
 /**
- * Tópicos — cada informação numa linha, com marcador.
- *
- * O marcador é um traço curto na cor do eixo, e não um ponto: o ponto some no
- * meio do texto em corpo grande, e um ícone por linha viraria decoração. As
- * informações vêm da linha de apoio e das métricas — as MESMAS de sempre, só
- * que empilhadas em vez de escaladas por importância. É a composição pra quando
- * o card tem várias coisas a dizer e nenhuma é maior que as outras.
- */
-function bulletsBlock(
-  ctx: CanvasRenderingContext2D,
-  data: ShareCardData,
-  theme: ShareTheme,
-  m: Metrics,
-  accent: string,
-): Block {
-  const style: TextStyle = { size: 40, weight: 500, color: theme.ink, leading: 1.25 }
-  const dash = 46
-  const gapAfterDash = 24
-  const rowGap = 26
-  const textWidth = m.contentWidth - dash - gapAfterDash
-
-  const lines: string[] = []
-
-  if (data.primaryMetric.value) {
-    lines.push(
-      data.primaryMetric.label
-        ? `${data.primaryMetric.value} ${data.primaryMetric.label}`
-        : data.primaryMetric.value,
-    )
-  }
-  if (data.secondaryMetric) {
-    lines.push(
-      data.secondaryMetric.label
-        ? `${data.secondaryMetric.value} ${data.secondaryMetric.label}`
-        : data.secondaryMetric.value,
-    )
-  }
-  for (const stat of data.stats) {
-    lines.push(stat.label ? `${stat.value} ${stat.label}` : stat.value)
-  }
-
-  const rows = lines.map((text) => wrapLines(ctx, text, style, textWidth, 2))
-  const lineHeight = lineHeightOf(style)
-  const height = rows.reduce((sum, row) => sum + row.length * lineHeight + rowGap, 0)
-
-  return {
-    gap: 34,
-    drop: 55,
-    height: Math.max(0, height - rowGap),
-    draw(y) {
-      let cursor = y
-      for (const row of rows) {
-        ctx.fillStyle = accent
-        ctx.fillRect(m.x, cursor + lineHeight * 0.42, dash, 4)
-
-        row.forEach((line, index) => {
-          drawLine(
-            ctx,
-            line,
-            m.x + dash + gapAfterDash,
-            cursor + lineHeight * (index + 0.75),
-            style,
-            'left',
-          )
-        })
-
-        cursor += row.length * lineHeight + rowGap
-      }
-    },
-  }
-}
-
-/**
  * O anel de progresso, com o número dentro.
  *
  * Um anel diz o que um número solto não diz: QUANTO FALTA. É por isso que ele
@@ -933,117 +1253,6 @@ function barsBlock(
           thickness,
         )
       })
-    },
-  }
-}
-
-/**
- * O mapa: o assunto no centro e o que sai dele em volta.
- *
- * Cada informação vira um nó ligado ao centro por um traço curvo. É a leitura
- * que mostra PERTENCIMENTO — as partes só fazem sentido porque saem da mesma
- * coisa —, e é por isso que o número do meio é o do card e os nós são a linha
- * de apoio, nunca o contrário.
- *
- * No máximo quatro nós, dois de cada lado. Seis viram teia, e teia não se lê
- * num Story que dura cinco segundos.
- */
-function mapBlock(
-  ctx: CanvasRenderingContext2D,
-  data: ShareCardData,
-  theme: ShareTheme,
-  m: Metrics,
-  accent: string,
-): Block | null {
-  const nodes = [
-    ...data.stats.map((stat) => (stat.label ? `${stat.value} ${stat.label}` : stat.value)),
-    ...(data.secondaryMetric
-      ? [
-          data.secondaryMetric.label
-            ? `${data.secondaryMetric.value} ${data.secondaryMetric.label}`
-            : data.secondaryMetric.value,
-        ]
-      : []),
-    ...data.items.filter((item) => item.done).map((item) => item.label),
-  ].slice(0, 4)
-
-  if (nodes.length === 0) return null
-
-  const centerStyle: TextStyle = { size: 120, weight: 700, color: theme.ink, tracking: -3 }
-  const centerLabelStyle: TextStyle = { size: 30, weight: 500, color: theme.inkMuted }
-  const nodeStyle: TextStyle = { size: 32, weight: 500, color: theme.ink, leading: 1.2 }
-
-  const centerRadius = 150
-  const rowGap = 118
-  const height = centerRadius * 2 + Math.ceil(nodes.length / 2) * rowGap
-
-  return {
-    gap: 40,
-    height,
-    draw(y) {
-      const cx = m.x
-      const cy = y + centerRadius
-
-      ctx.save()
-      ctx.strokeStyle = theme.line
-      ctx.lineWidth = 2
-
-      nodes.forEach((node, index) => {
-        const side = index % 2 === 0 ? -1 : 1
-        const row = Math.floor(index / 2)
-        const nodeY = cy + centerRadius + 40 + row * rowGap
-        const nodeX = cx + side * (m.contentWidth / 2 - 40)
-
-        // O traço sai do centro e curva até o nó: reta ligando dois pontos em
-        // diagonal cruzaria o número quando o nó fica logo abaixo dele.
-        ctx.beginPath()
-        ctx.moveTo(cx, cy + centerRadius - 10)
-        ctx.quadraticCurveTo(cx, nodeY, nodeX - side * 40, nodeY)
-        ctx.stroke()
-
-        const lines = wrapLines(ctx, node, nodeStyle, m.contentWidth / 2 - 60, 2)
-        lines.forEach((line, position) => {
-          drawLine(
-            ctx,
-            line,
-            nodeX,
-            nodeY + lineHeightOf(nodeStyle) * position,
-            nodeStyle,
-            side === -1 ? 'left' : 'left',
-          )
-        })
-      })
-
-      ctx.restore()
-
-      // O centro por último: ele passa por cima dos traços que chegam nele.
-      ctx.fillStyle = withAlpha(accent, 0.16)
-      ctx.beginPath()
-      ctx.arc(cx, cy, centerRadius, 0, Math.PI * 2)
-      ctx.fill()
-
-      ctx.save()
-      ctx.strokeStyle = withAlpha(accent, 0.6)
-      ctx.lineWidth = 3
-      ctx.beginPath()
-      ctx.arc(cx, cy, centerRadius, 0, Math.PI * 2)
-      ctx.stroke()
-      ctx.restore()
-
-      const value = data.primaryMetric.value || `${data.momentumAfter ?? ''}`
-      const scale = value.length > 4 ? 4 / value.length : 1
-      drawLine(
-        ctx,
-        value,
-        cx,
-        cy + centerStyle.size * scale * 0.24,
-        { ...centerStyle, size: centerStyle.size * scale },
-        'center',
-      )
-
-      if (data.primaryMetric.label) {
-        drawLine(ctx, data.primaryMetric.label, cx, cy + centerRadius * 0.62, centerLabelStyle, 'center')
-      }
     },
   }
 }

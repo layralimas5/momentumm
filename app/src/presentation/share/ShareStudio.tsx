@@ -4,10 +4,12 @@ import type { DayKey } from '@/domain/entities/day'
 import type { JourneyEvent } from '@/domain/entities/journey-event'
 import { toShareCardData } from '@/domain/share/share-card-adapter'
 import {
+  compositionsAllowedFor,
   DEFAULT_SHARE_COMPOSITION,
   DEFAULT_SHARE_FORMAT,
   DEFAULT_SHARE_TEMPLATE,
   defaultFieldsFor,
+  templatesAllowedFor,
   type ShareCardData,
   type ShareCompositionId,
   type ShareField,
@@ -24,8 +26,8 @@ import { ShareStudioControls } from './ShareStudioControls'
 import { ShareStudioPhotoPicker } from './ShareStudioPhotoPicker'
 import { ShareStudioVisibilityControls } from './ShareStudioVisibilityControls'
 import { UpgradeHint } from '@/presentation/components/dashboard/UpgradeHint'
+import { isUnlimited } from '@/domain/entities/plan'
 import { usePlanner } from '@/presentation/planner/use-planner'
-import { ShareCardPreview } from './ShareCardPreview'
 import { useSharePhoto } from './use-share-photo'
 import { trackShare } from './share-analytics'
 import {
@@ -62,8 +64,15 @@ type Status = 'idle' | 'generating' | 'shared' | 'saved' | 'cancelled'
  */
 export function ShareStudio({ event, displayName, today, compact }: ShareStudioProps) {
   const { limits } = usePlanner()
-  // No gratuito o card sai no modelo padrão, do jeito que nasce: cor, arranjo
-  // e o que entra no card são a personalização, e ela mora no PRO.
+  /*
+    O gratuito escolhe entre três arranjos e duas cores (preto e PNG); o PRO
+    leva os oito, as quatro cores, a foto de fundo e os toggles do que entra
+    no card. Os arranjos e cores trancados continuam VISÍVEIS: é o preview que
+    vende o PRO, e o botão de compartilhar é quem recusa.
+  */
+  const unlimited = isUnlimited(limits.shareTemplates)
+  const allowedCompositions = compositionsAllowedFor(unlimited)
+  const allowedTemplates = templatesAllowedFor(unlimited)
   const customizable = limits.shareCustomization
   const format: ShareFormat = DEFAULT_SHARE_FORMAT
   const [template, setTemplate] = useState<ShareTemplateId>(DEFAULT_SHARE_TEMPLATE)
@@ -190,8 +199,10 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
   }
 
   const busy = status === 'generating'
+  const lockedChoice =
+    !allowedCompositions.includes(composition) || !allowedTemplates.includes(template)
 
-  const preview = customizable ? (
+  const preview = (
     <ShareCompositionCarousel
       data={data}
       template={template}
@@ -199,24 +210,18 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
       value={composition}
       photo={background.photo}
       onChange={chooseComposition}
-      className={cn('mx-auto w-full', compact ? '' : 'max-w-md')}
-    />
-  ) : (
-    <ShareCardPreview
-      data={data}
-      template={template}
-      composition={composition}
-      format={format}
-      photo={background.photo}
+      allowed={allowedCompositions}
       className={cn('mx-auto w-full', compact ? '' : 'max-w-md')}
     />
   )
 
-  const options = customizable ? (
+  const options = (
     <div className="flex flex-col gap-5">
-      <Field label="Fundo">
-        <ShareStudioPhotoPicker state={background} />
-      </Field>
+      {customizable ? (
+        <Field label="Fundo">
+          <ShareStudioPhotoPicker state={background} />
+        </Field>
+      ) : null}
 
       <Field
         label="Cor"
@@ -224,22 +229,24 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
           ? { hint: 'Com foto, a cor sai de cena: o texto vira branco com sombra.' }
           : {})}
       >
-        <ShareStudioControls value={template} onChange={chooseTemplate} />
+        <ShareStudioControls value={template} onChange={chooseTemplate} allowed={allowedTemplates} />
       </Field>
 
-      <Field
-        label="Mostrar no card"
-        hint="Começa com o mínimo. Nada que você escreveu entra sem você ligar."
-      >
-        <ShareStudioVisibilityControls
-          event={event}
-          fields={fields}
-          onToggle={toggleField}
-        />
-      </Field>
+      {customizable ? (
+        <Field
+          label="Mostrar no card"
+          hint="Começa com o mínimo. Nada que você escreveu entra sem você ligar."
+        >
+          <ShareStudioVisibilityControls
+            event={event}
+            fields={fields}
+            onToggle={toggleField}
+          />
+        </Field>
+      ) : (
+        <UpgradeHint message="No PRO você libera os oito arranjos, as quatro cores, a foto de fundo e escolhe o que aparece no card." />
+      )}
     </div>
-  ) : (
-    <UpgradeHint message="O card sai no modelo padrão. No PRO você escolhe cor, arranjo, foto de fundo e o que aparece nele." />
   )
 
   /*
@@ -267,11 +274,16 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
         a partir do `sm`, o eixo vira horizontal e aí `flex-1` faz o que se
         espera: divide a largura em partes iguais.
       */}
+      {lockedChoice ? (
+        <UpgradeHint message="Esse arranjo ou essa cor é do PRO. Escolhe um dos liberados pra compartilhar, ou libera todos." />
+      ) : null}
+
       <div className="flex flex-col gap-2.5 sm:flex-row sm:gap-3">
         <Button
           size="lg"
           className="w-full sm:w-auto sm:flex-1"
           loading={busy}
+          disabled={lockedChoice}
           onClick={() => void handleShare()}
         >
           <Icon name="jornada" className="size-4.5" />
@@ -281,7 +293,7 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
           size="lg"
           variant="secondary"
           className="w-full sm:w-auto sm:flex-1"
-          disabled={busy}
+          disabled={busy || lockedChoice}
           onClick={() => void handleSave()}
         >
           <Icon name="arquivar" className="size-4.5" />

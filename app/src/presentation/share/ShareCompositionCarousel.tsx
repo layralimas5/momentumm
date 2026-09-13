@@ -7,6 +7,7 @@ import {
   type ShareFormat,
   type ShareTemplateId,
 } from '@/domain/share/share-card'
+import { Icon } from '@/presentation/components/ui/Icon'
 import { ShareCardPreview } from './ShareCardPreview'
 import type { SharePhoto } from './render/render-share-card'
 import { cn } from '@/shared/lib/cn'
@@ -18,6 +19,8 @@ interface ShareCompositionCarouselProps {
   readonly value: ShareCompositionId
   readonly photo: SharePhoto | null
   readonly onChange: (composition: ShareCompositionId) => void
+  /** Os arranjos que o plano libera. Os outros aparecem, mas trancados. */
+  readonly allowed: readonly ShareCompositionId[]
   readonly className?: string
 }
 
@@ -43,6 +46,7 @@ export function ShareCompositionCarousel({
   value,
   photo,
   onChange,
+  allowed,
   className,
 }: ShareCompositionCarouselProps) {
   const trackRef = useRef<HTMLDivElement>(null)
@@ -96,6 +100,7 @@ export function ShareCompositionCarousel({
 
   const spec = SHARE_COMPOSITION_SPECS[value]
   const index = SHARE_COMPOSITIONS.indexOf(value)
+  const locked = (composition: ShareCompositionId) => !allowed.includes(composition)
 
   return (
     <div className={cn('flex flex-col gap-3', className)}>
@@ -119,7 +124,7 @@ export function ShareCompositionCarousel({
               else slidesRef.current.delete(composition)
             }}
             className={cn(
-              'shrink-0 snap-center transition-opacity duration-200',
+              'relative shrink-0 snap-center transition-opacity duration-200',
               composition === value ? 'opacity-100' : 'opacity-55',
             )}
           >
@@ -131,6 +136,17 @@ export function ShareCompositionCarousel({
               photo={photo}
               className="max-h-[46dvh] sm:max-h-[54dvh]"
             />
+            {locked(composition) ? (
+              /*
+                O arranjo trancado continua visível de propósito: é o preview
+                que vende o PRO, não uma miniatura cinza. O selo diz o que
+                falta, e o botão de compartilhar é quem recusa.
+              */
+              <span className="pointer-events-none absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-white uppercase backdrop-blur">
+                <Icon name="cadeado" className="size-3" />
+                PRO
+              </span>
+            ) : null}
           </div>
         ))}
       </div>
@@ -138,7 +154,7 @@ export function ShareCompositionCarousel({
       <div className="flex flex-col items-center gap-2">
         <p className="text-sm text-ink-muted">
           <span className="font-medium text-ink">{spec.label}</span>
-          <span className="text-ink-faint"> · {spec.hint}</span>
+          <span className="text-ink-faint"> · {locked(value) ? 'Arranjo do PRO' : spec.hint}</span>
         </p>
 
         <div role="radiogroup" aria-label="Arranjo do card" className="flex items-center gap-2">

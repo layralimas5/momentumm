@@ -90,17 +90,24 @@ export const SHARE_TEMPLATE_SPECS: Readonly<Record<ShareTemplateId, ShareTemplat
  *
  * É a dimensão que responde "como isso aparece", e ela é independente da cor:
  * qualquer composição funciona em preto, neon, branco ou PNG. Cada uma conta a
- * mesma história de um jeito — número gigante, cartaz, texto de revista, lista
- * de tópicos, gráfico ou mapa — e todas leem os MESMOS dados, sem que nenhuma
+ * mesma história de um jeito, e todas leem os MESMOS dados, sem que nenhuma
  * conheça hábito, objetivo ou etapa.
+ *
+ * As oito vêm da referência do Strava e do Hevy, adaptadas: lá o assunto é
+ * treino (volume, recorde, músculo); aqui é ritmo (momentum, sequência,
+ * execução). O que ficou igual é a gramática — selo de recorde, resumo em
+ * linha, lista com figura, gráfico, grade de números, pilha centrada, recap
+ * em frase — porque é a gramática que as pessoas já sabem postar.
  */
 export const SHARE_COMPOSITIONS = [
-  'destaque',
-  'cartaz',
-  'editorial',
-  'topicos',
-  'grafico',
-  'mapa',
+  'selo',
+  'resumo',
+  'lista',
+  'anel',
+  'figura',
+  'grade',
+  'pilha',
+  'recap',
 ] as const
 export type ShareCompositionId = (typeof SHARE_COMPOSITIONS)[number]
 
@@ -113,15 +120,36 @@ export interface ShareCompositionSpec {
 export const SHARE_COMPOSITION_SPECS: Readonly<
   Record<ShareCompositionId, ShareCompositionSpec>
 > = {
-  destaque: { id: 'destaque', label: 'Destaque', hint: 'O número no meio' },
-  cartaz: { id: 'cartaz', label: 'Cartaz', hint: 'Número primeiro, texto embaixo' },
-  editorial: { id: 'editorial', label: 'Editorial', hint: 'A frase manda, o dado apoia' },
-  topicos: { id: 'topicos', label: 'Tópicos', hint: 'Tudo em lista, item por item' },
-  grafico: { id: 'grafico', label: 'Gráfico', hint: 'Anel de progresso e barras' },
-  mapa: { id: 'mapa', label: 'Mapa', hint: 'O centro e o que sai dele' },
+  selo: { id: 'selo', label: 'Selo', hint: 'O selo do momento e o número' },
+  resumo: { id: 'resumo', label: 'Resumo', hint: 'Números em linha e a lista do dia' },
+  lista: { id: 'lista', label: 'Lista', hint: 'O que saiu, com os dias da semana' },
+  anel: { id: 'anel', label: 'Anel', hint: 'Números em cima, o progresso desenhado' },
+  figura: { id: 'figura', label: 'Figura', hint: 'O desenho no centro, os números embaixo' },
+  grade: { id: 'grade', label: 'Grade', hint: 'Quatro números, um em cada canto' },
+  pilha: { id: 'pilha', label: 'Pilha', hint: 'Tudo centrado, um embaixo do outro' },
+  recap: { id: 'recap', label: 'Recap', hint: 'O número e a frase que o explica' },
 }
 
-export const DEFAULT_SHARE_COMPOSITION: ShareCompositionId = 'destaque'
+export const DEFAULT_SHARE_COMPOSITION: ShareCompositionId = 'selo'
+
+/**
+ * O que o gratuito leva: três arranjos e duas cores (preto e PNG).
+ *
+ * Três e não um, porque um card só não deixa ninguém descobrir que existe
+ * escolha — e é a escolha que faz a pessoa voltar ao estúdio. PNG entra no
+ * gratuito de propósito: o card por cima da foto dela é o que mais parece
+ * dela, e é o que ela vai postar.
+ */
+export const FREE_SHARE_COMPOSITIONS: readonly ShareCompositionId[] = ['selo', 'resumo', 'pilha']
+export const FREE_SHARE_TEMPLATES: readonly ShareTemplateId[] = ['dark', 'transparent']
+
+export function compositionsAllowedFor(unlimited: boolean): readonly ShareCompositionId[] {
+  return unlimited ? SHARE_COMPOSITIONS : FREE_SHARE_COMPOSITIONS
+}
+
+export function templatesAllowedFor(unlimited: boolean): readonly ShareTemplateId[] {
+  return unlimited ? SHARE_TEMPLATES : FREE_SHARE_TEMPLATES
+}
 
 export const DEFAULT_SHARE_TEMPLATE: ShareTemplateId = 'dark'
 

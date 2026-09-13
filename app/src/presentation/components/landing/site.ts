@@ -6,7 +6,7 @@
 
 export const SITE = {
   name: 'Momentumm',
-  url: 'https://momentumm.app',
+  url: 'https://www.momentumm.com.br',
   tagline: 'Do objetivo à ação de hoje.',
   description:
     'O Momentumm transforma objetivos em ações diárias, mede se o ritmo está de pé e ajusta o plano quando ele deixa de funcionar. Um sistema de progresso pessoal, não mais um app de hábitos.',

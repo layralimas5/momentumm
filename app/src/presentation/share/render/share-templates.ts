@@ -6,8 +6,7 @@ import { roundRect, withAlpha, type TextAlign } from './canvas-kit'
  *
  * `ShareTheme` responde COM QUE COR o card é pintado — fundo, tinta, linha,
  * moldura. `ShareComposition` responde COMO a informação se organiza dentro
- * dele — ordem dos blocos, alinhamento, âncora, tamanho do número e se existe
- * gráfico ou mapa.
+ * dele — ordem dos blocos, alinhamento, âncora, tamanho do número.
  *
  * Antes as duas coisas moravam na mesma descrição, e a consequência era um
  * template novo por combinação: "cartaz claro" e "cartaz escuro" seriam duas
@@ -34,29 +33,19 @@ export interface ShareTheme {
 /**
  * O arranjo.
  *
- * - `destaque`: kicker, título, número no meio. A leitura do app.
- * - `cartaz`: o número primeiro e enorme, texto encostado no rodapé.
- * - `editorial`: título grande, régua fina, número em corpo menor.
- * - `topicos`: tudo vira lista, uma informação por linha.
- * - `grafico`: anel de progresso e barras no lugar do número solto.
- * - `mapa`: o assunto no centro e o que sai dele em volta.
+ * Cada composição é uma ORDEM de blocos no renderizador mais estes ajustes de
+ * alinhamento, âncora, tamanho de título e de número. Nenhuma tem função de
+ * desenho própria.
  */
 export interface ShareComposition {
   readonly id: ShareCompositionId
   readonly align: TextAlign
-  /** `minimal` corta a lista de itens: sobra o essencial. */
-  readonly density: 'full' | 'minimal'
   /** Quantos itens da lista cabem antes do "+N outras". */
   readonly maxItems?: number
   readonly anchor: 'center' | 'bottom'
   /** Multiplicador do tamanho do número. */
   readonly metricScale: number
-  /** Desenha o anel de progresso no lugar do número. */
-  readonly chart?: 'anel'
-  /** Desenha o mapa: centro e ramos. */
-  readonly diagram?: 'mapa'
-  /** Kicker, título e stats viram linhas de lista com marcador. */
-  readonly bulleted?: boolean
+  readonly titleSize: number
 }
 
 const CANVAS_BLACK = '#0a0a0b'
@@ -233,103 +222,103 @@ export function overPhoto(theme: ShareTheme): ShareTheme {
 // composições
 // ---------------------------------------------------------------------------
 
-/** Destaque — o número no meio, com o título acima. */
-export const SHARE_COMPOSITION_DESTAQUE: ShareComposition = {
-  id: 'destaque',
+/** Selo — o selo do momento no alto, o número grande e o que ele é. */
+export const SHARE_COMPOSITION_SELO: ShareComposition = {
+  id: 'selo',
   align: 'left',
-  density: 'full',
   anchor: 'center',
-  metricScale: 1,
+  metricScale: 0.9,
+  titleSize: 72,
 }
 
 /**
- * Cartaz — o número é a notícia.
+ * Resumo — o título, três números em linha e a lista do que saiu.
  *
- * Ele vem antes do título e cresce; o título vira a legenda dele. O conteúdo
- * encosta embaixo, então o topo fica limpo — que é o que faz o card ser
- * reconhecido no meio de uma sequência de Stories.
+ * É o card de "como foi o dia": a linha de números responde rápido e a lista
+ * conta o resto. Seis itens no máximo: acima disso o card vira relatório.
  */
-export const SHARE_COMPOSITION_CARTAZ: ShareComposition = {
-  id: 'cartaz',
+export const SHARE_COMPOSITION_RESUMO: ShareComposition = {
+  id: 'resumo',
   align: 'left',
-  // Lista curta: no cartaz o número é o assunto, e quatro linhas são o que
-  // cabe embaixo dele sem transformar o card num relatório.
-  density: 'full',
-  maxItems: 4,
-  anchor: 'bottom',
-  metricScale: 1.16,
-}
-
-/**
- * Editorial — quando a frase é a notícia.
- *
- * Régua fina entre o título e o número, e o número recua pra corpo menor: em
- * "Objetivo concluído" ou "Você voltou", o dado é o detalhe e a frase é o
- * assunto. É o contrário do Cartaz, de propósito.
- */
-export const SHARE_COMPOSITION_EDITORIAL: ShareComposition = {
-  id: 'editorial',
-  align: 'left',
-  density: 'full',
-  anchor: 'bottom',
-  metricScale: 0.62,
-}
-
-/**
- * Tópicos — a mesma história em lista.
- *
- * Cada informação vira uma linha com marcador, inclusive as que nos outros
- * arranjos são texto corrido. Serve pra semana e pra rotina, onde o card tem
- * várias coisas pra dizer e nenhuma delas é maior que as outras.
- */
-export const SHARE_COMPOSITION_TOPICOS: ShareComposition = {
-  id: 'topicos',
-  align: 'left',
-  density: 'full',
-  maxItems: 8,
-  anchor: 'bottom',
+  anchor: 'center',
+  maxItems: 6,
+  titleSize: 76,
   metricScale: 0.5,
-  bulleted: true,
 }
 
 /**
- * Gráfico — o progresso desenhado.
+ * Lista — o que saiu à esquerda e a semana à direita.
  *
- * Um anel com o percentual no centro, e as barras do momentum e do que mais
- * tiver dois lados. É a composição pra quando o número tem CONTEXTO: 58% num
- * anel diz quanto falta, e "42% -> 58%" numa barra diz de onde veio.
+ * A coluna de pontos faz o papel que a figura do corpo faz no app de treino:
+ * mostra, sem palavra nenhuma, quanto da semana já tem movimento.
  */
-export const SHARE_COMPOSITION_GRAFICO: ShareComposition = {
-  id: 'grafico',
+export const SHARE_COMPOSITION_LISTA: ShareComposition = {
+  id: 'lista',
+  align: 'left',
+  anchor: 'center',
+  maxItems: 7,
+  titleSize: 72,
+  metricScale: 0.5,
+}
+
+/** Anel — os números em cima e o progresso desenhado no meio. */
+export const SHARE_COMPOSITION_ANEL: ShareComposition = {
+  id: 'anel',
   align: 'center',
-  density: 'full',
+  anchor: 'center',
   maxItems: 4,
-  anchor: 'center',
+  titleSize: 64,
   metricScale: 1,
-  chart: 'anel',
+}
+
+/** Figura — o desenho no centro, título em cima e os números embaixo. */
+export const SHARE_COMPOSITION_FIGURA: ShareComposition = {
+  id: 'figura',
+  align: 'center',
+  anchor: 'center',
+  titleSize: 68,
+  metricScale: 1,
+}
+
+/** Grade — quatro números grandes, um em cada canto. */
+export const SHARE_COMPOSITION_GRADE: ShareComposition = {
+  id: 'grade',
+  align: 'left',
+  anchor: 'center',
+  titleSize: 72,
+  metricScale: 0.5,
+}
+
+/** Pilha — tudo centrado, um número embaixo do outro, assinatura no meio. */
+export const SHARE_COMPOSITION_PILHA: ShareComposition = {
+  id: 'pilha',
+  align: 'center',
+  anchor: 'center',
+  titleSize: 60,
+  metricScale: 0.5,
 }
 
 /**
- * Mapa — o centro e o que sai dele.
+ * Recap — o ícone, o número e a frase que o explica.
  *
- * O assunto no meio, as informações em volta ligadas por um traço. É a leitura
- * que mostra que aquilo tudo pertence a uma coisa só — útil no dia e no
- * objetivo, onde as partes só fazem sentido juntas.
+ * "10 treinos. São 8 horas de esforço." O número é a manchete e a frase é o
+ * subtítulo, escrita a partir dos mesmos dados da linha de apoio.
  */
-export const SHARE_COMPOSITION_MAPA: ShareComposition = {
-  id: 'mapa',
-  align: 'center',
-  density: 'minimal',
+export const SHARE_COMPOSITION_RECAP: ShareComposition = {
+  id: 'recap',
+  align: 'left',
   anchor: 'center',
-  metricScale: 0.72,
-  diagram: 'mapa',
+  titleSize: 64,
+  metricScale: 1.1,
 }
 
 export const SHARE_COMPOSITIONS_BY_ID: Readonly<Record<ShareCompositionId, ShareComposition>> = {
-  destaque: SHARE_COMPOSITION_DESTAQUE,
-  cartaz: SHARE_COMPOSITION_CARTAZ,
-  editorial: SHARE_COMPOSITION_EDITORIAL,
-  topicos: SHARE_COMPOSITION_TOPICOS,
-  grafico: SHARE_COMPOSITION_GRAFICO,
-  mapa: SHARE_COMPOSITION_MAPA,
+  selo: SHARE_COMPOSITION_SELO,
+  resumo: SHARE_COMPOSITION_RESUMO,
+  lista: SHARE_COMPOSITION_LISTA,
+  anel: SHARE_COMPOSITION_ANEL,
+  figura: SHARE_COMPOSITION_FIGURA,
+  grade: SHARE_COMPOSITION_GRADE,
+  pilha: SHARE_COMPOSITION_PILHA,
+  recap: SHARE_COMPOSITION_RECAP,
 }

@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /app
 Disallow: /admin
-Sitemap: https://momentumm.app/sitemap.xml
+Sitemap: https://www.momentumm.com.br/sitemap.xml

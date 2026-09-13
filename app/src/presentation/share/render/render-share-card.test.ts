@@ -10,12 +10,12 @@ import {
 import { renderShareCard } from './render-share-card'
 
 /**
- * As quatro cores e os seis arranjos desenhando de verdade.
+ * As quatro cores e os oito arranjos desenhando de verdade.
  *
  * O renderizador é canvas puro: um arranjo que erra o nome de um método ou
  * esquece de fechar um caminho não quebra o build nem o teste de domínio — ele
- * quebra na mão da pessoa, no meio do Story. Este teste desenha as vinte e
- * quatro combinações num contexto falso que anota tudo que foi chamado, e
+ * quebra na mão da pessoa, no meio do Story. Este teste desenha as trinta e
+ * duas combinações num contexto falso que anota tudo que foi chamado, e
  * confere que cada uma pintou fundo e escreveu texto no espaço do card.
  *
  * O contexto é falso porque o `canvas` do Node é uma dependência nativa: pesada
@@ -64,6 +64,7 @@ function fakeContext() {
     save: record('save'),
     restore: record('restore'),
     scale: record('scale'),
+    translate: record('translate'),
     drawImage: record('drawImage'),
     createLinearGradient: () => gradient,
     createRadialGradient: () => gradient,
@@ -101,13 +102,13 @@ const DATA: ShareCardData = {
   accent: '#6d5cff',
 }
 
-function drawWith(template: ShareTemplateId, composition: ShareCompositionId = 'destaque') {
+function drawWith(template: ShareTemplateId, composition: ShareCompositionId = 'selo') {
   const ctx = fakeContext()
   renderShareCard(ctx, DATA, { template, composition, format: 'stories' })
   return ctx.calls
 }
 
-function textOf(template: ShareTemplateId, composition: ShareCompositionId = 'destaque'): string {
+function textOf(template: ShareTemplateId, composition: ShareCompositionId = 'selo'): string {
   return drawWith(template, composition)
     .filter((call) => call.method === 'fillText')
     .map((call) => String(call.args[0]))
@@ -135,7 +136,7 @@ describe('as cores', () => {
     const ctx = fakeContext()
     renderShareCard(ctx, DATA, {
       template: 'neon',
-      composition: 'destaque',
+      composition: 'selo',
       format: 'stories',
       photo: { image: {} as CanvasImageSource, width: 1080, height: 1440 },
     })
@@ -166,7 +167,7 @@ describe('os arranjos', () => {
     }
   })
 
-  it('o cartaz abre pelo número e o destaque abre pelo título', () => {
+  it('o selo abre pelo número e o resumo abre pelo título', () => {
     /*
       O texto sai caractere a caractere quando há espaçamento entre letras, e é
       por isso que a ordem é lida pela posição de cada trecho na sequência de
@@ -177,16 +178,22 @@ describe('os arranjos', () => {
       return { metric: written.indexOf('100%'), title: written.indexOf('Sete') }
     }
 
-    const cartaz = order('cartaz')
-    const destaque = order('destaque')
+    const selo = order('selo')
+    const resumo = order('resumo')
 
-    expect(cartaz.metric).toBeGreaterThanOrEqual(0)
-    expect(cartaz.metric).toBeLessThan(cartaz.title)
-    expect(destaque.title).toBeLessThan(destaque.metric)
+    expect(selo.metric).toBeGreaterThanOrEqual(0)
+    expect(selo.metric).toBeLessThan(selo.title)
+    expect(resumo.title).toBeLessThan(resumo.metric)
   })
 
-  it('o gráfico desenha o anel e as barras do momentum', () => {
-    const calls = drawWith('dark', 'grafico')
+  it('o selo desenha o círculo com a palavra do momento', () => {
+    const calls = drawWith('dark', 'selo')
+    expect(calls.some((call) => call.method === 'arc')).toBe(true)
+    expect(textOf('dark', 'selo')).toContain('HOJE')
+  })
+
+  it('o anel desenha o anel e as barras do momentum', () => {
+    const calls = drawWith('dark', 'anel')
 
     // Trilho e preenchimento: dois arcos de círculo inteiro, no mesmo centro.
     const rings = calls.filter(
@@ -194,24 +201,31 @@ describe('os arranjos', () => {
     )
     expect(rings.length).toBeGreaterThanOrEqual(2)
 
-    const written = textOf('dark', 'grafico')
+    const written = textOf('dark', 'anel')
     expect(written).toContain('100%')
     expect(written).toContain('Momentum agora')
   })
 
-  it('o mapa liga os nós ao centro com traços curvos', () => {
-    const curves = drawWith('dark', 'mapa').filter(
-      (call) => call.method === 'quadraticCurveTo',
-    )
-    expect(curves.length).toBeGreaterThan(0)
+  it('a lista desenha os sete pontos da semana ao lado dos itens', () => {
+    const circles = drawWith('dark', 'lista').filter((call) => call.method === 'arc')
+    // Sete pontos da semana mais os marcadores de cada item.
+    expect(circles.length).toBeGreaterThanOrEqual(7 + DATA.items.length)
+    expect(textOf('dark', 'lista')).toContain('Leitura')
   })
 
-  it('os tópicos listam as informações que os outros arranjos escalam', () => {
-    const written = textOf('dark', 'topicos')
+  it('a grade e a pilha escrevem os mesmos números da linha de apoio', () => {
+    for (const composition of ['grade', 'pilha'] as const) {
+      const written = textOf('dark', composition)
+      expect(written, composition).toContain('100%')
+      expect(written, composition).toContain('dias seguidos')
+    }
+  })
 
-    expect(written).toContain('dias seguidos')
-    expect(written).toContain('hábitos')
-    expect(written).toContain('100%')
+  it('o recap escreve a frase a partir da linha de apoio', () => {
+    const written = textOf('dark', 'recap')
+    expect(written).toContain('São')
+    expect(written).toContain('12 dias seguidos')
+    expect(written).toContain('5 hábitos')
   })
 
   /*
@@ -252,8 +266,8 @@ describe('os arranjos', () => {
   it.each(SHARE_COMPOSITIONS)('%s desenha a linha de apoio ou os seus dados', (composition) => {
     const written = textOf('dark', composition)
 
-    // No gráfico e no mapa os mesmos números aparecem dentro do desenho; o que
-    // não pode é a informação sumir porque o arranjo mudou.
+    // Em linha, em grade, em pilha ou em frase: o que não pode é a informação
+    // sumir porque o arranjo mudou.
     expect(written).toContain('dias seguidos')
   })
 })

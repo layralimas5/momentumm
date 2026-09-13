@@ -57,7 +57,7 @@ function appOrigin(request: Request): string {
   if (configured) return configured.replace(/\/$/, '')
   const origin = request.headers.get('origin') ?? ''
   if (/^http:\/\/localhost:\d+$/.test(origin)) return origin
-  return 'https://momentumm.app'
+  return 'https://www.momentumm.com.br'
 }
 
 function readJson(request: Request): Promise<unknown> {

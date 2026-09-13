@@ -651,17 +651,26 @@ pergunta com uma resposta só não é escolha.
 **Cor e arranjo são dimensões separadas.**
 
 A COR são quatro: Preto, Neon (moldura acesa), Branco e PNG (sem fundo, alpha
-real, pra ir sobre a foto da pessoa). O ARRANJO são seis: Destaque (número no
-meio), Cartaz (número primeiro, texto no rodapé), Editorial (a frase manda e o
-dado apoia), Tópicos (tudo em lista), Gráfico (anel de progresso e barras do
-momentum) e Mapa (o assunto no centro, o resto em volta ligado por traços).
+real, pra ir sobre a foto da pessoa). O ARRANJO são oito, adaptados da
+gramática do Strava e do Hevy (lá o assunto é treino; aqui é ritmo): Selo
+(o selo do momento e o número), Resumo (números em linha e a lista do dia),
+Lista (o que saiu e os sete pontos da semana à direita, no lugar da figura
+do corpo), Anel (números em cima e o progresso desenhado), Figura (o desenho
+no centro, números embaixo), Grade (quatro números, um em cada canto), Pilha
+(tudo centrado) e Recap (o ícone, o número e a frase escrita a partir da
+linha de apoio: "São 12 dias seguidos, 5 hábitos e 3 ações").
 
-Separá-las foi o que evitou vinte e quatro templates: "cartaz claro" e "cartaz
-escuro" seriam duas cópias que divergiriam na primeira correção. O tema descreve
-só tinta, fundo e moldura; a composição descreve ordem dos blocos, alinhamento,
-âncora, tamanho do número e se existe gráfico ou mapa. Nenhuma das duas é função
-de desenho própria — o renderizador continua um só, e gráfico e mapa apenas
+Separá-las foi o que evitou trinta e dois templates. O tema descreve só
+tinta, fundo e moldura; a composição descreve ordem dos blocos, alinhamento,
+âncora e tamanho do número. Nenhuma das duas é função de desenho própria: o
+renderizador continua um só, e selo, grade, pilha e a coluna da semana apenas
 acrescentam um bloco à mesma pilha.
+
+**O gratuito leva três arranjos (Selo, Resumo, Pilha) e duas cores (Preto e
+PNG)**; o PRO leva tudo, mais a foto de fundo e os toggles do que entra no
+card. Arranjo e cor trancados continuam VISÍVEIS no estúdio, com o selo PRO:
+é o preview que vende o plano, e o botão de compartilhar é quem recusa
+(`FREE_SHARE_COMPOSITIONS`, `FREE_SHARE_TEMPLATES`, `shareTemplates: 3`).
 
 **A escolha do arranjo acontece no próprio card.** O preview é um carrossel:
 arrasta pro lado e a mesma informação se reorganiza, em tamanho real, com o
@@ -1139,6 +1148,6 @@ Quando incomodar, trocar por import dinâmico dentro do `container`.
 cd app
 npm install
 npm run dev     # modo demo, sem configurar nada
-npm test        # 725 testes
+npm test        # 735 testes
 npm run build
 ```

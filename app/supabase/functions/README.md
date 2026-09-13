@@ -103,7 +103,7 @@ A cobrança do PRO, pelo Asaas. Duas funções e um domínio compartilhado:
 supabase secrets set ASAAS_API_KEY=...            # a chave decide sandbox ou produção
 supabase secrets set ASAAS_ENV=sandbox            # ou production
 supabase secrets set ASAAS_WEBHOOK_TOKEN=...      # 32+ caracteres, o mesmo do painel do Asaas
-supabase secrets set MOMENTUMM_APP_URL=https://momentumm.app   # pra onde o checkout devolve
+supabase secrets set MOMENTUMM_APP_URL=https://www.momentumm.com.br   # pra onde o checkout devolve
 
 # deploy (empacota o domínio e sobe as duas; o webhook sem verificação de JWT)
 npm run billing:deploy

@@ -9,7 +9,7 @@
 [build]
   base    = "app"
   command = "npm run build"
-  publish = "dist"
+  publish = "app/dist"
 
 [build.environment]
   NODE_VERSION = "22"

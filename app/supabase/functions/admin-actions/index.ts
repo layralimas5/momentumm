@@ -212,7 +212,7 @@ Deno.serve(async (request) => {
         // e-mail não volta pro painel nem pra auditoria: só o id criado.
         const { data, error } = await admin.auth.admin.inviteUserByEmail(body.email as string, {
           data: { name: body.name },
-          redirectTo: `${Deno.env.get('MOMENTUMM_SITE_URL') ?? 'https://momentumm.app'}/nova-senha`,
+          redirectTo: `${Deno.env.get('MOMENTUMM_SITE_URL') ?? 'https://www.momentumm.com.br'}/nova-senha`,
         })
         if (error || !data.user) {
           await admin.rpc('record_admin_audit', {

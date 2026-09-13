@@ -8,6 +8,8 @@ import { cn } from '@/shared/lib/cn'
 interface TemplateControlsProps {
   readonly value: ShareTemplateId
   readonly onChange: (template: ShareTemplateId) => void
+  /** As cores que o plano libera. As outras ficam visíveis, mas desabilitadas. */
+  readonly allowed: readonly ShareTemplateId[]
 }
 
 /**
@@ -21,7 +23,7 @@ interface TemplateControlsProps {
  * completos rodando junto com os seis do carrossel seriam dez desenhos por
  * toque, e nenhum deles responderia melhor que o quadradinho.
  */
-export function ShareStudioControls({ value, onChange }: TemplateControlsProps) {
+export function ShareStudioControls({ value, onChange, allowed }: TemplateControlsProps) {
   return (
     <div
       role="radiogroup"
@@ -31,6 +33,7 @@ export function ShareStudioControls({ value, onChange }: TemplateControlsProps) 
       {SHARE_TEMPLATES.map((template) => {
         const spec = SHARE_TEMPLATE_SPECS[template]
         const selected = template === value
+        const locked = !allowed.includes(template)
 
         return (
           <button
@@ -38,14 +41,22 @@ export function ShareStudioControls({ value, onChange }: TemplateControlsProps) 
             type="button"
             role="radio"
             aria-checked={selected}
-            onClick={() => onChange(template)}
+            aria-disabled={locked || undefined}
+            aria-label={locked ? `${spec.label} (só no PRO)` : undefined}
+            onClick={() => (locked ? undefined : onChange(template))}
             className={cn(
-              'flex flex-col gap-2 rounded-xl border p-2 text-left transition-all duration-150',
+              'relative flex flex-col gap-2 rounded-xl border p-2 text-left transition-all duration-150',
               selected
                 ? 'border-brand bg-brand-dim/40 shadow-[0_0_0_1px_var(--color-brand)]'
                 : 'border-line bg-surface-hi/50 hover:border-line-hi active:bg-surface-top',
+              locked && 'cursor-not-allowed opacity-60',
             )}
           >
+            {locked ? (
+              <span className="absolute top-1.5 right-1.5 rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white uppercase">
+                PRO
+              </span>
+            ) : null}
             <Swatch template={template} />
             <span className="min-w-0">
               <span
