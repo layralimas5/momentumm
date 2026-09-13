@@ -42,12 +42,12 @@ export function PlanLimitDialog({ notice, onClose }: PlanLimitDialogProps) {
       </ul>
 
       <Link
-        to="/#pro"
+        to="/app/assinatura"
         onClick={onClose}
         className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand text-sm font-medium text-white transition-colors hover:bg-brand-hi active:bg-brand-hi"
       >
         <Icon name="raio" className="size-4" />
-        Conhecer o PRO
+        Assinar o PRO
       </Link>
 
       <Button variant="ghost" size="lg" className="mt-2 h-11 w-full" onClick={onClose}>

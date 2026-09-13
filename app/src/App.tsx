@@ -44,6 +44,9 @@ const GoalsPage = lazy(() =>
 const ProfilePage = lazy(() =>
   import('@/presentation/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })),
 )
+const SubscriptionPage = lazy(() =>
+  import('@/presentation/pages/SubscriptionPage').then((m) => ({ default: m.SubscriptionPage })),
+)
 const CirclePage = lazy(() =>
   import('@/presentation/pages/CirclePage').then((m) => ({ default: m.CirclePage })),
 )
@@ -181,6 +184,7 @@ export function App() {
               <Route path="desafios/:id" element={<ChallengeDetailPage />} />
               <Route path="circulo/:id" element={<FriendProfilePage />} />
               <Route path="configuracoes" element={<ProfilePage />} />
+              <Route path="assinatura" element={<SubscriptionPage />} />
 
               {/* Rotas antigas continuam válidas: link salvo não pode virar 404. */}
               <Route path="atividades" element={<Navigate to="/app/jornada" replace />} />

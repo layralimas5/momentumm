@@ -25,7 +25,7 @@ export function UpgradeHint({
       <Icon name="raio" className="mt-px size-3.5 shrink-0 text-brand-hi" />
       <span>
         {message}{' '}
-        <Link to="/#pro" className="font-medium text-brand-hi underline-offset-2 hover:underline">
+        <Link to="/app/assinatura" className="font-medium text-brand-hi underline-offset-2 hover:underline">
           Ver o PRO
         </Link>
       </span>

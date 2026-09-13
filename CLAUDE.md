@@ -530,11 +530,33 @@ lê `ai.limits` antes de cada chamada e grava em `ai_calls` também as recusas
 (`status`, `error_code`, `duration_ms`).
 
 **Assinaturas** (`subscriptions`, `subscription_events`, 0026) são o contrato
-que o webhook do provedor vai preencher com service role; `profiles.plan`
-passa a seguir a assinatura por trigger (flag `momentumm.plan_sync`). Sem
-provedor, o painel mostra zero, não número inventado. **Cancelamento** é
-pedido pela pessoa em Configurações (motivo fechado + comentário opcional,
-lido só por owner/admin e apagado em 90 dias).
+que o webhook do provedor preenche com service role; `profiles.plan`
+passa a seguir a assinatura por trigger (flag `momentumm.plan_sync`).
+**Cancelamento** é pedido pela pessoa (motivo fechado + comentário opcional,
+lido só por owner/admin e apagado em 90 dias) e concluído no provedor pela
+função de cobrança no mesmo clique.
+
+### Cobrança pelo Asaas
+
+O provedor é o **Asaas**, pelo Checkout dele (cartão ou Pix; CPF e endereço
+coletados lá, nunca aqui). `domain/billing/` tem o preço (`PRO_PRICES`, em
+centavos, o mesmo número da landing e do checkout), a assinatura como a
+pessoa a vê e a decisão de cada evento do webhook (`decideBillingEvent` +
+`transitionFor`, puros, com teste). Migration 0030: `billing_customers`,
+`billing_checkouts`, `billing_webhook_events` — sem política nenhuma, só
+service role.
+
+Duas Edge Functions: `asaas-billing` (JWT da pessoa: abre o checkout,
+cancela) e `asaas-webhook` (sem JWT, token no header; a ÚNICA escrita em
+`subscriptions`). O app nunca declara PRO: a tela `/app/assinatura` volta
+do checkout com `?assinatura=sucesso` e fica relendo o perfil até o webhook
+gravar. Pagamento confirmado ativa, vencido vira `inadimplente` (plano cai
+no mesmo instante), reembolso e assinatura apagada cancelam; cancelada
+mantém o PRO até `current_period_end`. Deploy e cadastro do webhook em
+`supabase/functions/README.md`.
+
+Todo botão de PRO (ProGate, PlanLimitDialog, UpgradeHint, Configurações e
+o card da landing) leva pra `/app/assinatura`; `/#pro` fica como comparação.
 
 Migrations 0022 a 0028; suíte `supabase/tests/admin-authorization.sql` (109
 casos). Roda contra um Postgres embutido com stub do `auth`/`storage` quando o
@@ -1117,6 +1139,6 @@ Quando incomodar, trocar por import dinâmico dentro do `container`.
 cd app
 npm install
 npm run dev     # modo demo, sem configurar nada
-npm test        # 707 testes
+npm test        # 725 testes
 npm run build
 ```

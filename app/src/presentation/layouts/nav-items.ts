@@ -176,6 +176,14 @@ export const APP_NAV: readonly AppNavItem[] = [
     description: 'Perfil, visibilidade e plano',
     secondary: true,
   },
+  {
+    to: '/app/assinatura',
+    label: 'Assinatura',
+    end: false,
+    icon: 'raio',
+    description: 'O PRO: assinar, ver a renovação ou cancelar',
+    secondary: true,
+  },
 ]
 
 /** A navegação principal: só o ciclo do produto. */

@@ -42,13 +42,18 @@ export function ProGate({ title, description, className }: ProGateProps) {
         ))}
       </ul>
 
-      <Link
-        to="/#pro"
-        className="inline-flex h-11 w-fit items-center gap-2 rounded-xl bg-brand px-4 text-sm font-medium text-white transition-colors hover:bg-brand-hi"
-      >
-        <Icon name="raio" className="size-4" />
-        Conhecer o PRO
-      </Link>
+      <div className="flex flex-wrap items-center gap-3">
+        <Link
+          to="/app/assinatura"
+          className="inline-flex h-11 w-fit items-center gap-2 rounded-xl bg-brand px-4 text-sm font-medium text-white transition-colors hover:bg-brand-hi"
+        >
+          <Icon name="raio" className="size-4" />
+          Assinar o PRO
+        </Link>
+        <Link to="/#pro" className="text-sm font-medium text-brand-hi underline-offset-2 hover:underline">
+          Comparar os planos
+        </Link>
+      </div>
     </Panel>
   )
 }

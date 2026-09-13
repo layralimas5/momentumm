@@ -17,7 +17,6 @@ import { Field, Select, TextInput } from '@/presentation/components/ui/Field'
 import { ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 import { MobileShortcuts } from '@/presentation/components/mobile/MobileShortcuts'
-import { CancellationBlock } from '@/presentation/profile/CancellationBlock'
 import { SecurityPanel } from '@/presentation/profile/SecurityPanel'
 import { SupportPanel } from '@/presentation/profile/SupportPanel'
 import { usePlanner } from '@/presentation/planner/use-planner'
@@ -272,14 +271,12 @@ export function ProfilePage() {
               <li>Momentumm AI: {limits.ai ? 'franquia mensal' : 'não disponível'}</li>
             </ul>
 
-            {isPro(profile.plan) && !container.demo ? <CancellationBlock /> : null}
-
-            {isPro(profile.plan) ? null : (
+            {container.demo ? null : (
               <Link
-                to="/#pro"
+                to="/app/assinatura"
                 className="mt-3 inline-flex text-sm font-medium text-brand-hi underline-offset-2 hover:underline"
               >
-                Ver o que muda no PRO
+                {isPro(profile.plan) ? 'Gerenciar assinatura' : 'Assinar o PRO'}
               </Link>
             )}
 

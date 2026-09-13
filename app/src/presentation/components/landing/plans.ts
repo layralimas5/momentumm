@@ -1,3 +1,4 @@
+import { formatBRL, monthlyEquivalentCents, PRO_PRICES, type BillingCycle } from '@/domain/billing/billing-plans'
 import { PLAN_LIMITS } from '@/domain/entities/plan'
 
 /**
@@ -6,8 +7,9 @@ import { PLAN_LIMITS } from '@/domain/entities/plan'
  * Os LIMITES vêm do domínio (`PLAN_LIMITS`): quantos objetivos, hábitos,
  * planos, ações por dia e dias de histórico cada plano guarda. Copiar o número
  * aqui faria a landing prometer 5 hábitos no dia em que o app passasse a
- * guardar 3. O que mora neste arquivo é só o que o domínio não sabe: preço,
- * texto e a frase de cada plano.
+ * guardar 3. O PREÇO também vem do domínio (`PRO_PRICES`): é o mesmo número
+ * que a Edge Function manda pro checkout. O que mora neste arquivo é só o
+ * que o domínio não sabe: texto e a frase de cada plano.
  *
  * A separação é uma frase: o gratuito ORGANIZA E EXECUTA, o PRO REGISTRA,
  * ANALISA E EVOLUI. A tabela completa (`planMatrix`) fica logo abaixo dos
@@ -17,7 +19,7 @@ import { PLAN_LIMITS } from '@/domain/entities/plan'
  * produto dividiam a atenção e escondiam o desconto do anual.
  */
 
-export type BillingCycle = 'mensal' | 'anual'
+export type { BillingCycle }
 
 export interface Price {
   readonly amount: string
@@ -39,6 +41,7 @@ export interface PricingPlan {
 }
 
 const free = PLAN_LIMITS.free
+const pro = PRO_PRICES
 
 function plural(count: number, singular: string, pluralForm: string): string {
   return `${count} ${count === 1 ? singular : pluralForm}`
@@ -70,13 +73,17 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
     badge: 'PRO',
     headline: 'Registre, analise e evolua',
     prices: {
-      mensal: { amount: 'R$ 39,90', period: '/mês', strike: 'R$ 79,90' },
+      mensal: {
+        amount: formatBRL(pro.mensal.amountCents),
+        period: '/mês',
+        strike: formatBRL(pro.mensal.strikeCents),
+      },
       anual: {
-        amount: 'R$ 179,90',
+        amount: formatBRL(pro.anual.amountCents),
         period: '/ano',
-        strike: 'R$ 358,80',
-        note: 'equivale a R$ 14,99/mês',
-        savings: 'Economize R$ 178,90',
+        strike: formatBRL(pro.anual.strikeCents),
+        note: `equivale a ${formatBRL(monthlyEquivalentCents('anual'))}/mês`,
+        savings: `Economize ${formatBRL(pro.anual.strikeCents - pro.anual.amountCents)}`,
       },
     },
     description:

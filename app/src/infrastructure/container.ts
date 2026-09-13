@@ -25,6 +25,9 @@ import { DemoAdminGateway, DemoSupportRepository } from './demo/demo-support'
 import { SupabaseLegalAcceptanceRepository } from './supabase/supabase-legal'
 import { SupabaseMediaRepository } from './supabase/supabase-media'
 import { SupabaseAiService } from './ai/supabase-ai-service'
+import type { BillingService } from '@/domain/billing/billing-service'
+import { DemoBillingService } from './billing/demo-billing-service'
+import { SupabaseBillingService } from './billing/supabase-billing-service'
 import { isDemoMode } from './config/env'
 import {
   DemoActivityRepository,
@@ -108,6 +111,11 @@ export interface Container {
    * que painel nenhum.
    */
   readonly admin: AdminGateway
+  /**
+   * A assinatura do PRO, pelo Asaas. O app abre o checkout e lê a
+   * assinatura; quem escreve o plano é o webhook, no servidor.
+   */
+  readonly billing: BillingService
   readonly demo: boolean
 }
 
@@ -134,6 +142,7 @@ export const container: Container = isDemoMode
       media: new DemoMediaRepository(),
       support: new DemoSupportRepository(),
       admin: new DemoAdminGateway(),
+      billing: new DemoBillingService(),
       demo: true,
     }
   : {
@@ -157,5 +166,6 @@ export const container: Container = isDemoMode
       media: new SupabaseMediaRepository(),
       support: new SupabaseSupportRepository(),
       admin: new SupabaseAdminGateway(),
+      billing: new SupabaseBillingService(),
       demo: false,
     }

@@ -6,19 +6,22 @@ import {
   type CancelReason,
 } from '@/domain/support/support-request'
 import { container } from '@/infrastructure/container'
+import { reportError } from '@/infrastructure/errors/error-reporter'
 import { Button } from '@/presentation/components/ui/Button'
 import { Field, Select } from '@/presentation/components/ui/Field'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 
 /**
- * O pedido de cancelamento do PRO.
+ * O cancelamento do PRO, em dois passos que a pessoa vê como um.
  *
- * Um motivo obrigatório (lista fechada) e um comentário opcional. O
- * comentário é lido só por owner e admin e apagado depois de 90 dias. O
- * acesso PRO continua até o fim do período já pago — quem informa é o
- * servidor, com a data da assinatura.
+ * Primeiro o PEDIDO (motivo obrigatório de lista fechada, comentário
+ * opcional lido só por owner e admin e apagado em 90 dias) — é o que o
+ * painel usa pra entender por que as pessoas saem. Depois o cancelamento
+ * DE VERDADE, no Asaas, pela função de cobrança. Se o segundo passo falhar,
+ * o pedido fica registrado e a equipe conclui pelo painel; a tela diz isso.
+ * O acesso PRO continua até o fim do período já pago.
  */
-export function CancellationBlock() {
+export function CancellationBlock({ onCanceled }: { readonly onCanceled?: () => void } = {}) {
   const [open, setOpen] = useState(false)
   const [reason, setReason] = useState<CancelReason>('nao_uso')
   const [comment, setComment] = useState('')
@@ -26,8 +29,22 @@ export function CancellationBlock() {
 
   const submit = useAsyncAction(async () => {
     const result = await container.support.requestCancellation(reason, comment.trim() || null)
-    setAccessUntil(result.accessUntil ?? 'sent')
+    try {
+      await container.billing.cancelSubscription()
+      setAccessUntil(result.accessUntil ?? 'sent')
+    } catch (error) {
+      // O pedido já está gravado: a equipe conclui pelo provedor, e o erro
+      // vai pro painel pra ela saber que precisa.
+      reportError({
+        code: 'billing_cancel_failed',
+        module: 'edge_function',
+        message: error instanceof Error ? `${error.name}: ${error.message}` : String(error),
+        severity: 'alta',
+      })
+      setAccessUntil('sent')
+    }
     setOpen(false)
+    onCanceled?.()
   })
 
   if (accessUntil) {
