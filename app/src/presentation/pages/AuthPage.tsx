@@ -2,13 +2,13 @@ import { useState } from 'react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
+import { GoogleIcon } from '@/presentation/components/brand/GoogleIcon'
 import { Wordmark } from '@/presentation/components/brand/Logo'
 import { Button } from '@/presentation/components/ui/Button'
 import { Field, TextInput } from '@/presentation/components/ui/Field'
 import { ErrorNote } from '@/presentation/components/ui/States'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 import { MIN_PASSWORD_LENGTH } from '@/domain/auth/password'
-import { Icon } from '@/presentation/components/ui/Icon'
 
 type Mode = 'entrar' | 'criar' | 'recuperar'
 
@@ -59,9 +59,9 @@ export function AuthPage() {
   if (awaitingConfirmation) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-4 py-10">
-        <Wordmark className="mx-auto w-32 sm:w-36" />
+        <Wordmark className="mx-auto mb-4 w-32 sm:w-36" />
 
-        <h1 className="mt-8 text-2xl font-semibold tracking-tight text-ink">
+        <h1 className="mt-10 text-2xl font-semibold tracking-tight text-ink">
           Confirma teu e-mail
         </h1>
         <p className="mt-2 text-pretty text-sm text-ink-muted">
@@ -97,9 +97,9 @@ export function AuthPage() {
   if (resetSent) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-4 py-10">
-        <Wordmark className="mx-auto w-32 sm:w-36" />
+        <Wordmark className="mx-auto mb-4 w-32 sm:w-36" />
 
-        <h1 className="mt-8 text-2xl font-semibold tracking-tight text-ink">Confere teu e-mail</h1>
+        <h1 className="mt-10 text-2xl font-semibold tracking-tight text-ink">Confere teu e-mail</h1>
         <p className="mt-2 text-pretty text-sm text-ink-muted">
           Se <strong className="text-ink">{email}</strong> puder receber acesso, o link de nova
           senha chega em instantes. Olha também o spam.
@@ -121,9 +121,9 @@ export function AuthPage() {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-4 py-10">
-      <Wordmark className="mx-auto w-32 sm:w-36" />
+      <Wordmark className="mx-auto mb-4 w-32 sm:w-36" />
 
-      <h1 className="mt-8 text-2xl font-semibold tracking-tight text-ink">
+      <h1 className="mt-10 text-2xl font-semibold tracking-tight text-ink">
         {mode === 'criar' ? 'Criar conta' : mode === 'recuperar' ? 'Recuperar acesso' : 'Entrar'}
       </h1>
       <p className="mt-1 text-sm text-ink-muted">
@@ -158,7 +158,7 @@ export function AuthPage() {
               loading={google.running}
               onClick={() => void google.run()}
             >
-              <Icon name="raio" className="size-4" />
+              <GoogleIcon className="size-4" />
               Continuar com Google
             </Button>
 

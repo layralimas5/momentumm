@@ -38,8 +38,8 @@ export function NewPasswordPage() {
   if (!user) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-4 py-10">
-        <Wordmark className="mx-auto w-32 sm:w-36" />
-        <h1 className="mt-8 text-2xl font-semibold tracking-tight text-ink">
+        <Wordmark className="mx-auto mb-4 w-32 sm:w-36" />
+        <h1 className="mt-10 text-2xl font-semibold tracking-tight text-ink">
           Esse link não vale mais
         </h1>
         <p className="mt-2 text-pretty text-sm text-ink-muted">
@@ -57,9 +57,9 @@ export function NewPasswordPage() {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-4 py-10">
-      <Wordmark className="mx-auto w-32 sm:w-36" />
+      <Wordmark className="mx-auto mb-4 w-32 sm:w-36" />
 
-      <h1 className="mt-8 text-2xl font-semibold tracking-tight text-ink">Cria uma senha nova</h1>
+      <h1 className="mt-10 text-2xl font-semibold tracking-tight text-ink">Cria uma senha nova</h1>
       <p className="mt-1 text-sm text-ink-muted">
         Ao salvar, as sessões abertas nos outros dispositivos são encerradas.
       </p>
