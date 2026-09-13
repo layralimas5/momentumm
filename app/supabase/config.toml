@@ -10,6 +10,9 @@ project_id = "hsgjlxetdopomeibdbho"
 
 [auth]
 site_url = "https://momentumm.app"
+# Sem isso o link de recuperação/confirmação ignora o `redirectTo` do app e cai
+# no site_url, que em dev nem tem a rota /nova-senha.
+additional_redirect_urls = ["http://localhost:5176/**", "http://localhost:5173/**"]
 enable_signup = true
 enable_anonymous_sign_ins = false
 minimum_password_length = 12
