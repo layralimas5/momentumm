@@ -1,3 +1,5 @@
+import type { AdminRole } from '@/domain/admin/admin-role'
+
 export interface AuthUser {
   readonly id: string
   readonly email: string
@@ -34,6 +36,12 @@ export interface SessionInfo {
   readonly hasMfa: boolean
   /** Papel administrativo E sessão em aal2. As duas coisas, sempre juntas. */
   readonly isAdmin: boolean
+  /**
+   * O papel da conta, se houver, independente do nível da sessão. Serve só
+   * pra MOSTRAR a entrada do painel: quem tem papel vê o link e resolve o
+   * segundo fator na porta do `/admin`. Sem papel, o link não existe.
+   */
+  readonly adminRole: AdminRole | null
 }
 
 export interface MfaFactor {

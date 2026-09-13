@@ -7,6 +7,7 @@ import type {
   SessionInfo,
   SignUpResult,
 } from '@/domain/auth/auth-service'
+import { isAdminRole } from '@/domain/admin/admin-role'
 import { assertStrongPassword } from '@/domain/auth/password'
 import { assertValidName } from '@/domain/entities/profile'
 import { DomainError } from '@/shared/errors'
@@ -73,12 +74,12 @@ export class SupabaseAuthService implements AuthService {
       guardado ali seria auto-atribuível com uma linha de console.
       `user_roles` não tem política de escrita pra API pública.
     */
-    const { data: adminRow } = await supabase()
+    const { data: roleRow } = await supabase()
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
-      .eq('role', 'admin')
       .maybeSingle()
+    const adminRole = isAdminRole(roleRow?.role) ? roleRow.role : null
 
     return {
       user,
@@ -86,7 +87,8 @@ export class SupabaseAuthService implements AuthService {
       hasMfa: factors.some((factor) => factor.verified),
       // As duas condições juntas, igual ao `is_admin()` do banco. Papel sem
       // segundo fator não é sessão administrativa.
-      isAdmin: adminRow !== null && assurance === 'aal2',
+      isAdmin: (adminRole === 'owner' || adminRole === 'admin') && assurance === 'aal2',
+      adminRole,
     }
   }
 

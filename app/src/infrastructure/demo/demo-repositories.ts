@@ -128,7 +128,7 @@ export class DemoAuthService implements AuthService {
   async currentSession(): Promise<SessionInfo | null> {
     const user = await this.currentUser()
     if (!user) return null
-    return { user, assurance: 'aal1', hasMfa: false, isAdmin: false }
+    return { user, assurance: 'aal1', hasMfa: false, isAdmin: false, adminRole: null }
   }
 
   async signInWithGoogle(): Promise<void> {

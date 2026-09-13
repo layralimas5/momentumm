@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useAuth } from '@/presentation/auth/use-auth'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { APP_NAV } from '@/presentation/layouts/nav-items'
 import { TAB_ROUTES } from './MobileTabBar'
@@ -19,9 +20,34 @@ import { TAB_ROUTES } from './MobileTabBar'
 const SHORTCUTS = APP_NAV.filter((item) => !TAB_ROUTES.includes(item.to))
 
 export function MobileShortcuts() {
+  const { session } = useAuth()
+
   return (
     <nav aria-label="Outras telas" className="lg:hidden">
       <ul className="surface-card divide-y divide-line overflow-hidden">
+        {/* Painel admin: só pra quem tem papel. O /admin cobra o segundo fator. */}
+        {session?.adminRole ? (
+          <li>
+            <Link
+              to="/admin"
+              className="flex min-h-14 items-center gap-3.5 px-4 py-3 transition-colors active:bg-surface-hi"
+            >
+              <span
+                aria-hidden="true"
+                className="grid size-10 shrink-0 place-items-center rounded-xl border border-brand/40 bg-brand-dim/40 text-brand-ink"
+              >
+                <Icon name="cadeado" className="size-5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-medium text-ink">Painel admin</span>
+                <span className="mt-0.5 block truncate text-sm text-ink-faint">
+                  Operação, saúde e crescimento do produto
+                </span>
+              </span>
+              <Icon name="seta" className="size-4 shrink-0 text-ink-faint" />
+            </Link>
+          </li>
+        ) : null}
         {SHORTCUTS.map((item) => (
           <li key={item.to}>
             <Link

@@ -130,7 +130,7 @@ function SidebarContent({
   collapsed: boolean
   onToggle?: () => void
 }) {
-  const { profile, user, signOut } = useAuth()
+  const { profile, user, session, signOut } = useAuth()
 
   return (
     <div className="flex h-full flex-col px-3 py-5">
@@ -160,6 +160,24 @@ function SidebarContent({
           ))}
         </ul>
       </nav>
+
+      {/*
+        A entrada do painel só existe pra quem tem papel. O segundo fator não
+        é cobrado aqui: é a porta do /admin que verifica, e o banco atrás dela.
+      */}
+      {session?.adminRole ? (
+        <NavLink
+          to="/admin"
+          title={collapsed ? 'Painel admin' : undefined}
+          className={cn(
+            'mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-brand-ink transition-colors hover:bg-brand-dim/40',
+            collapsed && 'justify-center px-0',
+          )}
+        >
+          <Icon name="cadeado" />
+          {collapsed ? null : <span className="truncate">Painel admin</span>}
+        </NavLink>
+      ) : null}
 
       {profile ? (
         <div className={cn('mt-4 border-t border-line pt-4', collapsed && 'flex justify-center')}>

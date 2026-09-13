@@ -60,7 +60,12 @@ export function AdminLayout({ children }: { children: ReactNode }) {
               <LogoMark className="size-7" />
               <span className="text-sm font-semibold text-ink">{current?.label ?? 'Painel'}</span>
             </div>
-            <SessionBadge compact />
+            <div className="flex items-center gap-2">
+              <NavLink to="/app" className="rounded-full border border-line px-2.5 py-1 text-[11px] font-medium text-ink-muted hover:text-ink">
+                Ir pro app
+              </NavLink>
+              <SessionBadge compact />
+            </div>
           </div>
           <nav aria-label="Navegação do painel" className="overflow-x-auto px-2 pb-2">
             <ul className="flex gap-1">
