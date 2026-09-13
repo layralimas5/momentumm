@@ -134,27 +134,30 @@ export function renderShareCard(
   }
 
   const headerBottom = drawHeader(ctx, data, theme, composition, m)
-  const footerTop = drawFooter(ctx, data, theme, composition, m, height)
+  const footerHeight = drawFooter(ctx, data, theme, composition, m, height - m.pad, { dry: true })
 
-  const available0 = footerTop - headerBottom
-  const blocks = fitBlocks(buildBody(ctx, data, theme, composition, m, accent), available0)
+  const available = height - m.pad - footerHeight - headerBottom
+  const blocks = fitBlocks(buildBody(ctx, data, theme, composition, m, accent), available)
   const total = blocks.reduce(
     (sum, block, index) => sum + block.height + (index === 0 ? 0 : block.gap),
     0,
   )
 
   /*
-    Sem foto, a pilha fica centrada no espaço livre.
+    Sem foto, a pilha fica centrada no espaço livre, e a assinatura vem COLADA
+    embaixo dela: o card é o conteúdo mais a marca, um bloco só. Assinatura
+    presa no rodapé, a um palmo do último número, lia como marca d'água de
+    app — e o que a pessoa posta precisa parecer uma peça, não um print.
 
-    Com foto, ela desce e encosta no rodapé. É a diferença entre um card do app
-    e um card da pessoa: ancorando embaixo, os dois terços de cima da foto
-    ficam limpos — o rosto, o lugar, o treino — e o texto cai justamente sobre a
-    faixa que o véu mais escurece. Centralizado, o número aterrissaria no meio
-    da foto e cobriria o que ela tem de melhor.
+    Com foto, a pilha desce e encosta no rodapé. É a diferença entre um card
+    do app e um card da pessoa: ancorando embaixo, os dois terços de cima da
+    foto ficam limpos — o rosto, o lugar, o treino — e o texto cai justamente
+    sobre a faixa que o véu mais escurece. Centralizado, o número aterrissaria
+    no meio da foto e cobriria o que ela tem de melhor.
   */
-  const available = available0
   const anchorBottom = photo !== null || composition.anchor === 'bottom'
-  const offset = anchorBottom ? Math.max(0, available - total) : Math.max(0, (available - total) / 2)
+  const stack = total + footerHeight
+  const offset = anchorBottom ? Math.max(0, available - total) : Math.max(0, (available + footerHeight - stack) / 2)
   let cursor = headerBottom + offset
 
   blocks.forEach((block, index) => {
@@ -162,6 +165,9 @@ export function renderShareCard(
     block.draw(cursor)
     cursor += block.height
   })
+
+  const footerBottom = anchorBottom ? height - m.pad : Math.min(height - m.pad, cursor + footerHeight)
+  drawFooter(ctx, data, theme, composition, m, footerBottom)
 
   ctx.shadowColor = 'transparent'
   ctx.shadowBlur = 0
@@ -284,17 +290,24 @@ function drawHeader(
   return m.pad + style.size + 28
 }
 
-/** Devolve o topo do rodapé: é onde o corpo do card precisa parar. */
+/**
+ * A assinatura, o nome e a frase, com a borda de baixo em `bottom`. Devolve
+ * a ALTURA que ocupa (respiro acima incluído). Com `dry`, só mede: o
+ * renderizador precisa da altura antes de decidir onde o corpo termina.
+ */
 function drawFooter(
   ctx: CanvasRenderingContext2D,
   data: ShareCardData,
   theme: ShareTheme,
   composition: ShareComposition,
   m: Metrics,
-  height: number,
+  bottom: number,
+  options: { readonly dry?: boolean } = {},
 ): number {
-  let baseline = height - m.pad
-  let top = height - m.pad
+  const dry = options.dry === true
+  const write: typeof drawLine = (...args) => (dry ? 0 : drawLine(...args))
+  let baseline = bottom
+  let top = bottom
 
   if (data.branding || data.username) {
     const brandStyle: TextStyle = {
@@ -307,18 +320,18 @@ function drawFooter(
     const nameStyle: TextStyle = { size: 28, weight: 500, color: theme.inkFaint }
 
     if (composition.align === 'center') {
-      if (data.branding) drawBrandMark(ctx, m.x, baseline, theme, brandStyle, 'center')
+      if (data.branding && !dry) drawBrandMark(ctx, m.x, baseline, theme, brandStyle, 'center')
       if (data.username) {
-        drawLine(ctx, data.username, m.x, baseline - (data.branding ? 46 : 0), nameStyle, 'center')
+        write(ctx, data.username, m.x, baseline - (data.branding ? 46 : 0), nameStyle, 'center')
       }
       top = baseline - (data.branding && data.username ? 78 : 40)
     } else {
-      if (data.branding) drawBrandMark(ctx, m.x, baseline, theme, brandStyle, 'left')
+      if (data.branding && !dry) drawBrandMark(ctx, m.x, baseline, theme, brandStyle, 'left')
       if (data.username) {
         // À direita, na mesma linha da assinatura: duas linhas de rodapé
         // roubariam altura do número por uma informação de apoio.
         const width = measureText(ctx, data.username, nameStyle)
-        drawLine(ctx, data.username, m.x + m.contentWidth - width, baseline, nameStyle, 'left')
+        write(ctx, data.username, m.x + m.contentWidth - width, baseline, nameStyle, 'left')
       }
       top = baseline - 40
     }
@@ -327,11 +340,12 @@ function drawFooter(
   if (data.note) {
     const noteStyle: TextStyle = { size: 34, weight: 500, color: theme.inkMuted }
     baseline = top - 22
-    drawLine(ctx, data.note, m.x, baseline, noteStyle, composition.align)
+    write(ctx, data.note, m.x, baseline, noteStyle, composition.align)
     top = baseline - noteStyle.size
   }
 
-  return top - 36
+  // O respiro entre o conteúdo e a assinatura é curto de propósito.
+  return bottom - top + 44
 }
 
 /**
