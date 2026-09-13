@@ -135,7 +135,7 @@ function SidebarContent({
   return (
     <div className="flex h-full flex-col px-3 py-5">
       <div className={cn('flex items-center px-1', collapsed ? 'justify-center' : 'justify-between')}>
-        {collapsed ? <LogoMark className="size-7" /> : <Wordmark className="w-28" />}
+        {collapsed ? <LogoMark className="size-7" /> : <Wordmark className="w-24" />}
         {onToggle ? (
           <button
             type="button"
