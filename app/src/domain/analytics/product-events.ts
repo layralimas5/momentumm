@@ -23,6 +23,8 @@ export const PRODUCT_EVENTS = [
   'cancellation_requested',
   'support_opened',
   'plan_limit_hit',
+  'checkout_started',
+  'subscription_canceled',
 ] as const
 export type ProductEventName = (typeof PRODUCT_EVENTS)[number]
 
@@ -46,6 +48,7 @@ export const PRODUCT_FEATURES = [
   'insights',
   'perfil',
   'configuracoes',
+  'assinatura',
 ] as const
 export type ProductFeature = (typeof PRODUCT_FEATURES)[number]
 
@@ -69,6 +72,7 @@ export const FEATURE_LABELS: Readonly<Record<ProductFeature, string>> = {
   insights: 'Leituras do ritmo',
   perfil: 'Perfil',
   configuracoes: 'Configurações',
+  assinatura: 'Assinatura',
 }
 
 /** Só estas chaves entram. O banco descarta o resto. */
@@ -104,6 +108,7 @@ export function featureForRoute(pathname: string): ProductFeature | null {
     ['/app/insights', 'insights'],
     ['/app/perfil', 'perfil'],
     ['/app/configuracoes', 'configuracoes'],
+    ['/app/assinatura', 'assinatura'],
   ]
   for (const [prefix, feature] of table) {
     if (path === prefix || path.startsWith(`${prefix}/`)) return feature

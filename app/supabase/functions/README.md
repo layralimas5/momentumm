@@ -74,3 +74,56 @@ Depois disso todo papel é concedido pelo painel (Configurações), com auditori
 
 Suíte de autorização do painel: `supabase/tests/admin-authorization.sql`
 (109 casos, em transação com rollback).
+
+## asaas-billing e asaas-webhook
+
+A cobrança do PRO, pelo Asaas. Duas funções e um domínio compartilhado:
+
+- `asaas-billing` — com o JWT da pessoa. `checkout` abre uma sessão de
+  Checkout do Asaas (cartão ou Pix, CPF e endereço coletados lá) e devolve
+  o link; `cancel` cancela a assinatura no Asaas e marca aqui. Nunca grava
+  `subscriptions`.
+- `asaas-webhook` — sem JWT (`verify_jwt = false` em `config.toml`);
+  autenticada pelo header `asaas-access-token`. É a ÚNICA escrita em
+  `subscriptions`: pagamento confirmado ativa, vencido derruba pra
+  inadimplente, reembolso e assinatura apagada cancelam. `profiles.plan`
+  segue por trigger (0026). Cada evento fica em `billing_webhook_events`
+  pela chave do Asaas, o que resolve a entrega "pelo menos uma vez".
+- `_shared/billing.ts` — o domínio empacotado (`npm run billing:bundle`,
+  a partir de `src/domain/billing/edge-shared.ts`): preço, ciclo, a decisão
+  de cada evento (`decideBillingEvent`, `transitionFor`) com teste em
+  `asaas-events.test.ts`. `_shared/asaas.ts` é o cliente HTTP;
+  `_shared/product-image.ts` é o ícone em base64 que o checkout exige
+  (`npm run billing:image`).
+
+```bash
+# migration 0030 (supabase db push)
+
+# segredos
+supabase secrets set ASAAS_API_KEY=...            # a chave decide sandbox ou produção
+supabase secrets set ASAAS_ENV=sandbox            # ou production
+supabase secrets set ASAAS_WEBHOOK_TOKEN=...      # 32+ caracteres, o mesmo do painel do Asaas
+supabase secrets set MOMENTUMM_APP_URL=https://momentumm.app   # pra onde o checkout devolve
+
+# deploy (empacota o domínio e sobe as duas; o webhook sem verificação de JWT)
+npm run billing:deploy
+```
+
+No painel do Asaas (Integrações > Webhooks), cadastrar:
+
+- URL: `https://<project-ref>.supabase.co/functions/v1/asaas-webhook`
+- Token de autenticação: o mesmo `ASAAS_WEBHOOK_TOKEN`
+- Eventos: os de **cobrança** (`PAYMENT_CONFIRMED`, `PAYMENT_RECEIVED`,
+  `PAYMENT_OVERDUE`, `PAYMENT_REFUNDED`, `PAYMENT_CHARGEBACK_REQUESTED`,
+  `PAYMENT_CREDIT_CARD_CAPTURE_REFUSED`, `PAYMENT_REPROVED_BY_RISK_ANALYSIS`),
+  os de **assinatura** (`SUBSCRIPTION_DELETED`, `SUBSCRIPTION_INACTIVATED`)
+  e os de **checkout** (`CHECKOUT_PAID`). Marcar mais não quebra: o resto é
+  registrado como ignorado.
+- Fila: sequencial, e com a opção de pausar em falha DESLIGADA se possível
+  (a função sempre responde 200 depois de registrar).
+
+Testar no sandbox: `ASAAS_ENV=sandbox` com a chave do
+`sandbox.asaas.com`, assinar pela tela `/app/assinatura`, pagar com o
+cartão de teste do Asaas e conferir `billing_webhook_events.outcome` e
+`subscriptions`. Sem `ASAAS_API_KEY` a função responde `not_configured`
+e a tela diz que a assinatura não está disponível nesse ambiente.

@@ -48,3 +48,8 @@ token_verifications = 30
 token_refresh = 150
 anonymous_users = 1
 sms_sent = 1
+
+# O webhook é chamado pelo Asaas, não por uma pessoa: sem JWT. A autenticação
+# é o header `asaas-access-token`, conferido dentro da função.
+[functions.asaas-webhook]
+verify_jwt = false
