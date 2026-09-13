@@ -102,12 +102,14 @@ export function AdminOverviewPage() {
                 Erros críticos 24h: {data.health.critical_errors_24h}
               </StatusTag>
             </div>
+            <div className="mt-4">
             <MetricGrid cols={4}>
               <Metric label="Disponibilidade 7d" value={data.health.availability_7d} format="percent" hint="Horas sem erro crítico" />
               <Metric label="Erro da IA 24h" value={data.health.ai_error_rate_24h} format="percent" />
               <Metric label="Resposta média da IA" value={data.health.ai_avg_ms_24h} format="ms" />
               <Metric label="Erros 24h" value={data.totals.errors_24h} />
             </MetricGrid>
+            </div>
           </Section>
         </>
       ) : null}
