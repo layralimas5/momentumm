@@ -55,6 +55,7 @@ import type { HabitUpdate } from '@/domain/repositories/habit-repository'
 import type { ObjectiveUpdate } from '@/domain/repositories/objective-repository'
 import type { PlanStageUpdate } from '@/domain/repositories/plan-stage-repository'
 import type { TaskReorder, TaskUpdate } from '@/domain/repositories/task-repository'
+import { track } from '@/infrastructure/analytics/track'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { DomainError, toUserMessage } from '@/shared/errors'
@@ -282,6 +283,11 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         activities: sortByRecent([created, ...current.activities]),
       }))
       setError(null)
+      // Só o TIPO do registro sai: nunca a nota, o valor ou o eixo.
+      track('record_created', input.note ? 'registro_texto' : null, {
+        kind: input.note ? 'texto' : 'simples',
+        source: input.source ?? 'manual',
+      })
     },
     [user, profile],
   )
@@ -326,6 +332,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       const objective = await container.objectives.create({ userId: user.id, ...input })
       setData((current) => ({ ...current, objectives: [...current.objectives, objective] }))
       setError(null)
+      track('objective_created', 'objetivos')
       return objective
     },
     [user, limits],
@@ -783,6 +790,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   const setHabitStatus = useCallback(
     async (habitId: string, status: HabitStatus, day: DayKey = today) => {
       if (!user) return
+      if (status === 'feito' || status === 'minimo') track('habit_logged', 'habitos', { kind: status })
 
       const optimisticLog: HabitLog = {
         id: `optimistic-${habitId}-${day}`,
@@ -823,6 +831,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       assertWithinLimit('Ações no dia', actionsLimit(limits, snapshot.current.tasks, input.day))
       const link = resolveStage(input.objectiveId, input.stageId)
       const task = await container.tasks.create({ userId: user.id, ...input, ...link })
+      track('task_created', 'hoje', { kind: task.isMainPriority ? 'prioridade' : 'acao' })
       setData((current) => ({
         ...current,
         tasks: [
@@ -897,6 +906,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
 
       const next = done ? completeTask(target) : reopenTask(target)
       await updateTask(id, { status: next.status, completedAt: next.completedAt })
+      if (done) track('task_completed', 'hoje')
 
       if (!done || !target.stageId) return
 
@@ -987,6 +997,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         ],
       }))
       setError(null)
+      if (draft.completedAt) track('review_completed', 'review')
 
       // Só a CONCLUSÃO vira momento. O review salva a cada passo, e gravar em
       // cada um deles encheria o histórico de nove versões da mesma semana.

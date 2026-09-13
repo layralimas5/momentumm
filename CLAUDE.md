@@ -483,6 +483,64 @@ SQL não é porta, e a limpeza da pasta fica com o cliente (`purgeOwnMedia`).
 IA e JWT embutido. A suíte de autorização (`supabase/tests/authorization.sql`)
 roda contra o banco de verdade, dentro de uma transação com rollback.
 
+### Painel administrativo (`/admin`)
+
+Área separada do app, com layout próprio (`presentation/admin/`), bundle
+próprio (lazy) e QUATRO papéis em `user_roles` (0022): `owner` (configurações
+e administradores), `admin` (operação), `support` (solicitações e dados
+básicos) e `analyst` (só agregados). Um papel por conta.
+
+**A sessão administrativa é do servidor, não da tela.** `admin_me()` lê do
+JWT o `aal` e o carimbo `amr` do TOTP: painel exige aal2 E verificação nos
+últimos 60 minutos (`admin_session_valid`); ação crítica exige verificação
+nos últimos 5 minutos (`assert_admin_step_up`), e o `ActionDialog` pede o
+código de novo antes de chamar. `is_admin()` passou a significar owner/admin
+com sessão válida. A suíte SQL simula o `amr` em `entrar_como(quem, nivel,
+minutos_desde_mfa)`.
+
+**Nenhum papel lê conteúdo pessoal.** Não há política de RLS pra admin em
+nenhuma tabela do domínio; o painel lê por funções `security definer` que
+devolvem contagem, estado, plano e e-mail mascarado (`mask_email`). Toda
+função checa o papel na primeira linha (`assert_admin_role`) e tem revoke ao
+`anon`. O front não faz `.from('tabela')` nenhum: só `rpc` (`AdminGateway`).
+
+**Acesso excepcional** (`support_access_grants`, 0025): exige solicitação
+aberta pela própria pessoa, pedido da equipe com motivo e escopo, consentimento
+dela em Configurações, prazo de até 72h, leitura só por quem pediu com
+step-up, uma linha de auditoria por leitura, revogação pela pessoa. Ninguém
+pede acesso ao próprio conteúdo (constraint). Recusa é exceção e desfaz a
+transação: tentativa negada NÃO fica na auditoria (só na Edge Function, que
+grava antes de responder).
+
+**Ações sobre conta** passam pela Edge Function `admin-actions` (contexto de
+IP/agente na auditoria; GoTrue e Storage por service role). Suspender = ban +
+derrubar sessões; exclusão só a partir de solicitação `exclusao` da pessoa,
+agendada pra 7 dias, concluída manualmente pela função depois do prazo.
+
+**Eventos de uso** (`product_events`, `track_event`): lista fechada de nomes
+e recursos em `domain/analytics/product-events` E em SQL, com teste que
+compara as duas. Metadados só por chave conhecida e valor curto; sem política
+de leitura pro dono. **Erros** (`app_errors`, `report_error`): mensagem
+sanitizada nos dois lados (`domain/admin/privacy`), pessoa vira hash.
+**Configurações** (`product_settings`): só owner grava, com validação de
+forma no banco (`validate_setting`) e no cliente (`settings-schema`), antes e
+depois na auditoria; `public_settings()` expõe só as chaves públicas
+(manutenção, mensagem do sistema, recursos, versões legais). A `momentumm-ai`
+lê `ai.limits` antes de cada chamada e grava em `ai_calls` também as recusas
+(`status`, `error_code`, `duration_ms`).
+
+**Assinaturas** (`subscriptions`, `subscription_events`, 0026) são o contrato
+que o webhook do provedor vai preencher com service role; `profiles.plan`
+passa a seguir a assinatura por trigger (flag `momentumm.plan_sync`). Sem
+provedor, o painel mostra zero, não número inventado. **Cancelamento** é
+pedido pela pessoa em Configurações (motivo fechado + comentário opcional,
+lido só por owner/admin e apagado em 90 dias).
+
+Migrations 0022 a 0028; suíte `supabase/tests/admin-authorization.sql` (109
+casos). Roda contra um Postgres embutido com stub do `auth`/`storage` quando o
+CLI não está logado — a única diferença conhecida é o trigger
+`storage.protect_delete`, que o stub não tem.
+
 ### Share Studio e a camada de momentos
 
 O produto ganhou a ponte entre progresso e conteúdo: transformar o que a pessoa
@@ -1059,7 +1117,6 @@ Quando incomodar, trocar por import dinâmico dentro do `container`.
 cd app
 npm install
 npm run dev     # modo demo, sem configurar nada
-npm test        # 675 testes
-npm test        # 643 testes
+npm test        # 707 testes
 npm run build
 ```

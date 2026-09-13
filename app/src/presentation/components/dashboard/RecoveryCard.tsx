@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { track } from '@/infrastructure/analytics/track'
 import { motion } from 'framer-motion'
 import type { RecoveryState, RecoveryStep } from '@/domain/entities/recovery'
 import { Button } from '@/presentation/components/ui/Button'
@@ -98,7 +99,10 @@ export function RecoveryCard({ state, budgetFor, onChoose, onDismiss, aiEntry }:
                       size="sm"
                       variant="secondary"
                       className="shrink-0"
-                      onClick={() => onChoose(step)}
+                      onClick={() => {
+                        track('recovery_started', 'retomada')
+                        onChoose(step)
+                      }}
                     >
                       Começar por essa
                       <span className="sr-only">

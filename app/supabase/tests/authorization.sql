@@ -25,13 +25,25 @@ set local client_min_messages to warning;
 -- utilidades
 -- ---------------------------------------------------------------------------
 
-create or replace function pg_temp.entrar_como(quem uuid, nivel text default 'aal1')
+/*
+  Em aal2 o JWT real traz `amr` com o carimbo da verificação do TOTP, e é
+  esse carimbo que a sessão administrativa lê (migration 0023): sem ele,
+  aal2 sozinho não abre o painel. `minutos_desde_mfa` simula a idade da
+  verificação — zero é "acabou de verificar".
+*/
+create or replace function pg_temp.entrar_como(quem uuid, nivel text default 'aal1', minutos_desde_mfa integer default 0)
 returns void language plpgsql as $$
 begin
   perform set_config('role', 'authenticated', true);
   perform set_config(
     'request.jwt.claims',
-    json_build_object('sub', quem::text, 'role', 'authenticated', 'aal', nivel)::text,
+    json_build_object(
+      'sub', quem::text, 'role', 'authenticated', 'aal', nivel,
+      'amr', case when nivel = 'aal2'
+        then json_build_array(json_build_object('method', 'totp', 'timestamp', extract(epoch from now())::bigint - minutos_desde_mfa * 60))
+        else json_build_array(json_build_object('method', 'password', 'timestamp', extract(epoch from now())::bigint))
+      end
+    )::text,
     true
   );
 end;

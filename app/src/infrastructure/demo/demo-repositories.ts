@@ -78,7 +78,7 @@ import type {
   PlanStageReweight,
   PlanStageUpdate,
 } from '@/domain/repositories/plan-stage-repository'
-import { LEGAL_VERSIONS, type LegalAcceptance, type LegalDocument } from '@/domain/legal/legal-documents'
+import { LEGAL_VERSIONS, type LegalAcceptance, type LegalDocument, type LegalVersions } from '@/domain/legal/legal-documents'
 import { assertMediaAllowed, assertOwnsMediaPath, mediaPath, type MediaKind } from '@/domain/media/media-policy'
 import type { LegalAcceptanceRepository } from '@/domain/repositories/legal-acceptance-repository'
 import type { MediaRepository, StoredMedia } from '@/domain/repositories/media-repository'
@@ -600,13 +600,13 @@ export class DemoLegalAcceptanceRepository implements LegalAcceptanceRepository 
     }
   }
 
-  async accept(_userId: string, documents: readonly LegalDocument[]): Promise<void> {
+  async accept(_userId: string, documents: readonly LegalDocument[], versions: LegalVersions = LEGAL_VERSIONS): Promise<void> {
     const current = await this.listMine()
     const next = [
       ...current,
       ...documents
-        .filter((document) => !current.some((item) => item.document === document && item.version === LEGAL_VERSIONS[document]))
-        .map((document) => ({ document, version: LEGAL_VERSIONS[document], acceptedAt: new Date() })),
+        .filter((document) => !current.some((item) => item.document === document && item.version === versions[document]))
+        .map((document) => ({ document, version: versions[document], acceptedAt: new Date() })),
     ]
     localStorage.setItem(DemoLegalAcceptanceRepository.KEY, JSON.stringify(next))
   }

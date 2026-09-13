@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { track } from '@/infrastructure/analytics/track'
 import type { ActivityTypeSlug } from '@/domain/entities/activity-type'
 import {
   buildActivation,
@@ -193,6 +194,7 @@ export function useActivation(): ActivationController {
         created && created.slug !== plan.axis ? withAxis(plan.plan, created.slug) : plan.plan
 
       await planner.applyPlan([draftToSave])
+      track('onboarding_completed')
 
       clearDraft()
       persistSkipped(false)

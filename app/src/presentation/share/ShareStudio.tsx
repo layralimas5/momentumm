@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { track } from '@/infrastructure/analytics/track'
 import type { DayKey } from '@/domain/entities/day'
 import type { JourneyEvent } from '@/domain/entities/journey-event'
 import { toShareCardData } from '@/domain/share/share-card-adapter'
@@ -146,6 +147,7 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
       if (!supportsFileShare()) {
         downloadImage(blob, name)
         trackShare('share_saved', analytics)
+        track('share_exported', 'compartilhamento', { template, mode: 'download' })
         setStatus('saved')
         return
       }
@@ -153,6 +155,7 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
       const outcome = await shareImage(blob, name, data.title)
       if (outcome === 'shared') {
         trackShare('share_shared', analytics)
+        track('share_exported', 'compartilhamento', { template, mode: 'share' })
         setStatus('shared')
         return
       }

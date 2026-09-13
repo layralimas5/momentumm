@@ -1,4 +1,4 @@
-import type { LegalAcceptance, LegalDocument } from '@/domain/legal/legal-documents'
+import type { LegalAcceptance, LegalDocument, LegalVersions } from '@/domain/legal/legal-documents'
 import { LEGAL_VERSIONS } from '@/domain/legal/legal-documents'
 import type { LegalAcceptanceRepository } from '@/domain/repositories/legal-acceptance-repository'
 import { InfrastructureError } from '@/shared/errors'
@@ -19,7 +19,7 @@ export class SupabaseLegalAcceptanceRepository implements LegalAcceptanceReposit
     }))
   }
 
-  async accept(userId: string, documents: readonly LegalDocument[]): Promise<void> {
+  async accept(userId: string, documents: readonly LegalDocument[], versions: LegalVersions = LEGAL_VERSIONS): Promise<void> {
     if (documents.length === 0) return
     const { error } = await supabase()
       .from('legal_acceptances')
@@ -27,7 +27,7 @@ export class SupabaseLegalAcceptanceRepository implements LegalAcceptanceReposit
         documents.map((document) => ({
           user_id: userId,
           document,
-          version: LEGAL_VERSIONS[document],
+          version: versions[document],
         })),
         { onConflict: 'user_id,document,version', ignoreDuplicates: true },
       )

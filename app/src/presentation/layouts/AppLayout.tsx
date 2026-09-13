@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { featureForRoute } from '@/domain/analytics/product-events'
+import { track, trackFeatureView } from '@/infrastructure/analytics/track'
 import { Avatar } from '@/presentation/components/ui/Avatar'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
@@ -18,6 +20,7 @@ import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 import { AppHeader } from './AppHeader'
 import { PRIMARY_NAV, type AppNavItem } from './nav-items'
+import { SystemNotice } from './SystemNotice'
 
 const COLLAPSED_KEY = 'momentumm.sidebar.collapsed'
 
@@ -53,6 +56,7 @@ export function AppLayout() {
 function LayoutShell() {
   const [collapsed, setCollapsed] = useState(readCollapsed)
   const isDesktop = useIsDesktop()
+  useUsageEvents()
 
   useEffect(() => {
     try {
@@ -75,6 +79,7 @@ function LayoutShell() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {isDesktop ? <AppHeader /> : <MobileTopBar />}
+        <SystemNotice />
         <OfflineBanner />
 
         {/*
@@ -239,6 +244,25 @@ function SidebarLink({ item, collapsed }: { item: AppNavItem; collapsed: boolean
  * dos dados atuais; a linha fina no topo é o único sinal disso, porque trocar
  * a tela por um esqueleto a cada retorno de aba seria pior que não avisar.
  */
+/**
+ * Os eventos de uso que a casca registra: a sessão começou, e qual recurso
+ * a pessoa abriu. Só o nome do recurso sai — a rota com id de objetivo vira
+ * "objetivos", nunca o id. É a matéria-prima de "usuários ativos" e de
+ * "recursos mais usados" no painel.
+ */
+function useUsageEvents() {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    track('session_start')
+  }, [])
+
+  useEffect(() => {
+    const feature = featureForRoute(pathname)
+    if (feature) trackFeatureView(feature)
+  }, [pathname])
+}
+
 function OfflineBanner() {
   const { online, syncing } = usePlanner()
 

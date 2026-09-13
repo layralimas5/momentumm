@@ -17,6 +17,11 @@ import type { WinRepository } from '@/domain/repositories/win-repository'
 import { SimulatedAiService } from './ai/simulated-ai-service'
 import type { LegalAcceptanceRepository } from '@/domain/repositories/legal-acceptance-repository'
 import type { MediaRepository } from '@/domain/repositories/media-repository'
+import type { SupportRepository } from '@/domain/repositories/support-repository'
+import type { AdminGateway } from '@/domain/admin/admin-gateway'
+import { SupabaseAdminGateway } from './supabase/supabase-admin'
+import { SupabaseSupportRepository } from './supabase/supabase-support'
+import { DemoAdminGateway, DemoSupportRepository } from './demo/demo-support'
 import { SupabaseLegalAcceptanceRepository } from './supabase/supabase-legal'
 import { SupabaseMediaRepository } from './supabase/supabase-media'
 import { SupabaseAiService } from './ai/supabase-ai-service'
@@ -95,6 +100,14 @@ export interface Container {
   readonly legal: LegalAcceptanceRepository
   /** Fotos, áudios e anexos, em bucket privado com link assinado. */
   readonly media: MediaRepository
+  /** Solicitações, acesso excepcional e cancelamento, pelo lado da pessoa. */
+  readonly support: SupportRepository
+  /**
+   * O painel administrativo. Só existe de verdade com Supabase: no modo demo
+   * a implementação recusa tudo, porque painel com número inventado é pior
+   * que painel nenhum.
+   */
+  readonly admin: AdminGateway
   readonly demo: boolean
 }
 
@@ -119,6 +132,8 @@ export const container: Container = isDemoMode
       ai: new SimulatedAiService(),
       legal: new DemoLegalAcceptanceRepository(),
       media: new DemoMediaRepository(),
+      support: new DemoSupportRepository(),
+      admin: new DemoAdminGateway(),
       demo: true,
     }
   : {
@@ -140,5 +155,7 @@ export const container: Container = isDemoMode
       ai: new SupabaseAiService(),
       legal: new SupabaseLegalAcceptanceRepository(),
       media: new SupabaseMediaRepository(),
+      support: new SupabaseSupportRepository(),
+      admin: new SupabaseAdminGateway(),
       demo: false,
     }

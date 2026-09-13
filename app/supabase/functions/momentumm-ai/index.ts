@@ -9,7 +9,15 @@
 //   3. monta o prompt com as MESMAS regras que o app conhece
 //      (`src/domain/ai/ai-prompts.ts`, compartilhado via import map)
 //   4. chama o modelo com saída estruturada e valida a resposta com o zod
-//   5. registra a chamada em `ai_calls` (tokens, tipo, modelo; nunca conteúdo)
+//   5. registra a chamada em `ai_calls` (tokens, tipo, modelo, duração e
+//      resultado; nunca conteúdo) — inclusive as recusadas por limite,
+//      bloqueio ou erro, com zero tokens, pra central de IA do painel
+//
+// Os tetos vêm de `product_settings` (`ai.limits`, editado pelo owner no
+// painel): desligamento geral, função por função, franquia mensal por
+// plano, teto diário de segurança, ritmo por minuto e bloqueio por conta
+// (`ai_blocks`). `PLAN_LIMITS` do domínio é o padrão quando a chave não
+// existe.
 //
 // Nada do pedido ou da resposta vai pra log: nem prompt, nem contexto, nem
 // JWT. O que a função escreve em `ai_calls` é o suficiente pra teto e custo.
@@ -41,7 +49,36 @@ import {
 
 const DEFAULT_MODEL = 'claude-opus-5'
 /** Por pessoa. Cinco leituras num minuto já é mais do que qualquer tela pede. */
-const MAX_CALLS_PER_MINUTE = 5
+const DEFAULT_CALLS_PER_MINUTE = 5
+/** Teto diário de segurança: acima disso é script, não uso. */
+const DEFAULT_DAILY_SAFETY_LIMIT = 25
+
+interface AiLimits {
+  readonly enabled: boolean
+  readonly monthlyPerPlan: Readonly<Record<PlanTier, number>>
+  readonly dailySafetyLimit: number
+  readonly perMinute: number
+  readonly kinds: Readonly<Record<string, boolean>>
+}
+
+function readLimits(raw: unknown): AiLimits {
+  const value = (typeof raw === 'object' && raw !== null ? raw : {}) as Record<string, unknown>
+  const monthly = (typeof value['monthlyPerPlan'] === 'object' && value['monthlyPerPlan'] !== null
+    ? value['monthlyPerPlan']
+    : {}) as Record<string, unknown>
+  const number = (candidate: unknown, fallback: number) =>
+    typeof candidate === 'number' && Number.isFinite(candidate) ? candidate : fallback
+  return {
+    enabled: value['enabled'] !== false,
+    monthlyPerPlan: {
+      free: number(monthly['free'], PLAN_LIMITS.free.aiCallsPerMonth),
+      pro: number(monthly['pro'], PLAN_LIMITS.pro.aiCallsPerMonth),
+    },
+    dailySafetyLimit: number(value['dailySafetyLimit'], DEFAULT_DAILY_SAFETY_LIMIT),
+    perMinute: number(value['perMinute'], DEFAULT_CALLS_PER_MINUTE),
+    kinds: (typeof value['kinds'] === 'object' && value['kinds'] !== null ? value['kinds'] : {}) as Record<string, boolean>,
+  }
+}
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -95,37 +132,65 @@ Deno.serve(async (request) => {
     return fail(400, 'invalid_request', 'Pedido malformado.')
   }
 
-  // 3. Teto diário pelo plano. Lido com service role: `profiles.plan` é
-  //    protegido por trigger contra escrita do dono, e a leitura aqui é a
-  //    fonte de verdade que o cliente não consegue forjar.
+  // 3. Tetos. `profiles.plan` e `ai.limits` lidos com service role: são as
+  //    fontes de verdade que o cliente não consegue forjar.
   const admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } })
+  const startedAt = Date.now()
 
-  const { data: profile } = await admin
-    .from('profiles')
-    .select('plan')
-    .eq('id', user.id)
-    .maybeSingle()
+  const record = async (
+    status: 'ok' | 'erro' | 'limite' | 'bloqueado',
+    errorCode: string | null,
+    usage = { input_tokens: 0, output_tokens: 0 },
+    model = DEFAULT_MODEL,
+  ) => {
+    await admin.from('ai_calls').insert({
+      user_id: user.id,
+      kind: endpointRequest.kind,
+      model,
+      input_tokens: usage.input_tokens,
+      output_tokens: usage.output_tokens,
+      status,
+      error_code: errorCode,
+      duration_ms: Date.now() - startedAt,
+    })
+  }
+
+  const [{ data: profile }, { data: rawLimits }] = await Promise.all([
+    admin.from('profiles').select('plan').eq('id', user.id).maybeSingle(),
+    admin.rpc('setting_value', { p_key: 'ai.limits' }),
+  ])
   const tier: PlanTier = profile?.plan === 'pro' ? 'pro' : 'free'
-  const limit = PLAN_LIMITS[tier].aiCallsPerMonth
+  const limits = readLimits(rawLimits)
+  const limit = limits.monthlyPerPlan[tier]
+
+  if (!limits.enabled) {
+    await record('bloqueado', 'disabled')
+    return fail(503, 'not_configured', 'A Momentumm AI está temporariamente desligada.')
+  }
+  if (limits.kinds[endpointRequest.kind] === false) {
+    await record('bloqueado', 'kind_disabled')
+    return fail(503, 'not_configured', 'Essa função da IA está temporariamente indisponível.')
+  }
 
   // A IA é do PRO. Sem franquia o pedido nem chega no modelo: o app já
   // esconde os botões, e esta é a porta que o cliente não consegue contornar.
   if (limit <= 0) {
+    await record('limite', 'plan_required')
     return fail(403, 'plan_required', 'A Momentumm AI faz parte do PRO.')
   }
 
-  // Franquia MENSAL, contada no mês corrente (UTC). Reinicia no dia 1.
-  const startOfMonth = new Date()
-  startOfMonth.setUTCDate(1)
-  startOfMonth.setUTCHours(0, 0, 0, 0)
-  const { count } = await admin
-    .from('ai_calls')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', user.id)
-    .gte('created_at', startOfMonth.toISOString())
-  const used = count ?? 0
+  const { data: blocked } = await admin.rpc('ai_block_active', { p_user: user.id })
+  if (blocked === true) {
+    await record('bloqueado', 'account_blocked')
+    return fail(403, 'unauthorized', 'A Momentumm AI está temporariamente bloqueada nesta conta.')
+  }
+
+  // Franquia MENSAL, contada no mês corrente (UTC). Só chamada concluída gasta.
+  const { data: usedRaw } = await admin.rpc('ai_calls_this_month', { p_user: user.id })
+  const used = typeof usedRaw === 'number' ? usedRaw : 0
 
   if (used >= limit) {
+    await record('limite', 'quota_exceeded')
     return fail(
       429,
       'quota_exceeded',
@@ -133,9 +198,17 @@ Deno.serve(async (request) => {
     )
   }
 
+  // Teto diário de segurança: segura custo de conta comprometida ou script.
+  const { data: todayRaw } = await admin.rpc('ai_calls_today_for', { p_user: user.id })
+  if ((typeof todayRaw === 'number' ? todayRaw : 0) >= limits.dailySafetyLimit) {
+    await record('limite', 'daily_limit')
+    return fail(429, 'rate_limited', 'Limite diário de leituras atingido. Volta amanhã.')
+  }
+
   // Ritmo: a franquia segura o custo do mês; isto segura script e duplo toque.
   const { data: lastMinute } = await admin.rpc('ai_calls_last_minute', { p_user: user.id })
-  if ((lastMinute ?? 0) >= MAX_CALLS_PER_MINUTE) {
+  if ((lastMinute ?? 0) >= limits.perMinute) {
+    await record('limite', 'rate_limited')
     return fail(429, 'rate_limited', 'Muitas leituras seguidas. Espera um minuto e tenta de novo.')
   }
 
@@ -158,10 +231,26 @@ Deno.serve(async (request) => {
     usage = { input_tokens: response.usage.input_tokens, output_tokens: response.usage.output_tokens }
 
     if (response.stop_reason === 'refusal' || response.parsed_output === null) {
+      await record('erro', 'invalid_output', usage, model)
       return fail(502, 'invalid_output', 'A IA não devolveu uma resposta no formato esperado.')
     }
     parsed = response.parsed_output
   } catch (cause) {
+    const code =
+      cause instanceof Anthropic.RateLimitError ? 'model_rate_limited'
+      : cause instanceof Anthropic.AuthenticationError ? 'model_auth'
+      : cause instanceof Anthropic.APIError ? `model_${cause.status}`
+      : 'model_unreachable'
+    await record('erro', code, usage, model)
+    // A central de erros recebe só código e classe: nem prompt, nem contexto.
+    await admin.rpc('report_error', {
+      p_code: `momentumm_ai.${code}`,
+      p_module: 'ai',
+      p_message: cause instanceof Error ? `${cause.name}: ${cause.message}` : 'erro desconhecido',
+      p_environment: 'producao',
+      p_app_version: 'momentumm-ai@2',
+      p_severity: cause instanceof Anthropic.AuthenticationError ? 'critica' : 'alta',
+    })
     if (cause instanceof Anthropic.RateLimitError) {
       return fail(503, 'model_unavailable', 'A IA está no limite agora. Tenta de novo em um minuto.')
     }
@@ -175,13 +264,7 @@ Deno.serve(async (request) => {
   }
 
   // 5. Registro. Nunca o conteúdo: só o suficiente pra teto, custo e auditoria.
-  await admin.from('ai_calls').insert({
-    user_id: user.id,
-    kind: endpointRequest.kind,
-    model,
-    input_tokens: usage.input_tokens,
-    output_tokens: usage.output_tokens,
-  })
+  await record('ok', null, usage, model)
 
   return reply(200, { result: parsed, usage: { used: used + 1, limit } })
 })

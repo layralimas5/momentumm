@@ -1,4 +1,4 @@
-import type { LegalAcceptance, LegalDocument } from '@/domain/legal/legal-documents'
+import type { LegalAcceptance, LegalDocument, LegalVersions } from '@/domain/legal/legal-documents'
 
 /**
  * O registro de aceite. Só lê os próprios e grava os próprios; não existe
@@ -6,5 +6,6 @@ import type { LegalAcceptance, LegalDocument } from '@/domain/legal/legal-docume
  */
 export interface LegalAcceptanceRepository {
   listMine(userId: string): Promise<LegalAcceptance[]>
-  accept(userId: string, documents: readonly LegalDocument[]): Promise<void>
+  /** Grava o aceite com a versão vigente de cada documento. */
+  accept(userId: string, documents: readonly LegalDocument[], versions?: LegalVersions): Promise<void>
 }

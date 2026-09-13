@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { PlanLimitError } from '@/domain/entities/plan-usage'
+import { track } from '@/infrastructure/analytics/track'
 import type { PlanLimitNotice } from './PlanLimitDialog'
 
 /**
@@ -18,6 +19,7 @@ export function usePlanLimitNotice() {
       return await action()
     } catch (cause) {
       if (cause instanceof PlanLimitError) {
+        track('plan_limit_hit', null, { limit: cause.feature })
         setNotice({ feature: cause.feature, message: cause.message })
         return null
       }

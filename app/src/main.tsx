@@ -1,7 +1,10 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App'
+import { installGlobalErrorReporter } from './infrastructure/errors/error-reporter'
 import './index.css'
+
+installGlobalErrorReporter()
 
 const root = document.getElementById('root')
 if (!root) {

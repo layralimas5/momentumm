@@ -42,3 +42,35 @@ minuto por pessoa (`rate_limited`), por cima da franquia mensal.
 
 Kinds aceitos: `plan`, `day`, `progress`, `review`, `review_draft`,
 `recovery` (a 0019 abre a constraint de `ai_calls.kind` pra eles).
+
+## admin-actions
+
+A porta das ações administrativas sobre contas (painel `/admin`): suspender,
+reativar, revogar sessões, reenviar confirmação de e-mail, iniciar e concluir
+exclusão. Só owner e admin, com `aal2`, sessão administrativa dentro da hora
+e verificação do TOTP nos últimos 5 minutos (o carimbo `amr` do JWT).
+
+Suspender, reativar, revogar sessões e iniciar exclusão são delegados às
+funções do banco com o JWT da pessoa (`assert_admin_step_up` roda de novo lá
+dentro); a função só acrescenta IP e agente ao contexto da auditoria. Reenviar
+confirmação e concluir exclusão falam com o GoTrue e o Storage com service
+role, porque o SQL não alcança.
+
+```bash
+# migrations 0022 a 0028 (supabase db push)
+supabase functions deploy admin-actions
+# a momentumm-ai também mudou (tetos vindos de product_settings): redeploy
+npm run ai:deploy
+```
+
+Primeiro owner: conceder direto no banco, uma vez, com a conta já com MFA:
+
+```sql
+insert into public.user_roles (user_id, role, reason)
+values ('<uuid da conta>', 'owner', 'fundadora');
+```
+
+Depois disso todo papel é concedido pelo painel (Configurações), com auditoria.
+
+Suíte de autorização do painel: `supabase/tests/admin-authorization.sql`
+(109 casos, em transação com rollback).

@@ -83,6 +83,54 @@ const AiPage = lazy(() =>
   import('@/presentation/pages/AiPage').then((m) => ({ default: m.AiPage })),
 )
 
+/*
+  O painel administrativo é um bundle à parte: quem não tem papel nunca baixa
+  uma linha dele. A porta (`AdminRoute`) lê o papel no servidor antes de
+  montar qualquer tela, e cada tela só existe atrás dela.
+*/
+const AdminRoute = lazy(() =>
+  import('@/presentation/admin/AdminRoute').then((m) => ({ default: m.AdminRoute })),
+)
+const AdminOverviewPage = lazy(() =>
+  import('@/presentation/admin/pages/AdminOverviewPage').then((m) => ({ default: m.AdminOverviewPage })),
+)
+const AdminUsersPage = lazy(() =>
+  import('@/presentation/admin/pages/AdminUsersPage').then((m) => ({ default: m.AdminUsersPage })),
+)
+const AdminUserDetailPage = lazy(() =>
+  import('@/presentation/admin/pages/AdminUserDetailPage').then((m) => ({ default: m.AdminUserDetailPage })),
+)
+const AdminSubscriptionsPage = lazy(() =>
+  import('@/presentation/admin/pages/AdminSubscriptionsPage').then((m) => ({ default: m.AdminSubscriptionsPage })),
+)
+const AdminCancellationsPage = lazy(() =>
+  import('@/presentation/admin/pages/AdminCancellationsPage').then((m) => ({ default: m.AdminCancellationsPage })),
+)
+const AdminAiPage = lazy(() =>
+  import('@/presentation/admin/pages/AdminAiPage').then((m) => ({ default: m.AdminAiPage })),
+)
+const AdminRetentionPage = lazy(() =>
+  import('@/presentation/admin/pages/AdminRetentionPage').then((m) => ({ default: m.AdminRetentionPage })),
+)
+const AdminFeaturesPage = lazy(() =>
+  import('@/presentation/admin/pages/AdminFeaturesPage').then((m) => ({ default: m.AdminFeaturesPage })),
+)
+const AdminErrorsPage = lazy(() =>
+  import('@/presentation/admin/pages/AdminErrorsPage').then((m) => ({ default: m.AdminErrorsPage })),
+)
+const AdminRequestsPage = lazy(() =>
+  import('@/presentation/admin/pages/AdminRequestsPage').then((m) => ({ default: m.AdminRequestsPage })),
+)
+const AdminRequestDetailPage = lazy(() =>
+  import('@/presentation/admin/pages/AdminRequestDetailPage').then((m) => ({ default: m.AdminRequestDetailPage })),
+)
+const AdminAuditPage = lazy(() =>
+  import('@/presentation/admin/pages/AdminAuditPage').then((m) => ({ default: m.AdminAuditPage })),
+)
+const AdminSettingsPage = lazy(() =>
+  import('@/presentation/admin/pages/AdminSettingsPage').then((m) => ({ default: m.AdminSettingsPage })),
+)
+
 export function App() {
   return (
     <BrowserRouter>
@@ -136,6 +184,23 @@ export function App() {
 
               {/* Rotas antigas continuam válidas: link salvo não pode virar 404. */}
               <Route path="atividades" element={<Navigate to="/app/jornada" replace />} />
+            </Route>
+
+            <Route path="/admin" element={<AdminRoute />}>
+              <Route index element={<AdminOverviewPage />} />
+              <Route path="usuarios" element={<AdminUsersPage />} />
+              <Route path="usuarios/:id" element={<AdminUserDetailPage />} />
+              <Route path="assinaturas" element={<AdminSubscriptionsPage />} />
+              <Route path="cancelamentos" element={<AdminCancellationsPage />} />
+              <Route path="ia" element={<AdminAiPage />} />
+              <Route path="retencao" element={<AdminRetentionPage />} />
+              <Route path="recursos" element={<AdminFeaturesPage />} />
+              <Route path="erros" element={<AdminErrorsPage />} />
+              <Route path="solicitacoes" element={<AdminRequestsPage />} />
+              <Route path="solicitacoes/:id" element={<AdminRequestDetailPage />} />
+              <Route path="auditoria" element={<AdminAuditPage />} />
+              <Route path="configuracoes" element={<AdminSettingsPage />} />
+              <Route path="*" element={<Navigate to="/admin" replace />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

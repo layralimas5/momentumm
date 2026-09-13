@@ -31,15 +31,34 @@ export interface LegalAcceptance {
   readonly acceptedAt: Date
 }
 
+export type LegalVersions = Readonly<Record<LegalDocument, string>>
+
+/**
+ * As versões que valem AGORA: a do código, ou a que o owner publicou no
+ * painel (`legal.versions`) quando for mais nova. A mais nova ganha porque
+ * a data só anda pra frente — um painel apontando pra uma versão anterior
+ * ao texto publicado seria um erro de digitação, não uma decisão.
+ */
+export function effectiveLegalVersions(published: Partial<LegalVersions> | null | undefined): LegalVersions {
+  return {
+    termos: newest(LEGAL_VERSIONS.termos, published?.termos),
+    privacidade: newest(LEGAL_VERSIONS.privacidade, published?.privacidade),
+  }
+}
+
+function newest(base: string, candidate: string | undefined): string {
+  if (!candidate || !/^\d{4}-\d{2}-\d{2}$/.test(candidate)) return base
+  return candidate > base ? candidate : base
+}
+
 /** O que ainda falta aceitar, comparando o registro com as versões vigentes. */
 export function pendingLegalDocuments(
   accepted: readonly LegalAcceptance[],
+  versions: LegalVersions = LEGAL_VERSIONS,
 ): readonly LegalDocument[] {
   return LEGAL_DOCUMENTS.filter(
     (document) =>
-      !accepted.some(
-        (item) => item.document === document && item.version === LEGAL_VERSIONS[document],
-      ),
+      !accepted.some((item) => item.document === document && item.version === versions[document]),
   )
 }
 

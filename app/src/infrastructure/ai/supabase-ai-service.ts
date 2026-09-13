@@ -22,6 +22,7 @@ import type {
   AiReviewRequest,
   AiService,
 } from '@/domain/ai/ai-service'
+import { track } from '@/infrastructure/analytics/track'
 import { supabase } from '@/infrastructure/supabase/client'
 import { InfrastructureError } from '@/shared/errors'
 
@@ -79,11 +80,21 @@ export class SupabaseAiService implements AiService {
   private async call<K extends AiKind>(
     endpointRequest: Extract<AiEndpointRequest, { kind: K }>,
   ): Promise<z.infer<(typeof AI_OUTPUT_SCHEMAS)[K]>> {
+    const startedAt = Date.now()
     const { data, error } = await supabase().functions.invoke<EndpointSuccess>(AI_FUNCTION_NAME, {
       body: endpointRequest,
     })
 
-    if (error) throw await translate(error)
+    if (error) {
+      const translated = await translate(error)
+      track('ai_call', 'ai', {
+        kind: endpointRequest.kind,
+        result: translated instanceof AiError ? translated.code : 'erro',
+        duration_ms: Date.now() - startedAt,
+      })
+      throw translated
+    }
+    track('ai_call', 'ai', { kind: endpointRequest.kind, result: 'ok', duration_ms: Date.now() - startedAt })
     if (!data) throw new AiError('invalid_output', 'A IA respondeu vazio.')
     if (data.usage) this.quota = { used: data.usage.used, limit: data.usage.limit }
 

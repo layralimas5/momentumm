@@ -24,3 +24,13 @@ describe('pendingLegalDocuments', () => {
     expect(formatLegalVersion('2026-09-11')).toContain('2026')
   })
 })
+
+describe('versão publicada pelo painel', () => {
+  it('a mais nova entre código e painel vence, e formato inválido é ignorado', async () => {
+    const { effectiveLegalVersions, LEGAL_VERSIONS } = await import('./legal-documents')
+    expect(effectiveLegalVersions(null)).toEqual(LEGAL_VERSIONS)
+    expect(effectiveLegalVersions({ termos: '2030-01-01' }).termos).toBe('2030-01-01')
+    expect(effectiveLegalVersions({ termos: '2000-01-01' }).termos).toBe(LEGAL_VERSIONS.termos)
+    expect(effectiveLegalVersions({ termos: 'ontem' }).termos).toBe(LEGAL_VERSIONS.termos)
+  })
+})
