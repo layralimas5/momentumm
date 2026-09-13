@@ -8,6 +8,7 @@ import {
   type ThrottledAction,
 } from '@/domain/auth/auth-throttle'
 import type { Profile } from '@/domain/entities/profile'
+import { devAutoLogin } from '@/infrastructure/config/env'
 import { container } from '@/infrastructure/container'
 import { AuthContext, type AuthState } from './auth-context'
 
@@ -57,7 +58,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mounted.current = true
 
     void (async () => {
-      const current = await container.auth.currentUser()
+      let current = await container.auth.currentUser()
+      // Só em `vite dev`, com as credenciais no .env.local: entra sozinho.
+      if (!current && devAutoLogin && !container.demo) {
+        try {
+          current = await container.auth.signIn(devAutoLogin.email, devAutoLogin.password)
+        } catch {
+          // Senha errada no .env.local cai na tela de login normal.
+        }
+      }
       if (!mounted.current) return
       setUser(current)
       await Promise.all([loadProfile(current), current ? loadSession() : Promise.resolve()])

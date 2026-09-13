@@ -8,6 +8,23 @@ export const isAuthBypass =
   import.meta.env.DEV && import.meta.env['VITE_AUTH_BYPASS']?.trim() === 'true'
 
 /**
+ * Login automático de desenvolvimento, com a conta REAL do Supabase.
+ *
+ * Diferente do bypass (que é demo, sem servidor), aqui o app entra sozinho
+ * com e-mail e senha do `.env.local` na primeira carga. Só vale em
+ * `vite dev`: em build de produção as variáveis são ignoradas, então não
+ * existe caminho pra isso vazar. A senha fica no `.env.local`, que nunca é
+ * commitado.
+ */
+const devEmail = import.meta.env['VITE_DEV_LOGIN_EMAIL']?.trim()
+const devPassword = import.meta.env['VITE_DEV_LOGIN_PASSWORD']?.trim()
+
+export const devAutoLogin =
+  import.meta.env.DEV && devEmail && devPassword
+    ? ({ email: devEmail, password: devPassword } as const)
+    : null
+
+/**
  * Sem Supabase configurado o app roda em MODO DEMO, com dados em memória.
  * Isso mantém o produto abrível por qualquer pessoa (e por mim, offline) sem
  * expor chave nenhuma no bundle.
