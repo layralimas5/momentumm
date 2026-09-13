@@ -40,7 +40,10 @@ const legalVersions = z
   .object({ termos: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), privacidade: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) })
   .strict()
 
+const adminSecurity = z.object({ requireMfa: z.boolean() }).strict()
+
 export const SETTING_SCHEMAS: Readonly<Record<string, z.ZodTypeAny>> = {
+  'admin.security': adminSecurity,
   'plans.free': planLimits,
   'plans.pro': planLimits,
   'ai.limits': aiLimits,
@@ -52,6 +55,7 @@ export const SETTING_SCHEMAS: Readonly<Record<string, z.ZodTypeAny>> = {
 }
 
 export const SETTING_LABELS: Readonly<Record<string, string>> = {
+  'admin.security': 'Segurança do painel (MFA obrigatório)',
   'plans.free': 'Limites do plano Gratuito',
   'plans.pro': 'Limites do plano PRO',
   'ai.limits': 'Limites da Momentumm AI',
@@ -64,6 +68,7 @@ export const SETTING_LABELS: Readonly<Record<string, string>> = {
 
 /** Chaves cuja mudança muda o que TODO mundo vê ou pode fazer. */
 export const SENSITIVE_SETTINGS: ReadonlySet<string> = new Set([
+  'admin.security',
   'plans.free',
   'plans.pro',
   'ai.limits',

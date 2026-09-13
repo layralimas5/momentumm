@@ -4,6 +4,7 @@ import { adminGateFor, minutesLeft, type AdminSession } from './admin-session'
 const base: AdminSession = {
   role: 'admin',
   aal: 'aal2',
+  mfaRequired: true,
   mfaVerifiedAt: new Date(),
   sessionValid: true,
   sessionExpiresAt: new Date(Date.now() + 30 * 60_000),
@@ -31,6 +32,12 @@ describe('porta do painel', () => {
 
   it('só abre com papel, fator e sessão válida', () => {
     expect(adminGateFor(base, true)).toBe('open')
+  })
+
+  it('com a exigência de MFA desligada, papel basta (e sem papel continua proibido)', () => {
+    const relaxed = { ...base, mfaRequired: false, aal: 'aal1' as const, sessionValid: true }
+    expect(adminGateFor(relaxed, false)).toBe('open')
+    expect(adminGateFor({ ...relaxed, role: null }, false)).toBe('forbidden')
   })
 
   it('conta os minutos que faltam sem ir abaixo de zero', () => {

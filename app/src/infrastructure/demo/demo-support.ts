@@ -72,6 +72,7 @@ export class DemoAdminGateway implements AdminGateway {
     return {
       role: null,
       aal: 'aal1' as const,
+      mfaRequired: true,
       mfaVerifiedAt: null,
       sessionValid: false,
       sessionExpiresAt: null,

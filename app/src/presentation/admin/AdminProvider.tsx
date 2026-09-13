@@ -52,7 +52,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   }, [refresh])
 
   const requireStepUp = useCallback(async () => {
-    if (session?.stepUpValid) return true
+    if (session?.stepUpValid || session?.mfaRequired === false) return true
     return new Promise<boolean>((resolve) => {
       pendingStepUp.current = resolve
       setStepUpOpen(true)

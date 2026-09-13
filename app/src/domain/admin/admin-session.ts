@@ -10,6 +10,11 @@ import type { AdminRole } from './admin-role'
 export interface AdminSession {
   readonly role: AdminRole | null
   readonly aal: 'aal1' | 'aal2'
+  /**
+   * Se o painel está exigindo o segundo fator (`admin.security.requireMfa`).
+   * Desligado, a porta não pede fator e o painel avisa em vermelho.
+   */
+  readonly mfaRequired: boolean
   readonly mfaVerifiedAt: Date | null
   readonly sessionValid: boolean
   readonly sessionExpiresAt: Date | null
@@ -28,6 +33,7 @@ export type AdminGate =
 
 export function adminGateFor(session: AdminSession | null, hasMfaFactor: boolean): AdminGate {
   if (!session || !session.role) return 'forbidden'
+  if (!session.mfaRequired) return 'open'
   if (!hasMfaFactor) return 'enroll_mfa'
   if (!session.sessionValid) return 'verify_mfa'
   return 'open'

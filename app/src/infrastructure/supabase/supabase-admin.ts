@@ -59,6 +59,7 @@ export class SupabaseAdminGateway implements AdminGateway {
     return {
       role: raw.role,
       aal: raw.aal,
+      mfaRequired: raw.mfa_required,
       mfaVerifiedAt: raw.mfa_verified_at,
       sessionValid: raw.session_valid,
       sessionExpiresAt: raw.session_expires_at,

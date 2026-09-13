@@ -28,6 +28,7 @@ const planTier = z.enum(['free', 'pro'])
 export const adminSessionSchema = z.object({
   role: role.nullable(),
   aal: z.enum(['aal1', 'aal2']),
+  mfa_required: z.boolean().default(true),
   mfa_verified_at: nullableDate,
   session_valid: z.boolean(),
   session_expires_at: nullableDate,

@@ -134,14 +134,18 @@ Deno.serve(async (request) => {
   }
 
   // 3. MFA: aal2, sessão administrativa dentro da hora, verificação recente.
+  //    A exigência é um interruptor do owner (`admin.security.requireMfa`);
+  //    desligado, papel basta — e o painel avisa em vermelho.
+  const { data: security } = await admin.rpc('setting_value', { p_key: 'admin.security' })
+  const mfaRequired = (security as { requireMfa?: unknown } | null)?.requireMfa !== false
   const verifiedAt = totpVerifiedAt(claims)
-  if (claims['aal'] !== 'aal2') {
+  if (mfaRequired && claims['aal'] !== 'aal2') {
     return fail(403, 'mfa_required', 'Esta operação exige verificação em duas etapas.')
   }
-  if (minutesSince(verifiedAt) > SESSION_MAX_MINUTES) {
+  if (mfaRequired && minutesSince(verifiedAt) > SESSION_MAX_MINUTES) {
     return fail(403, 'session_expired', 'Sessão administrativa expirada: confirme o segundo fator de novo.')
   }
-  if (minutesSince(verifiedAt) > STEP_UP_MAX_MINUTES) {
+  if (mfaRequired && minutesSince(verifiedAt) > STEP_UP_MAX_MINUTES) {
     return fail(403, 'step_up_required', 'Ação crítica: confirme o segundo fator novamente.')
   }
 
