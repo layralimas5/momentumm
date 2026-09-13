@@ -34,10 +34,10 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
       <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-line bg-surface/40 lg:flex">
         <div className="flex h-full flex-col px-3 py-5">
-          <div className="flex min-w-0 items-center gap-2 px-1">
-            <Wordmark className="w-24 shrink-0" />
-            <span className="shrink-0 rounded-full border border-brand/40 bg-brand-dim/40 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-brand-ink uppercase">
-              admin
+          <div className="flex flex-col items-start gap-1.5 px-1">
+            <Wordmark className="w-24" />
+            <span className="rounded-full border border-brand/40 bg-brand-dim/40 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-brand-ink uppercase">
+              painel admin
             </span>
           </div>
           <nav aria-label="Navegação do painel" className="mt-8 flex-1">
