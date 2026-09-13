@@ -59,7 +59,7 @@ export function AuthPage() {
   if (awaitingConfirmation) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-4 py-10">
-        <Wordmark className="h-6 sm:h-7" />
+        <Wordmark className="mx-auto w-32 sm:w-36" />
 
         <h1 className="mt-8 text-2xl font-semibold tracking-tight text-ink">
           Confirma teu e-mail
@@ -97,7 +97,7 @@ export function AuthPage() {
   if (resetSent) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-4 py-10">
-        <Wordmark className="h-6 sm:h-7" />
+        <Wordmark className="mx-auto w-32 sm:w-36" />
 
         <h1 className="mt-8 text-2xl font-semibold tracking-tight text-ink">Confere teu e-mail</h1>
         <p className="mt-2 text-pretty text-sm text-ink-muted">
@@ -121,7 +121,7 @@ export function AuthPage() {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-4 py-10">
-      <Wordmark className="h-6 sm:h-7" />
+      <Wordmark className="mx-auto w-32 sm:w-36" />
 
       <h1 className="mt-8 text-2xl font-semibold tracking-tight text-ink">
         {mode === 'criar' ? 'Criar conta' : mode === 'recuperar' ? 'Recuperar acesso' : 'Entrar'}
