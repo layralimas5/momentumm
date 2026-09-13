@@ -94,7 +94,10 @@ export function AdminAiPage() {
               </p>
             </Section>
             <Section title="Por funcionalidade">
-              <Table head={['Função', 'Concluídas', 'Erros', 'Limite', 'Média']}>
+              {Object.keys(data.by_kind).length === 0 ? (
+                <p className="text-sm text-ink-faint">Nenhuma chamada no período.</p>
+              ) : (
+              <Table head={['Função', 'Concluídas', 'Erros', 'Limite', 'Média']} minWidth="0">
                 {Object.entries(data.by_kind)
                   .sort((a, b) => b[1].ok - a[1].ok)
                   .map(([kind, stats]) => (
@@ -107,6 +110,7 @@ export function AdminAiPage() {
                     </tr>
                   ))}
               </Table>
+              )}
             </Section>
             <Section title="Erros por código">
               <BarList items={data.by_error} />

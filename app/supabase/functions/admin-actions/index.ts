@@ -30,6 +30,7 @@ const SESSION_MAX_MINUTES = 60
 const STEP_UP_MAX_MINUTES = 5
 
 type Action =
+  | 'invite_user'
   | 'suspend'
   | 'reactivate'
   | 'revoke_sessions'
@@ -38,6 +39,7 @@ type Action =
   | 'complete_deletion'
 
 const ACTIONS: ReadonlySet<Action> = new Set([
+  'invite_user',
   'suspend',
   'reactivate',
   'revoke_sessions',
@@ -51,7 +53,12 @@ interface ActionRequest {
   readonly userId: string
   readonly reason: string
   readonly requestId?: string | null
+  /** Só em `invite_user`. */
+  readonly email?: string | null
+  readonly name?: string | null
 }
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
 function reply(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -154,16 +161,22 @@ Deno.serve(async (request) => {
   try {
     const raw = (await request.json()) as Partial<ActionRequest>
     if (!raw.action || !ACTIONS.has(raw.action)) throw new Error('action')
-    if (typeof raw.userId !== 'string' || !UUID.test(raw.userId)) throw new Error('userId')
+    const isInvite = raw.action === 'invite_user'
+    if (isInvite) {
+      if (typeof raw.email !== 'string' || !EMAIL.test(raw.email.trim())) throw new Error('email')
+      if (typeof raw.name !== 'string' || raw.name.trim().length < 2) throw new Error('name')
+    } else if (typeof raw.userId !== 'string' || !UUID.test(raw.userId)) throw new Error('userId')
     if (typeof raw.reason !== 'string' || raw.reason.trim().length < 5) throw new Error('reason')
     if (raw.requestId != null && (typeof raw.requestId !== 'string' || !UUID.test(raw.requestId))) {
       throw new Error('requestId')
     }
     body = {
       action: raw.action,
-      userId: raw.userId,
+      userId: isInvite ? '' : (raw.userId as string),
       reason: raw.reason.trim().slice(0, 280),
       requestId: raw.requestId ?? null,
+      email: isInvite ? (raw.email as string).trim().toLowerCase() : null,
+      name: isInvite ? (raw.name as string).trim().slice(0, 60) : null,
     }
   } catch {
     return fail(400, 'invalid_request', 'Pedido malformado: ação, conta e motivo (mínimo 5 caracteres) são obrigatórios.')
@@ -194,6 +207,26 @@ Deno.serve(async (request) => {
   //    `assert_admin_step_up` confere papel e carimbo de novo lá dentro.
   try {
     switch (body.action) {
+      case 'invite_user': {
+        // O GoTrue manda o link de convite; a pessoa escolhe a senha lá. O
+        // e-mail não volta pro painel nem pra auditoria: só o id criado.
+        const { data, error } = await admin.auth.admin.inviteUserByEmail(body.email as string, {
+          data: { name: body.name },
+          redirectTo: `${Deno.env.get('MOMENTUMM_SITE_URL') ?? 'https://momentumm.app'}/nova-senha`,
+        })
+        if (error || !data.user) {
+          await admin.rpc('record_admin_audit', {
+            p_action: 'user.invite', p_resource_type: 'user', p_resource_id: null, p_target_user: null,
+            p_result: 'erro', p_reason: body.reason, p_before: null, p_after: null, p_context: context,
+          })
+          return fail(409, 'invite_failed', 'Não consegui convidar: e-mail já cadastrado ou limite de envio.')
+        }
+        await admin.rpc('record_admin_audit', {
+          p_action: 'user.invite', p_resource_type: 'user', p_resource_id: data.user.id, p_target_user: data.user.id,
+          p_result: 'ok', p_reason: body.reason, p_before: null, p_after: null, p_context: context,
+        })
+        return reply(200, { ok: true, userId: data.user.id })
+      }
       case 'suspend': {
         const { error } = await asUser.rpc('admin_suspend_user', {
           p_user: body.userId,

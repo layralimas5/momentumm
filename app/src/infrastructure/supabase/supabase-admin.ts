@@ -114,6 +114,13 @@ export class SupabaseAdminGateway implements AdminGateway {
     if (error) throw await translateFunctionError(error)
   }
 
+  async inviteUser(email: string, name: string, reason: string): Promise<void> {
+    const { error } = await supabase().functions.invoke(ADMIN_FUNCTION_NAME, {
+      body: { action: 'invite_user', email, name, reason },
+    })
+    if (error) throw await translateFunctionError(error)
+  }
+
   subscriptionMetrics(period: Period) {
     return rpc('admin_subscription_metrics', { p_from: period.from, p_to: period.to }, subscriptionMetricsSchema)
   }

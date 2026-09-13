@@ -22,8 +22,9 @@ export const ADMIN_NAV: readonly AdminNavItem[] = [
   { to: '/admin/recursos', label: 'Recursos', icon: 'insights', end: false, requires: 'metrics.read', readOnly: true },
   { to: '/admin/erros', label: 'Erros e saúde', icon: 'raio', end: false, requires: 'errors.read', readOnly: true },
   { to: '/admin/solicitacoes', label: 'Solicitações', icon: 'sino', end: false, requires: 'requests.read', readOnly: false },
-  { to: '/admin/auditoria', label: 'Auditoria', icon: 'cadeado', end: false, requires: 'audit.read', readOnly: true },
+  { to: '/admin/auditoria', label: 'Auditoria', icon: 'arquivar', end: false, requires: 'audit.read', readOnly: true },
   { to: '/admin/configuracoes', label: 'Configurações', icon: 'config', end: false, requires: 'settings.read', readOnly: false },
+  { to: '/admin/painel', label: 'Painel', icon: 'cadeado', end: false, requires: 'admins.read', readOnly: false },
 ]
 
 export function adminNavItemFor(pathname: string): AdminNavItem | undefined {

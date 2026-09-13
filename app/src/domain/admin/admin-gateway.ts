@@ -103,6 +103,12 @@ export interface AdminGateway {
   userLogs(userId: string): Promise<readonly AdminAuditLog[]>
   exportUserAdminData(userId: string, reason: string): Promise<unknown>
   runUserAction(input: UserActionInput): Promise<void>
+  /**
+   * Convida uma pessoa por e-mail: o GoTrue manda o link, ela escolhe a
+   * senha. Serve pro caso raro de cadastrar alguém pela equipe; o caminho
+   * normal continua sendo a pessoa criar a própria conta.
+   */
+  inviteUser(email: string, name: string, reason: string): Promise<void>
 
   subscriptionMetrics(period: Period): Promise<AdminSubscriptionMetrics>
   listSubscriptions(status?: string, page?: number): Promise<AdminSubscriptionList>

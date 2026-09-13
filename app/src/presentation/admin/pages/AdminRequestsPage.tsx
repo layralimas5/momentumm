@@ -40,12 +40,12 @@ export function AdminRequestsPage() {
       title="Solicitações"
       description="Suporte, exportação, exclusão, denúncia, pagamento, acesso, segurança e privacidade. Cada uma tem protocolo, prioridade, prazo, responsável e histórico."
       action={
-        <div className="flex flex-wrap gap-2">
-          <Select value={filters.status ?? ''} onChange={(event) => setFilters({ ...filters, status: (event.target.value || undefined) as SupportStatus | undefined, page: 1 })} className="h-9 w-44 text-xs">
+        <div className="grid grid-cols-2 gap-2 sm:flex">
+          <Select value={filters.status ?? ''} onChange={(event) => setFilters({ ...filters, status: (event.target.value || undefined) as SupportStatus | undefined, page: 1 })} className="h-9 text-xs sm:w-44">
             <option value="">Todos os status</option>
             {SUPPORT_STATUSES.map((status) => <option key={status} value={status}>{SUPPORT_STATUS_LABELS[status]}</option>)}
           </Select>
-          <Select value={filters.category ?? ''} onChange={(event) => setFilters({ ...filters, category: (event.target.value || undefined) as SupportCategory | undefined, page: 1 })} className="h-9 w-44 text-xs">
+          <Select value={filters.category ?? ''} onChange={(event) => setFilters({ ...filters, category: (event.target.value || undefined) as SupportCategory | undefined, page: 1 })} className="h-9 text-xs sm:w-44">
             <option value="">Toda categoria</option>
             {SUPPORT_CATEGORIES.map((category) => <option key={category} value={category}>{SUPPORT_CATEGORY_LABELS[category]}</option>)}
           </Select>

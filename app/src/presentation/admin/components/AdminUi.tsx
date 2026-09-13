@@ -176,10 +176,19 @@ export function Section({
   )
 }
 
-export function Table({ head, children }: { readonly head: readonly string[]; readonly children: ReactNode }) {
+export function Table({
+  head,
+  children,
+  minWidth = '40rem',
+}: {
+  readonly head: readonly string[]
+  readonly children: ReactNode
+  /** Abaixo disso a tabela rola na horizontal em vez de espremer as colunas. */
+  readonly minWidth?: string
+}) {
   return (
     <div className="-mx-5 overflow-x-auto px-5">
-      <table className="w-full min-w-[40rem] border-collapse text-sm">
+      <table className="w-full border-collapse text-sm" style={{ minWidth }}>
         <thead>
           <tr className="border-b border-line text-left text-xs text-ink-faint">
             {head.map((label) => (

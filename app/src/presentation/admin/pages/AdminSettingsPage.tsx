@@ -10,30 +10,46 @@ import { ActionDialog } from '../components/ActionDialog'
 import { AdminPage, Empty, QueryState, Section, StatusTag, Table, Td, formatDate } from '../components/AdminUi'
 import { useAdminQuery } from '../use-admin-query'
 
-export function AdminSettingsPage() {
+/** As chaves que são do PAINEL, não do produto. Vivem na aba "Painel". */
+const PANEL_SETTINGS: ReadonlySet<string> = new Set(['admin.security'])
+
+/**
+ * Duas abas, um componente: "Configurações" mostra as chaves do produto;
+ * "Painel" mostra as chaves do próprio painel mais a gestão de
+ * administradores. Separar em duas telas é o que impede a segurança do
+ * painel de ficar escondida no meio de limite de plano e mensagem de sistema.
+ */
+export function AdminSettingsPage({ scope = 'produto' }: { readonly scope?: 'produto' | 'painel' }) {
   const admin = useAdmin()
   const settings = useAdminQuery(() => container.admin.settings(), 'settings')
   const admins = useAdminQuery(
-    () => (admin.can('admins.read') ? container.admin.listAdmins() : Promise.resolve([])),
-    'admins',
+    () => (scope === 'painel' && admin.can('admins.read') ? container.admin.listAdmins() : Promise.resolve([])),
+    `admins:${scope}`,
+  )
+  const visible = (settings.data ?? []).filter((setting) =>
+    scope === 'painel' ? PANEL_SETTINGS.has(setting.key) : !PANEL_SETTINGS.has(setting.key),
   )
 
   return (
     <AdminPage
-      title="Configurações do produto"
-      description="Limites, IA, funcionalidades, manutenção, versões legais, mensagens e administradores. Só o owner altera; toda mudança pede verificação recente, motivo, e grava antes e depois na auditoria."
+      title={scope === 'painel' ? 'Painel' : 'Configurações do produto'}
+      description={
+        scope === 'painel'
+          ? 'Segurança do painel e quem tem acesso a ele. Só o owner altera; toda mudança pede motivo e fica na auditoria.'
+          : 'Limites, IA, funcionalidades, manutenção, versões legais e mensagens. Só o owner altera; toda mudança pede verificação recente, motivo, e grava antes e depois na auditoria.'
+      }
     >
       <QueryState loading={settings.loading && !settings.data} error={settings.error} onRetry={() => void settings.reload()} />
 
       {settings.data ? (
         <div className="grid gap-5 lg:grid-cols-2">
-          {settings.data.map((setting) => (
+          {visible.map((setting) => (
             <SettingCard key={setting.key} setting={setting} canWrite={admin.can('settings.write')} onSaved={() => void settings.reload()} />
           ))}
         </div>
       ) : null}
 
-      {admin.can('admins.read') ? (
+      {scope === 'painel' && admin.can('admins.read') ? (
         <AdminsSection members={admins.data ?? []} loading={admins.loading} error={admins.error} onChanged={() => void admins.reload()} />
       ) : null}
     </AdminPage>

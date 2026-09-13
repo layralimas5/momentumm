@@ -99,6 +99,9 @@ export class DemoAdminGateway implements AdminGateway {
   runUserAction(): never {
     throw new DomainError(UNAVAILABLE)
   }
+  inviteUser(): never {
+    throw new DomainError(UNAVAILABLE)
+  }
   subscriptionMetrics(): never {
     throw new DomainError(UNAVAILABLE)
   }

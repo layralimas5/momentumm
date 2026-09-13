@@ -95,7 +95,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         {admin.session && !admin.session.mfaRequired ? (
           <p role="alert" className="border-b border-danger/40 bg-danger/10 px-4 py-2 text-center text-sm text-ink">
             <strong>Verificação em duas etapas desligada no painel.</strong> Qualquer pessoa com a senha
-            de uma conta com papel entra e age aqui. Ligue de volta em Configurações →
+            de uma conta com papel entra e age aqui. Ligue de volta na aba Painel →
             Segurança do painel.
           </p>
         ) : null}

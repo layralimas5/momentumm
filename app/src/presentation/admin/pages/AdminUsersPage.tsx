@@ -6,6 +6,8 @@ import { PLAN_LABELS } from '@/domain/entities/plan'
 import { container } from '@/infrastructure/container'
 import { Button } from '@/presentation/components/ui/Button'
 import { Field, Select, TextInput } from '@/presentation/components/ui/Field'
+import { useAdmin } from '../admin-context'
+import { ActionDialog } from '../components/ActionDialog'
 import {
   AdminPage,
   Empty,
@@ -28,8 +30,13 @@ export const ACCOUNT_STATE_LABELS: Readonly<Record<AccountState, string>> = {
 }
 
 export function AdminUsersPage() {
+  const admin = useAdmin()
   const [draft, setDraft] = useState<UserFilters>({})
   const [filters, setFilters] = useState<UserFilters>({ page: 1 })
+  const [inviteOpen, setInviteOpen] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteName, setInviteName] = useState('')
+  const [invited, setInvited] = useState<string | null>(null)
   const query = useAdminQuery(
     () => container.admin.listUsers({ ...filters, pageSize: PAGE_SIZE }),
     JSON.stringify(filters),
@@ -39,7 +46,41 @@ export function AdminUsersPage() {
     <AdminPage
       title="Usuários"
       description="Cada linha é um cartão administrativo: estado, plano, contagens e uso. Nenhum título de objetivo, texto de ação ou registro aparece aqui, nem em nenhuma outra tela."
+      action={
+        admin.can('users.act') ? (
+          <Button size="sm" variant="secondary" onClick={() => setInviteOpen(true)}>
+            Cadastrar usuário
+          </Button>
+        ) : undefined
+      }
     >
+      {invited ? (
+        <p aria-live="polite" className="rounded-xl border border-positive/30 bg-positive/10 px-3.5 py-2.5 text-sm text-ink">
+          Convite enviado pra {invited}. A pessoa recebe o link por e-mail e escolhe a senha.
+        </p>
+      ) : null}
+
+      <ActionDialog
+        open={inviteOpen}
+        title="Cadastrar usuário por convite"
+        description="Pra caso raro: a pessoa recebe um e-mail com o link, escolhe a senha e entra. O caminho normal continua sendo ela criar a própria conta."
+        confirmLabel="Enviar convite"
+        onConfirm={async (reason) => {
+          await container.admin.inviteUser(inviteEmail.trim(), inviteName.trim(), reason)
+          setInvited(inviteEmail.trim())
+          setInviteEmail('')
+          setInviteName('')
+        }}
+        onClose={() => setInviteOpen(false)}
+      >
+        <Field label="Nome">
+          {(id) => <TextInput id={id} value={inviteName} maxLength={60} onChange={(event) => setInviteName(event.target.value)} />}
+        </Field>
+        <Field label="E-mail">
+          {(id) => <TextInput id={id} type="email" value={inviteEmail} autoComplete="off" onChange={(event) => setInviteEmail(event.target.value)} />}
+        </Field>
+      </ActionDialog>
+
       <Section title="Filtros">
         <form
           className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"

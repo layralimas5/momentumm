@@ -200,6 +200,7 @@ export function App() {
               <Route path="solicitacoes/:id" element={<AdminRequestDetailPage />} />
               <Route path="auditoria" element={<AdminAuditPage />} />
               <Route path="configuracoes" element={<AdminSettingsPage />} />
+              <Route path="painel" element={<AdminSettingsPage scope="painel" />} />
               <Route path="*" element={<Navigate to="/admin" replace />} />
             </Route>
 
