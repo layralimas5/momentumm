@@ -13,6 +13,7 @@ const payment = {
   customer: 'cus_1',
   subscription: 'sub_1',
   externalReference: '11111111-1111-4111-8111-111111111111',
+  checkoutSession: 'chk_1',
   value: 39.9,
   dueDate: '2026-09-13',
   status: 'CONFIRMED',
@@ -31,6 +32,7 @@ describe('decideBillingEvent', () => {
       providerSubscriptionId: 'sub_1',
       customerId: 'cus_1',
       externalReference: payment.externalReference,
+      checkoutSessionId: 'chk_1',
       amountCents: 3990,
       dueDate: '2026-09-13',
     })

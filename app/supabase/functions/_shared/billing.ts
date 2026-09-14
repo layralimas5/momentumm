@@ -30,6 +30,7 @@ var asaasPaymentSchema = z.object({
   customer: z.string(),
   subscription: optionalString,
   externalReference: optionalString,
+  checkoutSession: optionalString,
   value: z.number().nonnegative(),
   dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   status: z.string(),
@@ -42,7 +43,8 @@ var asaasSubscriptionSchema = z.object({
   cycle: z.string(),
   status: z.string(),
   nextDueDate: optionalString,
-  externalReference: optionalString
+  externalReference: optionalString,
+  checkoutSession: optionalString
 });
 var asaasCheckoutSchema = z.object({
   id: z.string(),
@@ -93,6 +95,7 @@ function decideBillingEvent(event) {
       kind: "payment_confirmed",
       ...base,
       externalReference: payment.externalReference,
+      checkoutSessionId: payment.checkoutSession,
       amountCents: toCents(payment.value),
       dueDate: payment.dueDate
     };

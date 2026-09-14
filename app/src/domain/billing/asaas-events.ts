@@ -28,6 +28,7 @@ export const asaasPaymentSchema = z.object({
   customer: z.string(),
   subscription: optionalString,
   externalReference: optionalString,
+  checkoutSession: optionalString,
   value: z.number().nonnegative(),
   dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   status: z.string(),
@@ -42,6 +43,7 @@ export const asaasSubscriptionSchema = z.object({
   status: z.string(),
   nextDueDate: optionalString,
   externalReference: optionalString,
+  checkoutSession: optionalString,
 })
 
 export const asaasCheckoutSchema = z.object({
@@ -74,6 +76,8 @@ export type BillingDecision =
       readonly providerSubscriptionId: string
       readonly customerId: string
       readonly externalReference: string | null
+      /** O Asaas não propaga o externalReference do checkout; a sessão, sim. */
+      readonly checkoutSessionId: string | null
       readonly amountCents: number
       readonly dueDate: string
     }
@@ -135,6 +139,7 @@ export function decideBillingEvent(event: AsaasWebhookEvent): BillingDecision {
       kind: 'payment_confirmed',
       ...base,
       externalReference: payment.externalReference,
+      checkoutSessionId: payment.checkoutSession,
       amountCents: toCents(payment.value),
       dueDate: payment.dueDate,
     }
