@@ -54,12 +54,20 @@ async function linkCustomer(admin: Admin, userId: string, customerId: string): P
     .upsert({ user_id: userId, provider: PROVIDER, provider_customer_id: customerId }, { onConflict: 'user_id' })
 }
 
-/** Quem é a pessoa por trás do cliente do Asaas. `null` quando nenhum vínculo bate. */
+/**
+ * Quem é a pessoa por trás do cliente do Asaas. `null` quando nenhum vínculo bate.
+ *
+ * O PAYMENT_CONFIRMED costuma chegar ANTES do CHECKOUT_PAID (que é quem
+ * liga cliente e pessoa), mesmo com a fila sequencial. Por isso a sessão
+ * de checkout, que a gente mesmo gravou em `billing_checkouts`, vem logo
+ * depois do vínculo direto.
+ */
 async function resolveUser(
   admin: Admin,
   customerId: string,
   providerSubscriptionId: string | null,
   externalReference: string | null,
+  checkoutSessionId: string | null,
 ): Promise<string | null> {
   const { data: linked } = await admin
     .from('billing_customers')
@@ -68,6 +76,19 @@ async function resolveUser(
     .eq('provider_customer_id', customerId)
     .maybeSingle()
   if (linked?.user_id) return linked.user_id as string
+
+  if (checkoutSessionId) {
+    const { data: checkout } = await admin
+      .from('billing_checkouts')
+      .select('user_id')
+      .eq('provider', PROVIDER)
+      .eq('provider_checkout_id', checkoutSessionId)
+      .maybeSingle()
+    if (checkout?.user_id) {
+      await linkCustomer(admin, checkout.user_id as string, customerId)
+      return checkout.user_id as string
+    }
+  }
 
   if (providerSubscriptionId) {
     const { data: known } = await admin
@@ -135,7 +156,14 @@ async function applySubscriptionDecision(
   decision: Exclude<BillingDecision, { kind: 'ignore' } | { kind: 'checkout_paid' }>,
 ): Promise<string> {
   const externalReference = decision.kind === 'payment_confirmed' ? decision.externalReference : null
-  const userId = await resolveUser(admin, decision.customerId, decision.providerSubscriptionId, externalReference)
+  const checkoutSessionId = decision.kind === 'payment_confirmed' ? decision.checkoutSessionId : null
+  const userId = await resolveUser(
+    admin,
+    decision.customerId,
+    decision.providerSubscriptionId,
+    externalReference,
+    checkoutSessionId,
+  )
   if (!userId) return `pessoa não encontrada pro cliente ${decision.customerId}`
 
   const { data: existing } = await admin

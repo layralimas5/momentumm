@@ -1,5 +1,5 @@
 import { BillingError } from '@/domain/billing/billing-error'
-import type { BillingService, CheckoutSession } from '@/domain/billing/billing-service'
+import type { BillingService, CheckoutSession, PixCharge } from '@/domain/billing/billing-service'
 import type { Subscription } from '@/domain/billing/subscription'
 
 /**
@@ -11,6 +11,12 @@ export class DemoBillingService implements BillingService {
   readonly available = false
 
   startCheckout(): Promise<CheckoutSession> {
+    return Promise.reject(
+      new BillingError('not_configured', 'No modo demo não existe cobrança. Usa "Simular o PRO" em Configurações.'),
+    )
+  }
+
+  startPix(): Promise<PixCharge> {
     return Promise.reject(
       new BillingError('not_configured', 'No modo demo não existe cobrança. Usa "Simular o PRO" em Configurações.'),
     )

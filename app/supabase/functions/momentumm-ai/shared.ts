@@ -491,7 +491,7 @@ var PLAN_LIMITS = {
     voiceLogs: false,
     aiAnalysis: false,
     objectiveTemplates: 3,
-    shareTemplates: 1,
+    shareTemplates: 3,
     shareCustomization: false,
     dataExport: false,
     remindersPerHabit: 1,

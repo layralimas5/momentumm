@@ -7,6 +7,8 @@ import {
   type BillingEndpointRequest,
   type BillingService,
   type CheckoutSession,
+  type PixCharge,
+  type PixCustomer,
 } from '@/domain/billing/billing-service'
 import { SUBSCRIPTION_STATUSES, type Subscription } from '@/domain/billing/subscription'
 import { track } from '@/infrastructure/analytics/track'
@@ -36,6 +38,14 @@ const subscriptionRowSchema = z.object({
 
 const checkoutResponseSchema = z.object({ url: z.string().url() })
 
+const pixResponseSchema = z.object({
+  paymentId: z.string().min(1),
+  qrCodeImage: z.string().min(1),
+  qrCodePayload: z.string().min(1),
+  expiresAt: z.string().min(1),
+  invoiceUrl: z.string().url(),
+})
+
 interface EndpointFailure {
   readonly error?: { readonly code?: string; readonly message?: string }
 }
@@ -49,6 +59,14 @@ export class SupabaseBillingService implements BillingService {
     if (!parsed.success) throw new BillingError('provider_unavailable', 'O checkout veio sem endereço. Tenta de novo.')
     track('checkout_started', 'assinatura', { kind: cycle })
     return { url: parsed.data.url }
+  }
+
+  async startPix(cycle: Subscription['interval'], customer: PixCustomer): Promise<PixCharge> {
+    const data = await this.call({ action: 'pix', cycle, customer })
+    const parsed = pixResponseSchema.safeParse(data)
+    if (!parsed.success) throw new BillingError('provider_unavailable', 'A cobrança Pix veio sem QR code. Tenta de novo.')
+    track('checkout_started', 'assinatura', { kind: cycle, mode: 'pix' })
+    return parsed.data
   }
 
   async cancelSubscription(): Promise<void> {
