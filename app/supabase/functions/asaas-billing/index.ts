@@ -1,13 +1,19 @@
 // Momentumm — a porta da cobrança, pelo lado da pessoa.
 //
-// Duas ações, sempre com o JWT de quem pede:
+// Três ações, sempre com o JWT de quem pede:
 //
 //   checkout  abre uma sessão de checkout do Asaas pro PRO (mensal ou anual)
-//             e devolve o link. A pessoa paga LÁ, no cartão (o Asaas só
+//             e devolve o link. A pessoa paga LÁ, no cartão (o checkout só
 //             aceita cartão em cobrança recorrente), com CPF e endereço
 //             coletados por ele, e volta pro app por `returnTo`.
 //             Nada é gravado em `subscriptions` aqui: quem grava é o
 //             webhook, quando o Asaas confirma o pagamento.
+//   pix       o Pix não tem cartão salvo, então o caminho é outro: cria o
+//             cliente no Asaas (nome + CPF, exigidos por ele), abre uma
+//             assinatura `billingType: PIX` e devolve o QR da primeira
+//             cobrança pra pagar no app. As seguintes chegam por e-mail a
+//             cada ciclo. O vínculo cliente/pessoa é gravado aqui
+//             (`billing_customers`) pra o webhook achar a pessoa de cara.
 //   cancel    cancela a assinatura ativa no Asaas e marca aqui. O PRO
 //             continua até `current_period_end`, pelo trigger da 0026.
 //
@@ -20,8 +26,26 @@
 //   supabase secrets set ASAAS_API_KEY=... ASAAS_ENV=sandbox|production
 
 import { createClient } from 'npm:@supabase/supabase-js@2.116.0'
-import { AsaasError, asaasConfigured, createCheckout, deleteSubscription } from '../_shared/asaas.ts'
-import { formatBRL, isBillingCycle, PRO_PRICES, PRO_PRODUCT_NAME, type BillingErrorCode } from '../_shared/billing.ts'
+import {
+  AsaasError,
+  asaasConfigured,
+  createCheckout,
+  createCustomer,
+  createPixSubscription,
+  deleteSubscription,
+  getPixQrCode,
+  listSubscriptionPayments,
+  updateCustomer,
+} from '../_shared/asaas.ts'
+import {
+  formatBRL,
+  isBillingCycle,
+  isValidCpf,
+  normalizeCpf,
+  PRO_PRICES,
+  PRO_PRODUCT_NAME,
+  type BillingErrorCode,
+} from '../_shared/billing.ts'
 import { PRODUCT_IMAGE_BASE64 } from '../_shared/product-image.ts'
 
 const CORS_HEADERS = {
@@ -35,6 +59,25 @@ const CHECKOUT_MINUTES = 60
 
 /** O app só pode mandar a pessoa de volta pra ele mesmo. */
 const RETURN_PATH = /^\/[a-z0-9\-/]*$/i
+
+const NAME_MIN = 3
+const NAME_MAX = 120
+
+interface PixCustomerInput {
+  readonly name: string
+  readonly cpf: string
+}
+
+/** Nome e CPF como o Asaas vai receber, ou `null` se não dá pra criar o cliente com isso. */
+function readPixCustomer(value: unknown): PixCustomerInput | null {
+  if (!value || typeof value !== 'object') return null
+  const { name, cpf } = value as { name?: unknown; cpf?: unknown }
+  if (typeof name !== 'string' || typeof cpf !== 'string') return null
+  const trimmedName = name.trim().replace(/\s+/g, ' ')
+  if (trimmedName.length < NAME_MIN || trimmedName.length > NAME_MAX) return null
+  if (!isValidCpf(cpf)) return null
+  return { name: trimmedName, cpf: normalizeCpf(cpf) }
+}
 
 function reply(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -85,7 +128,9 @@ Deno.serve(async (request) => {
     return fail(503, 'not_configured', 'A cobrança ainda não está configurada nesse ambiente.')
   }
 
-  const body = (await readJson(request)) as { action?: unknown; cycle?: unknown; returnTo?: unknown } | null
+  const body = (await readJson(request)) as
+    | { action?: unknown; cycle?: unknown; returnTo?: unknown; customer?: unknown }
+    | null
   if (!body || typeof body.action !== 'string') return fail(400, 'invalid_request', 'Pedido inválido.')
 
   const admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } })
@@ -139,6 +184,58 @@ Deno.serve(async (request) => {
       }
 
       return reply(200, { url: checkout.link })
+    }
+
+    if (body.action === 'pix') {
+      if (!isBillingCycle(body.cycle)) return fail(400, 'invalid_request', 'Ciclo de cobrança inválido.')
+      const customer = readPixCustomer(body.customer)
+      if (!customer) return fail(400, 'invalid_request', 'Confere o nome e o CPF: o Asaas precisa dos dois.')
+      if (current) {
+        return fail(409, 'already_subscribed', 'Essa conta já tem uma assinatura PRO. Recarrega a página.')
+      }
+      const price = PRO_PRICES[body.cycle]
+      const customerInput = { ...customer, email: user.email, externalReference: user.id }
+
+      const { data: linked } = await admin
+        .from('billing_customers')
+        .select('provider_customer_id')
+        .eq('user_id', user.id)
+        .eq('provider', 'asaas')
+        .maybeSingle()
+      const asaasCustomer = linked?.provider_customer_id
+        ? await updateCustomer(linked.provider_customer_id as string, customerInput)
+        : await createCustomer(customerInput)
+      if (!linked) {
+        const { error: linkError } = await admin
+          .from('billing_customers')
+          .upsert({ user_id: user.id, provider: 'asaas', provider_customer_id: asaasCustomer.id }, { onConflict: 'user_id' })
+        if (linkError) {
+          console.error('billing_customers upsert', linkError.message)
+          return fail(500, 'provider_unavailable', 'Não consegui registrar o cliente. Tenta de novo.')
+        }
+      }
+
+      const subscription = await createPixSubscription({
+        customerId: asaasCustomer.id,
+        externalReference: user.id,
+        cycle: price.providerCycle,
+        value: price.amountCents / 100,
+        description: `${PRO_PRODUCT_NAME} ${body.cycle}`,
+      })
+      const first = (await listSubscriptionPayments(subscription.id)).find((payment) => payment.status === 'PENDING')
+      if (!first) {
+        console.error('asaas pix', 'assinatura sem cobrança pendente', subscription.id)
+        return fail(502, 'provider_unavailable', 'A assinatura foi aberta, mas o Pix não veio. Tenta de novo em instantes.')
+      }
+      const qr = await getPixQrCode(first.id)
+
+      return reply(200, {
+        paymentId: first.id,
+        qrCodeImage: qr.encodedImage,
+        qrCodePayload: qr.payload,
+        expiresAt: qr.expirationDate,
+        invoiceUrl: first.invoiceUrl,
+      })
     }
 
     if (body.action === 'cancel') {

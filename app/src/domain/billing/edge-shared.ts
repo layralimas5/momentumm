@@ -23,5 +23,6 @@ export {
   type AsaasWebhookEvent,
   type BillingDecision,
 } from './asaas-events'
+export { isValidCpf, normalizeCpf } from './cpf'
 export type { BillingErrorCode } from './billing-error'
 export type { SubscriptionStatus } from './subscription'

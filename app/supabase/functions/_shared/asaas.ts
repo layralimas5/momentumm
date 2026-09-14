@@ -4,9 +4,10 @@
 //   ASAAS_API_KEY   a chave da conta (sandbox ou produção, a chave decide)
 //   ASAAS_ENV       'sandbox' (padrão) ou 'production'
 //
-// O que sai daqui é o mínimo que o produto precisa: abrir um checkout,
-// ler uma assinatura, ler um cliente e cancelar uma assinatura. Nenhuma
-// chamada de cartão: o checkout do Asaas coleta e guarda o pagamento lá.
+// O que sai daqui é o mínimo que o produto precisa: abrir um checkout
+// (cartão), abrir uma assinatura Pix com o QR da primeira cobrança, ler
+// uma assinatura, ler e criar um cliente e cancelar uma assinatura.
+// Nenhuma chamada de cartão: o checkout do Asaas coleta e guarda lá.
 
 const BASE_URLS = {
   sandbox: 'https://api-sandbox.asaas.com/v3',
@@ -60,6 +61,34 @@ export interface AsaasCustomer {
   readonly externalReference: string | null
 }
 
+export interface AsaasCustomerInput {
+  readonly externalReference: string
+  readonly name: string
+  readonly cpf: string
+  readonly email: string
+}
+
+export interface AsaasPixSubscriptionInput {
+  readonly customerId: string
+  readonly externalReference: string
+  readonly cycle: 'MONTHLY' | 'YEARLY'
+  readonly value: number
+  readonly description: string
+}
+
+export interface AsaasPayment {
+  readonly id: string
+  readonly status: string
+  readonly dueDate: string
+  readonly invoiceUrl: string
+}
+
+export interface AsaasPixQrCode {
+  readonly encodedImage: string
+  readonly payload: string
+  readonly expirationDate: string
+}
+
 export function asaasConfigured(): boolean {
   return Boolean(Deno.env.get('ASAAS_API_KEY'))
 }
@@ -68,7 +97,7 @@ function baseUrl(): string {
   return Deno.env.get('ASAAS_ENV') === 'production' ? BASE_URLS.production : BASE_URLS.sandbox
 }
 
-async function call<T>(method: 'GET' | 'POST' | 'DELETE', path: string, body?: unknown): Promise<T> {
+async function call<T>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, body?: unknown): Promise<T> {
   const response = await fetch(`${baseUrl()}${path}`, {
     method,
     headers: {
@@ -125,6 +154,53 @@ export function getSubscription(id: string): Promise<AsaasSubscription> {
 
 export function getCustomer(id: string): Promise<AsaasCustomer> {
   return call<AsaasCustomer>('GET', `/customers/${encodeURIComponent(id)}`)
+}
+
+export function createCustomer(input: AsaasCustomerInput): Promise<AsaasCustomer> {
+  return call<AsaasCustomer>('POST', '/customers', customerBody(input))
+}
+
+/** O mesmo cliente pode ter vindo do checkout de cartão sem CPF de verdade; a assinatura Pix completa. */
+export function updateCustomer(id: string, input: AsaasCustomerInput): Promise<AsaasCustomer> {
+  return call<AsaasCustomer>('PUT', `/customers/${encodeURIComponent(id)}`, customerBody(input))
+}
+
+function customerBody(input: AsaasCustomerInput) {
+  return {
+    name: input.name,
+    cpfCnpj: input.cpf,
+    email: input.email,
+    externalReference: input.externalReference,
+    notificationDisabled: false,
+  }
+}
+
+/**
+ * Assinatura sem cartão: a cada ciclo o Asaas gera uma cobrança Pix e avisa
+ * a pessoa por e-mail. `nextDueDate` de hoje faz a primeira nascer agora.
+ */
+export function createPixSubscription(input: AsaasPixSubscriptionInput): Promise<AsaasSubscription> {
+  return call<AsaasSubscription>('POST', '/subscriptions', {
+    customer: input.customerId,
+    billingType: 'PIX',
+    value: input.value,
+    cycle: input.cycle,
+    nextDueDate: todayInBrazil(),
+    description: input.description,
+    externalReference: input.externalReference,
+  })
+}
+
+export async function listSubscriptionPayments(subscriptionId: string): Promise<readonly AsaasPayment[]> {
+  const page = await call<{ data: readonly AsaasPayment[] }>(
+    'GET',
+    `/subscriptions/${encodeURIComponent(subscriptionId)}/payments`,
+  )
+  return page.data
+}
+
+export function getPixQrCode(paymentId: string): Promise<AsaasPixQrCode> {
+  return call<AsaasPixQrCode>('GET', `/payments/${encodeURIComponent(paymentId)}/pixQrCode`)
 }
 
 export async function deleteSubscription(id: string): Promise<void> {

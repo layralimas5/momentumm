@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { formatBRL, isBillingCycle, monthlyEquivalentCents, PRO_PRICES, type BillingCycle } from '@/domain/billing/billing-plans'
+import type { PixCharge, PixCustomer } from '@/domain/billing/billing-service'
 import { grantsPro, isWindingDown, SUBSCRIPTION_STATUS_LABELS, type Subscription } from '@/domain/billing/subscription'
 import { isPro } from '@/domain/entities/plan'
 import { container } from '@/infrastructure/container'
@@ -11,6 +12,8 @@ import { Icon } from '@/presentation/components/ui/Icon'
 import { ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { Panel } from '@/presentation/components/ui/Surface'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
+import { PixChargePanel } from '@/presentation/plan/PixChargePanel'
+import { PixCustomerForm } from '@/presentation/plan/PixCustomerForm'
 import { PRO_BENEFITS, PRO_TAGLINE } from '@/presentation/plan/pro-benefits'
 import { CancellationBlock } from '@/presentation/profile/CancellationBlock'
 import { toUserMessage } from '@/shared/errors'
@@ -20,18 +23,21 @@ import { PageHeader } from './PageHeader'
 /**
  * A assinatura do PRO.
  *
- * Sem PRO: escolhe o ciclo e vai pro checkout do Asaas. Com PRO: vê o que
- * está pago, até quando, e cancela. A página é a mesma pra onde o Asaas
- * devolve a pessoa depois de pagar (`?assinatura=sucesso`): o pagamento é
- * confirmado pelo webhook, então a tela espera o plano virar em vez de
- * declarar PRO por conta própria.
+ * Sem PRO: escolhe o ciclo e paga. No cartão, vai pro checkout do Asaas e
+ * volta por `?assinatura=sucesso`; no Pix, informa nome e CPF e paga o QR
+ * aqui mesmo. Nos dois o pagamento é confirmado pelo webhook, então a tela
+ * espera o plano virar em vez de declarar PRO por conta própria. Com PRO:
+ * vê o que está pago, até quando, e cancela.
  */
 
 type ReturnStatus = 'sucesso' | 'cancelado' | 'expirado'
 
-/** Quanto tempo a tela espera o webhook depois do retorno do checkout. */
+type PaymentMethod = 'cartao' | 'pix'
+
+/** Quanto tempo a tela espera o webhook. O cartão confirma na volta; o Pix depende do banco da pessoa. */
 const CONFIRMATION_POLL_MS = 3000
-const CONFIRMATION_MAX_POLLS = 20
+const CARD_MAX_POLLS = 20
+const PIX_MAX_POLLS = 100
 
 function readReturnStatus(value: string | null): ReturnStatus | null {
   return value === 'sucesso' || value === 'cancelado' || value === 'expirado' ? value : null
@@ -65,16 +71,24 @@ export function SubscriptionPage() {
     void load()
   }, [load])
 
+  const [method, setMethod] = useState<PaymentMethod | null>(null)
+  const [pixCharge, setPixCharge] = useState<PixCharge | null>(null)
+
   const hasPro = profile ? isPro(profile.plan) : false
-  const confirming = returned === 'sucesso' && !hasPro
-  const confirmed = useConfirmationPolling(confirming, async () => {
+  const refresh = useCallback(async () => {
     await refreshProfile()
     await load()
-  })
+  }, [refreshProfile, load])
+  const confirming = returned === 'sucesso' && !hasPro
+  const confirmed = useConfirmationPolling(confirming, CARD_MAX_POLLS, refresh)
+  const pixConfirmed = useConfirmationPolling(pixCharge !== null && !hasPro, PIX_MAX_POLLS, refresh)
 
   const checkout = useAsyncAction(async () => {
     const { url } = await container.billing.startCheckout(cycle, '/app/assinatura')
     window.location.assign(url)
+  })
+  const pix = useAsyncAction(async (customer: PixCustomer) => {
+    setPixCharge(await container.billing.startPix(cycle, customer))
   })
 
   if (!profile || subscription === 'loading') return <LoadingBlock label="Carregando tua assinatura" />
@@ -99,6 +113,7 @@ export function SubscriptionPage() {
           busy={confirming && confirmed !== 'timeout'}
         />
       ) : null}
+      {pixCharge && hasPro ? <ReturnNote tone="positive" message="Pix confirmado. O PRO está liberado." /> : null}
       {returned === 'cancelado' ? (
         <ReturnNote tone="neutral" message="Você saiu do checkout sem pagar. Nada foi cobrado." />
       ) : null}
@@ -120,9 +135,15 @@ export function SubscriptionPage() {
         <Offer
           cycle={cycle}
           onCycleChange={setCycle}
-          onSubscribe={() => void checkout.run()}
-          loading={checkout.running}
-          error={checkout.error}
+          method={method}
+          onMethodChange={setMethod}
+          onCardCheckout={() => void checkout.run()}
+          onPix={(customer) => void pix.run(customer)}
+          pixCharge={pixCharge}
+          pixState={pixConfirmed === 'timeout' ? 'timeout' : 'waiting'}
+          customerName={profile.name}
+          loading={checkout.running || pix.running}
+          error={checkout.error ?? pix.error}
         />
       )}
     </div>
@@ -133,24 +154,41 @@ export function SubscriptionPage() {
  * A oferta. No modo demo ela é a mesma, com o botão trocado: quem entrou
  * pela porta "ver por dentro" precisa de conta pra assinar, e o PRO dá pra
  * experimentar em Configurações sem pagar.
+ *
+ * O rodapé do painel muda com o passo: escolha do método, formulário do
+ * Pix, QR pra pagar. O ciclo trava assim que o QR existe, porque a cobrança
+ * já nasceu com aquele valor.
  */
 function Offer({
   cycle,
   onCycleChange,
-  onSubscribe,
+  method = null,
+  onMethodChange,
+  onCardCheckout,
+  onPix,
+  pixCharge = null,
+  pixState = 'waiting',
+  customerName = '',
   loading = false,
   error = null,
   demo = false,
 }: {
   readonly cycle: BillingCycle
   readonly onCycleChange: (cycle: BillingCycle) => void
-  readonly onSubscribe?: () => void
+  readonly method?: PaymentMethod | null
+  readonly onMethodChange?: (method: PaymentMethod | null) => void
+  readonly onCardCheckout?: () => void
+  readonly onPix?: (customer: PixCustomer) => void
+  readonly pixCharge?: PixCharge | null
+  readonly pixState?: 'waiting' | 'timeout'
+  readonly customerName?: string
   readonly loading?: boolean
   readonly error?: string | null
   readonly demo?: boolean
 }) {
   const price = PRO_PRICES[cycle]
   const perMonth = monthlyEquivalentCents(cycle)
+  const cycleLocked = pixCharge !== null
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
@@ -160,7 +198,7 @@ function Offer({
             <Icon name="raio" className="size-3.5" />
             PRO
           </p>
-          <CycleToggle value={cycle} onChange={onCycleChange} />
+          {cycleLocked ? null : <CycleToggle value={cycle} onChange={onCycleChange} />}
         </div>
 
         <div aria-live="polite">
@@ -186,7 +224,7 @@ function Offer({
           ))}
         </ul>
 
-        {error ? <ErrorNote message={error} /> : null}
+        {error && method !== 'pix' ? <ErrorNote message={error} /> : null}
 
         {demo ? (
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -201,25 +239,51 @@ function Offer({
               Ou simular o PRO no demo
             </Link>
           </div>
+        ) : pixCharge ? (
+          <PixChargePanel charge={pixCharge} amountCents={price.amountCents} state={pixState} />
+        ) : method === 'pix' ? (
+          <PixCustomerForm
+            initialName={customerName}
+            submitLabel={`Gerar Pix de ${formatBRL(price.amountCents)}`}
+            loading={loading}
+            error={error}
+            onSubmit={(customer) => onPix?.(customer)}
+            onBack={() => onMethodChange?.(null)}
+          />
         ) : (
-          <Button size="lg" loading={loading} onClick={onSubscribe} className="w-full sm:w-fit">
-            <Icon name="raio" className="size-4" />
-            Assinar o PRO {cycle}
-          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Button size="lg" loading={loading} onClick={onCardCheckout} className="w-full sm:w-fit">
+              <Icon name="raio" className="size-4" />
+              Assinar com cartão
+            </Button>
+            <Button
+              size="lg"
+              variant="secondary"
+              disabled={loading}
+              onClick={() => onMethodChange?.('pix')}
+              className="w-full sm:w-fit"
+            >
+              Pagar com Pix
+            </Button>
+          </div>
         )}
 
         <p className="text-xs text-ink-faint">
-          Pagamento por cartão, na página segura do Asaas. O cartão fica lá, nunca aqui. Sem fidelidade:
-          cancelar mantém o PRO até o fim do período pago.
+          {pixCharge
+            ? 'A cada ciclo o Asaas manda um novo Pix pro teu e-mail. Sem fidelidade: cancelar mantém o PRO até o fim do período pago.'
+            : 'Cartão na página segura do Asaas (o cartão fica lá, nunca aqui) ou Pix aqui mesmo. Sem fidelidade: cancelar mantém o PRO até o fim do período pago.'}
         </p>
       </Panel>
 
       <Panel className="flex flex-col gap-3 text-sm text-ink-muted">
         <p className="text-sm font-semibold text-ink">Como funciona</p>
         <ol className="flex list-decimal flex-col gap-2 pl-4">
-          <li>Você escolhe o ciclo e vai pro checkout do Asaas.</li>
-          <li>Paga com cartão. O Asaas pede CPF e endereço, como qualquer loja.</li>
-          <li>Volta pra cá. Assim que o pagamento é confirmado, o PRO abre sozinho.</li>
+          <li>Você escolhe o ciclo e como pagar.</li>
+          <li>
+            No cartão, o checkout do Asaas pede CPF e endereço, como qualquer loja, e renova sozinho. No Pix, você
+            paga o QR aqui e recebe um novo por e-mail a cada ciclo.
+          </li>
+          <li>Assim que o pagamento é confirmado, o PRO abre sozinho.</li>
         </ol>
         <Link to="/#pro" className="mt-auto text-sm font-medium text-brand-hi underline-offset-2 hover:underline">
           Ver a comparação completa dos planos
@@ -296,10 +360,10 @@ function CurrentSubscription({
       <Panel className="flex flex-col gap-3 text-sm text-ink-muted">
         <p className="text-sm font-semibold text-ink">Pagamento</p>
         <p>
-          A cobrança é feita pelo Asaas, no cartão que você cadastrou no checkout. Recibos e segunda via
-          chegam no teu e-mail.
+          A cobrança é feita pelo Asaas, no cartão ou no Pix que você escolheu ao assinar. Recibos, segunda via e
+          o Pix de cada ciclo chegam no teu e-mail.
         </p>
-        <p>Pra trocar de cartão ou de ciclo, cancela a assinatura atual e assina de novo quando ela terminar.</p>
+        <p>Pra trocar de forma de pagamento ou de ciclo, cancela a assinatura atual e assina de novo quando ela terminar.</p>
         <Link to="/app/configuracoes" className={cn(buttonClass({ variant: 'secondary', size: 'sm' }), 'mt-auto w-fit')}>
           Configurações da conta
         </Link>
@@ -338,11 +402,15 @@ function ReturnNote({
 }
 
 /**
- * Depois do checkout, o PRO só abre quando o webhook grava a assinatura.
+ * Depois de pagar, o PRO só abre quando o webhook grava a assinatura.
  * Esta espera relê o perfil a cada poucos segundos até o plano virar ou
  * o tempo acabar — nunca declara PRO por conta própria.
  */
-function useConfirmationPolling(active: boolean, refresh: () => Promise<void>): 'waiting' | 'timeout' | 'idle' {
+function useConfirmationPolling(
+  active: boolean,
+  maxPolls: number,
+  refresh: () => Promise<void>,
+): 'waiting' | 'timeout' | 'idle' {
   const [state, setState] = useState<'waiting' | 'timeout' | 'idle'>('idle')
   // `refresh` muda a cada render do pai; a espera é decidida só por `active`.
   const refreshRef = useRef(refresh)
@@ -361,7 +429,7 @@ function useConfirmationPolling(active: boolean, refresh: () => Promise<void>): 
       polls += 1
       await refreshRef.current().catch(() => undefined)
       if (cancelled) return
-      if (polls >= CONFIRMATION_MAX_POLLS) setState('timeout')
+      if (polls >= maxPolls) setState('timeout')
       else timer = window.setTimeout(() => void tick(), CONFIRMATION_POLL_MS)
     }
     let timer = window.setTimeout(() => void tick(), CONFIRMATION_POLL_MS)
@@ -369,7 +437,7 @@ function useConfirmationPolling(active: boolean, refresh: () => Promise<void>): 
       cancelled = true
       window.clearTimeout(timer)
     }
-  }, [active])
+  }, [active, maxPolls])
 
   return state
 }

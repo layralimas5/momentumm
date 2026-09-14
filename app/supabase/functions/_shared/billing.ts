@@ -133,6 +133,24 @@ function transitionFor(current, decision) {
       return { status: "cancelada", eventType: "cancelada" };
   }
 }
+
+// src/domain/billing/cpf.ts
+var CPF_LENGTH = 11;
+function normalizeCpf(value) {
+  return value.replace(/\D/g, "");
+}
+function isValidCpf(value) {
+  const digits = normalizeCpf(value);
+  if (digits.length !== CPF_LENGTH) return false;
+  if (/^(\d)\1{10}$/.test(digits)) return false;
+  const numbers = digits.split("").map(Number);
+  return checkDigit(numbers, 9) === numbers[9] && checkDigit(numbers, 10) === numbers[10];
+}
+function checkDigit(numbers, length) {
+  const sum = numbers.slice(0, length).reduce((total, digit, index) => total + digit * (length + 1 - index), 0);
+  const remainder = sum * 10 % 11;
+  return remainder === 10 ? 0 : remainder;
+}
 export {
   BILLING_CYCLES,
   PRO_PRICES,
@@ -143,6 +161,8 @@ export {
   formatBRL,
   intervalOfProviderSubscription,
   isBillingCycle,
+  isValidCpf,
+  normalizeCpf,
   periodEndAfter,
   toCents,
   transitionFor
