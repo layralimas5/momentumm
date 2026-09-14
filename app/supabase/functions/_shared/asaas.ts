@@ -35,7 +35,6 @@ export interface AsaasCheckoutInput {
   readonly successUrl: string
   readonly cancelUrl: string
   readonly expiredUrl: string
-  readonly customer: { readonly name: string | null; readonly email: string }
   readonly minutesToExpire: number
 }
 
@@ -98,7 +97,7 @@ export function todayInBrazil(): string {
 
 export function createCheckout(input: AsaasCheckoutInput): Promise<AsaasCheckout> {
   return call<AsaasCheckout>('POST', '/checkouts', {
-    billingTypes: ['CREDIT_CARD', 'PIX'],
+    billingTypes: ['CREDIT_CARD'],
     chargeTypes: ['RECURRENT'],
     minutesToExpire: input.minutesToExpire,
     externalReference: input.externalReference,
@@ -117,10 +116,6 @@ export function createCheckout(input: AsaasCheckoutInput): Promise<AsaasCheckout
       },
     ],
     subscription: { cycle: input.cycle, nextDueDate: todayInBrazil() },
-    customerData: {
-      ...(input.customer.name ? { name: input.customer.name } : {}),
-      email: input.customer.email,
-    },
   })
 }
 

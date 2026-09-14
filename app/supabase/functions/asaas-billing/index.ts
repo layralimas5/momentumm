@@ -3,8 +3,9 @@
 // Duas ações, sempre com o JWT de quem pede:
 //
 //   checkout  abre uma sessão de checkout do Asaas pro PRO (mensal ou anual)
-//             e devolve o link. A pessoa paga LÁ — cartão ou Pix, CPF e
-//             endereço coletados pelo Asaas — e volta pro app por `returnTo`.
+//             e devolve o link. A pessoa paga LÁ, no cartão (o Asaas só
+//             aceita cartão em cobrança recorrente), com CPF e endereço
+//             coletados por ele, e volta pro app por `returnTo`.
 //             Nada é gravado em `subscriptions` aqui: quem grava é o
 //             webhook, quando o Asaas confirma o pagamento.
 //   cancel    cancela a assinatura ativa no Asaas e marca aqui. O PRO
@@ -112,8 +113,6 @@ Deno.serve(async (request) => {
       const origin = appOrigin(request)
       const price = PRO_PRICES[body.cycle]
 
-      const { data: profile } = await admin.from('profiles').select('name').eq('id', user.id).maybeSingle()
-
       const checkout = await createCheckout({
         externalReference: user.id,
         cycle: price.providerCycle,
@@ -124,7 +123,6 @@ Deno.serve(async (request) => {
         successUrl: `${origin}${returnTo}?assinatura=sucesso`,
         cancelUrl: `${origin}${returnTo}?assinatura=cancelado`,
         expiredUrl: `${origin}${returnTo}?assinatura=expirado`,
-        customer: { name: (profile?.name as string | null) ?? null, email: user.email },
         minutesToExpire: CHECKOUT_MINUTES,
       })
 

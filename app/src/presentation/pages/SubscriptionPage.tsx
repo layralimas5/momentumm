@@ -93,7 +93,7 @@ export function SubscriptionPage() {
             hasPro
               ? 'Pagamento confirmado. O PRO está liberado.'
               : confirmed === 'timeout'
-                ? 'O pagamento ainda não chegou até aqui. Pix pode levar alguns minutos; se você pagou, recarrega a página daqui a pouco.'
+                ? 'O pagamento ainda não chegou até aqui. A confirmação do cartão pode levar alguns minutos; se você pagou, recarrega a página daqui a pouco.'
                 : 'Estamos confirmando o pagamento com o Asaas. Isso leva alguns segundos.'
           }
           busy={confirming && confirmed !== 'timeout'}
@@ -209,7 +209,7 @@ function Offer({
         )}
 
         <p className="text-xs text-ink-faint">
-          Pagamento por cartão ou Pix, na página segura do Asaas. O cartão fica lá, nunca aqui. Sem fidelidade:
+          Pagamento por cartão, na página segura do Asaas. O cartão fica lá, nunca aqui. Sem fidelidade:
           cancelar mantém o PRO até o fim do período pago.
         </p>
       </Panel>
@@ -218,7 +218,7 @@ function Offer({
         <p className="text-sm font-semibold text-ink">Como funciona</p>
         <ol className="flex list-decimal flex-col gap-2 pl-4">
           <li>Você escolhe o ciclo e vai pro checkout do Asaas.</li>
-          <li>Paga com cartão ou Pix. O Asaas pede CPF e endereço, como qualquer loja.</li>
+          <li>Paga com cartão. O Asaas pede CPF e endereço, como qualquer loja.</li>
           <li>Volta pra cá. Assim que o pagamento é confirmado, o PRO abre sozinho.</li>
         </ol>
         <Link to="/#pro" className="mt-auto text-sm font-medium text-brand-hi underline-offset-2 hover:underline">
@@ -296,7 +296,7 @@ function CurrentSubscription({
       <Panel className="flex flex-col gap-3 text-sm text-ink-muted">
         <p className="text-sm font-semibold text-ink">Pagamento</p>
         <p>
-          A cobrança é feita pelo Asaas, no cartão ou Pix que você escolheu no checkout. Recibos e segunda via
+          A cobrança é feita pelo Asaas, no cartão que você cadastrou no checkout. Recibos e segunda via
           chegam no teu e-mail.
         </p>
         <p>Pra trocar de cartão ou de ciclo, cancela a assinatura atual e assina de novo quando ela terminar.</p>
