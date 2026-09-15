@@ -69,8 +69,8 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
   const { limits } = usePlanner()
   const profilePlan = useAuth().profile?.plan ?? 'free'
   /*
-    O gratuito escolhe entre três arranjos e duas cores (preto e PNG); o PRO
-    leva os oito, as quatro cores, a foto de fundo e os toggles do que entra
+    O gratuito escolhe entre três arranjos, com todas as cores e o PNG; o PRO
+    leva os oito arranjos, a foto de fundo e os toggles do que entra
     no card. Os arranjos e cores trancados continuam VISÍVEIS: é o preview que
     vende o PRO, e o botão de compartilhar é quem recusa.
   */
@@ -254,7 +254,7 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
           />
         </Field>
       ) : (
-        <UpgradeHint message="No PRO você libera os oito arranjos, as quatro cores, a foto de fundo e escolhe o que aparece no card." />
+        <UpgradeHint message="No PRO você libera os oito arranjos, a foto de fundo e escolhe o que aparece no card." />
       )}
     </div>
   )

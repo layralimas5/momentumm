@@ -133,15 +133,15 @@ export const SHARE_COMPOSITION_SPECS: Readonly<
 export const DEFAULT_SHARE_COMPOSITION: ShareCompositionId = 'selo'
 
 /**
- * O que o gratuito leva: três arranjos e duas cores (preto e PNG).
+ * O que o gratuito leva: três arranjos e TODAS as cores, inclusive o PNG.
  *
- * Três e não um, porque um card só não deixa ninguém descobrir que existe
- * escolha — e é a escolha que faz a pessoa voltar ao estúdio. PNG entra no
- * gratuito de propósito: o card por cima da foto dela é o que mais parece
- * dela, e é o que ela vai postar.
+ * Três arranjos e não um, porque um card só não deixa ninguém descobrir que
+ * existe escolha, e é a escolha que faz a pessoa voltar ao estúdio. As cores
+ * são todas de graça: cor não é o que diferencia o PRO (arranjo, foto de fundo
+ * e os toggles são), e um card preso no preto parecia castigo, não plano.
  */
 export const FREE_SHARE_COMPOSITIONS: readonly ShareCompositionId[] = ['selo', 'resumo', 'pilha']
-export const FREE_SHARE_TEMPLATES: readonly ShareTemplateId[] = ['dark', 'transparent']
+export const FREE_SHARE_TEMPLATES: readonly ShareTemplateId[] = [...SHARE_TEMPLATES]
 
 /**
  * O que a EVOLUÇÃO libera, por cima do plano.
@@ -156,9 +156,7 @@ const COMPOSITION_UNLOCKS: Readonly<Record<string, ShareCompositionId>> = {
   share_figura: 'figura',
 }
 
-const TEMPLATE_UNLOCKS: Readonly<Record<string, ShareTemplateId>> = {
-  share_neon: 'neon',
-}
+const TEMPLATE_UNLOCKS: Readonly<Record<string, ShareTemplateId>> = {}
 
 export function compositionsAllowedFor(
   unlimited: boolean,

@@ -176,7 +176,7 @@ export function planMatrix(): readonly PlanMatrixRow[] {
     { feature: 'Registros por voz', free: 'Não disponível', pro: 'Disponível com limite mensal' },
     { feature: 'Análises de IA', free: 'Não disponível', pro: 'Padrões, gargalos e recomendações' },
     { feature: 'Templates de objetivos', free: `Até ${free.objectiveTemplates} templates básicos`, pro: 'Biblioteca completa' },
-    { feature: 'Compartilhamento', free: `${free.shareTemplates} modelos, em preto ou PNG`, pro: 'Todos os modelos e personalização' },
+    { feature: 'Compartilhamento', free: `${free.shareTemplates} arranjos, todas as cores e PNG`, pro: 'Todos os modelos e personalização' },
     { feature: 'Exportação de dados', free: 'Não disponível', pro: 'PDF, imagem e CSV' },
     { feature: 'Lembretes', free: `${free.remindersPerHabit} lembrete por hábito`, pro: 'Lembretes personalizados' },
     { feature: 'Personalização', free: 'Tema padrão', pro: 'Temas, cores e preferências' },

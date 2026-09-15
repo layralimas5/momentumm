@@ -441,14 +441,6 @@ export const UNLOCKS: readonly UnlockSpec[] = [
     requiresPro: false,
   },
   {
-    key: 'share_neon',
-    kind: 'share',
-    label: 'Cor "Neon"',
-    hint: 'Moldura acesa no escuro, no Share Studio.',
-    level: 4,
-    requiresPro: false,
-  },
-  {
     key: 'retrospectiva',
     kind: 'retrospectiva',
     label: 'Retrospectiva da jornada',
