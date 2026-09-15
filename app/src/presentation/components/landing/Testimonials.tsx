@@ -4,13 +4,13 @@ import { Section, SectionHeading } from './Section'
 import { TESTIMONIALS_BOTTOM, TESTIMONIALS_TOP, type Testimonial } from './testimonials-data'
 
 /**
- * Três depoimentos, colados no preço: prova social decide na hora da
+ * Seis depoimentos, colados no preço: prova social decide na hora da
  * escolha, não logo depois do hero. Grade estática, sem esteira: no celular
  * a esteira custava duas telas.
  */
 const FEATURED: readonly Testimonial[] = [
-  ...TESTIMONIALS_TOP.slice(0, 2),
-  ...TESTIMONIALS_BOTTOM.slice(0, 1),
+  ...TESTIMONIALS_TOP.slice(0, 3),
+  ...TESTIMONIALS_BOTTOM.slice(0, 3),
 ]
 
 export function Testimonials() {
@@ -18,7 +18,7 @@ export function Testimonials() {
     <Section id="depoimentos" compact className="border-t border-line">
       <SectionHeading eyebrow="Depoimentos" title="Quem trocou o plano ideal pelo dia real." />
 
-      <ul className="mt-10 grid gap-4 md:grid-cols-3">
+      <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {FEATURED.map((item, index) => (
           <Reveal key={item.name} delay={index * 0.06} className="h-full">
             <TestimonialCard item={item} />
@@ -31,7 +31,7 @@ export function Testimonials() {
 
 function TestimonialCard({ item }: { readonly item: Testimonial }) {
   return (
-    <li className="h-full rounded-card border border-line bg-surface p-5">
+    <li className="pulse-on-hover h-full rounded-card border border-line bg-surface p-5">
       <figure className="flex h-full flex-col gap-4">
         <figcaption className="flex items-center gap-3">
           <img

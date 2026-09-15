@@ -1,4 +1,6 @@
-import { motion } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
+import { animate, motion, useInView, useReducedMotion } from 'framer-motion'
+import { cn } from '@/shared/lib/cn'
 import { Reveal } from './Reveal'
 import { Section, SectionHeading } from './Section'
 
@@ -61,9 +63,10 @@ export function MomentumScore() {
             <div className="flex items-end justify-between gap-4">
               <div>
                 <p className="text-sm text-ink-faint">Momentum</p>
-                <p className="text-gradient-brand tabular mt-1 text-6xl font-semibold leading-none tracking-tight sm:text-7xl">
-                  72
-                </p>
+                <CountUp
+                  value={72}
+                  className="text-gradient-brand tabular mt-1 block text-6xl font-semibold leading-none tracking-tight sm:text-7xl"
+                />
               </div>
               <div className="text-right">
                 <span className="inline-flex rounded-full border border-brand/40 bg-brand-dim/40 px-2.5 py-1 text-xs font-medium text-brand-ink">
@@ -72,6 +75,8 @@ export function MomentumScore() {
                 <p className="tabular mt-2 text-sm text-positive">+4 nesta semana</p>
               </div>
             </div>
+
+            <ScoreWindow />
 
             <ul className="mt-8 space-y-4">
               {FACTORS.map((factor, index) => (
@@ -108,7 +113,7 @@ export function MomentumScore() {
         <div className="flex flex-col gap-4 lg:self-center">
           {RULES.map((rule, index) => (
             <Reveal key={rule.title} delay={index * 0.06}>
-              <div className="rounded-card border border-line bg-surface p-5">
+              <div className="pulse-on-hover rounded-card border border-line bg-surface p-5">
                 <h3 className="font-medium text-ink">{rule.title}</h3>
                 <p className="mt-2 text-pretty text-sm text-ink-muted">{rule.description}</p>
               </div>
@@ -137,5 +142,93 @@ export function MomentumScore() {
         </div>
       </div>
     </Section>
+  )
+}
+
+/** O número sobe de zero até o valor quando entra na tela: ritmo se vê andando, não parado. */
+function CountUp({ value, className }: { readonly value: number; readonly className?: string }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  const inView = useInView(ref, { once: true, margin: '-80px' })
+  const reduced = useReducedMotion()
+  const [current, setCurrent] = useState(reduced ? value : 0)
+
+  useEffect(() => {
+    if (!inView || reduced) return
+    const controls = animate(0, value, {
+      duration: 1.4,
+      ease: [0.22, 1, 0.36, 1],
+      onUpdate: (latest) => setCurrent(Math.round(latest)),
+    })
+    return () => controls.stop()
+  }, [inView, reduced, value])
+
+  return (
+    <span ref={ref} className={className}>
+      {current}
+    </span>
+  )
+}
+
+/**
+ * A janela de 28 dias como imagem: quatro semanas de dias, a atual maior e
+ * em roxo (pesa o triplo), um dia vazio marcado pra mostrar que ele tira
+ * pouco e não zera. É a regra das duas cards ao lado, sem precisar ler.
+ */
+const WINDOW_DAYS = 28
+const EMPTY_DAY = 16
+const WEAK_DAYS = new Set([3, 9, 22])
+
+function ScoreWindow() {
+  const reduced = useReducedMotion()
+  const days = Array.from({ length: WINDOW_DAYS }, (_, index) => index)
+
+  return (
+    <div className="mt-7 rounded-2xl border border-line bg-canvas/60 p-4">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-xs font-medium text-ink">Últimos 28 dias</p>
+        <p className="text-[11px] text-ink-faint">semana atual pesa 3×</p>
+      </div>
+
+      <ol className="mt-3 grid grid-cols-7 gap-1.5" aria-hidden="true">
+        {days.map((day) => {
+          const currentWeek = day >= WINDOW_DAYS - 7
+          const empty = day === EMPTY_DAY
+          const weak = WEAK_DAYS.has(day)
+          return (
+            <motion.li
+              key={day}
+              initial={reduced ? false : { opacity: 0, scale: 0.6 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.3, delay: 0.15 + day * 0.02, ease: [0.22, 1, 0.36, 1] }}
+              className={cn(
+                'mx-auto rounded-full',
+                currentWeek ? 'size-4 sm:size-5' : 'size-3 sm:size-3.5',
+                empty && 'border border-dashed border-flame/80 bg-transparent',
+                !empty && weak && 'bg-brand/35',
+                !empty && !weak && (currentWeek ? 'bg-brand-hi' : 'bg-brand/70'),
+              )}
+            />
+          )
+        })}
+      </ol>
+
+      <dl className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-ink-faint">
+        <div className="flex items-center gap-1.5">
+          <dt className="size-2.5 rounded-full bg-brand-hi" />
+          <dd>dia cheio</dd>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <dt className="size-2.5 rounded-full bg-brand/35" />
+          <dd>versão mínima</dd>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <dt className="size-2.5 rounded-full border border-dashed border-flame/80" />
+          <dd>
+            dia vazio: <span className="text-flame">−2, não zero</span>
+          </dd>
+        </div>
+      </dl>
+    </div>
   )
 }
