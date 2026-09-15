@@ -1,4 +1,5 @@
 import { useId, useRef, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useFocusTrap } from '@/presentation/hooks/use-focus-trap'
 import { cn } from '@/shared/lib/cn'
@@ -19,6 +20,10 @@ interface BottomSheetProps {
  * Sobe pela borda de baixo porque é onde o polegar alcança, e nunca passa de
  * 88% da altura — a faixa que sobra em cima mostra que existe tela atrás e
  * dá um alvo grande pra fechar sem procurar o X.
+ *
+ * Vai pro `body` por portal: `backdrop-filter` e `transform` no ancestral
+ * (o header fixo do celular tem os dois) viram containing block do `fixed`,
+ * e o sheet nasceria preso dentro da barra em vez de cobrir a tela.
  */
 export function BottomSheet({
   open,
@@ -34,7 +39,7 @@ export function BottomSheet({
 
   useFocusTrap(open, panelRef, onClose)
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open ? (
         <motion.div
@@ -121,7 +126,8 @@ export function BottomSheet({
           </motion.div>
         </motion.div>
       ) : null}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   )
 }
 
