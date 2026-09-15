@@ -50,6 +50,11 @@ describe('resolveArea', () => {
     expect(resolveArea('saude', '', ['saude']).needsAxis).toBe(false)
   })
 
+  it('reconhece a área pelo sufixo quando o banco prefixou o slug com o dono', () => {
+    const area = resolveArea('carreira', '', ['ec19a1b4-carreira'])
+    expect(area).toMatchObject({ axis: 'ec19a1b4-carreira', needsAxis: false })
+  })
+
   it('áreas extras saem sem a principal e sem repetição', () => {
     const extras = resolveExtraAreas(['estudos', 'saude', 'saude', 'outro'], 'Violão', ['estudo'], 'estudo')
     expect(extras.map((area) => area.axis)).toEqual(['saude', 'violao'])

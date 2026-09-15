@@ -155,7 +155,12 @@ export function resolveArea(
   }
 
   const slug = slugify(label)
-  return { label, axis: slug, needsAxis: slug.length > 0 && !existingAxes.includes(slug) }
+  // A área criada vive no banco com o prefixo do dono (`ec19a1b4-carreira`).
+  // Reconhecer o sufixo evita criar "Carreira" de novo quando ela já existe,
+  // e aponta o plano pro slug que o banco tem, não pro que o domínio calculou.
+  const existing = existingAxes.find((item) => item === slug || item.endsWith(`-${slug}`))
+  if (existing) return { label, axis: existing, needsAxis: false }
+  return { label, axis: slug, needsAxis: slug.length > 0 }
 }
 
 /**

@@ -158,8 +158,13 @@ function unknownType(slug: ActivityTypeSlug): ActivityType {
   }
 }
 
+/**
+ * O rótulo de um slug que ninguém registrou. Área criada nasce com o prefixo
+ * do dono no slug (`ec19a1b4-carreira`): se a lista de áreas ainda não
+ * chegou, a tela mostra "Carreira", nunca o prefixo.
+ */
 function labelFromSlug(slug: string): string {
-  const words = slug.replace(/-/g, ' ').trim()
+  const words = slug.replace(/^[0-9a-f]{8}-/, '').replace(/-/g, ' ').trim()
   return words.charAt(0).toUpperCase() + words.slice(1)
 }
 

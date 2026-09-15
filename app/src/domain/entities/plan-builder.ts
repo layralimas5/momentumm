@@ -214,12 +214,28 @@ const TEMPLATES: Readonly<Record<string, AxisTemplate>> = {
 }
 
 /**
- * Roteiro de qualquer área criada pela pessoa. Usa o nome dela nas frases, pra
- * o plano não parecer um formulário genérico preenchido com o que sobrou.
+ * Roteiro de qualquer área criada pela pessoa.
+ *
+ * As frases nascem do OBJETIVO que ela escreveu, não do nome da área: "Dar o
+ * primeiro passo pra ter 30 leads" é um plano; "Fazer a primeira sessão de
+ * carreira" é um formulário preenchido com o que sobrou. A área só entra
+ * quando não há objetivo em palavras.
  */
-function templateFor(axis: ActivityTypeSlug, axisLabel?: string): AxisTemplate {
+function templateFor(axis: ActivityTypeSlug, axisLabel?: string, goal?: string): AxisTemplate {
   const known = TEMPLATES[axis]
   if (known) return known
+
+  const focus = goalPhrase(goal)
+  if (focus) {
+    return {
+      habit: `Trabalhar pra ${focus}`,
+      firstStep: `Dar o primeiro passo pra ${focus}`,
+      firstStepMinimal: 'Fazer 5 minutos, só pra começar',
+      preparation: `Listar o que falta pra ${focus}`,
+      preparationMinimal: 'Anotar o primeiro passo',
+      checkpoint: `Rever o caminho até ${focus}`,
+    }
+  }
 
   const label = (axisLabel ?? activityType(axis).label).toLowerCase()
 
@@ -231,6 +247,19 @@ function templateFor(axis: ActivityTypeSlug, axisLabel?: string): AxisTemplate {
     preparationMinimal: 'Anotar o primeiro passo',
     checkpoint: `Rever como ${label} está encaixando na rotina`,
   }
+}
+
+/**
+ * O objetivo como complemento de frase: "Ter 30 leads do Momentumm" vira
+ * "ter 30 leads do Momentumm". Só a primeira letra cai, porque o resto pode
+ * ser nome próprio. Objetivo longo demais deixaria a ação com três linhas.
+ */
+function goalPhrase(goal: string | undefined): string | null {
+  const trimmed = goal?.trim().replace(/[.!]+$/, '')
+  if (!trimmed || trimmed.length < 3 || trimmed.length > 60) return null
+  // Um título de fallback ("Carreira: primeiro passo") não é objetivo escrito.
+  if (/: primeiro passo$/.test(trimmed)) return null
+  return trimmed.charAt(0).toLowerCase() + trimmed.slice(1)
 }
 
 /**
@@ -286,7 +315,7 @@ function capacityPerSession(axis: ActivityTypeSlug, minutesPerDay: number): numb
 
 export function buildPlan(input: PlanInput): PlanDraft {
   const type = activityType(input.axis)
-  const template = templateFor(input.axis, input.axisLabel)
+  const template = templateFor(input.axis, input.axisLabel, input.title)
   const limits = limitsOfAxis(input.axis)
 
   const daysPerWeek = clamp(Math.round(input.daysPerWeek), MIN_DAYS_PER_WEEK, MAX_DAYS_PER_WEEK)

@@ -190,12 +190,19 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
 
       if (!mounted.current) return
 
+      // Uma área criada enquanto a leitura estava em voo não pode sumir só
+      // porque a resposta do servidor é mais velha que ela.
+      const knownAxes = snapshot.current.customAxes.filter(
+        (axis) => !customAxes.some((item) => item.slug === axis.slug),
+      )
+      const mergedAxes = [...customAxes, ...knownAxes]
+
       // Antes do setData: qualquer tela que renderizar já precisa saber
       // traduzir o slug de uma área criada em nome e cor.
-      registerCustomActivityTypes(customAxes)
+      registerCustomActivityTypes(mergedAxes)
 
       setData({
-        customAxes,
+        customAxes: mergedAxes,
         activities: sortByRecent(activities),
         objectives: objectives.filter(isActiveObjective),
         planStages,
@@ -223,6 +230,16 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void reload()
   }, [reload])
+
+  /*
+    O registro global de áreas segue o estado, sempre. Um `reload` silencioso
+    que começou antes de uma área ser criada e terminou depois registrava a
+    lista velha por cima da nova, e a meta recém-criada aparecia com o slug
+    cru ("Ec19a1b4 carreira") até a próxima sincronização.
+  */
+  useEffect(() => {
+    registerCustomActivityTypes(data.customAxes)
+  }, [data.customAxes])
 
   /*
     Re-sincronização. O provider carregava uma vez por sessão, e o app aberto
