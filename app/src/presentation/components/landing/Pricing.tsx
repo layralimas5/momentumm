@@ -86,7 +86,7 @@ function CycleToggle({
             aria-pressed={active}
             onClick={() => onChange(option.cycle)}
             className={cn(
-              'inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm transition-colors',
+              'inline-flex min-h-10 items-center gap-2 rounded-full px-4 py-2 text-sm transition-colors',
               active ? 'bg-brand text-white' : 'text-ink-muted hover:text-ink',
             )}
           >
@@ -136,7 +136,7 @@ function PlanCard({ plan, cycle }: { plan: PricingPlan; cycle: BillingCycle }) {
         {plan.headline}
       </h3>
 
-      <div className="mt-4 min-h-[5.5rem]" aria-live="polite">
+      <div className="mt-4 md:min-h-[5.5rem]" aria-live="polite">
         <p className="flex flex-wrap items-baseline gap-x-1">
           <span className="tabular text-3xl font-semibold text-ink">{price.amount}</span>
           <span className="text-sm text-ink-muted">{price.period}</span>
@@ -179,10 +179,10 @@ function PlanCard({ plan, cycle }: { plan: PricingPlan; cycle: BillingCycle }) {
       <Link
         to={CTA.primary.to}
         className={cn(
-          'mt-6 inline-flex h-11 items-center justify-center rounded-xl px-4 text-sm font-medium transition-colors',
+          'mt-6 inline-flex h-12 items-center justify-center rounded-xl px-4 text-sm font-medium transition-colors',
           plan.highlight
-            ? 'bg-brand text-white hover:bg-brand-hi'
-            : 'border border-line text-ink hover:border-line-hi',
+            ? 'bg-brand text-white hover:bg-brand-hi active:bg-brand-deep'
+            : 'border border-line text-ink hover:border-line-hi active:bg-surface-hi',
         )}
       >
         {plan.cta}

@@ -150,7 +150,7 @@ export function Screens() {
         role="tablist"
         aria-label="Telas do Momentumm"
         onKeyDown={onKeyDown}
-        className="mt-10 flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] sm:flex-wrap sm:justify-center [&::-webkit-scrollbar]:hidden"
+        className="-mx-4 mt-8 flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:mt-10 sm:flex-wrap sm:justify-center sm:px-0 [&::-webkit-scrollbar]:hidden"
       >
         {SCREENS.map((screen) => {
           const selected = screen.id === activeId
@@ -165,7 +165,7 @@ export function Screens() {
               tabIndex={selected ? 0 : -1}
               onClick={() => setActiveId(screen.id)}
               className={cn(
-                'inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm transition-colors',
+                'inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full border px-4 py-2 text-sm transition-colors',
                 selected
                   ? 'border-white/70 bg-white text-brand-deep'
                   : 'border-white/30 text-white/85 hover:border-white/60 hover:text-white',
@@ -185,7 +185,7 @@ export function Screens() {
         id={`${baseId}-panel`}
         role="tabpanel"
         aria-labelledby={`${baseId}-tab-${active.id}`}
-        className="mt-10 grid items-center gap-10 md:grid-cols-2 md:gap-14"
+        className="mt-8 grid items-center gap-8 sm:mt-10 md:grid-cols-2 md:gap-14"
       >
         <AnimatePresence mode="wait" initial={false}>
           <motion.div

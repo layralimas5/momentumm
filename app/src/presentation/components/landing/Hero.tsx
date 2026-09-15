@@ -69,7 +69,7 @@ export function Hero() {
         className="pointer-events-none absolute -top-40 left-1/2 size-[48rem] -translate-x-1/2 rounded-full bg-brand/20 blur-[120px]"
       />
 
-      <div className="relative mx-auto max-w-[90rem] px-4 pb-16 pt-32 sm:px-8 sm:pt-40 lg:pb-24 xl:pt-44">
+      <div className="relative mx-auto max-w-[90rem] px-4 pb-14 pt-28 sm:px-8 sm:pb-16 sm:pt-40 lg:pb-24 xl:pt-44">
         {CARDS.map((card) => (
           <FloatingCard
             key={card.key}
@@ -107,7 +107,7 @@ export function Hero() {
             </span>
           </motion.p>
 
-          <h1 className="mt-7 text-balance text-4xl font-semibold tracking-tight text-ink sm:text-5xl xl:text-7xl">
+          <h1 className="mt-7 text-balance text-[clamp(2.125rem,7.5vw,4.5rem)] font-semibold leading-[1.05] tracking-tight text-ink">
             {LINES.map((line, index) => (
               <motion.span
                 key={line}
@@ -131,7 +131,7 @@ export function Hero() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="mx-auto mt-6 max-w-2xl text-pretty text-lg text-ink-muted xl:text-xl"
+            className="mx-auto mt-6 max-w-2xl text-pretty text-[clamp(1rem,2.6vw,1.25rem)] text-ink-muted"
           >
             Diga o que quer alcançar. O Momentumm monta o plano, te entrega a ação de hoje e ajusta
             o caminho quando a semana não sai como o planejado.
@@ -145,7 +145,7 @@ export function Hero() {
           >
             <Link
               to={CTA.primary.to}
-              className="inline-flex h-13 w-full max-w-xs items-center justify-center gap-2 rounded-full bg-brand px-7 font-medium text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-hi sm:w-auto"
+              className="inline-flex h-13 w-full max-w-xs items-center justify-center gap-2 rounded-full bg-brand px-7 font-medium text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-hi active:bg-brand-deep sm:w-auto"
             >
               {CTA.primary.label}
               <ArrowIcon direction="up" />
@@ -153,7 +153,7 @@ export function Hero() {
 
             <Link
               to={CTA.secondary.to}
-              className="inline-flex h-13 w-full max-w-xs items-center justify-center gap-2 rounded-full border border-line-hi bg-surface/80 px-7 font-medium text-ink backdrop-blur transition-colors hover:bg-surface-hi sm:w-auto"
+              className="inline-flex h-13 w-full max-w-xs items-center justify-center gap-2 rounded-full border border-line-hi bg-surface/80 px-7 font-medium text-ink backdrop-blur transition-colors hover:bg-surface-hi active:bg-surface-top sm:w-auto"
             >
               Ver por dentro
               <ArrowIcon direction="down" />
@@ -163,8 +163,8 @@ export function Hero() {
           <p className="mt-6 text-sm text-ink-faint">{CTA.reassurance}</p>
         </div>
 
-        {/* No tablet os cards viram grade de quatro; no celular somem, que ali eles só empurram o CTA pra baixo. */}
-        <div className="mt-14 hidden grid-cols-4 justify-items-center gap-5 lg:grid xl:hidden">
+        {/* No tablet os cards viram grade (2x2 e depois 4); no celular somem, que ali eles só empurram o CTA pra baixo. */}
+        <div className="mx-auto mt-14 hidden max-w-3xl grid-cols-2 justify-items-center gap-5 md:grid lg:max-w-none lg:grid-cols-4 xl:hidden">
           {CARDS.map((card) => (
             <FloatingCard key={card.key} tilt={card.tilt / 2} delay={card.delay}>
               {card.node}
@@ -176,17 +176,17 @@ export function Hero() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.9 }}
-          className="mx-auto mt-16 max-w-4xl text-center xl:mt-24"
+          className="mx-auto mt-14 max-w-4xl text-center sm:mt-16 xl:mt-24"
         >
           <p className="text-sm font-medium text-ink">Serve pra qualquer objetivo com prazo</p>
           <p className="mt-1 text-sm text-ink-faint">
             de estudo e treino a concurso e projeto pessoal
           </p>
-          <ul className="mt-7 flex flex-wrap items-center justify-center gap-x-9 gap-y-4">
+          <ul className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 sm:mt-7 sm:gap-x-9 sm:gap-y-4">
             {AREAS.map((area) => (
               <li
                 key={area.label}
-                className="inline-flex items-center gap-2 text-base font-medium text-ink-muted transition-colors hover:text-ink"
+                className="inline-flex items-center gap-2 text-sm font-medium text-ink-muted transition-colors hover:text-ink sm:text-base"
               >
                 <Icon name={area.icon} className="size-5" />
                 {area.label}

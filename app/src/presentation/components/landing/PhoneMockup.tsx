@@ -32,7 +32,8 @@ export function PhoneMockup({
       <div
         className={cn(
           'overflow-hidden rounded-[2rem] bg-canvas px-3.5 pb-4 pt-10',
-          tall ? 'h-[600px]' : 'h-[540px]',
+          // No celular a altura acompanha o conteúdo: print cortado esconde o que a seção promete.
+          tall ? 'min-h-[600px] sm:h-[600px]' : 'min-h-[540px] sm:h-[540px]',
         )}
       >
         {children}

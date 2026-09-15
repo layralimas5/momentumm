@@ -60,13 +60,18 @@ export function Trust() {
       />
 
       <Reveal>
-        <dl className="mx-auto mt-12 grid max-w-3xl grid-cols-3 gap-3 text-center">
+        <dl className="mx-auto mt-12 grid max-w-3xl gap-3 min-[30rem]:grid-cols-3 min-[30rem]:text-center">
           {NUMBERS.map((item) => (
-            <div key={item.label} className="rounded-card bg-black/20 px-3 py-4">
-              <dd className="tabular text-2xl font-semibold text-white sm:text-3xl">
+            <div
+              key={item.label}
+              className="flex items-baseline gap-3 rounded-card bg-black/20 px-4 py-3 min-[30rem]:block min-[30rem]:px-3 min-[30rem]:py-4"
+            >
+              <dd className="tabular shrink-0 whitespace-nowrap text-2xl font-semibold text-white sm:text-3xl">
                 {item.value}
               </dd>
-              <dt className="mt-1 text-xs text-white/80 sm:text-sm">{item.label}</dt>
+              <dt className="text-sm text-white/80 min-[30rem]:mt-1 min-[30rem]:text-xs sm:text-sm">
+                {item.label}
+              </dt>
             </div>
           ))}
         </dl>

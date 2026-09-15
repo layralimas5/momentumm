@@ -69,7 +69,7 @@ export function MomentumAi() {
         </ol>
 
         <Reveal delay={0.12}>
-          <div aria-hidden="true" className="surface-brand edge-light rounded-card p-5 sm:p-6">
+          <div aria-hidden="true" className="surface-brand edge-light mx-auto w-full max-w-md rounded-card p-5 sm:p-6 lg:max-w-none">
             <p className="text-xs font-medium uppercase tracking-wide text-brand-hi">Prévia do plano</p>
             <p className="mt-2 text-sm font-medium text-ink">Terminar o TCC</p>
             <p className="text-xs text-ink-faint">Até 30 de novembro · 45 min por dia · 5 dias por semana</p>

@@ -19,6 +19,16 @@ export function SiteHeader() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  // Esc fecha o menu do celular; o hash mudando (clique numa âncora) também.
+  useEffect(() => {
+    if (!mobileOpen) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileOpen(false)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [mobileOpen])
+
   // Fecha o submenu ao clicar fora ou apertar Esc.
   useEffect(() => {
     if (!openGroup) return
@@ -49,18 +59,18 @@ export function SiteHeader() {
             : 'border-line bg-surface/70 shadow-lg shadow-black/20',
         )}
       >
-        <div className="grid h-14 grid-cols-[auto_1fr_auto] items-center gap-3 pl-4 pr-2 sm:h-16 sm:pl-5 sm:pr-2.5 md:grid-cols-[1fr_auto_1fr]">
+        <div className="grid h-14 grid-cols-[auto_1fr_auto] items-center gap-3 pl-4 pr-2 sm:h-16 sm:pl-5 sm:pr-2.5 lg:grid-cols-[1fr_auto_1fr]">
           {/* No celular só o símbolo cabe ao lado do menu e do CTA. */}
           <Link
             to="/"
             aria-label="Momentumm, ir para o início"
             className="shrink-0 justify-self-start"
           >
-            <LogoMark className="size-7 md:hidden" />
-            <Wordmark decorative className="hidden md:block md:w-36 lg:w-40" />
+            <LogoMark className="size-7 sm:hidden" />
+            <Wordmark decorative className="hidden w-32 sm:block md:w-36 lg:w-40" />
           </Link>
 
-          <div ref={navRef} className="hidden justify-self-center md:block">
+          <div ref={navRef} className="hidden justify-self-center lg:block">
             <nav aria-label="Navegação principal">
               <ul className="flex items-center gap-0.5">
                 {NAV_GROUPS.map((group) => {
@@ -134,13 +144,13 @@ export function SiteHeader() {
           <div className="flex shrink-0 items-center gap-1.5 justify-self-end">
             <Link
               to="/entrar"
-              className="hidden rounded-full px-3.5 py-2 text-sm font-medium text-ink-muted transition-colors hover:text-ink sm:block"
+              className="hidden rounded-full px-3.5 py-2 text-sm font-medium text-ink-muted transition-colors hover:text-ink lg:block"
             >
               Entrar
             </Link>
             <Link
               to="/entrar"
-              className="inline-flex h-10 items-center rounded-full bg-brand px-4 text-sm font-medium text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-hi sm:h-11 sm:px-5"
+              className="inline-flex h-10 items-center whitespace-nowrap rounded-full bg-brand px-4 text-sm font-medium text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-hi active:bg-brand-deep sm:h-11 sm:px-5"
             >
               Começar grátis
             </Link>
@@ -149,7 +159,7 @@ export function SiteHeader() {
               onClick={() => setMobileOpen((value) => !value)}
               aria-expanded={mobileOpen}
               aria-controls="menu-mobile"
-              className="rounded-full p-2 text-ink-muted transition-colors hover:text-ink md:hidden"
+              className="grid size-11 place-items-center rounded-full text-ink-muted transition-colors hover:bg-surface-hi hover:text-ink lg:hidden"
             >
               <span className="sr-only">{mobileOpen ? 'Fechar menu' : 'Abrir menu'}</span>
               <svg
@@ -173,14 +183,14 @@ export function SiteHeader() {
           id="menu-mobile"
           aria-label="Navegação principal"
           className={cn(
-            'max-h-[calc(100dvh-6rem)] overflow-y-auto border-t border-line md:hidden',
+            'max-h-[calc(100dvh-6rem)] overflow-y-auto border-t border-line lg:hidden',
             mobileOpen ? 'block' : 'hidden',
           )}
         >
           <div className="px-5 py-3">
             {NAV_GROUPS.map((group) => (
               <details key={group.label} className="group border-b border-line last:border-b-0">
-                <summary className="flex cursor-pointer list-none items-center justify-between py-3 text-sm font-medium text-ink marker:hidden">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between py-3 text-sm font-medium text-ink marker:hidden">
                   {group.label}
                   <svg
                     viewBox="0 0 24 24"
@@ -200,7 +210,7 @@ export function SiteHeader() {
                       <Link
                         to={link.href}
                         onClick={() => setMobileOpen(false)}
-                        className="block rounded-lg px-2 py-2 text-sm text-ink-muted transition-colors hover:text-ink"
+                        className="block rounded-lg px-2 py-2.5 text-sm text-ink-muted transition-colors hover:bg-surface-hi hover:text-ink"
                       >
                         {link.label}
                       </Link>
@@ -215,11 +225,21 @@ export function SiteHeader() {
                 key={link.href}
                 to={link.href}
                 onClick={() => setMobileOpen(false)}
-                className="block border-t border-line py-3 text-sm font-medium text-ink"
+                className="flex min-h-11 items-center border-t border-line py-3 text-sm font-medium text-ink"
               >
                 {link.label}
               </Link>
             ))}
+
+            {/* Abaixo de lg o "Entrar" sai do header e mora aqui. */}
+            <Link
+              to="/entrar"
+              onClick={() => setMobileOpen(false)}
+              className="flex min-h-11 items-center gap-2 border-t border-line py-3 text-sm font-medium text-ink-muted transition-colors hover:text-ink"
+            >
+              Entrar
+              <span className="text-xs text-ink-faint">já tenho conta</span>
+            </Link>
           </div>
         </nav>
       </div>

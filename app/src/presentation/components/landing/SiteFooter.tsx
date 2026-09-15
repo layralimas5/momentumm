@@ -29,7 +29,7 @@ export function SiteFooter() {
   return (
     <footer className="relative bg-surface">
       <div className="relative">
-        <div className="relative mx-auto grid max-w-6xl gap-10 px-4 pb-12 pt-20 sm:px-6 sm:pt-24 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+        <div className="relative mx-auto grid max-w-6xl gap-10 px-4 pb-12 pt-16 sm:px-6 sm:pt-24 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
             <Wordmark />
             <p className="mt-4 max-w-xs text-pretty text-sm text-ink-muted">
@@ -38,41 +38,44 @@ export function SiteFooter() {
             </p>
             <Link
               to={CTA.primary.to}
-              className="mt-6 inline-flex h-11 items-center justify-center rounded-full bg-brand px-5 text-sm font-medium text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-hi"
+              className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-full bg-brand px-5 text-sm font-medium text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-hi active:bg-brand-deep sm:h-11 sm:w-auto"
             >
               {CTA.primary.label}
             </Link>
           </div>
 
-          <FooterNav title="Produto" links={PRODUCT} />
-          <FooterNav title="Recursos" links={RESOURCES} />
+          {/* Celular: duas colunas de links; tablet: três; desktop: cada nav vira filho direto da grade. */}
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:contents">
+            <FooterNav title="Produto" links={PRODUCT} />
+            <FooterNav title="Recursos" links={RESOURCES} />
 
-          <div>
-            <h2 className="text-sm font-medium text-ink">
-              {SITE.contactEmail ? 'Contato e legal' : 'Legal'}
-            </h2>
-            <ul className="mt-3 flex flex-col gap-2">
-              {SITE.contactEmail ? (
-                <li>
-                  <a
-                    href={`mailto:${SITE.contactEmail}`}
-                    className="text-sm text-ink-muted transition-colors hover:text-ink"
-                  >
-                    {SITE.contactEmail}
-                  </a>
-                </li>
-              ) : null}
-              {LEGAL.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    to={link.href}
-                    className="text-sm text-ink-muted transition-colors hover:text-ink"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <div>
+              <h2 className="text-sm font-medium text-ink">
+                {SITE.contactEmail ? 'Contato e legal' : 'Legal'}
+              </h2>
+              <ul className="mt-3 flex flex-col gap-2">
+                {SITE.contactEmail ? (
+                  <li>
+                    <a
+                      href={`mailto:${SITE.contactEmail}`}
+                      className="inline-block py-1 text-sm text-ink-muted transition-colors hover:text-ink"
+                    >
+                      {SITE.contactEmail}
+                    </a>
+                  </li>
+                ) : null}
+                {LEGAL.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      to={link.href}
+                      className="inline-block py-1 text-sm text-ink-muted transition-colors hover:text-ink"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
 
@@ -104,7 +107,7 @@ function FooterNav({
           <li key={link.href}>
             <Link
               to={link.href}
-              className="text-sm text-ink-muted transition-colors hover:text-ink"
+              className="inline-block py-1 text-sm text-ink-muted transition-colors hover:text-ink"
             >
               {link.label}
             </Link>

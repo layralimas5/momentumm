@@ -12,7 +12,7 @@ interface SectionProps {
 
 export function Section({ id, children, className, bleed = false }: SectionProps) {
   return (
-    <section id={id} className={cn('scroll-mt-20 py-20 sm:py-28', className)}>
+    <section id={id} className={cn('scroll-mt-20 py-[clamp(4rem,10vw,7rem)]', className)}>
       <div className={cn(bleed ? '' : 'mx-auto max-w-5xl px-4')}>{children}</div>
     </section>
   )
@@ -58,7 +58,7 @@ export function SectionHeading({
       ) : null}
       <h2
         className={cn(
-          'mt-3 text-balance text-3xl font-semibold tracking-tight sm:text-4xl',
+          'mt-3 text-balance text-[clamp(1.75rem,5vw,2.5rem)] font-semibold leading-[1.15] tracking-tight',
           onBrand ? 'text-white' : 'text-ink',
         )}
       >
@@ -67,7 +67,7 @@ export function SectionHeading({
       {description ? (
         <motion.p
           {...fade(0.35)}
-          className={cn('mt-4 text-pretty text-lg', onBrand ? 'text-white/85' : 'text-ink-muted')}
+          className={cn('mt-4 text-pretty text-[clamp(1rem,2.4vw,1.125rem)]', onBrand ? 'text-white/85' : 'text-ink-muted')}
         >
           {description}
         </motion.p>

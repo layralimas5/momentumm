@@ -50,12 +50,12 @@ export function StickyCta() {
         >
           <div className="flex items-center gap-3 rounded-2xl border border-line-hi bg-surface/95 p-2 pl-4 shadow-2xl shadow-black/50 backdrop-blur-xl">
             <p className="min-w-0 flex-1 text-xs leading-tight text-ink-muted">
-              <span className="block font-medium text-ink">Grátis, sem cartão.</span>O plano leva
-              dois minutos.
+              <span className="block font-medium text-ink">Grátis, sem cartão.</span>
+              <span className="hidden min-[22.5rem]:inline">O plano leva dois minutos.</span>
             </p>
             <Link
               to={CTA.primary.to}
-              className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-brand px-5 text-sm font-medium text-white transition-colors hover:bg-brand-hi"
+              className="inline-flex h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-xl bg-brand px-5 text-sm font-medium text-white transition-colors hover:bg-brand-hi active:bg-brand-deep"
             >
               {CTA.primary.label}
             </Link>
