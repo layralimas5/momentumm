@@ -34,6 +34,7 @@ import {
   createPixSubscription,
   deleteSubscription,
   getPixQrCode,
+  listActiveSubscriptions,
   listSubscriptionPayments,
   updateCustomer,
 } from '../_shared/asaas.ts'
@@ -215,7 +216,17 @@ Deno.serve(async (request) => {
         }
       }
 
-      const subscription = await createPixSubscription({
+      // Quem gerou um Pix e não pagou já tem uma assinatura esperando no
+      // Asaas. Do mesmo ciclo, é ela que volta (mesmo QR); de outro ciclo,
+      // sai pra não acumular cobrança pendente no e-mail da pessoa.
+      const open = (await listActiveSubscriptions(asaasCustomer.id)).filter(
+        (item) => item.billingType === 'PIX' && item.externalReference === user.id,
+      )
+      let subscription = open.find((item) => item.cycle === price.providerCycle) ?? null
+      for (const stale of open) {
+        if (stale.id !== subscription?.id) await deleteSubscription(stale.id)
+      }
+      subscription ??= await createPixSubscription({
         customerId: asaasCustomer.id,
         externalReference: user.id,
         cycle: price.providerCycle,

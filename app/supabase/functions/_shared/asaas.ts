@@ -51,6 +51,7 @@ export interface AsaasSubscription {
   readonly value: number
   readonly cycle: string
   readonly status: string
+  readonly billingType?: string
   readonly nextDueDate: string | null
   readonly externalReference: string | null
 }
@@ -189,6 +190,15 @@ export function createPixSubscription(input: AsaasPixSubscriptionInput): Promise
     description: input.description,
     externalReference: input.externalReference,
   })
+}
+
+/** As assinaturas ainda ativas de um cliente, pra não abrir uma segunda enquanto a primeira espera o Pix. */
+export async function listActiveSubscriptions(customerId: string): Promise<readonly AsaasSubscription[]> {
+  const page = await call<{ data: readonly AsaasSubscription[] }>(
+    'GET',
+    `/subscriptions?customer=${encodeURIComponent(customerId)}&status=ACTIVE&limit=20`,
+  )
+  return page.data
 }
 
 export async function listSubscriptionPayments(subscriptionId: string): Promise<readonly AsaasPayment[]> {
