@@ -150,7 +150,7 @@ export function Screens() {
         role="tablist"
         aria-label="Telas do Momentumm"
         onKeyDown={onKeyDown}
-        className="-mx-4 mt-8 flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:mt-10 sm:flex-wrap sm:justify-center sm:px-0 [&::-webkit-scrollbar]:hidden"
+        className="-mx-4 mt-8 flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 pb-2 scroll-px-4 [scrollbar-width:none] sm:mx-0 sm:mt-10 sm:flex-wrap sm:justify-center sm:px-0 [&::-webkit-scrollbar]:hidden"
       >
         {SCREENS.map((screen) => {
           const selected = screen.id === activeId
