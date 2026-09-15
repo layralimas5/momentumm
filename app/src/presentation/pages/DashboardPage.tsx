@@ -37,6 +37,7 @@ import { usePlanner } from '@/presentation/planner/use-planner'
 import { DayCompleteBanner } from '@/presentation/components/dashboard/DayCompleteBanner'
 import { MobileDashboard } from '@/presentation/components/mobile/MobileDashboard'
 import { ShareMomentsRow } from '@/presentation/share/ShareMomentsRow'
+import { QuoteCard } from '@/presentation/components/dashboard/QuoteCard'
 import { useIsDesktop } from '@/presentation/hooks/use-media-query'
 import { AiDayDialog } from '@/presentation/ai/AiDayDialog'
 import { AiRecoveryDialog } from '@/presentation/ai/AiRecoveryDialog'
@@ -396,6 +397,8 @@ export function DashboardPage() {
         />
 
         <ShareMomentsRow view={view} />
+
+        <QuoteCard today={planner.today} />
 
         <TodayFocusCard
           focus={view.focus}

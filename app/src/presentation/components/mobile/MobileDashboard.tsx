@@ -22,6 +22,7 @@ import { MobileObjectives } from './MobileObjectives'
 import { MobilePriority } from './MobilePriority'
 import { MobileWins } from './MobileWins'
 import { ShareMomentsRow } from '@/presentation/share/ShareMomentsRow'
+import { QuoteCard } from '@/presentation/components/dashboard/QuoteCard'
 
 interface MobileDashboardProps {
   readonly view: DashboardView
@@ -134,6 +135,8 @@ export function MobileDashboard({
       />
 
       <ShareMomentsRow view={view} />
+
+      <QuoteCard today={planner.today} />
 
       <TodayFocusCard
         focus={view.focus}

@@ -44,19 +44,19 @@ export function AppLayout() {
             perfil, e é aberto de dentro de qualquer tela. Um estúdio por página
             seria o começo da divergência entre os cards.
           */}
-          <ShareStudioProvider>
+          <EvolutionProvider>
             {/*
               A evolução lê o planner (é dele que o XP nasce) e é lida pelo
-              Share Studio e pelo perfil: por isso fica dentro de um e em volta
-              do outro.
+              Share Studio (arranjos por nível) e pelo perfil: por isso fica
+              dentro de um e em volta do outro.
             */}
-            <EvolutionProvider>
+            <ShareStudioProvider>
               <LayoutShell />
               <FocusSession />
               <LegalGate />
               <EvolutionNotice />
-            </EvolutionProvider>
-          </ShareStudioProvider>
+            </ShareStudioProvider>
+          </EvolutionProvider>
         </FocusProvider>
       </ComposerProvider>
     </PlannerProvider>
