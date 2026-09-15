@@ -1,5 +1,6 @@
 # Momentumm — deploy do front no Netlify.
 #
+# `publish` é relativo à `base`: fica `dist`, não `app/dist`.
 # O app é uma SPA em `app/`: toda rota (`/app/objetivos`, `/admin`,
 # `/app/assinatura?assinatura=sucesso`) precisa cair no `index.html`, senão
 # recarregar a página dá 404. As variáveis `VITE_SUPABASE_URL` e
@@ -9,7 +10,7 @@
 [build]
   base    = "app"
   command = "npm run build"
-  publish = "app/dist"
+  publish = "dist"
 
 [build.environment]
   NODE_VERSION = "22"
