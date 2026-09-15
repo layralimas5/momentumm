@@ -396,7 +396,9 @@ export function defaultFieldsFor(type: JourneyEventType): ShareFieldSet {
     stages: on('stages', true),
     activeDays: on('activeDays', true),
     items: on('items', true),
-    date: on('date', true),
+    // A data começa desligada: em cima do card ela parecia carimbo de
+    // relatório, e o que a pessoa posta é o momento, não o dia. Quem quiser, liga.
+    date: on('date', false),
     branding: on('branding', true),
 
     /*
