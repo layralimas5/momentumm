@@ -158,6 +158,30 @@ export function resolveArea(
   return { label, axis: slug, needsAxis: slug.length > 0 && !existingAxes.includes(slug) }
 }
 
+/**
+ * As áreas secundárias resolvidas em eixo, sem a principal e sem repetição.
+ * Elas não geram plano: só garantem que a área exista quando a pessoa voltar
+ * pra criar o objetivo dela.
+ */
+export function resolveExtraAreas(
+  keys: readonly LifeAreaKey[],
+  customLabel: string,
+  existingAxes: readonly ActivityTypeSlug[],
+  primaryAxis: ActivityTypeSlug,
+): ResolvedArea[] {
+  const seen = new Set<ActivityTypeSlug>([primaryAxis])
+  const resolved: ResolvedArea[] = []
+
+  for (const key of keys) {
+    const area = resolveArea(key, customLabel, existingAxes)
+    if (area.axis.length === 0 || seen.has(area.axis)) continue
+    seen.add(area.axis)
+    resolved.push(area)
+  }
+
+  return resolved
+}
+
 // ---------------------------------------------------------------------------
 // 3. o prazo
 // ---------------------------------------------------------------------------
@@ -341,7 +365,13 @@ export const ACTIVATION_READY_MESSAGE =
 export const ACTIVATION_CTA = 'Começar meu Momentum'
 
 export interface ActivationAnswers {
+  /** A área principal: é dela que sai o plano. */
   readonly area: LifeAreaKey
+  /**
+   * As outras áreas marcadas. Não viram plano agora — viram eixo na conta,
+   * pra existirem quando a pessoa criar o segundo objetivo.
+   */
+  readonly extraAreas: readonly LifeAreaKey[]
   /** Nome escrito pela pessoa quando a área é "Outra". */
   readonly customArea: string
   /** O que ela quer alcançar, com as palavras dela. */
@@ -387,6 +417,8 @@ export interface ActivationPlan {
   readonly areaLabel: string
   readonly axis: ActivityTypeSlug
   readonly needsAxis: boolean
+  /** As outras áreas marcadas, já resolvidas em eixo. Sem a principal e sem repetição. */
+  readonly extraAxes: readonly ResolvedArea[]
   readonly objectiveTitle: string
   readonly deadline: DayKey
   readonly assumedDeadline: boolean
@@ -445,6 +477,12 @@ function core(input: ActivationInput): Core {
   const { answers, today, adjustment } = input
 
   const area = resolveArea(answers.area, answers.customArea, input.existingAxes)
+  const extraAxes = resolveExtraAreas(
+    answers.extraAreas,
+    answers.customArea,
+    input.existingAxes,
+    area.axis,
+  )
   const horizon = resolveHorizon(answers.horizon, today)
   const budget = resolveBudget(answers.budget)
 
@@ -494,6 +532,7 @@ function core(input: ActivationInput): Core {
       areaLabel: area.label,
       axis: area.axis,
       needsAxis: area.needsAxis,
+      extraAxes,
       objectiveTitle: title,
       deadline,
       assumedDeadline: horizon.assumed && adjustment?.days === undefined,

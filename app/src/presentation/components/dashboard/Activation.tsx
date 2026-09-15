@@ -3,6 +3,7 @@ import {
   ACTIVATION_PLAN_STEP,
   ACTIVATION_STEPS,
   areaLabelOf,
+  selectedAreas,
   type ActivationController,
 } from '@/presentation/planner/use-activation'
 import {
@@ -200,46 +201,56 @@ export function Activation({ firstName, today, control }: ActivationProps) {
 // ---------------------------------------------------------------------------
 
 function AreaStep({ control }: { readonly control: ActivationController }) {
-  const { draft, set } = control
+  const { draft, set, toggleArea } = control
+  const selected = selectedAreas(draft)
+  const primary = selected[0] ?? null
 
   return (
     <Step
       title="O que você quer mudar?"
-      hint="A área da tua vida, não a do app. Ela vira um eixo de verdade: histórico, sequência e gráfico passam a existir pra ela."
+      hint="Marca quantas quiser. A primeira vira o plano de hoje; as outras já ficam criadas como eixo, com histórico e gráfico, pra você adicionar objetivos depois."
     >
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
         {LIFE_AREAS.map((area) => {
-          const selected = draft.area === area.key
+          const isSelected = selected.includes(area.key)
+          const isPrimary = primary === area.key
           return (
             <button
               key={area.key}
               type="button"
-              aria-pressed={selected}
-              onClick={() => set({ area: area.key })}
+              aria-pressed={isSelected}
+              onClick={() => toggleArea(area.key)}
               className={cn(
                 'flex min-h-16 items-start gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors',
-                selected
+                isSelected
                   ? 'border-brand bg-brand-dim/50 shadow-[0_0_0_1px_var(--color-brand)]'
                   : 'border-line bg-surface-hi/50 hover:border-line-hi hover:bg-surface active:bg-surface-top',
               )}
             >
               <Icon
                 name={AREA_ICONS[area.key]}
-                className={cn('mt-0.5 size-5 shrink-0', selected ? 'text-brand-ink' : 'text-ink-faint')}
+                className={cn('mt-0.5 size-5 shrink-0', isSelected ? 'text-brand-ink' : 'text-ink-faint')}
               />
-              <span className="min-w-0">
-                <span className="block text-sm font-medium text-ink">{area.label}</span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-2 text-sm font-medium text-ink">
+                  {area.label}
+                  {isPrimary && selected.length > 1 ? (
+                    <span className="rounded-full bg-brand/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-ink">
+                      Plano de hoje
+                    </span>
+                  ) : null}
+                </span>
                 <span className="mt-0.5 block text-xs text-ink-muted">{area.hint}</span>
               </span>
-              {selected ? (
-                <Icon name="check" className="ml-auto size-4 shrink-0 text-brand-ink" strokeWidth={2.5} />
+              {isSelected ? (
+                <Icon name="check" className="size-4 shrink-0 text-brand-ink" strokeWidth={2.5} />
               ) : null}
             </button>
           )
         })}
       </div>
 
-      {draft.area === 'outro' ? (
+      {selected.includes('outro') ? (
         <div className="mt-3">
           <label htmlFor="area-livre" className="text-sm font-medium text-ink">
             Qual é a área?

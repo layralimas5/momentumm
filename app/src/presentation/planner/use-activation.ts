@@ -43,6 +43,7 @@ export interface ActivationDraft extends Omit<ActivationAnswers, 'area'> {
 
 const EMPTY_DRAFT: ActivationDraft = {
   area: null,
+  extraAreas: [],
   customArea: '',
   goal: '',
   horizon: { kind: 'flexivel' },
@@ -66,6 +67,11 @@ export interface ActivationController {
   /** Mensagem do que falta responder. Null quando dá pra avançar. */
   readonly blocker: string | null
   set(changes: Partial<ActivationDraft>): void
+  /**
+   * Marca ou desmarca uma área. A primeira marcada é a principal (vira o
+   * plano); as outras entram como eixo. Tirar a principal promove a seguinte.
+   */
+  toggleArea(area: LifeAreaKey): void
   applyRemedy(remedy: ActivationRemedy): void
   next(): void
   back(): void
@@ -124,6 +130,20 @@ export function useActivation(): ActivationController {
     setDraft((current) => ({ ...current, ...changes }))
   }, [])
 
+  const toggleArea = useCallback(
+    (area: LifeAreaKey) => {
+      const selected = [
+        ...(draft.area ? [draft.area] : []),
+        ...draft.extraAreas.filter((key) => key !== draft.area),
+      ]
+      const next = selected.includes(area)
+        ? selected.filter((key) => key !== area)
+        : [...selected, area]
+      set({ area: next[0] ?? null, extraAreas: next.slice(1) })
+    },
+    [draft.area, draft.extraAreas, set],
+  )
+
   const applyRemedy = useCallback((remedy: ActivationRemedy) => {
     if (!remedy.adjustment) return
     setAdjustment(remedy.adjustment)
@@ -137,8 +157,8 @@ export function useActivation(): ActivationController {
   const blocker = useMemo<string | null>(() => {
     switch (step) {
       case 0:
-        if (draft.area === null) return 'Escolhe uma área pra começar.'
-        if (draft.area === 'outro' && draft.customArea.trim().length < 2) {
+        if (draft.area === null) return 'Escolhe pelo menos uma área pra começar.'
+        if (selectedAreas(draft).includes('outro') && draft.customArea.trim().length < 2) {
           return 'Escreve o nome da tua área.'
         }
         return null
@@ -194,6 +214,14 @@ export function useActivation(): ActivationController {
         created && created.slug !== plan.axis ? withAxis(plan.plan, created.slug) : plan.plan
 
       await planner.applyPlan([draftToSave])
+
+      // As outras áreas viram eixo depois do plano gravado: se falharem, o
+      // plano principal já existe e a pessoa só perde uma linha que ela
+      // recria em dois toques.
+      for (const extra of plan.extraAxes) {
+        if (extra.needsAxis) await planner.createAxis(extra.label)
+      }
+
       track('onboarding_completed')
 
       clearDraft()
@@ -219,6 +247,7 @@ export function useActivation(): ActivationController {
     canAdvance: blocker === null,
     blocker,
     set,
+    toggleArea,
     applyRemedy,
     next,
     back,
@@ -229,7 +258,13 @@ export function useActivation(): ActivationController {
   }
 }
 
-/** O nome da área, já resolvido. A tela usa isso em quase todo passo. */
+/** Todas as áreas marcadas, principal primeiro. */
+export function selectedAreas(draft: ActivationDraft): readonly LifeAreaKey[] {
+  if (draft.area === null) return []
+  return [draft.area, ...draft.extraAreas.filter((key) => key !== draft.area)]
+}
+
+/** O nome da área principal, já resolvido. A tela usa isso em quase todo passo. */
 export function areaLabelOf(draft: ActivationDraft): string {
   if (draft.area === null) return ''
   return draft.area === 'outro'

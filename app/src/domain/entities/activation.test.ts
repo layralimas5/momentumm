@@ -8,6 +8,7 @@ import {
   LIFE_AREAS,
   readGoalQuantity,
   resolveArea,
+  resolveExtraAreas,
   resolveBudget,
   resolveHorizon,
   type ActivationAnswers,
@@ -21,6 +22,7 @@ const TODAY = parseDayKey('2026-09-03')
 function answers(overrides: Partial<ActivationAnswers> = {}): ActivationAnswers {
   return {
     area: 'estudos',
+    extraAreas: [],
     customArea: '',
     goal: 'Terminar o curso de arquitetura',
     horizon: { kind: 'preset', days: 90 },
@@ -46,6 +48,18 @@ describe('resolveArea', () => {
 
   it('não recria uma área que a conta já tem', () => {
     expect(resolveArea('saude', '', ['saude']).needsAxis).toBe(false)
+  })
+
+  it('áreas extras saem sem a principal e sem repetição', () => {
+    const extras = resolveExtraAreas(['estudos', 'saude', 'saude', 'outro'], 'Violão', ['estudo'], 'estudo')
+    expect(extras.map((area) => area.axis)).toEqual(['saude', 'violao'])
+    expect(extras.every((area) => area.needsAxis)).toBe(true)
+  })
+
+  it('o plano carrega as áreas extras resolvidas', () => {
+    const plan = buildActivation(input({ answers: answers({ extraAreas: ['financas', 'estudos'] }) }))
+    expect(plan.axis).toBe('estudo')
+    expect(plan.extraAxes.map((area) => area.label)).toEqual(['Finanças'])
   })
 
   it('"Outra" usa o nome escrito pela pessoa', () => {

@@ -74,6 +74,13 @@ export function ActivationPlanView({
           </Tag>
         </div>
         <p className="mt-2 text-xs text-ink-faint">{targetNote(plan)}</p>
+        {plan.extraAxes.length > 0 ? (
+          <p className="mt-1 text-xs text-ink-faint">
+            {plan.extraAxes.map((area) => area.label).join(', ')}
+            {plan.extraAxes.length === 1 ? ' já fica criada' : ' já ficam criadas'} como eixo. Você
+            adiciona os objetivos delas quando quiser.
+          </p>
+        ) : null}
         {plan.assumedDeadline ? (
           <p className="mt-1 text-xs text-ink-faint">
             Você disse que ainda não sabe a data: usei três meses pra o plano existir. Dá pra mudar
