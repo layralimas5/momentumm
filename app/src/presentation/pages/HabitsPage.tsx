@@ -50,7 +50,7 @@ export function HabitsPage() {
     <div className="flex flex-col gap-5">
       <PageHeader
         title="Hábitos"
-        description="A repetição que segura o plano nos dias em que a vontade não aparece. Por isso a versão mínima conta como cumprida: quebrar a sequência custa mais do que fazer pouco."
+        description="A repetição que segura o plano. Versão mínima conta."
         action={
           <Button onClick={() => composer.open('habito')} disabled={limit.reached}>
             <Icon name="mais" className="size-4" />
@@ -65,7 +65,7 @@ export function HabitsPage() {
       {active.length === 0 ? (
         <EmptyState
           title="Nenhum hábito ainda"
-          description="Começa com um só, do tamanho que sobrevive a uma semana ruim. O segundo entra quando o primeiro virar automático."
+          description="Começa com um só, do tamanho de uma semana ruim."
           action={
             <Button onClick={() => composer.open('habito')}>
               <Icon name="mais" className="size-4" />

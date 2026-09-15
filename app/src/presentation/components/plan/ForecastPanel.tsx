@@ -24,7 +24,7 @@ export function ForecastPanel({ view }: { readonly view: ObjectiveView }) {
       <PanelHeader
         title="Previsão"
         icon="calendario"
-        hint="Estimativa a partir do teu ritmo recente. Não é promessa."
+        hint="Pelo ritmo recente. Não é promessa."
       />
 
       <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">

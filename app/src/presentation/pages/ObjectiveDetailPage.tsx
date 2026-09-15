@@ -219,7 +219,6 @@ export function ObjectiveDetailPage() {
             <PanelHeader
               title="Hábitos"
               icon="habitos"
-              hint="A repetição que sustenta esse objetivo."
               action={
                 <Button
                   size="sm"
@@ -329,7 +328,7 @@ export function ObjectiveDetailPage() {
       {!view.plan.hasPlan && view.tasks.length === 0 && view.habits.length === 0 ? (
         <EmptyState
           title="Esse objetivo ainda não virou plano"
-          description="Sem etapa, hábito nem ação ele é só uma intenção com data. Quebra ele em três a cinco etapas, ou deixa o Momentumm AI montar o caminho."
+          description="Quebra em três a cinco etapas, ou deixa a Momentumm AI montar."
           action={
             <div className="flex flex-wrap justify-center gap-2">
               <Button onClick={() => composer.open('acao', { presetObjectiveId: objective.id })}>

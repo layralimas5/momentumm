@@ -53,7 +53,7 @@ export function GoalsInMotionCard({
         <div className="mt-4">
           <EmptyState
             title="Nenhuma meta ativa"
-            description="Meta transforma vontade em número. Começa com uma pequena, do tipo que dá pra bater num dia ruim."
+            description="Começa com uma meta pequena, que dá pra bater num dia ruim."
             action={
               <Button size="sm" onClick={onCreateGoal}>
                 <Icon name="mais" className="size-4" />

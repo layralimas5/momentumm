@@ -295,15 +295,15 @@ function summarize(
     case 'concluido':
       return `Objetivo fechado: ${formatUnit(type, objective.target)}.`
     case 'vencido':
-      return `O prazo passou com ${formatUnit(type, input.done)} de ${objective.target}. Dá pra renovar com uma data nova.`
+      return `Prazo passou: ${formatUnit(type, input.done)} de ${objective.target}. Dá pra renovar a data.`
     case 'no-prazo':
       return input.daysLeft === 0
         ? `Último dia: faltam ${formatUnit(type, input.remaining)}.`
-        : `No ritmo certo. Faltam ${formatUnit(type, input.remaining)} em ${input.daysLeft} dias, ou ${pace}.`
+        : `No ritmo. Faltam ${formatUnit(type, input.remaining)}, ${pace}.`
     case 'atencao':
-      return `Um pouco atrás do esperado. Pra fechar no prazo são ${pace}.`
+      return `Um pouco atrás. Pra fechar no prazo: ${pace}.`
     case 'atrasado':
-      return `Atrasado. Fechar no prazo exige ${pace}: se isso não cabe na tua semana, vale mexer no prazo em vez de abandonar.`
+      return `Atrasado. Fechar no prazo pede ${pace}. Se não cabe, mexe no prazo.`
   }
 }
 

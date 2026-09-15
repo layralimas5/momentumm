@@ -128,7 +128,7 @@ export function Activation({ firstName, today, control }: ActivationProps) {
           {step === ACTIVATION_PLAN_STEP && plan ? (
             <Step
               title="Seu plano"
-              hint="Montado com as tuas respostas. Dá pra mudar tudo depois, sem perder nada."
+              hint="Dá pra mudar tudo depois."
             >
               <div className="mt-4">
                 <ActivationPlanView
@@ -208,7 +208,7 @@ function AreaStep({ control }: { readonly control: ActivationController }) {
   return (
     <Step
       title="O que você quer mudar?"
-      hint="Marca quantas quiser. A primeira vira o plano de hoje; as outras já ficam criadas como eixo, com histórico e gráfico, pra você adicionar objetivos depois."
+      hint="Marca quantas quiser. A primeira vira o plano de hoje."
     >
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
         {LIFE_AREAS.map((area) => {
@@ -280,7 +280,7 @@ function GoalStep({ control }: { readonly control: ActivationController }) {
   return (
     <Step
       title="O que você quer alcançar?"
-      hint="Escreve como você contaria pra alguém. Se tiver um número na cabeça, coloca ele. O plano usa."
+      hint="Com as tuas palavras. Se tiver um número, coloca."
     >
       <div className="mt-4">
         <label htmlFor="objetivo-livre" className="sr-only">
@@ -322,7 +322,7 @@ function HorizonStep({
   return (
     <Step
       title="Quando gostaria de alcançar isso?"
-      hint="Prazo é o que separa objetivo de desejo. Se ainda não sabe, tudo bem: o app assume três meses e diz isso."
+      hint="Se ainda não sabe, o app assume três meses."
     >
       <div className="mt-4 flex flex-col gap-3">
         <div className="flex flex-wrap gap-2">
@@ -415,7 +415,7 @@ function BudgetStep({ control }: { readonly control: ActivationController }) {
   return (
     <Step
       title="Quanto tempo consegue dedicar realisticamente?"
-      hint="O tempo de uma semana ruim, não o da semana perfeita. Nenhuma sessão do plano vai passar disso."
+      hint="O tempo de uma semana ruim, não da perfeita."
     >
       <div className="mt-4 flex flex-col gap-5">
         <div>

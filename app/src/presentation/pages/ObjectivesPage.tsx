@@ -41,14 +41,13 @@ export function ObjectivesPage() {
     <div className="flex flex-col gap-5">
       <PageHeader
         title="Objetivos"
-        description="Onde você quer chegar, com prazo. É daqui que sai o plano, e é contra isso que o app compara teu ritmo pra perceber quando alguma coisa parou de andar."
+        description="Onde você quer chegar, com prazo."
         action={
           <div className="flex flex-wrap items-center gap-2">
             {planner.limits.ai && !limit.reached ? (
               <AiEntryLink
                 enabled
                 label="Criar plano com IA"
-                hint="o objetivo vira etapas, hábitos e ações que cabem no teu tempo."
                 to="/app/ia?funcao=plano"
               />
             ) : null}
@@ -71,7 +70,7 @@ export function ObjectivesPage() {
       ) : views.length === 0 ? (
         <EmptyState
           title="Nenhum objetivo ainda"
-          description="Começa por um só. Um objetivo com prazo vira plano; três ao mesmo tempo viram uma lista que ninguém executa."
+          description="Começa por um só. Objetivo com prazo vira plano."
           action={
             <Button onClick={() => composer.open('objetivo')}>
               <Icon name="mais" className="size-4" />

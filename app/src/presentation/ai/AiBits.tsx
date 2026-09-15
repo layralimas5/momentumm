@@ -61,7 +61,6 @@ export function AiSource({ children }: { readonly children?: ReactNode }) {
 export function AiEntry({
   enabled,
   label,
-  hint,
   onClick,
   size = 'sm',
   variant = 'secondary',
@@ -70,14 +69,15 @@ export function AiEntry({
   readonly enabled: boolean
   readonly label: string
   /** O que a porta faz, dito pela utilidade. Vai no convite ao PRO. */
-  readonly hint: string
+  /** Mantido por compatibilidade; o aviso do PRO não o exibe mais. */
+  readonly hint?: string
   readonly onClick: () => void
   readonly size?: 'sm' | 'md'
   readonly variant?: 'primary' | 'secondary' | 'ghost'
   readonly className?: string
 }) {
   if (!enabled) {
-    return <UpgradeHint {...(className ? { className } : {})} message={`${label}: ${hint} Faz parte do PRO.`} />
+    return <UpgradeHint {...(className ? { className } : {})} message={`${label} faz parte do PRO.`} />
   }
   return (
     <button type="button" onClick={onClick} className={cn(buttonClass({ variant, size }), className)}>
@@ -90,18 +90,18 @@ export function AiEntry({
 export function AiEntryLink({
   enabled,
   label,
-  hint,
   to,
   className,
 }: {
   readonly enabled: boolean
   readonly label: string
-  readonly hint: string
+  /** Mantido por compatibilidade; o aviso do PRO não o exibe mais. */
+  readonly hint?: string
   readonly to: string
   readonly className?: string
 }) {
   if (!enabled) {
-    return <UpgradeHint {...(className ? { className } : {})} message={`${label}: ${hint} Faz parte do PRO.`} />
+    return <UpgradeHint {...(className ? { className } : {})} message={`${label} faz parte do PRO.`} />
   }
   return (
     <Link to={to} className={cn(buttonClass({ variant: 'secondary', size: 'sm' }), className)}>

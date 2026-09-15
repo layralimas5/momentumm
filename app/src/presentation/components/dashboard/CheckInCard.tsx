@@ -133,7 +133,6 @@ function CheckInForm({
         id="checkin-titulo"
         title="Como você está chegando hoje?"
         icon="raio"
-        hint="Leva dez segundos e muda o que o Momentumm te sugere pro resto do dia."
       />
 
       <fieldset className="mt-5">

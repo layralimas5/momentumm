@@ -54,7 +54,7 @@ export function ProfileVisibilityPanel({ profile, onSaved }: ProfileVisibilityPa
       <PanelHeader
         title="Quem vê teu perfil"
         icon="cadeado"
-        hint="Vale pros teus números e conquistas. O que você compartilha continua sendo escolha de cada momento."
+        hint="Vale pros teus números. Cada momento é escolha à parte."
       />
 
       {error ? (

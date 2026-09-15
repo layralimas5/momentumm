@@ -49,7 +49,7 @@ export function ObjectivesCard({
         <div className="mt-4">
           <EmptyState
             title="Nenhum objetivo com prazo"
-            description="Objetivo é o que dá direção pro hábito. Sem data pra fechar, tudo vira rotina sem destino."
+            description="É o objetivo que dá direção pro dia."
             action={
               <Button size="sm" onClick={onCreate}>
                 <Icon name="mais" className="size-4" />

@@ -64,7 +64,7 @@ export function HabitsCard({
         <div className={bare ? '' : 'mt-4'}>
           <EmptyState
             title="Nenhum hábito pra hoje"
-            description="Um hábito simples e diário sustenta mais evolução do que três difíceis. Começa por um."
+            description="Começa por um hábito simples e diário."
             action={
               <Button size="sm" onClick={onCreate}>
                 <Icon name="mais" className="size-4" />

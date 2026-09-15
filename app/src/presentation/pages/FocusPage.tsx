@@ -42,7 +42,7 @@ export function FocusPage() {
     <div className="flex flex-col gap-5">
       <PageHeader
         title="Foco"
-        description="Sessão cronometrada que vira registro sozinha. O tempo conta por relógio real, não por aba aberta."
+        description="Sessão cronometrada que vira registro sozinha."
       />
 
       <div className="grid gap-5 xl:grid-cols-[22rem_minmax(0,1fr)] xl:items-start 2xl:grid-cols-[25rem_minmax(0,1fr)]">
@@ -92,7 +92,7 @@ export function FocusPage() {
               <div className="mt-4">
                 <EmptyState
                   title="Nenhuma sessão de foco ainda"
-                  description="Começa uma sessão pela prioridade do dia. No fim, ela vira registro sem você digitar nada."
+                  description="Começa pela prioridade do dia. No fim vira registro."
                 />
               </div>
             ) : (

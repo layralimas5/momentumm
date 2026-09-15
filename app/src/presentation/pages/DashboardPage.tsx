@@ -447,7 +447,6 @@ export function DashboardPage() {
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-start">
         <Section
           title="Objetivos em andamento"
-          hint="Onde cada um está e qual é o próximo passo."
           to="/app/objetivos"
           toLabel="Ver todos"
         >
@@ -488,7 +487,6 @@ export function DashboardPage() {
       {view.insight ? (
         <Section
           title="Seu Momentum"
-          hint="O que os teus registros estão mostrando."
           to="/app/insights"
           toLabel="Ver todas as leituras"
         >

@@ -35,7 +35,7 @@ export function CirclePage() {
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 lg:gap-6">
       <PageHeader
         title="Círculo"
-        description="As pessoas que você escolheu acompanhar, e só o que elas decidiram mostrar."
+        description="Quem você acompanha, e o que decidiram mostrar."
       />
 
       {circle.error ? <ErrorNote message={circle.error} /> : null}

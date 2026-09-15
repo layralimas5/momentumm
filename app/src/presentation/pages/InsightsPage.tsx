@@ -72,7 +72,7 @@ export function InsightsPage() {
       <div className="flex flex-col gap-5">
         <PageHeader
           title="O que mudou no seu ritmo"
-          description="Padrões, gargalos e o ajuste que cada um pede, lidos dos teus próprios registros."
+          description="Padrões lidos dos teus registros, com o ajuste de cada um."
         />
         <ProGate
           title="Leituras do ritmo"
@@ -109,7 +109,7 @@ export function InsightsPage() {
           {total === 0 ? (
             <EmptyState
               title="Nada saiu do lugar ainda"
-              description="Por enquanto o teu plano está funcionando como foi montado. Quando algum padrão mudar (uma etapa travando, a constância caindo, o dia ficando maior que a tua capacidade), ele aparece aqui com o ajuste."
+              description="Quando algum padrão mudar, ele aparece aqui com o ajuste."
             />
           ) : (
             insights.map((insight) => (
@@ -126,7 +126,6 @@ export function InsightsPage() {
               id="composicao-titulo"
               title="Como seu momentum é formado"
               icon="insights"
-              hint="Quatro fatores sobre os últimos 28 dias, com a última semana pesando o triplo."
             />
 
             <MomentumBreakdown momentum={view.momentum} className="mt-4" />

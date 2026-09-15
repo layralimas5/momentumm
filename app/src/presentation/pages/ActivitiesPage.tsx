@@ -64,7 +64,7 @@ export function ActivitiesPage() {
     <div className="flex flex-col gap-5">
       <PageHeader
         title="Minha Jornada"
-        description="Tudo que você já registrou, do mais recente. É a memória que o app usa pra perceber quando teu ritmo mudou, e é aqui que a evolução deixa de ser sensação."
+        description="Tudo que você registrou, do mais recente."
       />
 
       {error ? <ErrorNote message={error} /> : null}
@@ -97,7 +97,7 @@ export function ActivitiesPage() {
           ) : days.length === 0 ? (
             <EmptyState
               title="Nada por aqui ainda"
-              description="Assim que você registrar alguma coisa, o histórico aparece organizado por dia."
+              description="O histórico aparece no primeiro registro."
             />
           ) : (
             <>

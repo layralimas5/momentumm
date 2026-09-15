@@ -65,8 +65,8 @@ export function AdaptiveDayCard({
 
           <p className="mt-1 text-sm text-ink-muted">
             {plannedMin > 0
-              ? `O dia está montado com ${plannedMin} min. Diz o que cabe e eu reorganizo sem perder os objetivos de vista.`
-              : 'Diz quanto tempo cabe e eu organizo o dia em volta do que mais move os teus objetivos.'}
+              ? `Montado com ${plannedMin} min. Diz o que cabe e eu reorganizo.`
+              : 'Diz quanto cabe e eu organizo o dia.'}
           </p>
         </div>
       </div>

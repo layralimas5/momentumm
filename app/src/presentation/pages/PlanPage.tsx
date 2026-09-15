@@ -101,7 +101,7 @@ export function PlanPage() {
       ) : planner.tasks.length === 0 ? (
         <EmptyState
           title="Nenhuma ação no plano"
-          description="O plano nasce de um objetivo. Cria um objetivo e o Momentumm já sugere os primeiros passos, ou escreve a primeira ação por conta própria."
+          description="Cria um objetivo e o plano sai pronto."
           action={
             <div className="flex flex-wrap justify-center gap-2">
               <Button onClick={() => composer.open('objetivo')}>
@@ -159,7 +159,7 @@ export function PlanPage() {
               <PanelHeader
                 title="Caixa de entrada"
                 icon="plano"
-                hint="Anotadas sem objetivo. Não contam pra nenhum progresso até ganharem um destino."
+                hint="Sem objetivo, não contam pra nenhum progresso."
               />
               <TaskList tasks={inbox} label="Caixa de entrada" />
               <p className="mt-3 text-xs text-ink-faint">
@@ -172,7 +172,7 @@ export function PlanPage() {
           {withPlan.length === 0 && inbox.length === 0 ? (
             <EmptyState
               title="Nenhum objetivo virou plano ainda"
-              description="Você tem objetivos, mas nenhum tem ação. Abre um deles e cria o primeiro passo."
+              description="Abre um objetivo e cria o primeiro passo."
               action={
                 <Button variant="secondary" onClick={() => navigate('/app/objetivos')}>
                   Ver objetivos
@@ -197,7 +197,7 @@ export function PlanPage() {
           {horizons.length === 0 ? (
             <EmptyState
               title="Nada em aberto"
-              description="Todas as ações do plano estão concluídas ou canceladas. É um bom momento pra abrir o próximo objetivo."
+              description="Tudo concluído. Hora do próximo objetivo."
               action={
                 <Button onClick={() => composer.open('objetivo')}>
                   <Icon name="objetivo" className="size-4" />

@@ -41,7 +41,7 @@ export function EvolutionPage() {
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 lg:gap-6">
       <PageHeader
         title="Evolução"
-        description="Tudo que você já construiu, somado. O Momentum sobe e desce com a semana; isto aqui só cresce."
+        description="Tudo que você já construiu. Isto aqui só cresce."
       />
 
       {error ? <ErrorNote message={error} /> : null}
@@ -121,13 +121,13 @@ function Sources({ summary }: { readonly summary: EvolutionSummary }) {
 
   return (
     <Panel>
-      <PanelHeader title="Principais fontes" icon="insights" hint="De onde veio o XP desta semana." />
+      <PanelHeader title="Principais fontes" icon="insights" />
 
       {summary.weekSources.length === 0 ? (
         <div className="mt-4">
           <EmptyState
             title="Nenhum XP nesta semana ainda"
-            description="Fecha uma ação do Hoje ou cumpre um hábito. O XP entra sozinho, e aparece aqui."
+            description="Fecha uma ação ou cumpre um hábito: o XP entra sozinho."
           />
         </div>
       ) : (
@@ -200,7 +200,7 @@ function History({
 }) {
   return (
     <Panel>
-      <PanelHeader title="Histórico recente" icon="jornada" hint="Cada ganho, com a origem." />
+      <PanelHeader title="Histórico recente" icon="jornada" />
 
       {items.length === 0 ? (
         <div className="mt-4">
@@ -259,7 +259,7 @@ function Unlocks({ items }: { readonly items: readonly UnlockView[] }) {
       <PanelHeader
         title="Próximos desbloqueios"
         icon="cadeado"
-        hint="O plano define o que você pode usar. O XP define o que você conquistou."
+        hint="O plano define o que você usa; o XP, o que conquistou."
       />
 
       {pending.length === 0 ? (
@@ -364,7 +364,6 @@ function Achievements({ items }: { readonly items: readonly AchievementView[] })
       <PanelHeader
         title="Conquistas"
         icon="trofeu"
-        hint="Acontecimentos que valem registro. Cada uma acontece uma vez só."
       />
 
       {unlocked.length > 0 ? (

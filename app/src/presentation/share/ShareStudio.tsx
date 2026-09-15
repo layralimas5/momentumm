@@ -203,7 +203,7 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
     return (
       <EmptyState
         title="Ainda não há o que mostrar aqui"
-        description="Esse momento não tem nenhum número pra virar card. Registra alguma coisa hoje e volta. O card fica bom quando tem o que contar."
+        description="Esse momento ainda não tem número pra virar card."
       />
     )
   }
@@ -245,7 +245,6 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
       {customizable ? (
         <Field
           label="Mostrar no card"
-          hint="Começa com o mínimo. Nada que você escreveu entra sem você ligar."
         >
           <ShareStudioVisibilityControls
             event={event}

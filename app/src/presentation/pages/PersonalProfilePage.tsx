@@ -129,7 +129,7 @@ export function PersonalProfilePage() {
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 lg:gap-6">
       <PageHeader
         title="Perfil"
-        description="O retrato da tua evolução: onde você está, o que já construiu e o que vem em seguida."
+        description="Onde você está e o que já construiu."
         action={
           editing ? undefined : (
             <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
@@ -396,14 +396,13 @@ export function PersonalProfilePage() {
         <PanelHeader
           title="Progresso recente"
           icon="jornada"
-          hint="Registrados sozinhos conforme você avançou. Tudo privado até você escolher mostrar."
         />
 
         {recent.length === 0 ? (
           <div className="mt-4">
             <EmptyState
               title="Ainda não há momentos registrados"
-              description="Conclua um hábito, feche o dia ou avance um objetivo. O que valer a pena guardar aparece aqui."
+              description="Fecha um dia ou avança um objetivo e ele aparece aqui."
             />
           </div>
         ) : (

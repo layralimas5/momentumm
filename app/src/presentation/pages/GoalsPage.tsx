@@ -125,7 +125,7 @@ export function GoalsPage() {
           ) : goals.progress.length === 0 ? (
             <EmptyState
               title="Nenhuma meta ativa"
-              description="Começa com uma meta que você conseguiria bater até num dia ruim. Consistência primeiro, volume depois."
+              description="Começa com uma meta que cabe num dia ruim."
             />
           ) : (
             <ul className="grid gap-2 2xl:grid-cols-2">

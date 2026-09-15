@@ -81,7 +81,6 @@ export function StagePanel({ plan }: { readonly plan: PlanProgress }) {
       <PanelHeader
         title="Plano"
         icon="plano"
-        hint="As etapas até o objetivo. O peso de cada uma é o quanto ela vale do total."
         action={
           <Button
             size="sm"

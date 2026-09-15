@@ -63,7 +63,7 @@ export function ProgressPage() {
     <div className="flex flex-col gap-5">
       <PageHeader
         title="Progresso"
-        description="Onde você está evoluindo, onde perdeu constância, o que travou o plano e o ajuste que resolve."
+        description="Se o teu ritmo está de pé e o que ajustar."
       />
 
       {planner.error ? <ErrorNote message={planner.error} /> : null}
@@ -73,7 +73,7 @@ export function ProgressPage() {
       ) : !hasData ? (
         <EmptyState
           title="Ainda não há o que medir"
-          description="O progresso começa a contar história no primeiro registro. Marca um hábito ou conclui uma ação e volta aqui."
+          description="Marca um hábito ou conclui uma ação e volta aqui."
           action={
             <Link to="/app" className={buttonClass()}>
               <Icon name="hoje" className="size-4" />
@@ -303,7 +303,6 @@ export function ProgressPage() {
             <PanelHeader
               title="Objetivos"
               icon="objetivo"
-              hint="Onde cada um está, o que está travando e quando fecha no ritmo atual."
             />
             {progress.objectives.length === 0 ? (
               <p className="mt-4 text-sm text-ink-muted">Nenhum objetivo criado ainda.</p>

@@ -39,7 +39,7 @@ export function ChallengesPage() {
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 lg:gap-6">
       <PageHeader
         title="Desafios"
-        description="Combinados curtos com quem já está no teu círculo. Privados, e medidos pelo que você já faz."
+        description="Combinados curtos com o teu círculo."
         action={<Button onClick={() => setCreating(true)}>Criar desafio</Button>}
       />
 
@@ -104,7 +104,7 @@ export function ChallengesPage() {
       {nothing ? (
         <EmptyState
           title="Nenhum desafio por aqui"
-          description="Um desafio é um combinado curto: treinar 20 dias no mês, ler 30 minutos por dia. Ele conta pelo hábito que você já tem, então não vira uma segunda lista pra cumprir."
+          description="Um combinado curto, medido pelo hábito que você já tem."
           action={<Button onClick={() => setCreating(true)}>Criar o primeiro</Button>}
         />
       ) : null}
