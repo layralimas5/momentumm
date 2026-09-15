@@ -387,7 +387,7 @@ function reasonOfTask(input: {
     return `${size} Destrava a etapa que está segurando ${objectiveTitle}.`
   }
   if (objectiveTitle && stalled.has(objectiveTitle)) {
-    return `${size} Tira ${objectiveTitle} da inércia — é o objetivo que está parado há mais tempo.`
+    return `${size} Tira ${objectiveTitle} da inércia: é o objetivo que está parado há mais tempo.`
   }
   if (objectiveTitle) return `${size} Empurra ${objectiveTitle} sem tomar o dia.`
   return `${size} Pequena o suficiente pra sair hoje.`

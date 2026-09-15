@@ -193,7 +193,7 @@ export function ProgressPage() {
             <PanelHeader title="Onde você avançou" icon="trofeu" />
             {progress.gains.length === 0 ? (
               <p className="mt-4 text-sm text-ink-muted">
-                Ainda não há avanço mensurável nessa janela. Não é o mesmo que estar parado — é
+                Ainda não há avanço mensurável nessa janela. Não é o mesmo que estar parado: é
                 que uma semana é pouco pra mostrar tendência.
               </p>
             ) : (
@@ -497,7 +497,7 @@ function Stat({
 }
 
 function rateText(rate: Rate): string {
-  if (rate.total === 0) return '—'
+  if (rate.total === 0) return 'sem dado'
   return `${Math.round(rate.ratio * 100)}%`
 }
 

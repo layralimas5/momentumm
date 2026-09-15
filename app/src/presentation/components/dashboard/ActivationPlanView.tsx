@@ -55,7 +55,7 @@ export function ActivationPlanView({
         <Icon name="ia" className="mt-0.5 size-4 shrink-0 text-brand-ink" />
         <span className="text-pretty">
           <strong className="font-medium text-ink">Momentumm AI.</strong> O plano abaixo é calculado
-          por regras determinísticas em cima das tuas quatro respostas — mesmo pedido, mesmo plano.
+          por regras determinísticas em cima das tuas quatro respostas: mesmo pedido, mesmo plano.
           Nada aqui foi escrito por um modelo.
         </span>
       </p>
@@ -122,7 +122,7 @@ export function ActivationPlanView({
         {habit ? (
           <p className="mt-2 text-sm text-ink">
             Hábito: <strong className="font-medium">{habit.name}</strong>, {habit.target}{' '}
-            {type.unitLabel.many} por sessão — e {habit.minimalTarget} {type.unitLabel.many} nos dias
+            {type.unitLabel.many} por sessão, e {habit.minimalTarget} {type.unitLabel.many} nos dias
             ruins, que também contam.
           </p>
         ) : null}

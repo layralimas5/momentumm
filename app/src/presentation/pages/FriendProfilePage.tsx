@@ -70,7 +70,7 @@ export function FriendProfilePage() {
         <BackLink />
         <EmptyState
           title="Essa pessoa não está no teu círculo"
-          description="Só dá pra ver os momentos de quem aceitou o teu pedido — e de quem você aceitou."
+          description="Só dá pra ver os momentos de quem aceitou o teu pedido, e de quem você aceitou."
           action={
             <Button variant="secondary" size="sm" onClick={() => navigate('/app/circulo')}>
               Voltar pro círculo

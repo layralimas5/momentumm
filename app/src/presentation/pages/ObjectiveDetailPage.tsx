@@ -191,13 +191,13 @@ export function ObjectiveDetailPage() {
                 label="Ritmo necessário"
                 value={
                   view.progress.dailyPace === 0
-                    ? '—'
+                    ? 'sem ritmo'
                     : `${Math.ceil(view.progress.dailyPace)}/dia`
                 }
               />
               <Figure
                 label="Etapa atual"
-                value={view.plan.currentStage?.stage.title ?? '—'}
+                value={view.plan.currentStage?.stage.title ?? 'sem etapa'}
               />
             </div>
 
@@ -236,7 +236,7 @@ export function ObjectiveDetailPage() {
 
             {view.habits.length === 0 ? (
               <p className="mt-4 text-sm text-ink-muted">
-                Nenhum hábito ligado. É o hábito que carrega o volume — a ação sozinha não fecha
+                Nenhum hábito ligado. É o hábito que carrega o volume. A ação sozinha não fecha
                 um objetivo de três meses.
               </p>
             ) : (
@@ -262,7 +262,7 @@ export function ObjectiveDetailPage() {
                         <p className="mt-0.5 truncate text-xs text-ink-faint">
                           Etapa:{' '}
                           {view.plan.stages.find((item) => item.stage.id === habit.stageId)?.stage
-                            .title ?? '—'}
+                            .title ?? 'sem etapa'}
                         </p>
                       ) : null}
                     </div>
@@ -354,7 +354,7 @@ export function ObjectiveDetailPage() {
       <ConfirmDialog
         open={confirming === 'concluir'}
         title="Concluir esse objetivo?"
-        description="As ações que ainda estão em aberto vão ser canceladas — elas continuam no histórico, mas param de aparecer no plano e no dia."
+        description="As ações que ainda estão em aberto vão ser canceladas. Elas continuam no histórico, mas param de aparecer no plano e no dia."
         confirmLabel="Concluir"
         onConfirm={() => void planner.completeObjective(objective.id, true)}
         onClose={() => setConfirming(null)}
@@ -363,7 +363,7 @@ export function ObjectiveDetailPage() {
       <ConfirmDialog
         open={confirming === 'arquivar'}
         title="Arquivar esse objetivo?"
-        description="Ele sai da lista e some do dia, e as etapas do plano são apagadas junto — elas não existem fora do objetivo. As ações e os hábitos ficam, sem etapa. Nenhuma atividade registrada é apagada, e a área fica livre pra um objetivo novo."
+        description="Ele sai da lista e some do dia, e as etapas do plano são apagadas junto, porque elas não existem fora do objetivo. As ações e os hábitos ficam, sem etapa. Nenhuma atividade registrada é apagada, e a área fica livre pra um objetivo novo."
         confirmLabel="Arquivar"
         destructive
         onConfirm={() => {

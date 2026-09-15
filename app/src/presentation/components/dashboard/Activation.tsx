@@ -280,7 +280,7 @@ function GoalStep({ control }: { readonly control: ActivationController }) {
   return (
     <Step
       title="O que você quer alcançar?"
-      hint="Escreve como você contaria pra alguém. Se tiver um número na cabeça, coloca ele — o plano usa."
+      hint="Escreve como você contaria pra alguém. Se tiver um número na cabeça, coloca ele. O plano usa."
     >
       <div className="mt-4">
         <label htmlFor="objetivo-livre" className="sr-only">

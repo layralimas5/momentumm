@@ -273,7 +273,7 @@ function HabitCard({ habit }: { readonly habit: Habit }) {
       <ConfirmDialog
         open={confirming}
         title="Arquivar esse hábito?"
-        description="Ele sai da lista e do dia. Se você só quer suspender por um tempo, pausar preserva o hábito e o histórico — arquivar é definitivo."
+        description="Ele sai da lista e do dia. Se você só quer suspender por um tempo, pausar preserva o hábito e o histórico. Arquivar é definitivo."
         confirmLabel="Arquivar"
         destructive
         onConfirm={() => void planner.archiveHabit(habit.id)}

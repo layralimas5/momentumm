@@ -193,7 +193,7 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
     return (
       <EmptyState
         title="Ainda não há o que mostrar aqui"
-        description="Esse momento não tem nenhum número pra virar card. Registra alguma coisa hoje e volta — o card fica bom quando tem o que contar."
+        description="Esse momento não tem nenhum número pra virar card. Registra alguma coisa hoje e volta. O card fica bom quando tem o que contar."
       />
     )
   }

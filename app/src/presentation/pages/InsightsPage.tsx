@@ -109,7 +109,7 @@ export function InsightsPage() {
           {total === 0 ? (
             <EmptyState
               title="Nada saiu do lugar ainda"
-              description="Por enquanto o teu plano está funcionando como foi montado. Quando algum padrão mudar — uma etapa travando, a constância caindo, o dia ficando maior que a tua capacidade — ele aparece aqui com o ajuste."
+              description="Por enquanto o teu plano está funcionando como foi montado. Quando algum padrão mudar (uma etapa travando, a constância caindo, o dia ficando maior que a tua capacidade), ele aparece aqui com o ajuste."
             />
           ) : (
             insights.map((insight) => (

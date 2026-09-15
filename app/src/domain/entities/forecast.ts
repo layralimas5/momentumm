@@ -77,7 +77,7 @@ export function forecastOf(input: ForecastInput): Forecast {
   if (!plan.hasPlan) {
     return empty(
       'sem-dados',
-      'Esse objetivo ainda não tem etapas. A previsão nasce do plano — sem ele não há caminho pra medir.',
+      'Esse objetivo ainda não tem etapas. A previsão nasce do plano: sem ele não há caminho pra medir.',
     )
   }
 
@@ -172,7 +172,7 @@ function messageOf(input: {
   if (input.daysLate <= 0) {
     const early = Math.abs(input.daysLate)
     return early === 0
-      ? `${base} Mantendo esse ritmo, a previsão de conclusão é ${date} — em cima do prazo.`
+      ? `${base} Mantendo esse ritmo, a previsão de conclusão é ${date}, em cima do prazo.`
       : `${base} Mantendo esse ritmo, a previsão de conclusão é ${date}, ${early} ${early === 1 ? 'dia' : 'dias'} antes do prazo.`
   }
 

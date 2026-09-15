@@ -231,7 +231,7 @@ const noActionToday: Rule = (input) => {
   return {
     id: 'dia-sem-acao',
     title: 'Hoje ainda não tem nenhuma ação definida',
-    reason: 'Sem uma ação escolhida, o dia inteiro vira decisão — e decidir cansa mais que executar.',
+    reason: 'Sem uma ação escolhida, o dia inteiro vira decisão, e decidir cansa mais que executar.',
     recommendation: 'Escolhe uma ação só pra hoje. Pode ser pequena; ela existe pra tirar você da inércia.',
     action: 'criar-primeira-acao',
     actionLabel: 'Definir a ação de hoje',
@@ -356,7 +356,7 @@ const objectiveWithoutPlan: Rule = (input) => {
     id: `objetivo-sem-plano-${objective.id}`,
     title: `${objective.title} tem ${open} ações e nenhuma etapa`,
     reason:
-      'Sem etapa, a barra do objetivo mede só o volume que você registrou — não dá pra saber que parte do caminho está feita nem o que está travando.',
+      'Sem etapa, a barra do objetivo mede só o volume que você registrou. Não dá pra saber que parte do caminho está feita nem o que está travando.',
     recommendation:
       'Quebra ele em três a cinco etapas e leva cada ação pra dentro de uma. É o que faz a porcentagem passar a significar alguma coisa.',
     action: 'abrir-objetivo',

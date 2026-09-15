@@ -65,8 +65,8 @@ export function AuthPage() {
           Confirma teu e-mail
         </h1>
         <p className="mt-2 text-pretty text-sm text-ink-muted">
-          A conta foi criada. Mandamos um link pra <strong className="text-ink">{email}</strong> —
-          abre ele e volta aqui pra entrar.
+          A conta foi criada. Mandamos um link pra <strong className="text-ink">{email}</strong>.
+          Abre ele e volta aqui pra entrar.
         </p>
         <p className="mt-3 text-sm text-ink-faint">
           Se não chegar em alguns minutos, olha o spam. O link vale por 24 horas.

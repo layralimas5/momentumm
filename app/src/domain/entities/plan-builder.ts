@@ -399,7 +399,7 @@ export function buildPlan(input: PlanInput): PlanDraft {
       não entendeu a própria conta.
     */
     rationale: `${formatUnit(type, Math.round(input.target))} em ${totalDays} dias, em ${daysPerWeek} ${daysPerWeek === 1 ? 'dia' : 'dias'} por semana, dá ${formatUnit(type, perSession)} por sessão${
-      type.unit === 'minutos' ? '' : ` — cerca de ${estimatedMinutes(input.axis, perSession)} minutos`
+      type.unit === 'minutos' ? '' : ` (cerca de ${estimatedMinutes(input.axis, perSession)} minutos)`
     }.`,
     warning: warningFor(feasibility, input, perSession, capacity, suggestedDeadline, fittingTarget),
     suggestedDeadline,
@@ -483,7 +483,7 @@ function warningFor(
   const extraDays = suggestedDeadline ? daysBetween(input.deadline, suggestedDeadline) : 0
   const wayOut = suggestedDeadline
     ? `Aumentar o prazo em ${extraDays} ${extraDays === 1 ? 'dia' : 'dias'} resolve, e baixar o alvo pra ${formatUnit(type, fittingTarget)} também.`
-    : `Nem o prazo máximo resolve esse alvo com esse tempo. Nesse prazo cabem ${formatUnit(type, fittingTarget)} — ou você reserva mais minutos por dia.`
+    : `Nem o prazo máximo resolve esse alvo com esse tempo. Nesse prazo cabem ${formatUnit(type, fittingTarget)}, ou você reserva mais minutos por dia.`
 
   // Quando o teto é o tempo declarado, o aviso diz isso com todas as letras: a
   // pessoa acabou de responder quanto tempo tem, e o plano está pedindo mais.

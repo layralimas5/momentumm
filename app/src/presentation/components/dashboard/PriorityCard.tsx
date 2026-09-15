@@ -70,8 +70,8 @@ export function PriorityCard({
         </h2>
         <p className="mt-2 max-w-lg text-pretty text-ink-muted">
           {dayComplete
-            ? 'O plano de hoje saiu inteiro. Se quiser adiantar alguma coisa, planeje amanhã — hoje já está resolvido.'
-            : 'Nenhuma ação escolhida ainda. Uma só já resolve — o resto do dia fica mais fácil quando existe uma decisão tomada.'}
+            ? 'O plano de hoje saiu inteiro. Se quiser adiantar alguma coisa, planeje amanhã. Hoje já está resolvido.'
+            : 'Nenhuma ação escolhida ainda. Uma só já resolve: o resto do dia fica mais fácil quando existe uma decisão tomada.'}
         </p>
         <Button
           className="mt-5"

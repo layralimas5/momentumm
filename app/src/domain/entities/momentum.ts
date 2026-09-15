@@ -206,7 +206,7 @@ export const MOMENTUM_PART_HINTS: Readonly<Record<MomentumPartKey, string>> = {
   consistency:
     'Em quantos dias você moveu alguma coisa nos últimos 28, com os últimos sete pesando o triplo. Dia de descanso planejado não conta contra.',
   priorities:
-    'Do que você planejou, quanto saiu — medido por impacto: prioridade e ação de objetivo valem mais que tarefa comum. Ação vencida pesa, adiada pesa metade, cancelada não pesa.',
+    'Do que você planejou, quanto saiu, medido por impacto: prioridade e ação de objetivo valem mais que tarefa comum. Ação vencida pesa, adiada pesa metade, cancelada não pesa.',
   objectives:
     'O quanto o plano dos teus objetivos andou de verdade no período, comparado com o ritmo que o prazo pede.',
   recovery:

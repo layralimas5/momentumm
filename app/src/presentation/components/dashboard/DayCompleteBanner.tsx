@@ -24,7 +24,7 @@ export function DayCompleteBanner({ win }: { win: Win | null }) {
         saiu.{' '}
         <span className="text-ink-muted">
           {win
-            ? 'Amanhã continua daqui — hoje já está fechado.'
+            ? 'Amanhã continua daqui. Hoje já está fechado.'
             : 'Registra a vitória do dia e encerra por aqui.'}
         </span>
       </span>
