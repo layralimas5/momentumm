@@ -2,11 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { activityType } from '@/domain/entities/activity-type'
 import { countsAsDone, habitsScheduledOn, statusOf } from '@/domain/entities/habit'
-import { Avatar } from '@/presentation/components/ui/Avatar'
+import { AccountMenu } from '@/presentation/components/account/AccountMenu'
 import { isPending } from '@/domain/entities/task'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
-import { useAuth } from '@/presentation/auth/use-auth'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
@@ -26,7 +25,6 @@ function titleOf(pathname: string): string {
 export function AppHeader() {
   const { pathname } = useLocation()
   const pageTitle = titleOf(pathname)
-  const { profile } = useAuth()
   const [paletteOpen, setPaletteOpen] = useState(false)
 
   const now = new Date()
@@ -90,14 +88,7 @@ export function AppHeader() {
 
           <AddMenu />
 
-          {profile ? (
-            <Avatar
-              name={profile.name}
-              src={profile.avatarUrl}
-              className="hidden size-9 sm:block"
-              textClassName="text-sm"
-            />
-          ) : null}
+          <AccountMenu variant="desktop" />
         </div>
       </header>
 

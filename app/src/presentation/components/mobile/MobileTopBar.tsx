@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { activityType } from '@/domain/entities/activity-type'
 import { countsAsDone, habitsScheduledOn, statusOf } from '@/domain/entities/habit'
-import { Avatar } from '@/presentation/components/ui/Avatar'
+import { AccountMenu } from '@/presentation/components/account/AccountMenu'
 import { LogoMark } from '@/presentation/components/brand/Logo'
 import { isPending } from '@/domain/entities/task'
 import { useAuth } from '@/presentation/auth/use-auth'
@@ -13,7 +13,7 @@ import { TAB_ROUTES } from './MobileTabBar'
 import { navItemFor } from '@/presentation/layouts/nav-items'
 
 /**
- * Topo do celular: onde a pessoa está, notificações e avatar. Só isso.
+ * Topo do celular: onde a pessoa está, notificações e o menu da conta. Só isso.
  *
  * Em `Hoje` ele cumprimenta e dá a data, porque é a tela que abre o dia. Nas
  * outras fica só a marca: repetir "Boa noite" em cima de "Plano" gastava a
@@ -106,19 +106,7 @@ export function MobileTopBar() {
             </span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => navigate('/app/perfil')}
-            className="grid size-11 shrink-0 place-items-center rounded-full transition-colors active:bg-surface"
-          >
-            <Avatar
-              name={profile?.name ?? '—'}
-              src={profile?.avatarUrl ?? null}
-              className="size-9"
-              textClassName="text-sm"
-            />
-            <span className="sr-only">Abrir perfil</span>
-          </button>
+          <AccountMenu variant="mobile" />
         </div>
       </header>
 
