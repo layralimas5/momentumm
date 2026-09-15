@@ -455,6 +455,16 @@ export class SupabaseProfileRepository implements ProfileRepository {
     await deleteOwnAccount()
   }
 
+  async resetData(): Promise<void> {
+    const {
+      data: { user },
+    } = await supabase().auth.getUser()
+    if (user) await purgeOwnMedia(user.id)
+
+    const { error } = await supabase().rpc('reset_my_data')
+    if (error) throw new DomainError('Não consegui recomeçar do zero agora.')
+  }
+
   async exportData(): Promise<AccountExport> {
     const { data, error } = await supabase().rpc('export_my_data')
     if (error) throw new DomainError('Não consegui montar a exportação agora.')

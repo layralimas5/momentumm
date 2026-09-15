@@ -288,6 +288,10 @@ export class DemoProfileRepository implements ProfileRepository {
     demoStore.clear()
   }
 
+  async resetData(): Promise<void> {
+    demoStore.clear()
+  }
+
   async exportData(): Promise<AccountExport> {
     return { exported_at: new Date().toISOString(), format: 'momentumm.export.v1', ...demoStore.snapshot() }
   }

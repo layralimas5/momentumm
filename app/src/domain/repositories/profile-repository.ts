@@ -38,6 +38,11 @@ export interface ProfileRepository {
    */
   deleteAccount(): Promise<void>
   /**
+   * Apaga o conteúdo e mantém a conta: login, plano, papéis e amizades ficam.
+   * É o "recomeçar do zero"; `deleteAccount` é o "ir embora".
+   */
+  resetData(): Promise<void>
+  /**
    * Tudo que a conta registrou, num JSON só (`momentumm.export.v1`). É o
    * direito de portabilidade: a pessoa leva o que é dela, e só o que é dela —
    * o dado do amigo que ela enxerga pelo Círculo não entra.

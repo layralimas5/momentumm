@@ -56,6 +56,7 @@ export function SecurityPanel() {
       <MfaBlock factors={factors} onChanged={load} />
       <SessionsBlock />
       <ExportBlock />
+      <ResetBlock />
       <DangerBlock />
     </div>
   )
@@ -356,6 +357,62 @@ function SessionsBlock() {
   )
 }
 
+/**
+ * Recomeçar do zero é diferente de ir embora.
+ *
+ * Apaga o conteúdo (objetivos, hábitos, ações, registros, momentos, XP) e
+ * mantém a conta: e-mail, senha, plano e amizades ficam. Existe porque a única
+ * saída antes era "Excluir a conta", que apaga o login junto, e quem só queria
+ * limpar o progresso saía sem conseguir voltar a entrar.
+ */
+function ResetBlock() {
+  const [confirming, setConfirming] = useState(false)
+
+  const reset = useAsyncAction(async () => {
+    await container.profiles.resetData()
+    // Recarrega inteiro: planner, evolução e rascunhos locais voltam do zero
+    // pelo caminho normal, sem cada provider precisar saber limpar a si mesmo.
+    try {
+      window.localStorage.removeItem('momentumm.activation.v1')
+      window.localStorage.removeItem('momentumm.activation.skipped.v1')
+    } catch {
+      // Sem armazenamento não há rascunho pra limpar.
+    }
+    window.location.assign('/app')
+  })
+
+  return (
+    <Panel>
+      <PanelHeader
+        title="Recomeçar do zero"
+        icon="desfazer"
+        hint="Apaga objetivos, hábitos, ações, registros, momentos, XP e conquistas. Tua conta, plano e amizades ficam."
+      />
+
+      <Button className="mt-4" variant="secondary" onClick={() => setConfirming(true)}>
+        Recomeçar do zero
+      </Button>
+
+      <div aria-live="polite" className="min-h-5">
+        {reset.error ? <p className="mt-1 text-sm text-danger">{reset.error}</p> : null}
+      </div>
+
+      <ConfirmDialog
+        open={confirming}
+        title="Recomeçar do zero?"
+        description="Todo o teu progresso é apagado agora e o app volta pro primeiro acesso. Você continua logada, com o mesmo plano. Não dá pra desfazer."
+        confirmLabel="Apagar e recomeçar"
+        destructive
+        onConfirm={() => {
+          setConfirming(false)
+          void reset.run()
+        }}
+        onClose={() => setConfirming(false)}
+      />
+    </Panel>
+  )
+}
+
 function DangerBlock() {
   const [confirming, setConfirming] = useState(false)
 
@@ -369,7 +426,7 @@ function DangerBlock() {
       <PanelHeader
         title="Excluir a conta"
         icon="lixeira"
-        hint="Apaga objetivos, hábitos, ações, registros, momentos e arquivos. Não dá pra desfazer."
+        hint="Apaga a conta inteira, inclusive o login e o plano. Pra manter a conta e só limpar o progresso, use Recomeçar do zero."
       />
 
       <Button className="mt-4" variant="danger" onClick={() => setConfirming(true)}>
