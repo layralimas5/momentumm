@@ -21,7 +21,7 @@ export function Pricing() {
       <SectionHeading
         eyebrow="Planos"
         title="O gratuito organiza e executa. O PRO registra, analisa e evolui."
-        description="No gratuito você cria objetivo, organiza hábitos, acompanha o dia e vê o Momentum Score de hoje. O PRO libera entender os próprios padrões, registrar a jornada, ver métricas e ajustar o plano com a leitura da IA."
+        description="Grátis pra rodar o ciclo. PRO pra entender os próprios padrões e ajustar o plano com a leitura da IA."
       />
 
       <div className="mt-10 flex justify-center">
@@ -38,7 +38,24 @@ export function Pricing() {
         ))}
       </ul>
 
-      <PlanMatrix className="mt-10" />
+      {/* A tabela completa fica fechada: são 18 linhas, três telas de celular. Quem precisa dela abre. */}
+      <details className="group mx-auto mt-8 max-w-4xl">
+        <summary className="mx-auto flex w-fit min-h-11 cursor-pointer list-none items-center gap-2 rounded-full border border-line px-5 text-sm font-medium text-ink transition-colors hover:border-line-hi marker:hidden">
+          Ver a comparação completa, recurso a recurso
+          <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            className="size-4 text-ink-muted transition-transform group-open:rotate-180"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </summary>
+        <PlanMatrix className="mt-6" />
+      </details>
 
       <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-ink-faint">
         {PRICING_FOOTNOTE}

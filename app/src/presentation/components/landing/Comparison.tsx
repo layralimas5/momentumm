@@ -18,6 +18,7 @@ interface Criterion {
   readonly covers: readonly Tool[]
 }
 
+/** Cinco critérios. Dia adaptável e constância já apareceram nas telas e no score. */
 const CRITERIA: readonly Criterion[] = [
   {
     label: 'Liga cada ação a um objetivo com prazo',
@@ -30,18 +31,8 @@ const CRITERIA: readonly Criterion[] = [
     covers: ['Momentumm'],
   },
   {
-    label: 'Adapta o dia quando a energia cai',
-    note: 'Check-in de capacidade e versão mínima de cada item. O dia encolhe em vez de virar dívida.',
-    covers: ['Momentumm'],
-  },
-  {
     label: 'Percebe quando o plano parou de funcionar',
     note: 'Sinais combinados: execução baixa, objetivo sem avanço, adiamentos, queda de ritmo.',
-    covers: ['Momentumm'],
-  },
-  {
-    label: 'Mede constância sem punir uma falha isolada',
-    note: 'Sequência conta dias cumpridos. O score olha 28 dias, e um dia vazio nunca zera nada.',
     covers: ['Momentumm'],
   },
   {
@@ -167,7 +158,15 @@ function Mark({
   const size = small ? 'size-3.5' : 'size-5'
   if (!covered) {
     return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" className={cn(size, 'mx-auto text-ink-faint/60')} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <svg
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+        className={cn(size, 'mx-auto text-ink-faint/60')}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      >
         <path d="M7 12h10" />
       </svg>
     )

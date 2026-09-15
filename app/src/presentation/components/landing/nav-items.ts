@@ -22,13 +22,8 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     label: 'Produto',
     links: [
       {
-        label: 'O método',
-        description: 'Objetivo, plano, hoje, progresso, review, ajuste',
-        href: '/#metodo',
-      },
-      {
         label: 'Por dentro',
-        description: 'As seis telas do ciclo, com um exemplo só',
+        description: 'O ciclo em seis telas, com um exemplo só',
         href: '/#telas',
       },
       {
@@ -45,11 +40,6 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         label: 'Por que é diferente',
         description: 'Contra Notion, agenda, lista e habit tracker',
         href: '/#comparacao',
-      },
-      {
-        label: 'Por que confiar',
-        description: 'O que sustenta a promessa, sem depoimento inventado',
-        href: '/#confianca',
       },
     ],
   },

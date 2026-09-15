@@ -83,15 +83,11 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
       'Entender os próprios padrões, registrar a jornada, ver as métricas e ajustar o plano com a leitura da IA. É a proposta inteira do Momentumm.',
     features: [
       'Tudo do gratuito, sem limite de quantidade',
-      'Histórico completo',
-      'Momentum Score com evolução e detalhamento',
+      'Histórico completo, com a evolução e o detalhamento do score',
       'Review semanal cruzando os teus dados reais',
-      'Momentumm AI com franquia mensal',
-      'Métricas detalhadas e relatórios semanais e mensais',
-      'Registros em texto, foto e voz',
-      'Análises de IA: padrões, gargalos e recomendações',
-      'Compartilhamento com todos os modelos e exportação de dados',
-      'Lembretes personalizados, temas e preferências',
+      'Momentumm AI: plano, gargalos e recomendações',
+      'Métricas, relatórios e registros em texto, foto e voz',
+      'Compartilhamento com todos os modelos e exportação',
     ],
     cta: 'Começar com PRO',
     highlight: true,
@@ -101,9 +97,7 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
 /** O que só o anual tem. Aparece no card do PRO quando o ciclo anual está selecionado. */
 export const ANNUAL_EXTRAS = [
   'Preço protegido na renovação*',
-  'Suporte prioritário',
-  'Selo de fundador no perfil',
-  'Acesso antecipado a novidades',
+  'Suporte prioritário, selo de fundador e acesso antecipado',
 ] as const
 
 export const PRICING_FOOTNOTE =

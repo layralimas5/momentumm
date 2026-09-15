@@ -4,69 +4,34 @@ import { Section, SectionHeading } from './Section'
 import { TESTIMONIALS_BOTTOM, TESTIMONIALS_TOP, type Testimonial } from './testimonials-data'
 
 /**
- * Duas esteiras contínuas em sentidos opostos, sem pausa e sem emenda
- * visível: cada faixa repete a lista duas vezes e o keyframe desloca
- * exatamente uma cópia. A segunda cópia é `aria-hidden` pra leitor de tela
- * não ouvir doze depoimentos duas vezes.
+ * Três depoimentos, colados no preço: prova social decide na hora da
+ * escolha, não logo depois do hero. Grade estática, sem esteira: no celular
+ * a esteira custava duas telas.
  */
+const FEATURED: readonly Testimonial[] = [
+  ...TESTIMONIALS_TOP.slice(0, 2),
+  ...TESTIMONIALS_BOTTOM.slice(0, 1),
+]
+
 export function Testimonials() {
   return (
-    <Section id="depoimentos" className="relative overflow-hidden" bleed>
-      {/* Aviso do bloco roxo que vem a seguir: a luz sobe antes da cor chegar. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-72 bg-[radial-gradient(70%_100%_at_50%_100%,rgb(136_120_255_/_0.45),transparent_70%)]"
-      />
-      <div className="mx-auto max-w-5xl px-4">
-        <SectionHeading
-          eyebrow="Depoimentos"
-          title="Quem trocou o plano ideal pelo dia real."
-          description="Gente que não precisava de mais motivação. Precisava de um sistema que sobrevivesse à semana."
-        />
-      </div>
+    <Section id="depoimentos" compact className="border-t border-line">
+      <SectionHeading eyebrow="Depoimentos" title="Quem trocou o plano ideal pelo dia real." />
 
-      <Reveal className="mt-12 flex flex-col gap-4">
-        <MarqueeRow items={TESTIMONIALS_TOP} />
-        <MarqueeRow items={TESTIMONIALS_BOTTOM} reverse />
-      </Reveal>
+      <ul className="mt-10 grid gap-4 md:grid-cols-3">
+        {FEATURED.map((item, index) => (
+          <Reveal key={item.name} delay={index * 0.06} className="h-full">
+            <TestimonialCard item={item} />
+          </Reveal>
+        ))}
+      </ul>
     </Section>
-  )
-}
-
-interface MarqueeRowProps {
-  readonly items: readonly Testimonial[]
-  readonly reverse?: boolean
-}
-
-function MarqueeRow({ items, reverse = false }: MarqueeRowProps) {
-  return (
-    <div className="marquee-fade overflow-hidden">
-      <div className={cn('flex w-max animate-marquee', reverse && '[animation-direction:reverse]')}>
-        <TestimonialList items={items} />
-        <TestimonialList items={items} ariaHidden />
-      </div>
-    </div>
-  )
-}
-
-interface TestimonialListProps {
-  readonly items: readonly Testimonial[]
-  readonly ariaHidden?: boolean
-}
-
-function TestimonialList({ items, ariaHidden = false }: TestimonialListProps) {
-  return (
-    <ul className="flex shrink-0 gap-4 pr-4" aria-hidden={ariaHidden || undefined}>
-      {items.map((item) => (
-        <TestimonialCard key={item.name} item={item} />
-      ))}
-    </ul>
   )
 }
 
 function TestimonialCard({ item }: { readonly item: Testimonial }) {
   return (
-    <li className="w-72 shrink-0 rounded-card border border-line bg-surface p-5 sm:w-80">
+    <li className="h-full rounded-card border border-line bg-surface p-5">
       <figure className="flex h-full flex-col gap-4">
         <figcaption className="flex items-center gap-3">
           <img

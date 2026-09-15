@@ -3,7 +3,6 @@ import { Wordmark } from '@/presentation/components/brand/Logo'
 import { CTA, SITE } from './site'
 
 const PRODUCT = [
-  { label: 'O método', href: '/#metodo' },
   { label: 'Por dentro', href: '/#telas' },
   { label: 'Momentum Score', href: '/#momentum-score' },
   { label: 'Momentumm AI', href: '/#ia' },

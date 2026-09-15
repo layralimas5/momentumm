@@ -142,8 +142,8 @@ export function Screens() {
       <SectionHeading
         tone="brand"
         eyebrow="Por dentro"
-        title="Seis telas. Um exemplo só atravessa todas."
-        description="O mesmo objetivo visto do dia, do plano, do progresso e do review. Nenhum número aparece diferente em duas telas."
+        title="Seis telas, um ciclo."
+        description="Objetivo, plano, dia, progresso, review e ajuste são a mesma coisa vista de seis ângulos. Um exemplo só atravessa todas, e nenhum número aparece diferente em duas telas."
       />
 
       <div

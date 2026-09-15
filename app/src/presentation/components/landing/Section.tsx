@@ -8,11 +8,20 @@ interface SectionProps {
   readonly children: ReactNode
   readonly className?: string
   readonly bleed?: boolean
+  /** Seção-ponte (curta, entre duas grandes): metade do respiro vertical. */
+  readonly compact?: boolean
 }
 
-export function Section({ id, children, className, bleed = false }: SectionProps) {
+export function Section({ id, children, className, bleed = false, compact = false }: SectionProps) {
   return (
-    <section id={id} className={cn('scroll-mt-20 py-[clamp(4rem,10vw,7rem)]', className)}>
+    <section
+      id={id}
+      className={cn(
+        'scroll-mt-20',
+        compact ? 'py-[clamp(3rem,7vw,5rem)]' : 'py-[clamp(4rem,10vw,7rem)]',
+        className,
+      )}
+    >
       <div className={cn(bleed ? '' : 'mx-auto max-w-5xl px-4')}>{children}</div>
     </section>
   )
@@ -67,7 +76,10 @@ export function SectionHeading({
       {description ? (
         <motion.p
           {...fade(0.35)}
-          className={cn('mt-4 text-pretty text-[clamp(1rem,2.4vw,1.125rem)]', onBrand ? 'text-white/85' : 'text-ink-muted')}
+          className={cn(
+            'mt-4 text-pretty text-[clamp(1rem,2.4vw,1.125rem)]',
+            onBrand ? 'text-white/85' : 'text-ink-muted',
+          )}
         >
           {description}
         </motion.p>

@@ -59,19 +59,6 @@
   --shadow-raised: 0 1px 0 0 rgb(255 255 255 / 0.03) inset;
   --shadow-glow: 0 0 0 1px rgb(109 92 255 / 0.25), 0 18px 60px -28px rgb(109 92 255 / 0.65);
 
-  /* Esteira continua de cards (depoimentos). Cada copia da lista carrega o
-     gap como padding no fim, entao deslocar exatamente metade da faixa faz
-     a segunda copia cair onde a primeira comecou, sem emenda. */
-  --animate-marquee: marquee 60s linear infinite;
-
-  @keyframes marquee {
-    from {
-      transform: translateX(0);
-    }
-    to {
-      transform: translateX(-50%);
-    }
-  }
 }
 
 @layer base {
@@ -330,10 +317,6 @@
   }
 }
 
-/* Bordas da esteira de depoimentos somem no fundo em vez de cortar o card. */
-.marquee-fade {
-  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
-}
 
 /* A linha fina de sincronização do app: um traço que atravessa o topo. */
 @keyframes sync {
@@ -345,19 +328,3 @@
   }
 }
 
-/* Botao que pulsa: um anel da marca se expande e some, em ciclo. */
-.pulse-ring {
-  animation: pulse-ring 2.2s ease-out infinite;
-}
-
-@keyframes pulse-ring {
-  0% {
-    box-shadow: 0 0 0 0 rgb(109 92 255 / 0.65);
-  }
-  70% {
-    box-shadow: 0 0 0 16px rgb(109 92 255 / 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgb(109 92 255 / 0);
-  }
-}

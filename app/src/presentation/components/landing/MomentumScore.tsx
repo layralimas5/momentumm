@@ -30,6 +30,7 @@ const FACTORS = [
   },
 ] as const
 
+/** Duas regras bastam na landing: a janela e o custo de falhar. O resto mora no app. */
 const RULES = [
   {
     title: 'Olha 28 dias, com a semana atual pesando o triplo',
@@ -40,16 +41,6 @@ const RULES = [
     title: 'Falhar um dia custa pouco e nunca zera',
     description:
       'Um dia vazio é um dia sem crédito, não um zero na conta. Com 28 dias na janela, o pior dia possível tira poucos pontos.',
-  },
-  {
-    title: 'Conta impacto, não quantidade',
-    description:
-      'A prioridade do dia vale 3, a ação de objetivo vale 2, a tarefa comum vale 1. Hábito tem teto: cinco marcações fáceis nunca passam a ação que destrava a etapa.',
-  },
-  {
-    title: 'Voltar rápido devolve a nota',
-    description:
-      'Retomar em até dois dias devolve nota cheia no fator de retomada. A volta mais recente pesa o dobro das anteriores: a pergunta é "você consegue voltar?", e a resposta que vale é a de agora.',
   },
 ] as const
 
@@ -95,7 +86,11 @@ export function MomentumScore() {
                       initial={{ width: 0 }}
                       whileInView={{ width: `${factor.weight * 2.4}%` }}
                       viewport={{ once: true }}
-                      transition={{ duration: 0.7, delay: 0.1 + index * 0.08, ease: [0.22, 1, 0.36, 1] }}
+                      transition={{
+                        duration: 0.7,
+                        delay: 0.1 + index * 0.08,
+                        ease: [0.22, 1, 0.36, 1],
+                      }}
                     />
                   </div>
                   <p className="mt-1.5 text-xs text-ink-faint">{factor.description}</p>
@@ -104,13 +99,13 @@ export function MomentumScore() {
             </ul>
 
             <p className="mt-6 text-xs text-ink-faint">
-              Os pontos por fator somam exatamente o score. Um detalhamento que dá 47 embaixo de
-              um 46 ensina a desconfiar da conta.
+              Os pontos por fator somam exatamente o score. Um detalhamento que dá 47 embaixo de um
+              46 ensina a desconfiar da conta.
             </p>
           </div>
         </Reveal>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 lg:self-center">
           {RULES.map((rule, index) => (
             <Reveal key={rule.title} delay={index * 0.06}>
               <div className="rounded-card border border-line bg-surface p-5">
@@ -119,23 +114,28 @@ export function MomentumScore() {
               </div>
             </Reveal>
           ))}
+
+          <Reveal delay={0.2}>
+            <div className="rounded-card border border-line bg-surface p-5">
+              <p className="flex flex-wrap items-center gap-2 text-sm text-ink-faint">
+                <span>Quatro classificações:</span>
+                {LEVELS.map((level) => (
+                  <span
+                    key={level}
+                    className="rounded-full border border-line px-2.5 py-1 text-xs text-ink-muted"
+                  >
+                    {level}
+                  </span>
+                ))}
+              </p>
+              <p className="mt-3 text-pretty text-sm text-ink-faint">
+                Abaixo de sete dias de história, o app diz que o número ainda está se formando, em
+                vez de vender precisão que não existe.
+              </p>
+            </div>
+          </Reveal>
         </div>
       </div>
-
-      <Reveal delay={0.2}>
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-2 text-sm text-ink-faint">
-          <span>Quatro classificações:</span>
-          {LEVELS.map((level) => (
-            <span key={level} className="rounded-full border border-line px-2.5 py-1 text-xs text-ink-muted">
-              {level}
-            </span>
-          ))}
-        </div>
-        <p className="mx-auto mt-4 max-w-2xl text-balance text-center text-sm text-ink-faint">
-          Abaixo de sete dias de história, o app diz que o número ainda está se formando, em vez
-          de vender precisão que não existe.
-        </p>
-      </Reveal>
     </Section>
   )
 }
