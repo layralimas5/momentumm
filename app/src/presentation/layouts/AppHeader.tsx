@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { activityType } from '@/domain/entities/activity-type'
 import { countsAsDone, habitsScheduledOn, statusOf } from '@/domain/entities/habit'
 import { AccountMenu } from '@/presentation/components/account/AccountMenu'
+import { ThemeToggle } from '@/presentation/theme/ThemeToggle'
 import { isPending } from '@/domain/entities/task'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
@@ -83,6 +84,8 @@ export function AppHeader() {
             <Icon name="busca" />
             <span className="sr-only">Buscar ou comandar</span>
           </button>
+
+          <ThemeToggle />
 
           <Notifications />
 

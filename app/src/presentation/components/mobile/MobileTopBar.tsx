@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { activityType } from '@/domain/entities/activity-type'
 import { countsAsDone, habitsScheduledOn, statusOf } from '@/domain/entities/habit'
 import { AccountMenu } from '@/presentation/components/account/AccountMenu'
+import { ThemeToggle } from '@/presentation/theme/ThemeToggle'
 import { LogoMark } from '@/presentation/components/brand/Logo'
 import { isPending } from '@/domain/entities/task'
 import { useAuth } from '@/presentation/auth/use-auth'
@@ -88,6 +89,8 @@ export function MobileTopBar() {
               </>
             )}
           </div>
+
+          <ThemeToggle className="size-11 active:bg-surface" />
 
           <button
             type="button"

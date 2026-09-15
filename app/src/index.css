@@ -284,6 +284,73 @@
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Tema claro.
+
+   Os mesmos tokens, outros valores: nenhuma tela sabe em que tema está. O
+   violeta ganha mais presença aqui de propósito: no escuro ele é acento; no
+   claro, os cards de destaque (prioridade, foco, nível) ficam roxos inteiros,
+   com o texto invertido dentro deles. É o que mantém a hierarquia legível
+   num fundo branco, onde um gradiente sutil sumiria.
+--------------------------------------------------------------------------- */
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --color-canvas: #f6f5fb;
+  --color-surface: #ffffff;
+  --color-surface-hi: #f1f0f8;
+  --color-surface-top: #e6e4f2;
+  --color-line: #e3e1ee;
+  --color-line-hi: #cfcbe3;
+
+  --color-ink: #16151f;
+  --color-ink-muted: #4f4d63;
+  --color-ink-faint: #6f6d85;
+
+  --color-brand: #5b48f0;
+  --color-brand-hi: #4a38dc;
+  --color-brand-dim: #e8e4ff;
+  --color-brand-deep: #3b2cc4;
+  --color-brand-ink: #4a38dc;
+
+  --color-flame: #e0561f;
+  --color-flame-dim: #fde8dd;
+
+  --color-positive: #16a068;
+  --color-danger: #d93a3a;
+
+  --shadow-raised: 0 1px 2px 0 rgb(22 21 31 / 0.04), 0 1px 0 0 rgb(255 255 255 / 0.6) inset;
+  --shadow-glow: 0 0 0 1px rgb(91 72 240 / 0.2), 0 18px 50px -24px rgb(91 72 240 / 0.55);
+}
+
+:root[data-theme='light'] .surface-brand {
+  /* Card roxo de verdade: o destaque no claro é cor cheia, nao gradiente sutil. */
+  --color-ink: #ffffff;
+  --color-ink-muted: rgb(255 255 255 / 0.82);
+  --color-ink-faint: rgb(255 255 255 / 0.66);
+  --color-brand-ink: #ffffff;
+  --color-brand-hi: #ffffff;
+  --color-brand-dim: rgb(255 255 255 / 0.16);
+  --color-surface: rgb(255 255 255 / 0.12);
+  --color-surface-hi: rgb(255 255 255 / 0.16);
+  --color-surface-top: rgb(255 255 255 / 0.3);
+  --color-line: rgb(255 255 255 / 0.22);
+  --color-line-hi: rgb(255 255 255 / 0.4);
+  --color-canvas: rgb(0 0 0 / 0.12);
+  background-image: linear-gradient(150deg, #6a57ff 0%, #4b3ad9 100%);
+  border-color: rgb(75 58 217 / 0.6);
+  color: var(--color-ink);
+}
+
+:root[data-theme='light'] .surface-brand .text-gradient-brand {
+  background-image: linear-gradient(120deg, #ffffff 0%, #ffffff 100%);
+}
+
+:root[data-theme='light'] .edge-light::before {
+  opacity: 0.5;
+}
+
 /* Conclusão de hábito e de ação: um pulso curto, sem confete. */
 @keyframes check-pop {
   0% {
