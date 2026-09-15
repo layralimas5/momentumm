@@ -40,3 +40,13 @@ export const supabaseConfig =
  * o RLS recusaria toda leitura e o app ficaria logado e vazio.
  */
 export const isDemoMode = supabaseConfig === null || isAuthBypass
+
+/**
+ * O Círculo (comunidade) fica fechado até o produto ter os primeiros dez
+ * assinantes: uma rede social vazia ensina a pessoa a ignorar a aba. Abrir é
+ * ligar `VITE_CIRCLE_OPEN=true` no Netlify e publicar de novo; no `.env.local`
+ * serve pra trabalhar nas telas do Círculo em desenvolvimento.
+ */
+export const CIRCLE_LAUNCH_SUBSCRIBERS = 10
+
+export const circleOpen = import.meta.env['VITE_CIRCLE_OPEN']?.trim() === 'true'

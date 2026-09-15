@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
-import { isAuthBypass } from '@/infrastructure/config/env'
+import { circleOpen, isAuthBypass } from '@/infrastructure/config/env'
 import { AuthProvider } from '@/presentation/auth/AuthProvider'
 import { ProtectedRoute } from '@/presentation/auth/ProtectedRoute'
 import { AppLayout } from '@/presentation/layouts/AppLayout'
@@ -46,6 +46,9 @@ const ProfilePage = lazy(() =>
 )
 const SubscriptionPage = lazy(() =>
   import('@/presentation/pages/SubscriptionPage').then((m) => ({ default: m.SubscriptionPage })),
+)
+const CircleLockedPage = lazy(() =>
+  import('@/presentation/pages/CircleLockedPage').then((m) => ({ default: m.CircleLockedPage })),
 )
 const CirclePage = lazy(() =>
   import('@/presentation/pages/CirclePage').then((m) => ({ default: m.CirclePage })),
@@ -179,10 +182,20 @@ export function App() {
               <Route path="foco" element={<FocusPage />} />
               <Route path="insights" element={<InsightsPage />} />
               <Route path="perfil" element={<PersonalProfilePage />} />
-              <Route path="circulo" element={<CirclePage />} />
-              <Route path="desafios" element={<ChallengesPage />} />
-              <Route path="desafios/:id" element={<ChallengeDetailPage />} />
-              <Route path="circulo/:id" element={<FriendProfilePage />} />
+              {circleOpen ? (
+                <>
+                  <Route path="circulo" element={<CirclePage />} />
+                  <Route path="desafios" element={<ChallengesPage />} />
+                  <Route path="desafios/:id" element={<ChallengeDetailPage />} />
+                  <Route path="circulo/:id" element={<FriendProfilePage />} />
+                </>
+              ) : (
+                <>
+                  {/* Fechado até os primeiros assinantes: a rota fica, a comunidade não. */}
+                  <Route path="circulo/*" element={<CircleLockedPage />} />
+                  <Route path="desafios/*" element={<CircleLockedPage />} />
+                </>
+              )}
               <Route path="configuracoes" element={<ProfilePage />} />
               <Route path="assinatura" element={<SubscriptionPage />} />
 

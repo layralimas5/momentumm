@@ -1,3 +1,4 @@
+import { circleOpen } from '@/infrastructure/config/env'
 import type { IconName } from '@/presentation/components/ui/Icon'
 
 export interface AppNavItem {
@@ -9,6 +10,8 @@ export interface AppNavItem {
   readonly description: string
   /** Fora da navegação principal: aparece só na busca e nos atalhos do perfil. */
   readonly secondary?: boolean
+  /** Só existe com o Círculo aberto (ver `circleOpen`). */
+  readonly requiresCircle?: boolean
 }
 
 /**
@@ -24,7 +27,7 @@ export interface AppNavItem {
  * "se o ritmo está de pé e qual é o próximo ajuste" descreve o que essa tela
  * resolve — e é essa a diferença que o produto vende.
  */
-export const APP_NAV: readonly AppNavItem[] = [
+const ALL_NAV: readonly AppNavItem[] = [
   {
     to: '/app',
     label: 'Hoje',
@@ -80,6 +83,7 @@ export const APP_NAV: readonly AppNavItem[] = [
     end: false,
     icon: 'jornada',
     description: 'Os amigos que você acompanha e o que eles compartilharam',
+    requiresCircle: true,
   },
 
   /*
@@ -97,6 +101,7 @@ export const APP_NAV: readonly AppNavItem[] = [
     icon: 'trofeu',
     description: 'Combinados curtos com o teu círculo, medidos pelo que você já faz',
     secondary: true,
+    requiresCircle: true,
   },
 
   /*
@@ -185,6 +190,11 @@ export const APP_NAV: readonly AppNavItem[] = [
     secondary: true,
   },
 ]
+
+/** Tudo que a pessoa pode abrir hoje. Com o Círculo fechado, ele e os desafios somem daqui. */
+export const APP_NAV: readonly AppNavItem[] = ALL_NAV.filter(
+  (item) => circleOpen || !item.requiresCircle,
+)
 
 /** A navegação principal: só o ciclo do produto. */
 export const PRIMARY_NAV = APP_NAV.filter((item) => !item.secondary)

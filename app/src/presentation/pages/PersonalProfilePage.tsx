@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { activityType } from '@/domain/entities/activity-type'
 import { belongsInCircle } from '@/domain/entities/circle-feed'
+import { circleOpen } from '@/infrastructure/config/env'
 import { countsAsDone } from '@/domain/entities/habit'
 import { formatDayLabel, startOfWeek } from '@/domain/entities/day'
 import {
@@ -363,7 +364,8 @@ export function PersonalProfilePage() {
         )}
       </Panel>
 
-      <ProfileVisibilityPanel profile={profile} onSaved={refreshProfile} />
+      {/* Quem vê o perfil só faz sentido quando existe alguém pra ver. */}
+      {circleOpen ? <ProfileVisibilityPanel profile={profile} onSaved={refreshProfile} /> : null}
 
       <MobileShortcuts />
 
@@ -402,7 +404,9 @@ function CircleToggle({
   readonly event: JourneyEvent
   readonly onChange: (id: string, visibility: JourneyVisibility) => Promise<void>
 }) {
-  if (!belongsInCircle(event.type)) return null
+  // Sem Círculo aberto não existe pra quem mostrar: o botão prometeria um
+  // público que ainda não existe.
+  if (!circleOpen || !belongsInCircle(event.type)) return null
 
   const shared = event.visibility === 'amigos'
 
