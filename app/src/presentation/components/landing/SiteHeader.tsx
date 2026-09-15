@@ -59,7 +59,7 @@ export function SiteHeader() {
             : 'border-line bg-surface/70 shadow-lg shadow-black/20',
         )}
       >
-        <div className="grid h-14 grid-cols-[auto_1fr_auto] items-center gap-3 pl-4 pr-2 sm:h-16 sm:pl-5 sm:pr-2.5 lg:grid-cols-[1fr_auto_1fr]">
+        <div className="grid h-14 grid-cols-[auto_1fr_auto] items-center gap-2 pl-3 pr-1.5 sm:h-16 sm:gap-3 sm:pl-5 sm:pr-2.5 lg:grid-cols-[1fr_auto_1fr]">
           {/* No celular só o símbolo cabe ao lado do menu e do CTA. */}
           <Link
             to="/"
@@ -141,16 +141,16 @@ export function SiteHeader() {
             </nav>
           </div>
 
-          <div className="flex shrink-0 items-center gap-1.5 justify-self-end">
+          <div className="flex shrink-0 items-center gap-0.5 justify-self-end sm:gap-1.5">
             <Link
               to="/entrar"
-              className="hidden rounded-full px-3.5 py-2 text-sm font-medium text-ink-muted transition-colors hover:text-ink lg:block"
+              className="inline-flex h-10 items-center rounded-full px-2 text-sm font-medium text-ink-muted transition-colors hover:text-ink sm:h-11 sm:px-3.5"
             >
               Entrar
             </Link>
             <Link
               to="/entrar"
-              className="inline-flex h-10 items-center whitespace-nowrap rounded-full bg-brand px-4 text-sm font-medium text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-hi active:bg-brand-deep sm:h-11 sm:px-5"
+              className="inline-flex h-10 items-center whitespace-nowrap rounded-full bg-brand px-3 text-sm font-medium text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-hi active:bg-brand-deep sm:h-11 sm:px-5"
             >
               Começar grátis
             </Link>
@@ -159,7 +159,7 @@ export function SiteHeader() {
               onClick={() => setMobileOpen((value) => !value)}
               aria-expanded={mobileOpen}
               aria-controls="menu-mobile"
-              className="grid size-11 place-items-center rounded-full text-ink-muted transition-colors hover:bg-surface-hi hover:text-ink lg:hidden"
+              className="grid size-10 place-items-center rounded-full text-ink-muted transition-colors hover:bg-surface-hi hover:text-ink lg:hidden"
             >
               <span className="sr-only">{mobileOpen ? 'Fechar menu' : 'Abrir menu'}</span>
               <svg
@@ -230,16 +230,6 @@ export function SiteHeader() {
                 {link.label}
               </Link>
             ))}
-
-            {/* Abaixo de lg o "Entrar" sai do header e mora aqui. */}
-            <Link
-              to="/entrar"
-              onClick={() => setMobileOpen(false)}
-              className="flex min-h-11 items-center gap-2 border-t border-line py-3 text-sm font-medium text-ink-muted transition-colors hover:text-ink"
-            >
-              Entrar
-              <span className="text-xs text-ink-faint">já tenho conta</span>
-            </Link>
           </div>
         </nav>
       </div>
