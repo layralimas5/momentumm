@@ -376,6 +376,15 @@ export function DashboardPage() {
           aiEntry={aiRecoveryEntry}
         />
 
+        <QuoteCard today={planner.today} />
+
+        <CheckInCard
+          checkIn={view.checkIn}
+          capacity={view.capacity}
+          textLogs={planner.limits.textLogs}
+          onSave={(input) => planner.saveCheckIn({ ...input, day: planner.today })}
+        />
+
         <MomentumStrip
           momentum={view.momentum}
           history={view.momentumSeries}
@@ -397,8 +406,6 @@ export function DashboardPage() {
         />
 
         <ShareMomentsRow view={view} />
-
-        <QuoteCard today={planner.today} />
 
         <TodayFocusCard
           focus={view.focus}
@@ -512,14 +519,6 @@ export function DashboardPage() {
             <WeeklyProgressCard week={view.week} limits={planner.limits} />
           </Section>
 
-          <Section title="Como você chegou hoje" level={3}>
-            <CheckInCard
-              checkIn={view.checkIn}
-              capacity={view.capacity}
-              textLogs={planner.limits.textLogs}
-              onSave={(input) => planner.saveCheckIn({ ...input, day: planner.today })}
-            />
-          </Section>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2 lg:items-start">

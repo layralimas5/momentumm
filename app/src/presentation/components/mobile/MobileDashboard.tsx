@@ -102,6 +102,18 @@ export function MobileDashboard({
   */
   return (
     <div className="flex flex-col gap-7">
+      {/* A frase abre o dia, e o estado do dia vem logo abaixo: é a primeira
+          pergunta que o app faz, e é ela que ajusta tudo o que vem depois. */}
+      <QuoteCard today={planner.today} />
+
+      <div ref={checkInRef}>
+        <MobileCheckIn
+          checkIn={view.checkIn}
+          capacity={view.capacity}
+          onSave={(input) => planner.saveCheckIn({ ...input, day: planner.today })}
+        />
+      </div>
+
       <MomentumStrip
         momentum={view.momentum}
         history={view.momentumSeries}
@@ -135,8 +147,6 @@ export function MobileDashboard({
       />
 
       <ShareMomentsRow view={view} />
-
-      <QuoteCard today={planner.today} />
 
       <TodayFocusCard
         focus={view.focus}
@@ -199,14 +209,6 @@ export function MobileDashboard({
       />
 
       {/* Daqui pra baixo é consulta e registro do fim do dia. */}
-      <div ref={checkInRef}>
-        <MobileCheckIn
-          checkIn={view.checkIn}
-          capacity={view.capacity}
-          onSave={(input) => planner.saveCheckIn({ ...input, day: planner.today })}
-        />
-      </div>
-
       <div ref={focusRef}>
         <MobileFocus
           task={view.mainPriority}
