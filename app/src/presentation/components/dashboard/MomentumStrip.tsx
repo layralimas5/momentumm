@@ -11,7 +11,7 @@ import { Icon } from '@/presentation/components/ui/Icon'
 import { Tag } from '@/presentation/components/ui/Surface'
 import { cn } from '@/shared/lib/cn'
 import { MomentumDialog } from './MomentumDialog'
-import { MomentumHistoryChart } from './MomentumHistoryChart'
+import { MomentumRing } from './MomentumRing'
 
 /**
  * O Momentum em uma faixa, não em um card.
@@ -58,70 +58,60 @@ export function MomentumStrip({
     <>
       <section
         aria-labelledby="momentum-titulo"
-        className="surface-card flex flex-wrap items-center gap-x-5 gap-y-3 px-4 py-3.5"
+        className="surface-card flex items-center gap-4 px-4 py-4"
       >
-        <div className="flex items-baseline gap-2">
-          <h2 id="momentum-titulo" className="sr-only">
-            Momentum Score
-          </h2>
+        <h2 id="momentum-titulo" className="sr-only">
+          Momentum Score
+        </h2>
+
+        <MomentumRing value={momentum.value} size={88}>
           <span className="text-gradient-brand tabular text-3xl leading-none font-semibold tracking-tight">
             {momentum.value}
           </span>
-          <span className="text-xs text-ink-faint">Momentum</span>
-        </div>
+        </MomentumRing>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Tag tone={tone}>{MOMENTUM_LEVEL_LABELS[momentum.level]}</Tag>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <Tag tone={tone}>{MOMENTUM_LEVEL_LABELS[momentum.level]}</Tag>
 
-          {/*
-            Sem uma semana de história não existe variação. Mostrar "+62" pra
-            quem começou ontem é comparar com o vazio e inflar o primeiro número
-            que a pessoa vê.
-          */}
-          {!detail ? null : momentum.hasEnoughData ? (
-            <span
-              className={cn(
-                'tabular inline-flex items-center gap-1 text-xs',
-                flat ? 'text-ink-faint' : rising ? 'text-positive' : 'text-flame',
-              )}
-            >
-              <Icon name={flat ? 'minimo' : rising ? 'subir' : 'descer'} className="size-3.5" />
-              {flat
-                ? 'igual à semana passada'
-                : `${rising ? '+' : ''}${momentum.delta} nesta semana`}
-            </span>
+            {!detail ? null : momentum.hasEnoughData ? (
+              <span
+                className={cn(
+                  'tabular inline-flex items-center gap-1 text-xs',
+                  flat ? 'text-ink-faint' : rising ? 'text-positive' : 'text-flame',
+                )}
+              >
+                <Icon name={flat ? 'minimo' : rising ? 'subir' : 'descer'} className="size-3.5" />
+                {flat ? 'igual à semana passada' : `${rising ? '+' : ''}${momentum.delta} na semana`}
+              </span>
+            ) : (
+              <span className="text-xs text-ink-faint">primeira semana</span>
+            )}
+
+            {streak.current > 0 ? (
+              <span className="tabular inline-flex items-center gap-1 text-xs text-ink-faint">
+                <Icon name="fogo" className="size-3.5 text-flame" />
+                {streak.current} {streak.current === 1 ? 'dia' : 'dias'}
+              </span>
+            ) : null}
+          </div>
+
+          {/* Os últimos sete dias como barras: a semana inteira num olhar. */}
+          {history.length > 1 ? (
+            <WeekBars history={history} today={today} />
           ) : (
-            <span className="text-xs text-ink-faint">primeira semana de registro</span>
+            <p className="mt-2 text-sm text-pretty text-ink-muted">{momentum.headline}</p>
           )}
 
-          {streak.current > 0 ? (
-            <span className="tabular inline-flex items-center gap-1 text-xs text-ink-faint">
-              <Icon name="fogo" className="size-3.5 text-flame" />
-              {streak.current} {streak.current === 1 ? 'dia' : 'dias'}
-            </span>
-          ) : null}
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="mt-2 inline-flex items-center gap-1 text-xs text-ink-faint transition-colors hover:text-ink-muted"
+          >
+            Entender meu score
+            <Icon name="seta" className="size-3.5" />
+          </button>
         </div>
-
-        {/* A curva some antes do resto quando a largura aperta: ela é a parte
-            decorativa da faixa, e o número com a leitura é a parte útil. */}
-        {detail && history.length > 1 && history.some((point) => point.value > 0) ? (
-          <div className="hidden w-32 shrink-0 xl:block">
-            <MomentumHistoryChart history={history} today={today} compact />
-          </div>
-        ) : null}
-
-        <p className="min-w-0 basis-full text-sm text-pretty text-ink-muted lg:basis-auto lg:flex-1">
-          {momentum.headline}
-        </p>
-
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-ink-faint transition-colors hover:bg-surface-hi hover:text-ink-muted"
-        >
-          Entender meu score
-          <Icon name="seta" className="size-3.5" />
-        </button>
       </section>
 
       <MomentumDialog
@@ -135,5 +125,24 @@ export function MomentumStrip({
         onClose={() => setOpen(false)}
       />
     </>
+  )
+}
+
+/** Sete barras, a de hoje acesa. Sem eixo nem número: é o desenho da semana. */
+function WeekBars({ history, today }: { readonly history: readonly MomentumPoint[]; readonly today: DayKey }) {
+  const last = history.slice(-7)
+  return (
+    <div className="mt-2.5 flex h-7 items-end gap-1" aria-hidden="true">
+      {last.map((point) => (
+        <span
+          key={point.day}
+          className={cn(
+            'w-3 rounded-sm transition-[height] duration-500 ease-out',
+            point.day === today ? 'bg-brand' : 'bg-brand/35',
+          )}
+          style={{ height: `${Math.max(12, point.value)}%` }}
+        />
+      ))}
+    </div>
   )
 }
