@@ -9,6 +9,8 @@ import {
   type UnlockView,
   type XpTransaction,
 } from '@/domain/entities/evolution'
+import { AiCoachPanel } from '@/presentation/ai/AiCoachPanel'
+import { useAi } from '@/presentation/ai/use-ai'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
 import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { Stat, StatGrid } from '@/presentation/components/ui/Stat'
@@ -34,6 +36,7 @@ import { PageHeader } from './PageHeader'
 export function EvolutionPage() {
   const { summary, loading, error, snapshot } = useEvolution()
   const planner = usePlanner()
+  const ai = useAi()
 
   if (loading) return <LoadingBlock label="Carregando tua evolução" />
 
@@ -64,6 +67,8 @@ export function EvolutionPage() {
       </div>
 
       <Achievements items={summary.achievements} />
+
+      <AiCoachPanel ai={ai} />
     </div>
   )
 }

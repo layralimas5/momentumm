@@ -1,4 +1,6 @@
 import type {
+  AiCoachNudge,
+  AiCoachRequest,
   AiAdjustment,
   AiDayPlan,
   AiDayRequest,
@@ -246,6 +248,23 @@ export class SimulatedAiService implements AiService {
       priorities: priorities.length > 0 ? priorities : ['Escolher a próxima ação de cada objetivo'],
       basis: `Execução ${execution}, ${request.activeDays} dias ativos, ${context.overdueTasks.length} atrasadas${late.length > 0 ? `, ${late.length} objetivo(s) com atraso` : ''}.`,
     })
+  }
+
+  /** Regras fixas, avisadas na tela: o coach de verdade mora na Edge Function. */
+  async coach(request: AiCoachRequest): Promise<AiCoachNudge> {
+    const better = request.weekXp > request.previousWeekXp
+    const punch = request.overdueTasks > 0
+      ? 'Tem coisa atrasada e você está lendo métrica.'
+      : better
+        ? 'Melhor que semana passada não é o mesmo que bom.'
+        : 'Os números não mentem. Você caiu.'
+    const truth = better
+      ? `${request.weekXp} XP contra ${request.previousWeekXp}. Ainda faltam ${request.xpToNext} pro nível ${request.level + 1}, e ${request.windowDays - request.activeDays} dos últimos ${request.windowDays} dias não tiveram nada.`
+      : `${request.activeDays} de ${request.windowDays} dias com movimento e momentum em ${request.momentum}. ${request.overdueTasks > 0 ? `${request.overdueTasks} ação atrasada esperando.` : 'A sequência está em ' + request.streak + '; o recorde é ' + request.streakRecord + '.'}`
+    const order = request.nextAction
+      ? `Fecha "${request.nextAction}" antes de abrir qualquer outra tela.`
+      : 'Marca uma ação de 25 minutos pra hoje e fecha ela agora.'
+    return { punch, truth, order }
   }
 
   async planRecovery(request: AiRecoveryRequest): Promise<AiRecoveryPlan> {

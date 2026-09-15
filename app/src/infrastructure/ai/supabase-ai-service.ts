@@ -8,6 +8,8 @@ import {
   type AiKind,
 } from '@/domain/ai/ai-prompts'
 import type {
+  AiCoachNudge,
+  AiCoachRequest,
   AiDayPlan,
   AiDayRequest,
   AiPlanRequest,
@@ -70,6 +72,10 @@ export class SupabaseAiService implements AiService {
 
   planRecovery(request: AiRecoveryRequest): Promise<AiRecoveryPlan> {
     return this.call({ kind: 'recovery', request })
+  }
+
+  coach(request: AiCoachRequest): Promise<AiCoachNudge> {
+    return this.call({ kind: 'coach', request })
   }
 
   async summarizeReview(request: AiReviewRequest): Promise<string> {

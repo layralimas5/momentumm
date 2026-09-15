@@ -11,6 +11,7 @@ import type {
   AiDayRequest,
   AiPlanRequest,
   AiProgressRequest,
+  AiCoachRequest,
   AiRecoveryRequest,
   AiReviewDraftRequest,
   AiReviewRequest,
@@ -30,7 +31,7 @@ import type {
 
 export const AI_FUNCTION_NAME = 'momentumm-ai'
 
-export const AI_KINDS = ['plan', 'day', 'progress', 'review', 'review_draft', 'recovery'] as const
+export const AI_KINDS = ['plan', 'day', 'progress', 'review', 'review_draft', 'recovery', 'coach'] as const
 export type AiKind = (typeof AI_KINDS)[number]
 
 const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/
@@ -51,6 +52,7 @@ export type AiEndpointRequest =
   | { readonly kind: 'review'; readonly request: AiReviewRequest }
   | { readonly kind: 'review_draft'; readonly request: AiReviewDraftRequest }
   | { readonly kind: 'recovery'; readonly request: AiRecoveryRequest }
+  | { readonly kind: 'coach'; readonly request: AiCoachRequest }
 
 // ---------------------------------------------------------------------------
 // O que o modelo devolve. Os mesmos enums do domínio: um ícone fora da lista
@@ -176,6 +178,12 @@ export const recoveryPlanSchema = z.object({
   reasoning: SENTENCE,
 })
 
+export const coachNudgeSchema = z.object({
+  punch: z.string().trim().min(1).max(120),
+  truth: z.string().trim().min(1).max(220),
+  order: z.string().trim().min(1).max(160),
+})
+
 export const AI_OUTPUT_SCHEMAS = {
   plan: planSuggestionSchema,
   day: dayPlanSchema,
@@ -183,6 +191,7 @@ export const AI_OUTPUT_SCHEMAS = {
   review: reviewSummarySchema,
   review_draft: reviewDraftSchema,
   recovery: recoveryPlanSchema,
+  coach: coachNudgeSchema,
 } as const
 
 // ---------------------------------------------------------------------------
@@ -422,6 +431,20 @@ export function userPromptFor(endpointRequest: AiEndpointRequest): string {
         'adjustments: de 1 a 3 passos PEQUENOS pra hoje, ordenados por avanço por minuto e não por importância: trazer uma ação atrasada (move_action pra hoje), encolher pra versão mínima (shrink_action) ou criar uma ação curta (create_action, no máximo 30 minutos, com minimalVersion). Um passo por objetivo. O primeiro vira a prioridade principal (set_main_priority não é necessário: o app faz isso).',
         'keepHabits: até 3 refs de hábitos que valem manter na versão mínima esta semana, os de maior constância primeiro. reasoning: por que esses passos e não os maiores.',
         ADJUSTMENT_RULES,
+        '',
+        'CONTEXTO DA CONTA',
+        context,
+      ].join('\n')
+    }
+
+    case 'coach': {
+      const { request } = endpointRequest
+      return [
+        'Você é o coach da pessoa, no fim da tela de métricas. Tom: AGRESSIVO e exigente, como um treinador que não aceita desculpa. Isso significa direto, seco, cobrando com número. NUNCA significa ofensa pessoal, xingamento, humilhação, ameaça ou comentário sobre corpo, saúde mental ou vida pessoal. Sem "você consegue", sem "parabéns", sem "continue assim", sem exclamação em série.',
+        '',
+        `Números de agora: momentum ${request.momentum}/100 (${request.momentumLevel}); XP desta semana ${request.weekXp} contra ${request.previousWeekXp} na anterior; nível ${request.level} (${request.levelName}), faltam ${request.xpToNext} XP pro próximo; sequência de ${request.streak} dias (recorde ${request.streakRecord}); ${request.activeDays} de ${request.windowDays} dias com movimento; ${request.overdueTasks} ações atrasadas; objetivos parados: ${request.stalledObjectives.length > 0 ? request.stalledObjectives.join('; ') : 'nenhum'}; próxima ação sugerida: ${request.nextAction ?? 'nenhuma'}.`,
+        '',
+        'punch: uma frase de impacto, até 12 palavras, segunda pessoa, sem número. truth: a verdade desconfortável que os números mostram, em até 2 frases, citando pelo menos um número de cima (o mais incômodo). Se a semana está melhor que a anterior, diga que ainda é pouco pra onde ela quer chegar, com o XP que falta. order: UMA ordem concreta pra hoje, começando com verbo no imperativo, usando a próxima ação sugerida ou a ação atrasada mais antiga quando existir. Nada de travessão no texto.',
         '',
         'CONTEXTO DA CONTA',
         context,

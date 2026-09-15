@@ -14,6 +14,7 @@ import { Button, buttonClass } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { Panel, PanelHeader, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
+import { AiCoachPanel } from '@/presentation/ai/AiCoachPanel'
 import { AiProgressPanel } from '@/presentation/ai/AiProgressPanel'
 import { useAi } from '@/presentation/ai/use-ai'
 import { ProGate } from '@/presentation/plan/ProGate'
@@ -400,6 +401,9 @@ export function ProgressPage() {
           </Panel>
         </div>
       )}
+
+      {/* Por último, de propósito: o coach fala depois de a pessoa ver os números. */}
+      <AiCoachPanel ai={ai} />
     </div>
   )
 }

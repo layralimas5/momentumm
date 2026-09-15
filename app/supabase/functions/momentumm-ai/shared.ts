@@ -119,7 +119,7 @@ var TASK_EFFORTS = ["leve", "medio", "pesado"];
 var MAX_ESTIMATED_MIN = 8 * 60;
 
 // src/domain/ai/ai-prompts.ts
-var AI_KINDS = ["plan", "day", "progress", "review", "review_draft", "recovery"];
+var AI_KINDS = ["plan", "day", "progress", "review", "review_draft", "recovery", "coach"];
 var DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
 var dayKeySchema = z.string().regex(DAY_KEY);
 var aiEndpointRequestSchema = z.object({
@@ -224,13 +224,19 @@ var recoveryPlanSchema = z.object({
   keepHabits: z.array(REF).max(3),
   reasoning: SENTENCE
 });
+var coachNudgeSchema = z.object({
+  punch: z.string().trim().min(1).max(120),
+  truth: z.string().trim().min(1).max(220),
+  order: z.string().trim().min(1).max(160)
+});
 var AI_OUTPUT_SCHEMAS = {
   plan: planSuggestionSchema,
   day: dayPlanSchema,
   progress: progressReadingSchema,
   review: reviewSummarySchema,
   review_draft: reviewDraftSchema,
-  recovery: recoveryPlanSchema
+  recovery: recoveryPlanSchema,
+  coach: coachNudgeSchema
 };
 var AI_SYSTEM_PROMPT = `Voc\xEA \xE9 a Momentumm AI, a parte do app Momentumm que transforma objetivo em plano e l\xEA o progresso de uma pessoa.
 
@@ -434,6 +440,19 @@ function userPromptFor(endpointRequest) {
         "adjustments: de 1 a 3 passos PEQUENOS pra hoje, ordenados por avan\xE7o por minuto e n\xE3o por import\xE2ncia: trazer uma a\xE7\xE3o atrasada (move_action pra hoje), encolher pra vers\xE3o m\xEDnima (shrink_action) ou criar uma a\xE7\xE3o curta (create_action, no m\xE1ximo 30 minutos, com minimalVersion). Um passo por objetivo. O primeiro vira a prioridade principal (set_main_priority n\xE3o \xE9 necess\xE1rio: o app faz isso).",
         "keepHabits: at\xE9 3 refs de h\xE1bitos que valem manter na vers\xE3o m\xEDnima esta semana, os de maior const\xE2ncia primeiro. reasoning: por que esses passos e n\xE3o os maiores.",
         ADJUSTMENT_RULES,
+        "",
+        "CONTEXTO DA CONTA",
+        context
+      ].join("\n");
+    }
+    case "coach": {
+      const { request } = endpointRequest;
+      return [
+        'Voc\xEA \xE9 o coach da pessoa, no fim da tela de m\xE9tricas. Tom: AGRESSIVO e exigente, como um treinador que n\xE3o aceita desculpa. Isso significa direto, seco, cobrando com n\xFAmero. NUNCA significa ofensa pessoal, xingamento, humilha\xE7\xE3o, amea\xE7a ou coment\xE1rio sobre corpo, sa\xFAde mental ou vida pessoal. Sem "voc\xEA consegue", sem "parab\xE9ns", sem "continue assim", sem exclama\xE7\xE3o em s\xE9rie.',
+        "",
+        `N\xFAmeros de agora: momentum ${request.momentum}/100 (${request.momentumLevel}); XP desta semana ${request.weekXp} contra ${request.previousWeekXp} na anterior; n\xEDvel ${request.level} (${request.levelName}), faltam ${request.xpToNext} XP pro pr\xF3ximo; sequ\xEAncia de ${request.streak} dias (recorde ${request.streakRecord}); ${request.activeDays} de ${request.windowDays} dias com movimento; ${request.overdueTasks} a\xE7\xF5es atrasadas; objetivos parados: ${request.stalledObjectives.length > 0 ? request.stalledObjectives.join("; ") : "nenhum"}; pr\xF3xima a\xE7\xE3o sugerida: ${request.nextAction ?? "nenhuma"}.`,
+        "",
+        "punch: uma frase de impacto, at\xE9 12 palavras, segunda pessoa, sem n\xFAmero. truth: a verdade desconfort\xE1vel que os n\xFAmeros mostram, em at\xE9 2 frases, citando pelo menos um n\xFAmero de cima (o mais inc\xF4modo). Se a semana est\xE1 melhor que a anterior, diga que ainda \xE9 pouco pra onde ela quer chegar, com o XP que falta. order: UMA ordem concreta pra hoje, come\xE7ando com verbo no imperativo, usando a pr\xF3xima a\xE7\xE3o sugerida ou a a\xE7\xE3o atrasada mais antiga quando existir. Nada de travess\xE3o no texto.",
         "",
         "CONTEXTO DA CONTA",
         context

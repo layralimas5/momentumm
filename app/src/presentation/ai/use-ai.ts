@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import type {
+  AiCoachNudge,
+  AiCoachRequest,
   AiDayPlan,
   AiPlanRequest,
   AiPlanSuggestion,
@@ -18,6 +20,7 @@ import { deadlineFrom } from '@/domain/entities/objective'
 import { estimatedMinutesOf, isPending, tasksOfDay } from '@/domain/entities/task'
 import { AiError, type AiErrorCode } from '@/domain/ai/ai-error'
 import { container } from '@/infrastructure/container'
+import { useEvolution } from '@/presentation/evolution/use-evolution'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { useProgress } from '@/presentation/planner/use-progress'
 import { DomainError, toUserMessage } from '@/shared/errors'
@@ -135,6 +138,7 @@ export interface RecoveryInput {
 export function useAi() {
   const planner = usePlanner()
   const progress = useProgress()
+  const { summary: evolution } = useEvolution()
 
   const bundle = useMemo<AiContextBundle>(
     () =>
@@ -212,6 +216,30 @@ export function useAi() {
     return container.ai.readProgress(request)
   })
 
+  const coachRequest = useMemo<AiCoachRequest>(
+    () => ({
+      context,
+      momentum: progress.momentum.value,
+      momentumLevel: progress.momentum.level,
+      weekXp: evolution.weekXp,
+      previousWeekXp: evolution.previousWeekXp,
+      level: evolution.progress.level,
+      levelName: evolution.progress.name,
+      xpToNext: evolution.progress.xpToNext,
+      streak: planner.streak.current,
+      streakRecord: Math.max(planner.streak.record, planner.streak.current),
+      activeDays: progress.last7.activeDays,
+      windowDays: 7,
+      stalledObjectives: progress.stalled.map((view) => view.progress.objective.title),
+      overdueTasks: planner.tasks.filter((task) => isPending(task) && task.day < planner.today)
+        .length,
+      nextAction: progress.nextAction?.title ?? null,
+    }),
+    [context, progress, evolution, planner.streak, planner.tasks, planner.today],
+  )
+
+  const coach = useAiCall(async (): Promise<AiCoachNudge> => container.ai.coach(coachRequest))
+
   const draftReview = useAiCall(
     async (input: ReviewDraftInput): Promise<AiReviewDraft> =>
       container.ai.draftReview({ ...input, context }),
@@ -242,6 +270,7 @@ export function useAi() {
     draftReview,
     planRecovery,
     summarizeReview,
+    coach,
     request,
     context,
     refs,

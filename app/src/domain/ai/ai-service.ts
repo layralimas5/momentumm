@@ -255,6 +255,40 @@ export interface AiQuota {
   readonly limit: number
 }
 
+/**
+ * O toque do coach: a leitura curta e dura no fim das métricas.
+ *
+ * Não é diagnóstico (isso é `readProgress`) nem plano: são três linhas que
+ * cobram, com número, e mandam fazer uma coisa hoje. Tom agressivo é pedido
+ * do produto pra quem é PRO; o limite é ofensa pessoal, que nunca entra.
+ */
+export interface AiCoachRequest {
+  readonly context: AiUserContext
+  readonly momentum: number
+  readonly momentumLevel: string
+  readonly weekXp: number
+  readonly previousWeekXp: number
+  readonly level: number
+  readonly levelName: string
+  readonly xpToNext: number
+  readonly streak: number
+  readonly streakRecord: number
+  readonly activeDays: number
+  readonly windowDays: number
+  readonly stalledObjectives: readonly string[]
+  readonly overdueTasks: number
+  readonly nextAction: string | null
+}
+
+export interface AiCoachNudge {
+  /** A frase de impacto, curta. */
+  readonly punch: string
+  /** A verdade desconfortável tirada dos números. */
+  readonly truth: string
+  /** A ordem: uma coisa só, pra hoje. */
+  readonly order: string
+}
+
 export interface AiService {
   /** A implementação simulada responde true aqui pra tela poder avisar. */
   readonly simulated: boolean
@@ -266,4 +300,5 @@ export interface AiService {
   draftReview(request: AiReviewDraftRequest): Promise<AiReviewDraft>
   planRecovery(request: AiRecoveryRequest): Promise<AiRecoveryPlan>
   summarizeReview(request: AiReviewRequest): Promise<string>
+  coach(request: AiCoachRequest): Promise<AiCoachNudge>
 }
