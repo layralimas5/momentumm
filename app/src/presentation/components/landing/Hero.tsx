@@ -86,9 +86,9 @@ export function Hero() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="inline-flex items-center gap-3 rounded-full border border-line bg-surface/80 py-1.5 pl-1.5 pr-4 text-sm text-ink-muted backdrop-blur"
+            className="inline-flex max-w-full items-center gap-2.5 rounded-full border border-line bg-surface/80 py-1.5 pl-1.5 pr-4 text-left text-sm text-ink-muted backdrop-blur sm:gap-3"
           >
-            <span className="flex -space-x-2">
+            <span className="flex shrink-0 -space-x-2">
               {AVATARS.map((person) => (
                 <img
                   key={person.name}
@@ -101,9 +101,10 @@ export function Hero() {
                 />
               ))}
             </span>
-            <span>
-              <span className="font-medium text-ink">{CTA.badge}</span>: as primeiras pessoas já
-              estão dentro
+            <span className="min-w-0 leading-snug">
+              <span className="font-medium text-ink">{CTA.badge}</span>
+              <span className="hidden sm:inline">: as primeiras pessoas já estão dentro</span>
+              <span className="block text-xs text-ink-faint sm:hidden">as primeiras pessoas já estão dentro</span>
             </span>
           </motion.p>
 
