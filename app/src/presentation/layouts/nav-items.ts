@@ -166,6 +166,14 @@ const ALL_NAV: readonly AppNavItem[] = [
     secondary: true,
   },
   {
+    to: '/app/evolucao',
+    label: 'Evolução',
+    end: false,
+    icon: 'subir',
+    description: 'XP, nível, conquistas e o que o teu caminho já liberou',
+    secondary: true,
+  },
+  {
     to: '/app/perfil',
     label: 'Perfil',
     end: false,

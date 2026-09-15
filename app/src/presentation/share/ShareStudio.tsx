@@ -28,6 +28,9 @@ import { ShareStudioVisibilityControls } from './ShareStudioVisibilityControls'
 import { UpgradeHint } from '@/presentation/components/dashboard/UpgradeHint'
 import { isUnlimited } from '@/domain/entities/plan'
 import { usePlanner } from '@/presentation/planner/use-planner'
+import { unlockedKeys } from '@/domain/entities/evolution'
+import { useAuth } from '@/presentation/auth/use-auth'
+import { useEvolution } from '@/presentation/evolution/use-evolution'
 import { useSharePhoto } from './use-share-photo'
 import { trackShare } from './share-analytics'
 import {
@@ -64,6 +67,7 @@ type Status = 'idle' | 'generating' | 'shared' | 'saved' | 'cancelled'
  */
 export function ShareStudio({ event, displayName, today, compact }: ShareStudioProps) {
   const { limits } = usePlanner()
+  const profilePlan = useAuth().profile?.plan ?? 'free'
   /*
     O gratuito escolhe entre três arranjos e duas cores (preto e PNG); o PRO
     leva os oito, as quatro cores, a foto de fundo e os toggles do que entra
@@ -71,8 +75,14 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
     vende o PRO, e o botão de compartilhar é quem recusa.
   */
   const unlimited = isUnlimited(limits.shareTemplates)
-  const allowedCompositions = compositionsAllowedFor(unlimited)
-  const allowedTemplates = templatesAllowedFor(unlimited)
+  // O nível libera arranjos por cima do plano: é o que a Evolução promete.
+  const { summary: evolution } = useEvolution()
+  const unlocked = useMemo(
+    () => unlockedKeys(evolution.progress.level, profilePlan),
+    [evolution.progress.level, profilePlan],
+  )
+  const allowedCompositions = compositionsAllowedFor(unlimited, unlocked)
+  const allowedTemplates = templatesAllowedFor(unlimited, unlocked)
   const customizable = limits.shareCustomization
   const format: ShareFormat = DEFAULT_SHARE_FORMAT
   const [template, setTemplate] = useState<ShareTemplateId>(DEFAULT_SHARE_TEMPLATE)

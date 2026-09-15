@@ -9,6 +9,8 @@ import { LogoMark, Wordmark } from '@/presentation/components/brand/Logo'
 import { MobileTabBar } from '@/presentation/components/mobile/MobileTabBar'
 import { MobileTopBar } from '@/presentation/components/mobile/MobileTopBar'
 import { Icon } from '@/presentation/components/ui/Icon'
+import { EvolutionNotice } from '@/presentation/evolution/EvolutionNotice'
+import { EvolutionProvider } from '@/presentation/evolution/EvolutionProvider'
 import { FocusProvider } from '@/presentation/focus/FocusProvider'
 import { FocusSession } from '@/presentation/focus/FocusSession'
 import { ComposerProvider } from '@/presentation/planner/ComposerProvider'
@@ -43,9 +45,17 @@ export function AppLayout() {
             seria o começo da divergência entre os cards.
           */}
           <ShareStudioProvider>
-            <LayoutShell />
-            <FocusSession />
-            <LegalGate />
+            {/*
+              A evolução lê o planner (é dele que o XP nasce) e é lida pelo
+              Share Studio e pelo perfil: por isso fica dentro de um e em volta
+              do outro.
+            */}
+            <EvolutionProvider>
+              <LayoutShell />
+              <FocusSession />
+              <LegalGate />
+              <EvolutionNotice />
+            </EvolutionProvider>
           </ShareStudioProvider>
         </FocusProvider>
       </ComposerProvider>

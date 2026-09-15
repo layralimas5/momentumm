@@ -143,12 +143,44 @@ export const DEFAULT_SHARE_COMPOSITION: ShareCompositionId = 'selo'
 export const FREE_SHARE_COMPOSITIONS: readonly ShareCompositionId[] = ['selo', 'resumo', 'pilha']
 export const FREE_SHARE_TEMPLATES: readonly ShareTemplateId[] = ['dark', 'transparent']
 
-export function compositionsAllowedFor(unlimited: boolean): readonly ShareCompositionId[] {
-  return unlimited ? SHARE_COMPOSITIONS : FREE_SHARE_COMPOSITIONS
+/**
+ * O que a EVOLUÇÃO libera, por cima do plano.
+ *
+ * A chave é a do desbloqueio (`UNLOCKS`, em `evolution.ts`). O plano continua
+ * mandando: o PRO já tem tudo, e o gratuito ganha arranjo por arranjo conforme
+ * sobe de nível. Nada aqui tira o que o plano dá; só acrescenta.
+ */
+const COMPOSITION_UNLOCKS: Readonly<Record<string, ShareCompositionId>> = {
+  share_lista: 'lista',
+  share_anel: 'anel',
+  share_figura: 'figura',
 }
 
-export function templatesAllowedFor(unlimited: boolean): readonly ShareTemplateId[] {
-  return unlimited ? SHARE_TEMPLATES : FREE_SHARE_TEMPLATES
+const TEMPLATE_UNLOCKS: Readonly<Record<string, ShareTemplateId>> = {
+  share_neon: 'neon',
+}
+
+export function compositionsAllowedFor(
+  unlimited: boolean,
+  unlocked: ReadonlySet<string> = new Set(),
+): readonly ShareCompositionId[] {
+  if (unlimited) return SHARE_COMPOSITIONS
+  const extra = Object.entries(COMPOSITION_UNLOCKS)
+    .filter(([key]) => unlocked.has(key))
+    .map(([, id]) => id)
+  // Na ordem da tabela, não na ordem em que foram liberados.
+  return SHARE_COMPOSITIONS.filter((id) => FREE_SHARE_COMPOSITIONS.includes(id) || extra.includes(id))
+}
+
+export function templatesAllowedFor(
+  unlimited: boolean,
+  unlocked: ReadonlySet<string> = new Set(),
+): readonly ShareTemplateId[] {
+  if (unlimited) return SHARE_TEMPLATES
+  const extra = Object.entries(TEMPLATE_UNLOCKS)
+    .filter(([key]) => unlocked.has(key))
+    .map(([, id]) => id)
+  return SHARE_TEMPLATES.filter((id) => FREE_SHARE_TEMPLATES.includes(id) || extra.includes(id))
 }
 
 export const DEFAULT_SHARE_TEMPLATE: ShareTemplateId = 'dark'

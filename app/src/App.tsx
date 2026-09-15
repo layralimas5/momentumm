@@ -66,6 +66,9 @@ const FriendProfilePage = lazy(() =>
     default: m.FriendProfilePage,
   })),
 )
+const EvolutionPage = lazy(() =>
+  import('@/presentation/pages/EvolutionPage').then((m) => ({ default: m.EvolutionPage })),
+)
 const PersonalProfilePage = lazy(() =>
   import('@/presentation/pages/PersonalProfilePage').then((m) => ({
     default: m.PersonalProfilePage,
@@ -182,6 +185,7 @@ export function App() {
               <Route path="foco" element={<FocusPage />} />
               <Route path="insights" element={<InsightsPage />} />
               <Route path="perfil" element={<PersonalProfilePage />} />
+              <Route path="evolucao" element={<EvolutionPage />} />
               {circleOpen ? (
                 <>
                   <Route path="circulo" element={<CirclePage />} />

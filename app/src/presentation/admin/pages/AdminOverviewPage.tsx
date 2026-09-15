@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { achievementSpec, ACHIEVEMENT_KEYS, levelSpecOf } from '@/domain/entities/evolution'
 import { container } from '@/infrastructure/container'
 import {
   AdminPage,
@@ -18,6 +19,7 @@ export function AdminOverviewPage() {
   const { period } = usePeriod()
   const query = useAdminQuery(() => container.admin.overview(period), `${period.from}|${period.to}`)
   const data = query.data
+  const evolution = useAdminQuery(() => container.admin.evolutionMetrics(), 'evolution')
 
   return (
     <AdminPage
@@ -89,6 +91,55 @@ export function AdminOverviewPage() {
             </Section>
           </div>
 
+          <Section title="Evolução" hint="XP e níveis, só em agregado. O histórico de cada pessoa fica com ela.">
+            {evolution.data ? (
+              <>
+                <MetricGrid cols={4}>
+                  <Metric label="Pessoas com XP" value={evolution.data.people} />
+                  <Metric label="XP total da base" value={evolution.data.xpTotal} />
+                  <Metric label="XP nesta semana" value={evolution.data.xpThisWeek} />
+                  <Metric label="Ativas na semana" value={evolution.data.activeThisWeek} />
+                </MetricGrid>
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  <div className="rounded-card border border-line bg-surface p-4">
+                    <p className="text-xs text-ink-faint">Pessoas por nível</p>
+                    <ul className="mt-2 flex flex-col gap-1 text-sm">
+                      {evolution.data.byLevel.length === 0 ? (
+                        <li className="text-ink-faint">Ninguém ganhou XP ainda.</li>
+                      ) : (
+                        evolution.data.byLevel.map((row) => (
+                          <li key={row.level} className="flex justify-between gap-3">
+                            <span className="text-ink-muted">
+                              Nível {row.level}, {levelSpecOf(row.level).name}
+                            </span>
+                            <span className="tabular text-ink">{formatValue(row.people)}</span>
+                          </li>
+                        ))
+                      )}
+                    </ul>
+                  </div>
+                  <div className="rounded-card border border-line bg-surface p-4">
+                    <p className="text-xs text-ink-faint">Conquistas alcançadas</p>
+                    <ul className="mt-2 flex flex-col gap-1 text-sm">
+                      {evolution.data.achievements.length === 0 ? (
+                        <li className="text-ink-faint">Nenhuma ainda.</li>
+                      ) : (
+                        evolution.data.achievements.map((row) => (
+                          <li key={row.key} className="flex justify-between gap-3">
+                            <span className="text-ink-muted">{achievementName(row.key)}</span>
+                            <span className="tabular text-ink">{formatValue(row.people)}</span>
+                          </li>
+                        ))
+                      )}
+                    </ul>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <QueryState loading={evolution.loading} error={evolution.error} onRetry={() => void evolution.reload()} />
+            )}
+          </Section>
+
           <Section title="Saúde do sistema" hint="Últimas 24 horas e disponibilidade dos últimos 7 dias.">
             <div className="flex flex-wrap gap-2">
               <StatusTag tone="positive">Banco: {data.health.database}</StatusTag>
@@ -115,6 +166,11 @@ export function AdminOverviewPage() {
       ) : null}
     </AdminPage>
   )
+}
+
+function achievementName(key: string): string {
+  const known = ACHIEVEMENT_KEYS.find((candidate) => candidate === key)
+  return known ? achievementSpec(known).name : key
 }
 
 function SeriesCard({ label, points }: { readonly label: string; readonly points: readonly number[] }) {

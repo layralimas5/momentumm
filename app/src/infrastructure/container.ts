@@ -14,6 +14,8 @@ import type { ProfileRepository } from '@/domain/repositories/profile-repository
 import type { TaskRepository } from '@/domain/repositories/task-repository'
 import type { WeeklyReviewRepository } from '@/domain/repositories/weekly-review-repository'
 import type { WinRepository } from '@/domain/repositories/win-repository'
+import type { EvolutionRepository } from '@/domain/repositories/evolution-repository'
+import { SupabaseEvolutionRepository } from './supabase/supabase-evolution'
 import { SimulatedAiService } from './ai/simulated-ai-service'
 import type { LegalAcceptanceRepository } from '@/domain/repositories/legal-acceptance-repository'
 import type { MediaRepository } from '@/domain/repositories/media-repository'
@@ -38,6 +40,7 @@ import {
   DemoGoalRepository,
   DemoFriendshipRepository,
   DemoHabitRepository,
+  DemoEvolutionRepository,
   DemoJourneyEventRepository,
   DemoObjectiveRepository,
   DemoPlanStageRepository,
@@ -86,6 +89,11 @@ export interface Container {
    * vão ler depois — nenhum deles fala com hábito ou objetivo direto.
    */
   readonly journeyEvents: JourneyEventRepository
+  /**
+   * XP, nível e conquistas. Só leitura: quem concede é o banco, em trigger,
+   * reagindo ao que a pessoa fez. Não existe "dar XP" como operação do app.
+   */
+  readonly evolution: EvolutionRepository
   /** O Círculo: amizades e a busca por gente. */
   readonly friendships: FriendshipRepository
   /**
@@ -135,6 +143,7 @@ export const container: Container = isDemoMode
       wins: new DemoWinRepository(),
       weeklyReviews: new DemoWeeklyReviewRepository(),
       journeyEvents: new DemoJourneyEventRepository(),
+      evolution: new DemoEvolutionRepository(),
       friendships: new DemoFriendshipRepository(),
       challenges: new DemoChallengeRepository(),
       ai: new SimulatedAiService(),
@@ -159,6 +168,7 @@ export const container: Container = isDemoMode
       wins: new SupabaseWinRepository(),
       weeklyReviews: new SupabaseWeeklyReviewRepository(),
       journeyEvents: new SupabaseJourneyEventRepository(),
+      evolution: new SupabaseEvolutionRepository(),
       friendships: new SupabaseFriendshipRepository(),
       challenges: new SupabaseChallengeRepository(),
       ai: new SupabaseAiService(),

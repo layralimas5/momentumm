@@ -362,6 +362,17 @@ export const featureUsageSchema = z.object({
 })
 export type AdminFeatureUsage = z.infer<typeof featureUsageSchema>
 
+/** Só agregados: quantas pessoas em cada nível, nunca o histórico de alguém. */
+export const evolutionMetricsSchema = z.object({
+  people: count,
+  xpTotal: count,
+  xpThisWeek: count,
+  activeThisWeek: count,
+  byLevel: z.array(z.object({ level: count, people: count })),
+  achievements: z.array(z.object({ key: z.string(), people: count })),
+})
+export type AdminEvolutionMetrics = z.infer<typeof evolutionMetricsSchema>
+
 export const requestListSchema = z.object({
   total: count,
   items: z.array(

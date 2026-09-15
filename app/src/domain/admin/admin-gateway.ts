@@ -6,6 +6,7 @@ import type {
   AdminAuditLog,
   AdminCancellations,
   AdminErrorMetrics,
+  AdminEvolutionMetrics,
   AdminFeatureUsage,
   AdminMember,
   AdminOverview,
@@ -129,6 +130,8 @@ export interface AdminGateway {
 
   retention(period: Period): Promise<AdminRetention>
   featureUsage(period: Period): Promise<AdminFeatureUsage>
+  /** Distribuição por nível e XP da semana. Agregado, sem dado individual. */
+  evolutionMetrics(): Promise<AdminEvolutionMetrics>
 
   listRequests(filters: RequestFilters): Promise<AdminRequestList>
   requestDetail(id: string): Promise<AdminRequestDetail>

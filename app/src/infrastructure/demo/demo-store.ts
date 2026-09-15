@@ -7,6 +7,13 @@ import {
 } from '@/domain/entities/checkin'
 import { addDays, dayKeyOf, type DayKey } from '@/domain/entities/day'
 import {
+  EMPTY_EVOLUTION,
+  type EvolutionSnapshot,
+  type UnlockedAchievement,
+  type XpTransaction,
+} from '@/domain/entities/evolution'
+import { applyEvolutionEvent, type EvolutionEvent } from '@/domain/entities/evolution-engine'
+import {
   createHabit,
   type Habit,
   type HabitLog,
@@ -110,6 +117,8 @@ interface DemoState {
   challengeParticipants: ChallengeParticipant[]
   /** Apoios dados e recebidos, no formato `eventId::userId`. */
   supports: string[]
+  /** XP, nível e conquistas. No demo o motor puro faz o papel do trigger. */
+  evolution: EvolutionSnapshot
 }
 
 let state: DemoState | null = null
@@ -526,6 +535,8 @@ function seed(): DemoState {
     friendships: seedFriendships(),
     ...seedChallenge(today, habits),
     supports: [],
+    // XP não vem de fábrica pelo mesmo motivo dos momentos: é resultado.
+    evolution: EMPTY_EVOLUTION,
   }
 }
 
@@ -781,6 +792,12 @@ interface StoredState {
     }
   >
   supports?: string[]
+  evolution?: {
+    xpTotal: number
+    level: number
+    transactions: Array<Omit<XpTransaction, 'createdAt'> & { createdAt: string }>
+    achievements: Array<Omit<UnlockedAchievement, 'unlockedAt'> & { unlockedAt: string }>
+  }
 }
 
 function revive(raw: string): DemoState {
@@ -862,6 +879,20 @@ function revive(raw: string): DemoState {
       completedAt: item.completedAt ? new Date(item.completedAt) : null,
     })),
     supports: parsed.supports ?? [],
+    evolution: parsed.evolution
+      ? {
+          xpTotal: parsed.evolution.xpTotal,
+          level: parsed.evolution.level,
+          transactions: parsed.evolution.transactions.map((item) => ({
+            ...item,
+            createdAt: new Date(item.createdAt),
+          })),
+          achievements: parsed.evolution.achievements.map((item) => ({
+            ...item,
+            unlockedAt: new Date(item.unlockedAt),
+          })),
+        }
+      : EMPTY_EVOLUTION,
   }
 }
 
@@ -888,7 +919,36 @@ function persist(): void {
   }
 }
 
+/**
+ * O papel do trigger, no demo: cada mudança que vale XP passa pelo motor puro
+ * e o resultado fica no estado. É a mesma regra do servidor.
+ */
+function evolve(current: DemoState, event: EvolutionEvent): void {
+  const result = applyEvolutionEvent(current.evolution, event, {
+    userId: DEMO_USER.id,
+    now: new Date(),
+    newId,
+  })
+  current.evolution = result.snapshot
+}
+
+/** Prioridades do dia (principal ou alta) e quantas já saíram. */
+function prioritiesOf(tasks: readonly Task[], day: DayKey): { total: number; done: number } {
+  const priorities = tasks.filter(
+    (task) =>
+      task.day === day && task.status !== 'cancelada' && (task.isMainPriority || task.priority === 'alta'),
+  )
+  return {
+    total: priorities.length,
+    done: priorities.filter((task) => task.status === 'feita').length,
+  }
+}
+
 export const demoStore = {
+  evolution(): EvolutionSnapshot {
+    return load().evolution
+  },
+
   profile(): Profile {
     return load().profile
   },
@@ -964,9 +1024,13 @@ export const demoStore = {
 
   updateObjective(id: string, changes: ObjectiveUpdate): void {
     const current = load()
+    const before = current.objectives.find((objective) => objective.id === id)
     current.objectives = current.objectives.map((objective) =>
       objective.id === id ? { ...objective, ...changes } : objective,
     )
+    if (before && before.completedAt === null && changes.completedAt) {
+      evolve(current, { type: 'objective_done', objectiveId: id, day: dayKeyOf(new Date()) })
+    }
     persist()
   },
 
@@ -1038,6 +1102,9 @@ export const demoStore = {
 
     const updated: PlanStage = { ...found, ...changes }
     current.planStages = current.planStages.map((stage) => (stage.id === id ? updated : stage))
+    if (found.status !== 'concluida' && updated.status === 'concluida') {
+      evolve(current, { type: 'stage_done', stageId: id, day: dayKeyOf(new Date()) })
+    }
     persist()
     return updated
   },
@@ -1181,6 +1248,10 @@ export const demoStore = {
       ? current.habitLogs.map((item) => (item === existing ? log : item))
       : [...current.habitLogs, log]
 
+    if (status === 'feito' || status === 'minimo') {
+      evolve(current, { type: 'habit_done', habitId, day: dayKeyOf(new Date()) })
+    }
+
     persist()
     return log
   },
@@ -1218,6 +1289,16 @@ export const demoStore = {
       return task
     })
 
+    if (found.status !== 'feita' && updated.status === 'feita') {
+      evolve(current, {
+        type: 'task_done',
+        taskId: id,
+        day: dayKeyOf(new Date()),
+        isMainPriority: updated.isMainPriority,
+        priorities: prioritiesOf(current.tasks, updated.day),
+      })
+    }
+
     persist()
     return updated
   },
@@ -1254,6 +1335,10 @@ export const demoStore = {
     current.weeklyReviews = existing
       ? current.weeklyReviews.map((item) => (item.weekStart === weekStart ? review : item))
       : [...current.weeklyReviews, review]
+
+    if (!existing?.completedAt && review.completedAt) {
+      evolve(current, { type: 'review_done', weekStart, day: dayKeyOf(new Date()) })
+    }
 
     persist()
     return review
@@ -1535,6 +1620,7 @@ export const demoStore = {
       challenges: [],
       challengeParticipants: [],
       supports: [],
+      evolution: EMPTY_EVOLUTION,
     }
     persist()
   },

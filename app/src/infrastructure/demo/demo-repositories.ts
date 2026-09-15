@@ -82,6 +82,8 @@ import { LEGAL_VERSIONS, type LegalAcceptance, type LegalDocument, type LegalVer
 import { assertMediaAllowed, assertOwnsMediaPath, mediaPath, type MediaKind } from '@/domain/media/media-policy'
 import type { LegalAcceptanceRepository } from '@/domain/repositories/legal-acceptance-repository'
 import type { MediaRepository, StoredMedia } from '@/domain/repositories/media-repository'
+import type { EvolutionRepository } from '@/domain/repositories/evolution-repository'
+import type { EvolutionSnapshot } from '@/domain/entities/evolution'
 import { DEMO_USER, demoStore } from './demo-store'
 
 const SESSION_KEY = 'momentumm.demo.session'
@@ -401,6 +403,12 @@ export class DemoWinRepository implements WinRepository {
 
   async save(input: NewWinInput): Promise<Win> {
     return demoStore.saveWin(input)
+  }
+}
+
+export class DemoEvolutionRepository implements EvolutionRepository {
+  async load(): Promise<EvolutionSnapshot> {
+    return demoStore.evolution()
   }
 }
 

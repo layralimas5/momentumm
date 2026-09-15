@@ -19,6 +19,7 @@ import {
   cancellationsSchema,
   errorListSchema,
   errorMetricsSchema,
+  evolutionMetricsSchema,
   featureUsageSchema,
   overviewSchema,
   requestDetailSchema,
@@ -185,6 +186,10 @@ export class SupabaseAdminGateway implements AdminGateway {
 
   featureUsage(period: Period) {
     return rpc('admin_feature_usage', { p_from: period.from, p_to: period.to }, featureUsageSchema)
+  }
+
+  evolutionMetrics() {
+    return rpc('admin_evolution_metrics', {}, evolutionMetricsSchema)
   }
 
   listRequests(filters: RequestFilters) {

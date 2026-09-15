@@ -34,6 +34,8 @@ import { Stat, StatGrid } from '@/presentation/components/ui/Stat'
 import { MobileShortcuts } from '@/presentation/components/mobile/MobileShortcuts'
 import { ProfileEditor } from '@/presentation/profile/ProfileEditor'
 import { ProfileVisibilityPanel } from '@/presentation/profile/ProfileVisibilityPanel'
+import { LevelCard } from '@/presentation/evolution/LevelCard'
+import { useEvolution } from '@/presentation/evolution/use-evolution'
 import { ShareButton } from '@/presentation/share/ShareButton'
 import { useDashboard } from '@/presentation/planner/use-dashboard'
 import { usePlanner } from '@/presentation/planner/use-planner'
@@ -59,7 +61,16 @@ export function PersonalProfilePage() {
   const { profile, loading, refreshProfile } = useAuth()
   const planner = usePlanner()
   const view = useDashboard()
+  const evolution = useEvolution()
   const [editing, setEditing] = useState(false)
+
+  const { summary: evolutionSummary } = evolution
+  const achievementsUnlocked = evolutionSummary.achievements.filter(
+    (item) => item.unlockedAt !== null,
+  ).length
+  const auroraFrame = evolutionSummary.unlocks.some(
+    (item) => item.key === 'moldura_aurora' && item.status === 'liberado',
+  )
 
   const { activities, habitLogs, journeyEvents, streak } = planner
 
@@ -141,17 +152,30 @@ export function PersonalProfilePage() {
           />
         ) : (
           <div className="flex items-center gap-4">
-            <Avatar
-              name={profile.name}
-              src={profile.avatarUrl}
-              className="size-16 sm:size-20"
-              textClassName="text-lg sm:text-xl"
-            />
+            {/* A moldura Aurora é um desbloqueio (PRO + nível 7): um anel, não um enfeite. */}
+            <span
+              className={cn(
+                'shrink-0 rounded-full',
+                auroraFrame && 'p-0.5 ring-2 ring-brand/70 shadow-[0_0_24px_-4px_var(--color-brand)]',
+              )}
+            >
+              <Avatar
+                name={profile.name}
+                src={profile.avatarUrl}
+                className="size-16 sm:size-20"
+                textClassName="text-lg sm:text-xl"
+              />
+            </span>
             <div className="min-w-0">
               <h2 className="truncate text-xl font-semibold tracking-tight text-ink sm:text-2xl">
                 {profile.name}
               </h2>
-              <p className="truncate text-sm text-ink-faint">@{profile.handle}</p>
+              <p className="truncate text-sm text-ink-faint">
+                @{profile.handle}
+                {evolutionSummary.title ? (
+                  <span className="text-brand-ink"> · {evolutionSummary.title}</span>
+                ) : null}
+              </p>
               {profile.bio ? (
                 <p className="mt-1.5 text-sm text-pretty text-ink-muted">{profile.bio}</p>
               ) : null}
@@ -163,6 +187,10 @@ export function PersonalProfilePage() {
                 existem pra caber num olhar, e é por isso que a linha é uma só.
               */}
               <p className="mt-2 text-sm text-ink-muted">
+                <span className="font-medium text-ink">
+                  Nível {evolutionSummary.progress.level}, {evolutionSummary.progress.name}
+                </span>
+                <span className="text-ink-faint"> · </span>
                 <span className="font-medium text-ink">Momentum {view.momentum.value}</span>
                 <span className="text-ink-faint"> · </span>
                 {running.length} {running.length === 1 ? 'objetivo ativo' : 'objetivos ativos'}
@@ -182,9 +210,44 @@ export function PersonalProfilePage() {
       </Panel>
 
       {/*
+        Nível e Momentum lado a lado, de propósito: um é o caminho percorrido
+        (só cresce), o outro é o ritmo de agora (sobe e desce). Juntos eles
+        contam a história inteira; separados, cada um parece o outro.
+      */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <LevelCard progress={evolutionSummary.progress} title={evolutionSummary.title} compact />
+        <div className="surface-card flex flex-col justify-between p-4">
+          <p className="text-xs font-semibold tracking-wide text-ink-faint uppercase">
+            Evolução
+          </p>
+          <dl className="mt-2 grid grid-cols-2 gap-3">
+            <div>
+              <dt className="text-xs text-ink-faint">Conquistas</dt>
+              <dd className="tabular text-xl font-semibold text-ink">
+                {achievementsUnlocked}
+                <span className="text-sm font-normal text-ink-faint">
+                  {' '}
+                  de {evolutionSummary.achievements.length}
+                </span>
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-ink-faint">Semanas em evolução</dt>
+              <dd className="tabular text-xl font-semibold text-ink">
+                {evolutionSummary.weeksInEvolution}
+              </dd>
+            </div>
+          </dl>
+          <p className="mt-2 text-xs text-ink-faint">
+            +{evolutionSummary.weekXp.toLocaleString('pt-BR')} XP nesta semana
+          </p>
+        </div>
+      </div>
+
+      {/*
         Os quatro números que respondem "como eu venho indo". Momentum é o
         ritmo de agora; os outros três são a régua longa, que é justamente a que
-        o dashboard não mostra — lá tudo é sobre hoje.
+        o dashboard não mostra: lá tudo é sobre hoje.
       */}
       <StatGrid>
         <Stat

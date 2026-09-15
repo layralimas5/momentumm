@@ -47,6 +47,7 @@ export const PRODUCT_FEATURES = [
   'foco',
   'insights',
   'perfil',
+  'evolucao',
   'configuracoes',
   'assinatura',
 ] as const
@@ -71,6 +72,7 @@ export const FEATURE_LABELS: Readonly<Record<ProductFeature, string>> = {
   foco: 'Foco',
   insights: 'Leituras do ritmo',
   perfil: 'Perfil',
+  evolucao: 'Evolução',
   configuracoes: 'Configurações',
   assinatura: 'Assinatura',
 }
@@ -107,6 +109,7 @@ export function featureForRoute(pathname: string): ProductFeature | null {
     ['/app/foco', 'foco'],
     ['/app/insights', 'insights'],
     ['/app/perfil', 'perfil'],
+    ['/app/evolucao', 'evolucao'],
     ['/app/configuracoes', 'configuracoes'],
     ['/app/assinatura', 'assinatura'],
   ]
