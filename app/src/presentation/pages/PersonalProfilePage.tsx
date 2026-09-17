@@ -23,7 +23,7 @@ import {
 } from '@/domain/entities/milestone'
 import { membershipLabel, PROFILE_VISIBILITY_LABELS } from '@/domain/entities/profile'
 import { totalMinutes } from '@/domain/entities/activity'
-import { milestoneEvent } from '@/domain/share/journey-event-builders'
+import { milestoneEvent, momentumEvent } from '@/domain/share/journey-event-builders'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { Avatar } from '@/presentation/components/ui/Avatar'
 import { Button } from '@/presentation/components/ui/Button'
@@ -132,10 +132,29 @@ export function PersonalProfilePage() {
         description="Onde você está e o que já construiu."
         action={
           editing ? undefined : (
-            <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
-              <Icon name="editar" className="size-4" />
-              Editar perfil
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              {/*
+                O único ponto de entrada do Share Studio que existe todo dia,
+                em qualquer tela. Os outros aparecem só quando há um momento
+                digno de card; este serve pra quem quer o card do momentum
+                agora, sem esperar o dia render.
+              */}
+              <ShareButton
+                label="Compartilhar Momentum"
+                build={() =>
+                  momentumEvent({
+                    userId: profile.id,
+                    today: planner.today,
+                    momentum: view.momentum,
+                    streakDays: planner.streak.current,
+                  })
+                }
+              />
+              <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
+                <Icon name="editar" className="size-4" />
+                Editar perfil
+              </Button>
+            </div>
           )
         }
       />
