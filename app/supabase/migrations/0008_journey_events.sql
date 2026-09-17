@@ -68,7 +68,7 @@ create table public.journey_events (
   progress_before numeric(4, 3) check (progress_before between 0 and 1),
   progress_after  numeric(4, 3) check (progress_after between 0 and 1),
 
-  -- Momentum, 0 a 100. A VARIAÇÃO não é guardada: ela é derivada dos dois
+  -- Momentumm, 0 a 100. A VARIAÇÃO não é guardada: ela é derivada dos dois
   -- lados. Guardar abriria a porta pra uma linha dizendo "+6" com 76 → 81 na
   -- coluna ao lado, e o card mostraria a contradição em tamanho grande.
   momentum_before smallint check (momentum_before between 0 and 100),

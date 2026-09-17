@@ -151,7 +151,7 @@ describe('buildAdaptiveDay — 1h30 com plano de 4h', () => {
   })
 
   it('leva o título fixo da revisão', () => {
-    expect(plan.title).toBe('Vamos proteger seu Momentum')
+    expect(plan.title).toBe('Vamos proteger seu Momentumm')
   })
 })
 

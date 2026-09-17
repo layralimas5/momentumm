@@ -28,7 +28,7 @@ import { PageHeader } from './PageHeader'
 /**
  * Progresso.
  *
- * O número existe pra virar decisão. Por isso o Momentum aparece aberto em
+ * O número existe pra virar decisão. Por isso o Momentumm aparece aberto em
  * fatores logo abaixo do total: um score fechado é um oráculo, e ninguém muda
  * de comportamento por causa de um oráculo.
  */
@@ -44,8 +44,8 @@ export function ProgressPage() {
   const actions = useInsightActions(progress.insightContext)
   const applyAdjustment = useAsyncAction(actions.apply)
 
-  // Ação concluída é movimento: o Momentum conta ela, então a tela que mostra
-  // o Momentum não pode dizer "nada pra medir" no dia em que a pessoa fechou
+  // Ação concluída é movimento: o Momentumm conta ela, então a tela que mostra
+  // o Momentumm não pode dizer "nada pra medir" no dia em que a pessoa fechou
   // a primeira prioridade da conta.
   const hasData =
     planner.activities.length > 0 ||
@@ -85,7 +85,7 @@ export function ProgressPage() {
       ) : (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <Panel tone="brand" className="xl:col-span-2">
-            <PanelHeader title="Momentum" icon="raio" />
+            <PanelHeader title="Momentumm" icon="raio" />
 
             <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
               <div>

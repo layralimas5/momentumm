@@ -142,8 +142,8 @@ export function describeCard(data: ShareCardData): string {
   if (data.momentumAfter !== null) {
     parts.push(
       data.momentumBefore !== null && data.momentumBefore !== data.momentumAfter
-        ? `Momentum de ${data.momentumBefore} para ${data.momentumAfter}`
-        : `Momentum ${data.momentumAfter}`,
+        ? `Momentumm de ${data.momentumBefore} para ${data.momentumAfter}`
+        : `Momentumm ${data.momentumAfter}`,
     )
   }
 

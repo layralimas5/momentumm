@@ -556,7 +556,7 @@ export interface RankedParticipant {
 /**
  * A classificação DENTRO do desafio, e só dela.
  *
- * Nada aqui compara Momentum Score, constância ou volume: o único número é o
+ * Nada aqui compara Momentumm Score, constância ou volume: o único número é o
  * dia cumprido, que é o que as duas pessoas combinaram cumprir. Score é a
  * comparação de alguém com ela mesma, e transportá-lo pra uma tabela entre
  * amigos é exatamente o ranking que o produto recusa.

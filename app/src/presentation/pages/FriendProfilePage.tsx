@@ -21,9 +21,9 @@ import { toUserMessage } from '@/shared/errors'
  * isso.
  *
  * O que NÃO aparece aqui é a parte importante: objetivos, hábitos, notas,
- * check-ins, constância e Momentum Score. Nada disso foi compartilhado — é o
+ * check-ins, constância e Momentumm Score. Nada disso foi compartilhado — é o
  * planejamento da vida de alguém, e o fato de vocês serem amigos não torna
- * isso público. E o Momentum fica de fora também pelo outro motivo: ele é a
+ * isso público. E o Momentumm fica de fora também pelo outro motivo: ele é a
  * comparação da pessoa com ela mesma, e colocá-lo lado a lado no perfil de
  * cada amigo é montar um ranking sem chamar de ranking.
  */

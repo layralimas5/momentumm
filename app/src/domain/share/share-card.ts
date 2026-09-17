@@ -227,7 +227,7 @@ export interface ShareFieldSpec {
 }
 
 export const SHARE_FIELD_SPECS: Readonly<Record<ShareField, ShareFieldSpec>> = {
-  momentum: { id: 'momentum', label: 'Momentum Score', warning: null },
+  momentum: { id: 'momentum', label: 'Momentumm Score', warning: null },
   items: {
     id: 'items',
     label: 'Atividades concluídas',

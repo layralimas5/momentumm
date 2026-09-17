@@ -56,7 +56,7 @@ export const RECOVERY_SIGNAL_LABELS: Readonly<Record<RecoverySignalKey, string>>
   'baixa-execucao': 'Execução baixa',
   'objetivos-parados': 'Objetivo parado',
   adiamentos: 'Adiamentos seguidos',
-  'queda-momentum': 'Momentum em queda',
+  'queda-momentum': 'Momentumm em queda',
 }
 
 /** Sinais simultâneos pra ligar o modo. Um sozinho é ruído. */
@@ -203,7 +203,7 @@ function detectSignals(input: RecoveryInput): RecoverySignal[] {
     signals.push({
       key: 'queda-momentum',
       label: RECOVERY_SIGNAL_LABELS['queda-momentum'],
-      detail: `O Momentum caiu ${Math.abs(input.momentum.delta)} pontos contra a semana passada.`,
+      detail: `O Momentumm caiu ${Math.abs(input.momentum.delta)} pontos contra a semana passada.`,
     })
   }
 

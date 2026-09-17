@@ -92,7 +92,7 @@ export function useProgress(): ProgressView {
     A MESMA entrada do dashboard, inclusive o avanço do plano.
 
     Antes esta tela montava a própria: o fator de objetivos ficava sem base
-    aqui e medido lá, e o mesmo Momentum aparecia com dois valores em duas
+    aqui e medido lá, e o mesmo Momentumm aparecia com dois valores em duas
     telas do mesmo app.
   */
   const input = useMomentumInput()

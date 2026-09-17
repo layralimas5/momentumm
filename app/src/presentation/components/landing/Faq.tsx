@@ -27,16 +27,16 @@ const QUESTIONS = [
   {
     question: 'E se eu perder um dia? Perco tudo?',
     answer:
-      'Não. A sequência conta dias cumpridos, e a versão mínima de um hábito conta. O Momentum Score olha 28 dias, então um dia vazio tira poucos pontos e nunca zera. Voltar em até dois dias devolve a nota cheia no fator de retomada.',
+      'Não. A sequência conta dias cumpridos, e a versão mínima de um hábito conta. O Momentumm Score olha 28 dias, então um dia vazio tira poucos pontos e nunca zera. Voltar em até dois dias devolve a nota cheia no fator de retomada.',
   },
   {
     question: 'O que tem no plano gratuito e o que muda no PRO?',
-    answer: `O gratuito organiza e executa: até ${free.activeObjectives} objetivos ativos, ${free.activeHabits} hábitos, ${free.activePlans} plano por etapas, ${free.actionsPerDay} ações por dia, os últimos ${free.historyDays} dias de histórico, o Momentum Score de hoje e um check-in semanal manual. O PRO registra, analisa e evolui: tira os limites, abre o histórico completo, a evolução e o detalhamento do score, o review cruzando os dados reais, a Momentumm AI, métricas, relatórios, registros em texto, foto e voz, todos os modelos de compartilhamento e exportação. A tabela completa está na seção de planos.`,
+    answer: `O gratuito organiza e executa: até ${free.activeObjectives} objetivos ativos, ${free.activeHabits} hábitos, ${free.activePlans} plano por etapas, ${free.actionsPerDay} ações por dia, os últimos ${free.historyDays} dias de histórico, o Momentumm Score de hoje e um check-in semanal manual. O PRO registra, analisa e evolui: tira os limites, abre o histórico completo, a evolução e o detalhamento do score, o review cruzando os dados reais, a Momentumm AI, métricas, relatórios, registros em texto, foto e voz, todos os modelos de compartilhamento e exportação. A tabela completa está na seção de planos.`,
   },
   {
     question: 'Como a IA usa os meus dados?',
     answer:
-      'Ela lê o que você já colocou no app: objetivos, prazo, minutos por dia, hábitos, execução e Momentum. Com isso monta o plano, aponta gargalos e sugere ajustes. Toda sugestão vira uma prévia que você edita antes de salvar, e o que ela devolve segue as mesmas regras de domínio de um plano feito na mão. Nenhuma chave de IA roda no seu navegador.',
+      'Ela lê o que você já colocou no app: objetivos, prazo, minutos por dia, hábitos, execução e Momentumm. Com isso monta o plano, aponta gargalos e sugere ajustes. Toda sugestão vira uma prévia que você edita antes de salvar, e o que ela devolve segue as mesmas regras de domínio de um plano feito na mão. Nenhuma chave de IA roda no seu navegador.',
   },
   {
     question: 'Meus dados ficam privados?',

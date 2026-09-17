@@ -119,7 +119,7 @@ function kickerOf(event: JourneyEvent): string | null {
     case 'goal_completed':
       return 'Objetivo concluído'
     case 'momentum_record':
-      return 'Novo momentum'
+      return 'Novo Momentumm'
     case 'comeback':
       return 'De volta ao ritmo'
     case 'milestone':
@@ -221,7 +221,7 @@ function fallbackMetric(
     return { value: percent, label: labelForPercent(event.type) }
   }
   if (fields.momentum && event.momentumAfter !== null) {
-    return { value: `${event.momentumAfter}`, label: 'Momentum' }
+    return { value: `${event.momentumAfter}`, label: 'Momentumm' }
   }
   if (fields.duration && event.durationMin) {
     return { value: formatMinutes(event.durationMin), label: 'de foco' }

@@ -14,7 +14,7 @@ import { MomentumDialog } from './MomentumDialog'
 import { MomentumRing } from './MomentumRing'
 
 /**
- * O Momentum em uma faixa, não em um card.
+ * O Momentumm em uma faixa, não em um card.
  *
  * Ele precisa de destaque e não de espaço: é um número de contexto, não a ação
  * do dia. Como card grande ele disputava a primeira dobra com o foco — e a
@@ -61,7 +61,7 @@ export function MomentumStrip({
         className="surface-card flex items-center gap-4 px-4 py-4"
       >
         <h2 id="momentum-titulo" className="sr-only">
-          Momentum Score
+          Momentumm Score
         </h2>
 
         <MomentumRing value={momentum.value} size={88}>

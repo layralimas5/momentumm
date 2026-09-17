@@ -135,7 +135,7 @@ const context: AiUserContext = {
 describe('renderContext', () => {
   it('escreve só as seções que existem, com os números que sustentam a leitura', () => {
     const text = renderContext(context)
-    expect(text).toContain('Momentum: 46/100')
+    expect(text).toContain('Momentumm: 46/100')
     expect(text).toContain('Gargalo: Ler os três primeiros')
     expect(text).toContain('Ajustes decididos: Ler de manhã')
     expect(text).toContain('PRIORIDADE PRINCIPAL')
@@ -145,7 +145,7 @@ describe('renderContext', () => {
     expect(text).toContain('AÇÕES DOS PRÓXIMOS 7 DIAS')
     expect(text).toContain('[o1]')
     expect(text).toContain('[h1]')
-    expect(text).toContain('Momentum bruto (sem o limite diário): 51/100')
+    expect(text).toContain('Momentumm bruto (sem o limite diário): 51/100')
     expect(text).toContain('O que mudou vs semana anterior: Execução das prioridades -4')
     expect(text).toContain('Próxima ação com mais potencial: "Ler 20 páginas" (+3 no score hoje)')
   })

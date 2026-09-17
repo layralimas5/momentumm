@@ -170,7 +170,7 @@ export function MockRow({
   )
 }
 
-/** A faixa do Momentum, como no topo do `Hoje`. */
+/** A faixa do Momentumm, como no topo do `Hoje`. */
 export function MockMomentum({
   value,
   level,
@@ -188,7 +188,7 @@ export function MockMomentum({
         <span className="text-gradient-brand tabular text-2xl font-semibold leading-none tracking-tight">
           {value}
         </span>
-        <span className="text-[10px] text-ink-faint">Momentum</span>
+        <span className="text-[10px] text-ink-faint">Momentumm</span>
       </span>
       <MockTag tone={level === 'Avançando' ? 'positive' : level === 'Desacelerando' ? 'warn' : 'brand'}>
         {level}

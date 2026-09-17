@@ -140,7 +140,7 @@ export function PersonalProfilePage() {
                 agora, sem esperar o dia render.
               */}
               <ShareButton
-                label="Compartilhar Momentum"
+                label="Compartilhar Momentumm"
                 build={() =>
                   momentumEvent({
                     userId: profile.id,
@@ -210,7 +210,7 @@ export function PersonalProfilePage() {
                   Nível {evolutionSummary.progress.level}, {evolutionSummary.progress.name}
                 </span>
                 <span className="text-ink-faint"> · </span>
-                <span className="font-medium text-ink">Momentum {view.momentum.value}</span>
+                <span className="font-medium text-ink">Momentumm {view.momentum.value}</span>
                 <span className="text-ink-faint"> · </span>
                 {running.length} {running.length === 1 ? 'objetivo ativo' : 'objetivos ativos'}
                 <span className="text-ink-faint"> · </span>
@@ -229,7 +229,7 @@ export function PersonalProfilePage() {
       </Panel>
 
       {/*
-        Nível e Momentum lado a lado, de propósito: um é o caminho percorrido
+        Nível e Momentumm lado a lado, de propósito: um é o caminho percorrido
         (só cresce), o outro é o ritmo de agora (sobe e desce). Juntos eles
         contam a história inteira; separados, cada um parece o outro.
       */}
@@ -264,13 +264,13 @@ export function PersonalProfilePage() {
       </div>
 
       {/*
-        Os quatro números que respondem "como eu venho indo". Momentum é o
+        Os quatro números que respondem "como eu venho indo". Momentumm é o
         ritmo de agora; os outros três são a régua longa, que é justamente a que
         o dashboard não mostra: lá tudo é sobre hoje.
       */}
       <StatGrid>
         <Stat
-          label="Momentum"
+          label="Momentumm"
           value={`${view.momentum.value}`}
           hint={MOMENTUM_LEVEL_LABELS[view.momentum.level]}
           accent="var(--color-brand)"

@@ -18,7 +18,7 @@ const CAPABILITIES = [
   },
   {
     title: 'Lê o progresso e aponta o gargalo',
-    input: 'Momentum, dias ativos, taxa de hábitos e ações, objetivos parados, o que está planejado pra hoje e a sua capacidade.',
+    input: 'Momentumm, dias ativos, taxa de hábitos e ações, objetivos parados, o que está planejado pra hoje e a sua capacidade.',
     output:
       'Padrões, gargalos, sinal de sobrecarga quando o dia pede mais do que você tem, e uma próxima ação concreta.',
   },

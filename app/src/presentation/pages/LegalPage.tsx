@@ -97,7 +97,7 @@ const DOCUMENTS: Readonly<Record<LegalKind, LegalDocument>> = {
         title: '1. O que coletamos',
         paragraphs: [
           'Dados de conta: e-mail, nome, foto e bio (opcionais) e as credenciais de acesso. Se você entrar com o Google, recebemos o e-mail e o nome do seu perfil Google.',
-          'Dados de uso do produto: objetivos, planos, etapas, hábitos, ações, registros de atividade, check-ins, reviews e as respostas que você escreve. Também derivamos números a partir deles, como o Momentum Score.',
+          'Dados de uso do produto: objetivos, planos, etapas, hábitos, ações, registros de atividade, check-ins, reviews e as respostas que você escreve. Também derivamos números a partir deles, como o Momentumm Score.',
           'Dados técnicos: registros de acesso, tipo de navegador e eventos de uso agregados (por exemplo, "compartilhou um card"), nunca o conteúdo que você escreveu.',
         ],
       },
@@ -111,7 +111,7 @@ const DOCUMENTS: Readonly<Record<LegalKind, LegalDocument>> = {
       {
         title: '3. Momentumm AI',
         paragraphs: [
-          'Quando você pede um plano, uma reorganização do dia, uma leitura do progresso, o rascunho da review ou um plano de retorno, enviamos ao provedor de IA um recorte fechado da sua conta: objetivos e etapas, hábitos, ações, capacidade do dia, Momentum Score, os últimos reviews e vitórias recentes. Não enviamos e-mail, nome, observações do check-in nem dados de outras pessoas. O processamento acontece no nosso servidor; nenhuma chave de IA roda no seu navegador. Guardamos apenas o tipo da chamada, o modelo e a contagem de tokens, nunca o conteúdo. Não usamos os seus dados pra treinar modelos.',
+          'Quando você pede um plano, uma reorganização do dia, uma leitura do progresso, o rascunho da review ou um plano de retorno, enviamos ao provedor de IA um recorte fechado da sua conta: objetivos e etapas, hábitos, ações, capacidade do dia, Momentumm Score, os últimos reviews e vitórias recentes. Não enviamos e-mail, nome, observações do check-in nem dados de outras pessoas. O processamento acontece no nosso servidor; nenhuma chave de IA roda no seu navegador. Guardamos apenas o tipo da chamada, o modelo e a contagem de tokens, nunca o conteúdo. Não usamos os seus dados pra treinar modelos.',
           'A IA propõe; você decide. Nenhuma sugestão altera dados, datas ou planejamentos sem a sua confirmação.',
         ],
       },

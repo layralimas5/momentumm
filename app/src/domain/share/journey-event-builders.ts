@@ -32,7 +32,7 @@ function ephemeral(input: NewJourneyEventInput, key: string): JourneyEvent {
 }
 
 /**
- * Momentum antes: o score atual menos a variação que o próprio domínio calculou.
+ * Momentumm antes: o score atual menos a variação que o próprio domínio calculou.
  *
  * Sem uma semana de história o "antes" é zero por falta de dado, não por falta
  * de movimento. Nesse caso o card mostra só o número de hoje: "0 → 37" numa
@@ -297,7 +297,7 @@ export function momentumEvent(input: MomentumEventInput): JourneyEvent {
       type: 'momentum_record',
       sourceType: 'momentum',
       sourceId: input.today,
-      title: 'Meu momentum',
+      title: 'Meu Momentumm',
       metadata: input.streakDays > 0 ? { streakDays: input.streakDays } : {},
       ...momentumPair(input.momentum),
     },

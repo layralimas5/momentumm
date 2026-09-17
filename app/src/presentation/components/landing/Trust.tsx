@@ -46,7 +46,7 @@ const PROOFS: readonly Proof[] = [
 const NUMBERS = [
   { value: '600+', label: 'testes automatizados nas regras' },
   { value: '10 s', label: 'de check-in por dia' },
-  { value: '28 dias', label: 'de janela no Momentum Score' },
+  { value: '28 dias', label: 'de janela no Momentumm Score' },
 ] as const
 
 export function Trust() {

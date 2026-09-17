@@ -49,7 +49,7 @@ import { useAi } from '@/presentation/ai/use-ai'
  *
  * A tela tem TRÊS níveis de atenção, e a diferença entre eles é deliberada:
  *
- *   1. Saudação, Momentum e **Seu foco de hoje** — a primeira dobra. Responde
+ *   1. Saudação, Momentumm e **Seu foco de hoje** — a primeira dobra. Responde
  *      "como estou" e "o que faço agora", que é o motivo de a pessoa abrir o app.
  *   2. Objetivos, hábitos e insight — responde "estou avançando".
  *   3. Semana, check-in, foco cronometrado, metas e vitórias — consulta.
@@ -160,7 +160,7 @@ export function DashboardPage() {
    *
    * Ele é protegido, entra no dia mesmo vindo de outra data e vira a
    * prioridade principal — e é aí que mora a recompensa: prioridade concluída
-   * vale o triplo de uma tarefa comum no Momentum, e fechar a pausa de hoje é
+   * vale o triplo de uma tarefa comum no Momentumm, e fechar a pausa de hoje é
    * o que o fator de retomada mede.
    */
   const chooseRecoveryStep = useCallback(
@@ -497,7 +497,7 @@ export function DashboardPage() {
 
       {view.insight ? (
         <Section
-          title="Seu Momentum"
+          title="Seu Momentumm"
           to="/app/insights"
           toLabel="Ver todas as leituras"
         >

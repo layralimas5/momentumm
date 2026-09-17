@@ -60,7 +60,7 @@ export const FEATURE_LABELS: Readonly<Record<ProductFeature, string>> = {
   plano: 'Plano',
   progresso: 'Progresso',
   review: 'Review semanal',
-  momentum_score: 'Momentum Score',
+  momentum_score: 'Momentumm Score',
   ai: 'Momentumm AI',
   retomada: 'Modo Retomada',
   compartilhamento: 'Compartilhamento',

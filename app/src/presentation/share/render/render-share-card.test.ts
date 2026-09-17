@@ -203,7 +203,7 @@ describe('os arranjos', () => {
 
     const written = textOf('dark', 'anel')
     expect(written).toContain('100%')
-    expect(written).toContain('Momentum agora')
+    expect(written).toContain('Momentumm agora')
   })
 
   it('a lista desenha os sete pontos da semana ao lado dos itens', () => {

@@ -5,7 +5,7 @@
  */
 export const PRO_BENEFITS = [
   'Objetivos, hábitos, planos e ações sem limite',
-  'Histórico completo e evolução do Momentum Score',
+  'Histórico completo e evolução do Momentumm Score',
   'Review semanal cruzando os teus dados reais',
   'Momentumm AI, métricas e relatórios',
 ] as const

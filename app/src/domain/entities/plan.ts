@@ -3,7 +3,7 @@
  *
  * A separação é uma frase: o gratuito ORGANIZA E EXECUTA, o PRO REGISTRA,
  * ANALISA E EVOLUI. Quem está no gratuito cria objetivo, organiza alguns
- * hábitos, acompanha as ações do dia, marca o que concluiu e vê o Momentum
+ * hábitos, acompanha as ações do dia, marca o que concluiu e vê o Momentumm
  * Score de hoje. O que ela não consegue é olhar pra trás com profundidade:
  * evolução do score, métricas, relatórios, análises da IA e a review que cruza
  * os dados reais da semana.
@@ -166,7 +166,7 @@ export function planMatrix(): readonly PlanMatrixRow[] {
     { feature: 'Planos ativos', free: String(free.activePlans), pro: 'Ilimitados' },
     { feature: 'Ações no Hoje', free: `Até ${free.actionsPerDay} por dia`, pro: 'Ilimitadas' },
     { feature: 'Histórico', free: `Últimos ${free.historyDays} dias`, pro: 'Histórico completo' },
-    { feature: 'Momentum Score', free: 'Apenas pontuação atual', pro: 'Pontuação, evolução e detalhamento' },
+    { feature: 'Momentumm Score', free: 'Apenas pontuação atual', pro: 'Pontuação, evolução e detalhamento' },
     { feature: 'Review semanal', free: 'Check-in básico manual', pro: 'Review completo e personalizado' },
     { feature: 'Momentumm AI', free: 'Não disponível', pro: `Franquia mensal (${PLAN_LIMITS.pro.aiCallsPerMonth} leituras)` },
     { feature: 'Métricas', free: 'Não disponível', pro: 'Métricas detalhadas' },

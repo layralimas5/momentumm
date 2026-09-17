@@ -8,7 +8,7 @@ import { type Task } from './task'
 import type { WeeklyReview } from './weekly-review'
 
 /**
- * Momentum Score: o ritmo da pessoa, não a nota dela.
+ * Momentumm Score: o ritmo da pessoa, não a nota dela.
  *
  * ## A fórmula oficial
  *
