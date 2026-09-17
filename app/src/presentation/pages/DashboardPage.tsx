@@ -385,16 +385,6 @@ export function DashboardPage() {
           onSave={(input) => planner.saveCheckIn({ ...input, day: planner.today })}
         />
 
-        <MomentumStrip
-          momentum={view.momentum}
-          history={view.momentumSeries}
-          today={planner.today}
-          streak={planner.streak}
-          recommendation={view.recommendation}
-          detail={planner.limits.momentumDetail}
-          nextAction={view.nextAction}
-        />
-
         {view.dayComplete ? <DayCompleteBanner win={view.todayWin} /> : null}
 
         <AdaptiveDayCard
@@ -444,6 +434,17 @@ export function DashboardPage() {
           today={planner.today}
           onStartFocus={startFocus}
           onBringToToday={(task) => void bringToToday(task)}
+        />
+
+        {/* O momentum vem depois do que precisa sair: é leitura, não ação. */}
+        <MomentumStrip
+          momentum={view.momentum}
+          history={view.momentumSeries}
+          today={planner.today}
+          streak={planner.streak}
+          recommendation={view.recommendation}
+          detail={planner.limits.momentumDetail}
+          nextAction={view.nextAction}
         />
       </div>
 

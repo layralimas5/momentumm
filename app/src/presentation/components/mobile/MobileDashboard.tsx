@@ -70,6 +70,7 @@ export function MobileDashboard({
   const checkInRef = useRef<HTMLDivElement>(null)
   const priorityRef = useRef<HTMLDivElement>(null)
   const focusRef = useRef<HTMLDivElement>(null)
+  const planRef = useRef<HTMLDivElement>(null)
 
   const mainGoal = planner.goals.find((goal) => goal.id === view.mainPriority?.goalId) ?? null
 
@@ -94,8 +95,8 @@ export function MobileDashboard({
   /*
     A ordem do celular é uma narrativa vertical, não o desktop espremido.
 
-    Momentum, foco de hoje, objetivos, hábitos, insight, semana — e a análise
-    depois. A pessoa desce a tela e vai encontrando as coisas na ordem em que
+    Frase, check-in, plano do dia, foco, objetivos, hábitos, e só então o
+    momentum e o insight. A pessoa desce a tela e vai encontrando as coisas na ordem em que
     elas mudam a decisão do dia. O check-in desceu do topo: ele calibra o dia,
     mas quem abre o app às sete da manhã quer ver o que precisa sair, não
     responder um formulário antes de qualquer coisa.
@@ -110,19 +111,14 @@ export function MobileDashboard({
         <MobileCheckIn
           checkIn={view.checkIn}
           capacity={view.capacity}
-          onSave={(input) => planner.saveCheckIn({ ...input, day: planner.today })}
+          onSave={async (input) => {
+            await planner.saveCheckIn({ ...input, day: planner.today })
+            // Respondeu, a tela desce pro plano do dia já ajustado à energia:
+            // é a resposta à pergunta que acabou de ser feita.
+            planRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }}
         />
       </div>
-
-      <MomentumStrip
-        momentum={view.momentum}
-        history={view.momentumSeries}
-        today={planner.today}
-        streak={planner.streak}
-        recommendation={view.recommendation}
-        detail={planner.limits.momentumDetail}
-        nextAction={view.nextAction}
-      />
 
       {view.dayComplete ? (
         <p
@@ -138,15 +134,15 @@ export function MobileDashboard({
 
       {/* Antes do foco de propósito: no celular o app é aberto no meio do dia,
           e "quanto tempo eu tenho agora" é a pergunta que reordena o resto. */}
-      <AdaptiveDayCard
-        plannedMin={dayLoad.minutes}
-        openItems={dayLoad.items}
-        capacity={view.capacity}
-        onAdapt={onAdaptDay}
-        aiEntry={aiDayEntry}
-      />
-
-      <ShareMomentsRow view={view} />
+      <div ref={planRef} className="scroll-mt-20">
+        <AdaptiveDayCard
+          plannedMin={dayLoad.minutes}
+          openItems={dayLoad.items}
+          capacity={view.capacity}
+          onAdapt={onAdaptDay}
+          aiEntry={aiDayEntry}
+        />
+      </div>
 
       <TodayFocusCard
         focus={view.focus}
@@ -201,6 +197,19 @@ export function MobileDashboard({
         onSeeAll={() => navigate('/app/habitos')}
         onCreate={() => composer.open('habito')}
       />
+
+      {/* O momentum vem depois do que precisa sair: é leitura, não ação. */}
+      <MomentumStrip
+        momentum={view.momentum}
+        history={view.momentumSeries}
+        today={planner.today}
+        streak={planner.streak}
+        recommendation={view.recommendation}
+        detail={planner.limits.momentumDetail}
+        nextAction={view.nextAction}
+      />
+
+      <ShareMomentsRow view={view} />
 
       <MobileInsight
         insight={view.insight}
