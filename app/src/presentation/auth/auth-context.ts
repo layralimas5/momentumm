@@ -1,5 +1,6 @@
 import { createContext } from 'react'
 import type { AuthUser, MfaEnrollment, MfaFactor, SessionInfo } from '@/domain/auth/auth-service'
+import type { PlanTrial } from '@/domain/billing/trial'
 import type { Profile } from '@/domain/entities/profile'
 
 export interface AuthState {
@@ -14,6 +15,13 @@ export interface AuthState {
    * derivar permissão do perfil, que é editável pelo dono.
    */
   readonly session: SessionInfo | null
+  /**
+   * O teste de 7 dias do PRO desta conta, como o servidor devolveu ao abrir
+   * a sessão. `null` sem teste (contas do demo, por exemplo). Quem decide se
+   * ele ainda vale é `profile.plan`, gravado pelo banco; isto aqui é o que
+   * a tela usa pra dizer "até quando".
+   */
+  readonly trial: PlanTrial | null
   readonly loading: boolean
 
   signIn(email: string, password: string): Promise<void>

@@ -25,6 +25,8 @@ export const PRODUCT_EVENTS = [
   'plan_limit_hit',
   'checkout_started',
   'subscription_canceled',
+  'trial_started',
+  'trial_ended',
 ] as const
 export type ProductEventName = (typeof PRODUCT_EVENTS)[number]
 

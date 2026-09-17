@@ -1,6 +1,7 @@
 import { BillingError } from '@/domain/billing/billing-error'
 import type { BillingService, CheckoutSession, PixCharge } from '@/domain/billing/billing-service'
 import type { Subscription } from '@/domain/billing/subscription'
+import type { PlanTrial } from '@/domain/billing/trial'
 
 /**
  * Sem servidor não há cobrança. O modo demo troca de plano pelo botão
@@ -27,6 +28,11 @@ export class DemoBillingService implements BillingService {
   }
 
   mySubscription(): Promise<Subscription | null> {
+    return Promise.resolve(null)
+  }
+
+  /** No demo o plano é escolhido em Configurações; não existe teste com prazo. */
+  settlePlan(): Promise<PlanTrial | null> {
     return Promise.resolve(null)
   }
 }

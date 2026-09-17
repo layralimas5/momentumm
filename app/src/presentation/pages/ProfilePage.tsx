@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ACTIVITY_VISIBILITIES, VISIBILITY_LABELS, type ActivityVisibility } from '@/domain/entities/activity'
+import { isTrialActive } from '@/domain/billing/trial'
 import { formatLimit, isPro, limitsOf, PLAN_LABELS, type PlanTier } from '@/domain/entities/plan'
+import { formatTrialEnd } from '@/presentation/plan/TrialBanner'
 import { MAX_REST_WEEKDAYS } from '@/domain/entities/momentum'
 import {
   initialsOf,
@@ -23,7 +25,7 @@ import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 
 export function ProfilePage() {
-  const { user, profile, loading, signOut, refreshProfile } = useAuth()
+  const { user, profile, trial, loading, signOut, refreshProfile } = useAuth()
   const planner = usePlanner()
   const navigate = useNavigate()
 
@@ -254,6 +256,7 @@ export function ProfilePage() {
                 )}
               >
                 {PLAN_LABELS[profile.plan]}
+                {isPro(profile.plan) && isTrialActive(trial) ? ` · teste até ${formatTrialEnd(trial.endsAt)}` : ''}
               </span>
             </div>
 

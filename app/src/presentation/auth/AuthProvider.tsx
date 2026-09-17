@@ -7,15 +7,29 @@ import {
   type AttemptLog,
   type ThrottledAction,
 } from '@/domain/auth/auth-throttle'
+import type { PlanTrial } from '@/domain/billing/trial'
 import type { Profile } from '@/domain/entities/profile'
 import { devAutoLogin } from '@/infrastructure/config/env'
 import { container } from '@/infrastructure/container'
 import { AuthContext, type AuthState } from './auth-context'
 
+/**
+ * Falha no acerto do plano não pode travar a sessão: sem resposta o app fica
+ * com o que `profiles.plan` diz, que o banco já mantém pelo agendador.
+ */
+async function settlePlanSafely(): Promise<PlanTrial | null> {
+  try {
+    return await container.billing.settlePlan()
+  } catch {
+    return null
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [session, setSession] = useState<SessionInfo | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [trial, setTrial] = useState<PlanTrial | null>(null)
   const [loading, setLoading] = useState(true)
   const mounted = useRef(true)
 
@@ -32,11 +46,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadProfile = useCallback(async (nextUser: AuthUser | null) => {
     if (!nextUser) {
       setProfile(null)
+      setTrial(null)
       return
     }
     try {
+      // Primeiro o servidor acerta o plano (fecha teste vencido, regrava
+      // `profiles.plan`), depois o perfil é lido já certo.
+      const settled = await settlePlanSafely()
       const found = await container.profiles.findById(nextUser.id)
-      if (mounted.current) setProfile(found)
+      if (mounted.current) {
+        setTrial(settled)
+        setProfile(found)
+      }
     } catch {
       // Perfil ausente não pode travar a sessão: a tela de perfil trata isso.
       if (mounted.current) setProfile(null)
@@ -114,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       session,
       profile,
+      trial,
       loading,
 
       async signIn(email, password) {
@@ -191,7 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       refreshSession: loadSession,
     }),
-    [user, session, profile, loading, loadProfile, loadSession, throttled],
+    [user, session, profile, trial, loading, loadProfile, loadSession, throttled],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
