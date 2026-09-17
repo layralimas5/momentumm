@@ -31,12 +31,19 @@ function ephemeral(input: NewJourneyEventInput, key: string): JourneyEvent {
   return createJourneyEvent(input, `efemero:${key}`)
 }
 
-/** Momentum antes: o score atual menos a variação que o próprio domínio calculou. */
+/**
+ * Momentum antes: o score atual menos a variação que o próprio domínio calculou.
+ *
+ * Sem uma semana de história o "antes" é zero por falta de dado, não por falta
+ * de movimento. Nesse caso o card mostra só o número de hoje: "0 → 37" numa
+ * conta de três dias conta uma história que não aconteceu.
+ */
 function momentumPair(momentum: MomentumScore | null): {
   momentumBefore: number | null
   momentumAfter: number | null
 } {
   if (!momentum) return { momentumBefore: null, momentumAfter: null }
+  if (!momentum.hasEnoughData) return { momentumBefore: null, momentumAfter: momentum.value }
   return { momentumBefore: momentum.value - momentum.delta, momentumAfter: momentum.value }
 }
 
