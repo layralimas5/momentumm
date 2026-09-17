@@ -95,7 +95,7 @@ export function QuickLog({ onLog }: QuickLogProps) {
           value={custom}
           onChange={(event) => setCustom(event.target.value)}
           placeholder={`Outro valor em ${type.unitLabel.many}`}
-          className="h-11 flex-1 rounded-xl border border-line bg-surface-hi px-3 text-ink placeholder:text-ink-faint focus:border-brand"
+          className="h-11 min-w-0 flex-1 rounded-xl border border-line bg-surface-hi px-3 text-ink placeholder:text-ink-faint focus:border-brand"
         />
         <Button type="submit" disabled={!customIsValid} loading={action.running}>
           Salvar

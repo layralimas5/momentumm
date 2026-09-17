@@ -18,7 +18,7 @@ export function PageHeader({
         </h2>
         <p className="mt-1 max-w-2xl text-pretty text-sm text-ink-muted">{description}</p>
       </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
+      {action ? <div className="min-w-0 max-w-full shrink-0">{action}</div> : null}
     </header>
   )
 }
