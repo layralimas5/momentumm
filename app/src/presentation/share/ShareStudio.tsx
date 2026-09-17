@@ -20,7 +20,6 @@ import {
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { EmptyState, ErrorNote } from '@/presentation/components/ui/States'
-import { cn } from '@/shared/lib/cn'
 import { ShareCompositionCarousel } from './ShareCompositionCarousel'
 import { ShareStudioControls } from './ShareStudioControls'
 import { ShareStudioPhotoPicker } from './ShareStudioPhotoPicker'
@@ -49,6 +48,7 @@ interface ShareStudioProps {
 }
 
 type Status = 'idle' | 'generating' | 'shared' | 'saved' | 'cancelled'
+
 
 /**
  * Share Studio.
@@ -221,7 +221,14 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
       photo={background.photo}
       onChange={chooseComposition}
       allowed={allowedCompositions}
-      className={cn('mx-auto w-full', compact ? '' : 'max-w-md')}
+      className="mx-auto w-full"
+      /*
+        No desktop o card tem ALTURA fixa, na proporção do Story: é o que a
+        pessoa vai ver no Instagram, então é o que ela vê aqui. A largura sai da
+        proporção. Sem altura explícita o quadro 9:16 dentro do trilho não tem
+        de onde tirar tamanho e some.
+      */
+      previewClassName={compact ? 'max-h-[46dvh] sm:max-h-[54dvh]' : 'h-[calc(85dvh-13.5rem)]'}
     />
   )
 
@@ -334,13 +341,16 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
     )
   }
 
+  /*
+    Duas colunas com altura travada: o preview fica parado à esquerda e só a
+    coluna dos controles rola. É o que faz dar pra mexer nos toggles olhando o
+    card, em vez de perder o card pra cima a cada rolagem.
+  */
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-      {/* Preview colado no topo: ele continua visível enquanto a coluna da
-          direita rola, que é o ponto inteiro de existir duas colunas. */}
-      <div className="lg:sticky lg:top-0 lg:self-start">{preview}</div>
+    <div className="grid h-[calc(85dvh-9rem)] gap-8 lg:grid-cols-[calc((85dvh-13.5rem)*9/16)_minmax(0,1fr)]">
+      <div className="min-w-0">{preview}</div>
 
-      <div className="flex min-w-0 flex-col gap-6">
+      <div className="flex min-h-0 min-w-0 flex-col gap-6 overflow-y-auto pr-1">
         {options}
         {actions}
       </div>
