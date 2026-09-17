@@ -1,6 +1,6 @@
 -- Momentumm — dias de descanso planejado.
 --
--- O Momentumm Score mede ritmo em 28 dias. Sem esta coluna, o domingo de quem
+-- O Momentum Score mede ritmo em 28 dias. Sem esta coluna, o domingo de quem
 -- decidiu não trabalhar no domingo entra na conta como um dia vazio — e o
 -- número passa a cobrar uma escolha que o produto diz respeitar.
 --
