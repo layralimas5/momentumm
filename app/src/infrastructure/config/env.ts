@@ -50,3 +50,11 @@ export const isDemoMode = supabaseConfig === null || isAuthBypass
 export const CIRCLE_LAUNCH_SUBSCRIBERS = 10
 
 export const circleOpen = import.meta.env['VITE_CIRCLE_OPEN']?.trim() === 'true'
+
+/**
+ * Login com Google. O botão só aparece com `VITE_GOOGLE_LOGIN=true`, depois de
+ * o provedor estar ligado no Supabase (Authentication > Providers > Google,
+ * com client id e secret do Google Cloud). Sem isso o Supabase responde 400
+ * ao botão e a pessoa cai numa página de erro.
+ */
+export const googleLoginEnabled = import.meta.env['VITE_GOOGLE_LOGIN']?.trim() === 'true'

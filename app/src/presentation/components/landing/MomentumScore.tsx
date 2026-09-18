@@ -48,7 +48,7 @@ export function MomentumScore() {
         <div className="grid gap-4 sm:grid-cols-2">
           {RULES.map((rule, index) => (
             <Reveal key={rule.title} delay={index * 0.06}>
-              <div className="rounded-card border border-line bg-surface p-5">
+              <div className="pulse-on-hover h-full rounded-card border border-line bg-surface p-5">
                 <h3 className="font-medium text-ink">{rule.title}</h3>
                 <p className="mt-2 text-pretty text-sm text-ink-muted">{rule.description}</p>
               </div>

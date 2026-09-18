@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
+import { googleLoginEnabled } from '@/infrastructure/config/env'
 import { GoogleIcon } from '@/presentation/components/brand/GoogleIcon'
 import { Wordmark } from '@/presentation/components/brand/Logo'
 import { Button } from '@/presentation/components/ui/Button'
@@ -149,7 +150,7 @@ export function AuthPage() {
       >
         {submit.error ? <ErrorNote message={submit.error} /> : null}
 
-        {mode === 'recuperar' ? null : (
+        {mode === 'recuperar' || !googleLoginEnabled ? null : (
           <>
             <Button
               type="button"
