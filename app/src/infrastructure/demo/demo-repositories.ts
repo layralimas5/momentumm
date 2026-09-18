@@ -41,6 +41,7 @@ import {
   assertValidRestWeekdays,
   normalizedRestWeekdays,
 } from '@/domain/entities/profile'
+import { assertValidBanner, assertValidStatus, normalizeStatus } from '@/domain/entities/profile-banner'
 import type { ActivityRepository } from '@/domain/repositories/activity-repository'
 import type {
   ActivityTypeRepository,
@@ -305,6 +306,9 @@ export class DemoProfileRepository implements ProfileRepository {
     if (changes.handle !== undefined) assertValidHandle(changes.handle)
     if (changes.bio !== undefined) assertValidBio(changes.bio)
     if (changes.restWeekdays !== undefined) assertValidRestWeekdays(changes.restWeekdays)
+    const status = changes.status !== undefined ? normalizeStatus(changes.status) : undefined
+    if (status !== undefined) assertValidStatus(status)
+    if (changes.banner !== undefined) assertValidBanner(changes.banner)
 
     return demoStore.updateProfile({
       ...(changes.name !== undefined ? { name: changes.name.trim() } : {}),
@@ -319,6 +323,8 @@ export class DemoProfileRepository implements ProfileRepository {
         ? { restWeekdays: normalizedRestWeekdays(changes.restWeekdays) }
         : {}),
       ...(changes.plan !== undefined ? { plan: changes.plan } : {}),
+      ...(status !== undefined ? { status } : {}),
+      ...(changes.banner !== undefined ? { banner: changes.banner } : {}),
     })
   }
 }

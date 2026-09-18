@@ -32,7 +32,9 @@ import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/u
 import { Panel, PanelHeader, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
 import { Stat, StatGrid } from '@/presentation/components/ui/Stat'
 import { MobileShortcuts } from '@/presentation/components/mobile/MobileShortcuts'
+import { ProfileBanner } from '@/presentation/profile/ProfileBanner'
 import { ProfileEditor } from '@/presentation/profile/ProfileEditor'
+import { StatusEditor } from '@/presentation/profile/StatusEditor'
 import { ProfileVisibilityPanel } from '@/presentation/profile/ProfileVisibilityPanel'
 import { LevelCard } from '@/presentation/evolution/LevelCard'
 import { useEvolution } from '@/presentation/evolution/use-evolution'
@@ -63,6 +65,7 @@ export function PersonalProfilePage() {
   const view = useDashboard()
   const evolution = useEvolution()
   const [editing, setEditing] = useState(false)
+  const [statusOpen, setStatusOpen] = useState(false)
 
   const { summary: evolutionSummary } = evolution
   const achievementsUnlocked = evolutionSummary.achievements.filter(
@@ -159,7 +162,7 @@ export function PersonalProfilePage() {
         }
       />
 
-      <Panel>
+      <Panel flush={!editing}>
         {editing ? (
           <ProfileEditor
             profile={profile}
@@ -170,22 +173,56 @@ export function PersonalProfilePage() {
             }}
           />
         ) : (
-          <div className="flex items-center gap-4">
-            {/* A moldura Aurora é um desbloqueio (PRO + nível 7): um anel, não um enfeite. */}
-            <span
-              className={cn(
-                'shrink-0 rounded-full',
-                auroraFrame && 'p-0.5 ring-2 ring-brand/70 shadow-[0_0_24px_-4px_var(--color-brand)]',
-              )}
-            >
-              <Avatar
-                name={profile.name}
-                src={profile.avatarUrl}
-                className="size-16 sm:size-20"
-                textClassName="text-lg sm:text-xl"
-              />
-            </span>
-            <div className="min-w-0">
+          <div>
+            {/*
+              Capa em cima, avatar montado na borda dela: o card lê como um
+              cartão de identidade, não como uma linha de lista. A capa é
+              escolha da pessoa (tema ou foto) e o status vem logo abaixo do
+              nome, onde ela conta em que pé está.
+            */}
+            <ProfileBanner banner={profile.banner} className="h-24 sm:h-32" />
+            <div className="px-5 pb-5">
+              <div className="-mt-10 flex items-end gap-3 sm:-mt-12">
+                <span
+                  className={cn(
+                    'shrink-0 rounded-full bg-surface p-1',
+                    // A moldura Aurora é um desbloqueio (PRO + nível 7): um anel, não um enfeite.
+                    auroraFrame && 'ring-2 ring-brand/70 shadow-[0_0_24px_-4px_var(--color-brand)]',
+                  )}
+                >
+                  <Avatar
+                    name={profile.name}
+                    src={profile.avatarUrl}
+                    className="size-20 sm:size-24"
+                    textClassName="text-xl sm:text-2xl"
+                  />
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setStatusOpen(true)}
+                  className={cn(
+                    'mb-1 inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-full border px-3 text-sm transition-colors',
+                    profile.status
+                      ? 'border-line bg-surface-hi text-ink hover:border-line-hi'
+                      : 'border-dashed border-line-hi text-ink-muted hover:bg-surface-hi hover:text-ink',
+                  )}
+                >
+                  {profile.status ? (
+                    <>
+                      {profile.status.emoji ? <span aria-hidden="true">{profile.status.emoji}</span> : null}
+                      <span className="truncate">{profile.status.text ?? 'Status'}</span>
+                      <span className="sr-only">. Editar status</span>
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="mais" className="size-4" />
+                      Adicionar status
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="mt-3 min-w-0">
               <h2 className="truncate text-xl font-semibold tracking-tight text-ink sm:text-2xl">
                 {profile.name}
               </h2>
@@ -223,10 +260,19 @@ export function PersonalProfilePage() {
                 <Icon name="cadeado" className="size-3.5" />
                 {PROFILE_VISIBILITY_LABELS[profile.visibility]}
               </p>
+              </div>
             </div>
           </div>
         )}
       </Panel>
+
+      <StatusEditor
+        open={statusOpen}
+        profileId={profile.id}
+        status={profile.status}
+        onClose={() => setStatusOpen(false)}
+        onSaved={refreshProfile}
+      />
 
       {/*
         Nível e Momentumm lado a lado, de propósito: um é o caminho percorrido

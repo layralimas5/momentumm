@@ -50,6 +50,7 @@ import {
   assertValidRestWeekdays,
   normalizedRestWeekdays,
 } from '@/domain/entities/profile'
+import { assertValidBanner, assertValidStatus, normalizeStatus } from '@/domain/entities/profile-banner'
 import type { ActivityRepository } from '@/domain/repositories/activity-repository'
 import type {
   ActivityTypeRepository,
@@ -420,6 +421,9 @@ export class SupabaseProfileRepository implements ProfileRepository {
     if (changes.handle !== undefined) assertValidHandle(changes.handle)
     if (changes.bio !== undefined) assertValidBio(changes.bio)
     if (changes.restWeekdays !== undefined) assertValidRestWeekdays(changes.restWeekdays)
+    const status = changes.status !== undefined ? normalizeStatus(changes.status) : undefined
+    if (status !== undefined) assertValidStatus(status)
+    if (changes.banner !== undefined) assertValidBanner(changes.banner)
 
     const { data, error } = await supabase()
       .from('profiles')
@@ -437,6 +441,10 @@ export class SupabaseProfileRepository implements ProfileRepository {
         ...(changes.restWeekdays !== undefined
           ? { rest_weekdays: normalizedRestWeekdays(changes.restWeekdays) }
           : {}),
+        ...(status !== undefined
+          ? { status_emoji: status?.emoji ?? null, status_text: status?.text ?? null }
+          : {}),
+        ...(changes.banner !== undefined ? { banner: changes.banner } : {}),
       })
       .eq('id', id)
       .select('*')

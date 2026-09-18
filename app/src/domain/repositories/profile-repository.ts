@@ -1,4 +1,5 @@
 import type { Profile } from '@/domain/entities/profile'
+import type { ProfileStatus } from '@/domain/entities/profile-banner'
 
 export interface ProfileUpdate {
   readonly name?: string
@@ -19,6 +20,10 @@ export interface ProfileUpdate {
   readonly visibility?: Profile['visibility']
   /** Dias da semana de descanso planejado (0 = domingo). Saem da conta do Momentumm. */
   readonly restWeekdays?: readonly number[]
+  /** Status atual; `null` limpa. */
+  readonly status?: ProfileStatus | null
+  /** Capa do perfil (preset ou foto); `null` volta ao padrão. */
+  readonly banner?: string | null
   /**
    * Só o modo demo aplica. Em produção quem manda no plano é a assinatura, não
    * a tela de perfil — o repositório do Supabase ignora esse campo de propósito.
