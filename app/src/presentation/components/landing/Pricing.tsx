@@ -22,7 +22,7 @@ export function Pricing() {
       <SectionHeading
         eyebrow="Planos"
         title="O gratuito organiza e executa. O PRO registra, analisa e evolui."
-        description="No gratuito você cria objetivo, organiza hábitos, acompanha o dia e vê o Momentum Score de hoje. O PRO libera entender os próprios padrões, registrar a jornada, ver métricas e ajustar o plano com a leitura da IA."
+        description="No gratuito você cria objetivo, organiza hábitos, acompanha o dia e vê o Momentumm Score de hoje. O PRO libera entender os próprios padrões, registrar a jornada, ver métricas e ajustar o plano com a leitura da IA."
       />
 
       <div className="mt-10 flex justify-center">

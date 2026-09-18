@@ -48,7 +48,7 @@ export interface Profile {
   readonly plan: PlanTier
   /**
    * Dias da semana de descanso planejado (0 = domingo). Vazio é o padrão:
-   * ninguém nasce com folga marcada, e o Momentum só tira da conta o que a
+   * ninguém nasce com folga marcada, e o Momentumm só tira da conta o que a
    * pessoa declarou. No máximo `MAX_REST_WEEKDAYS`.
    */
   readonly restWeekdays: readonly number[]

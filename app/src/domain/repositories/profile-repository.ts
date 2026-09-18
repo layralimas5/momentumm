@@ -17,7 +17,7 @@ export interface ProfileUpdate {
   readonly defaultVisibility?: Profile['defaultVisibility']
   /** Quem vê o perfil: privado, somente amigos ou público. */
   readonly visibility?: Profile['visibility']
-  /** Dias da semana de descanso planejado (0 = domingo). Saem da conta do Momentum. */
+  /** Dias da semana de descanso planejado (0 = domingo). Saem da conta do Momentumm. */
   readonly restWeekdays?: readonly number[]
   /**
    * Só o modo demo aplica. Em produção quem manda no plano é a assinatura, não

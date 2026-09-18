@@ -57,7 +57,7 @@ export const JOURNEY_EVENT_TYPE_LABELS: Readonly<Record<JourneyEventType, string
   milestone: 'Marco',
   weekly_review: 'Resumo da semana',
   comeback: 'Retomada',
-  momentum_record: 'Momentum',
+  momentum_record: 'Momentumm',
   challenge_joined: 'Entrou no desafio',
   challenge_progress: 'Avanço no desafio',
   challenge_milestone: 'Marco do desafio',
@@ -157,7 +157,7 @@ export interface JourneyEvent {
   /** Progresso do objetivo antes e depois, de 0 a 1. */
   readonly progressBefore: number | null
   readonly progressAfter: number | null
-  /** Momentum de 0 a 100. */
+  /** Momentumm de 0 a 100. */
   readonly momentumBefore: number | null
   readonly momentumAfter: number | null
   /** Derivado: existe só quando os dois lados existem. */

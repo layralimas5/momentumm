@@ -224,7 +224,7 @@ function Participants({
 
       {/*
         A classificação existe DENTRO do desafio e só com o número que as duas
-        pessoas combinaram cumprir. Nenhum Momentum, nenhuma constância, nenhum
+        pessoas combinaram cumprir. Nenhum Momentumm, nenhuma constância, nenhum
         volume: o score é a comparação de alguém com ela mesma, e trazê-lo pra
         cá montaria a tabela entre amigos que o produto recusa.
       */}

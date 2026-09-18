@@ -292,7 +292,7 @@ describe('ciclo de vida do objetivo', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Momentum: o fator de retomada
+// Momentumm: o fator de retomada
 // ---------------------------------------------------------------------------
 
 describe('fator de retomada', () => {

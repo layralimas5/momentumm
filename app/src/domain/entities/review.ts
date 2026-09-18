@@ -77,7 +77,7 @@ export interface WeekReview {
   readonly focusMinutes: number
   readonly previousFocusMinutes: number
   /**
-   * O Momentum no fim da semana revisada, pela MESMA fórmula do dashboard.
+   * O Momentumm no fim da semana revisada, pela MESMA fórmula do dashboard.
    * A review não tem conta própria de ritmo: ela lê o score que a pessoa viu
    * no domingo, com a variação contra o domingo anterior.
    */
@@ -342,7 +342,7 @@ function findGains(input: ReviewInput, context: GainContext): ReviewPoint[] {
     points.push({
       id: 'presenca',
       title: 'Você apareceu mais vezes',
-      detail: `${context.activeDays} dias com movimento contra ${context.previousActiveDays} na semana anterior. Presença é o que mais pesa no momentum.`,
+      detail: `${context.activeDays} dias com movimento contra ${context.previousActiveDays} na semana anterior. Presença é o que mais pesa no Momentumm.`,
     })
   }
 

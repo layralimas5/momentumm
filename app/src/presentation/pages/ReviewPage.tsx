@@ -83,7 +83,7 @@ export function ReviewPage() {
    * diria "24 a 30" enquanto os números seriam de "23 a 29".
    */
   const computed = useMemo<WeekReview>(() => {
-    // A MESMA entrada do Momentum do dashboard (descanso planejado e avanço
+    // A MESMA entrada do Momentumm do dashboard (descanso planejado e avanço
     // do plano inclusos), com a janela terminando no domingo revisado.
     const input: ReviewInput = {
       ...momentumInput,
@@ -390,7 +390,7 @@ function SummaryStep({ review }: { readonly review: WeekReview }) {
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         <Figure
-          label="Momentum"
+          label="Momentumm"
           value={`${review.momentum.value}`}
           hint={
             review.momentum.hasEnoughData

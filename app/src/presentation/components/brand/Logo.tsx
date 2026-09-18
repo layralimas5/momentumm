@@ -23,9 +23,10 @@ export function Wordmark({ className, decorative = false }: LogoProps) {
       /*
         O wordmark é muito largo (proporção ~19:1): controlar pela ALTURA
         estoura a largura e come o menu inteiro. Por isso o tamanho é definido
-        pela largura, com a altura calculada sozinha.
+        pela largura, com a altura calculada sozinha. Quem passa `className`
+        assume a largura inteira: o `cn` não resolve conflito de classe.
       */
-      className={cn('h-auto w-40 select-none sm:w-48', className)}
+      className={cn('h-auto select-none', className ?? 'w-40 sm:w-48')}
       {...(decorative ? { 'aria-hidden': true } : {})}
     />
   )

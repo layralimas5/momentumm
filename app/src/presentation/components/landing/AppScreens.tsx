@@ -316,7 +316,7 @@ export function ReviewScreen() {
       <div className="grid grid-cols-3 gap-2">
         <Stat label="Execução" value="82%" />
         <Stat label="Dias ativos" value="6/7" />
-        <Stat label="Momentum" value="+4" />
+        <Stat label="Momentumm" value="+4" />
       </div>
 
       <MockLabel>Onde evoluiu</MockLabel>
@@ -365,7 +365,7 @@ export function AdaptiveDayScreen() {
         <MockTag>Capacidade mínima</MockTag>
       </div>
 
-      <MockLabel>Vamos proteger seu Momentum</MockLabel>
+      <MockLabel>Vamos proteger seu Momentumm</MockLabel>
       <MockCard tone="brand">
         <div className="grid grid-cols-3 gap-2 text-center">
           <Budget label="Você tem" value="40 min" />

@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ACTIVITY_VISIBILITIES, VISIBILITY_LABELS, type ActivityVisibility } from '@/domain/entities/activity'
+import { isTrialActive } from '@/domain/billing/trial'
 import { formatLimit, isPro, limitsOf, PLAN_LABELS, type PlanTier } from '@/domain/entities/plan'
+import { formatTrialEnd } from '@/presentation/plan/TrialBanner'
 import { MAX_REST_WEEKDAYS } from '@/domain/entities/momentum'
 import {
   initialsOf,
@@ -23,7 +25,7 @@ import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 
 export function ProfilePage() {
-  const { user, profile, loading, signOut, refreshProfile } = useAuth()
+  const { user, profile, trial, loading, signOut, refreshProfile } = useAuth()
   const planner = usePlanner()
   const navigate = useNavigate()
 
@@ -179,7 +181,7 @@ export function ProfilePage() {
           </Field>
 
           {/*
-            Descanso planejado é escolha, não falta: o Momentum tira da conta
+            Descanso planejado é escolha, não falta: o Momentumm tira da conta
             o dia vazio que a pessoa marcou aqui. Dois por semana no máximo,
             e o limite aparece antes da tentativa, não como erro depois.
           */}
@@ -187,7 +189,7 @@ export function ProfilePage() {
             <legend className="text-sm font-medium text-ink">Dias de descanso</legend>
             <p className="text-xs text-pretty text-ink-muted">
               Até {MAX_REST_WEEKDAYS} por semana. Um dia de descanso vazio não conta contra o
-              teu Momentum; se você se mover nele, ele conta normal.
+              teu Momentumm; se você se mover nele, ele conta normal.
             </p>
             <div className="flex flex-wrap gap-1.5">
               {WEEKDAY_LABELS.map((label, day) => {
@@ -254,6 +256,7 @@ export function ProfilePage() {
                 )}
               >
                 {PLAN_LABELS[profile.plan]}
+                {isPro(profile.plan) && isTrialActive(trial) ? ` · teste até ${formatTrialEnd(trial.endsAt)}` : ''}
               </span>
             </div>
 
@@ -266,7 +269,7 @@ export function ProfilePage() {
                 Histórico:{' '}
                 {Number.isFinite(limits.historyDays) ? `últimos ${limits.historyDays} dias` : 'completo'}
               </li>
-              <li>Momentum Score: {limits.momentumDetail ? 'evolução e detalhamento' : 'pontuação de hoje'}</li>
+              <li>Momentumm Score: {limits.momentumDetail ? 'evolução e detalhamento' : 'pontuação de hoje'}</li>
               <li>Review semanal: {limits.fullReview ? 'completo' : 'check-in manual'}</li>
               <li>Momentumm AI: {limits.ai ? 'franquia mensal' : 'não disponível'}</li>
             </ul>

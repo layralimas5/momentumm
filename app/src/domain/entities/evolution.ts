@@ -6,7 +6,7 @@ import { addDays, startOfWeek, type DayKey } from './day'
  *
  * ## O que este módulo NÃO é
  *
- * Não é o Momentum. O score mede o ritmo de agora e sobe e desce com a semana;
+ * Não é o Momentumm. O score mede o ritmo de agora e sobe e desce com a semana;
  * o XP mede o caminho percorrido desde o primeiro dia e só cresce. São duas
  * perguntas diferentes ("como estou?" e "quanto já andei?") e por isso duas
  * réguas: uma pessoa em queda de momentum pode estar no nível 6, e um nível 1
@@ -323,7 +323,7 @@ export const ACHIEVEMENTS: readonly AchievementSpec[] = [
   },
   {
     key: 'momentum',
-    name: 'Momentum',
+    name: 'Momentumm',
     description: 'A primeira semana consistente: cinco dias com movimento.',
     icon: 'fogo',
     category: 'constancia',

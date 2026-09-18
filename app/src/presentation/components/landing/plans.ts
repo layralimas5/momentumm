@@ -56,13 +56,13 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
     headline: 'Organize e execute',
     prices: { mensal: FREE_PRICE, anual: FREE_PRICE },
     description:
-      'Cria o objetivo, organiza os hábitos, acompanha as ações do dia e vê o teu Momentum Score de hoje. É o ciclo rodando, sem cartão.',
+      'Cria o objetivo, organiza os hábitos, acompanha as ações do dia e vê o teu Momentumm Score de hoje. É o ciclo rodando, sem cartão.',
     features: [
       `Até ${plural(free.activeObjectives, 'objetivo ativo', 'objetivos ativos')} e ${plural(free.activeHabits, 'hábito ativo', 'hábitos ativos')}`,
       `${plural(free.activePlans, 'plano ativo', 'planos ativos')} por etapas`,
       `Até ${free.actionsPerDay} ações por dia no Hoje`,
       `Histórico dos últimos ${free.historyDays} dias`,
-      'Momentum Score de hoje',
+      'Momentumm Score de hoje',
       'Check-in semanal manual',
       'Dia Adaptável e Modo Retomada',
     ],
@@ -91,7 +91,7 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
     features: [
       'Tudo do gratuito, sem limite de quantidade',
       'Histórico completo',
-      'Momentum Score com evolução e detalhamento',
+      'Momentumm Score com evolução e detalhamento',
       'Review semanal cruzando os teus dados reais',
       'Momentumm AI com franquia mensal',
       'Métricas detalhadas e relatórios semanais e mensais',

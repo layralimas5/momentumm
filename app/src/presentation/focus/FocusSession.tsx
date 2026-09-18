@@ -131,7 +131,7 @@ export function FocusSession() {
                 value={pages}
                 onChange={(event) => setPages(event.target.value)}
                 placeholder="Quantas páginas você leu?"
-                className="h-12 flex-1 rounded-xl border border-line bg-surface px-4 text-ink placeholder:text-ink-faint focus:border-brand"
+                className="h-12 min-w-0 flex-1 rounded-xl border border-line bg-surface px-4 text-ink placeholder:text-ink-faint focus:border-brand"
               />
               <Button
                 type="submit"

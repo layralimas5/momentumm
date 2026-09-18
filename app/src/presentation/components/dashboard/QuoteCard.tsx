@@ -72,8 +72,8 @@ export function QuoteCard({ today, className }: { readonly today: DayKey; readon
         </motion.blockquote>
       </AnimatePresence>
 
-      <div className="mt-4 flex justify-center">
-        <Wordmark decorative className="w-24 opacity-80 sm:w-28" />
+      <div className="mt-3 flex justify-center">
+        <Wordmark decorative className="w-20 opacity-60 sm:w-24" />
       </div>
 
       <div className="mt-5 flex items-center justify-center gap-2">

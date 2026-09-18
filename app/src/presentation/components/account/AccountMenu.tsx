@@ -63,7 +63,7 @@ export function AccountMenu({ variant }: AccountMenuProps) {
       key: 'conta',
       icon: 'trofeu',
       label: 'Minha conta',
-      hint: 'Tua evolução, momentum e conquistas',
+      hint: 'Tua evolução, Momentumm e conquistas',
       run: () => go('/app/perfil'),
     },
     {

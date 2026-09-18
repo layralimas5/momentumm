@@ -22,6 +22,8 @@ interface ShareCompositionCarouselProps {
   /** Os arranjos que o plano libera. Os outros aparecem, mas trancados. */
   readonly allowed: readonly ShareCompositionId[]
   readonly className?: string
+  /** Tamanho de cada card: limitado pela altura no celular, fixo no desktop. */
+  readonly previewClassName: string
 }
 
 /**
@@ -48,6 +50,7 @@ export function ShareCompositionCarousel({
   onChange,
   allowed,
   className,
+  previewClassName,
 }: ShareCompositionCarouselProps) {
   const trackRef = useRef<HTMLDivElement>(null)
   const slidesRef = useRef(new Map<ShareCompositionId, HTMLDivElement>())
@@ -134,7 +137,7 @@ export function ShareCompositionCarousel({
               composition={composition}
               format={format}
               photo={photo}
-              className="max-h-[46dvh] sm:max-h-[54dvh]"
+              className={previewClassName}
             />
             {locked(composition) ? (
               /*

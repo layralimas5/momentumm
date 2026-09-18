@@ -1,5 +1,6 @@
 import type { BillingCycle } from './billing-plans'
 import type { Subscription } from './subscription'
+import type { PlanTrial } from './trial'
 
 /** O nome da Edge Function que fala com o Asaas em nome da pessoa. */
 export const BILLING_FUNCTION_NAME = 'asaas-billing'
@@ -56,4 +57,12 @@ export interface BillingService {
   cancelSubscription(): Promise<void>
   /** A assinatura mais relevante da conta, ou `null` sem nenhuma. */
   mySubscription(): Promise<Subscription | null>
+  /**
+   * Acerta o plano da conta com o servidor e devolve o teste de 7 dias.
+   *
+   * É o servidor que fecha um teste vencido e regrava `profiles.plan`; o app
+   * só pergunta. Chamado na abertura da sessão, antes de ler o perfil, pra
+   * ninguém ver PRO por um instante depois do prazo.
+   */
+  settlePlan(): Promise<PlanTrial | null>
 }

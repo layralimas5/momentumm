@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { formatBRL, isBillingCycle, monthlyEquivalentCents, PRO_PRICES, type BillingCycle } from '@/domain/billing/billing-plans'
 import type { PixCharge, PixCustomer } from '@/domain/billing/billing-service'
-import { grantsPro, isWindingDown, SUBSCRIPTION_STATUS_LABELS, type Subscription } from '@/domain/billing/subscription'
-import { isPro } from '@/domain/entities/plan'
+import { isWindingDown, SUBSCRIPTION_STATUS_LABELS, type Subscription } from '@/domain/billing/subscription'
+import { planAccessOf, trialDaysLeft, type PlanTrial } from '@/domain/billing/trial'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { CycleToggle } from '@/presentation/components/landing/CycleToggle'
@@ -14,6 +14,7 @@ import { Panel } from '@/presentation/components/ui/Surface'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 import { PixChargePanel } from '@/presentation/plan/PixChargePanel'
 import { PixCustomerForm } from '@/presentation/plan/PixCustomerForm'
+import { formatTrialEnd } from '@/presentation/plan/TrialBanner'
 import { PRO_BENEFITS, PRO_TAGLINE } from '@/presentation/plan/pro-benefits'
 import { CancellationBlock } from '@/presentation/profile/CancellationBlock'
 import { toUserMessage } from '@/shared/errors'
@@ -48,7 +49,7 @@ function formatDate(date: Date): string {
 }
 
 export function SubscriptionPage() {
-  const { profile, refreshProfile } = useAuth()
+  const { profile, trial, refreshProfile } = useAuth()
   const [params] = useSearchParams()
   const returned = readReturnStatus(params.get('assinatura'))
   const requestedCycle = params.get('ciclo')
@@ -74,14 +75,22 @@ export function SubscriptionPage() {
   const [method, setMethod] = useState<PaymentMethod | null>(null)
   const [pixCharge, setPixCharge] = useState<PixCharge | null>(null)
 
-  const hasPro = profile ? isPro(profile.plan) : false
+  /*
+    "Pago" é a assinatura que o webhook gravou, nunca `profile.plan` sozinho:
+    no teste de 7 dias o plano já é PRO, e a tela ainda precisa esperar o
+    Asaas confirmar antes de dizer que o pagamento entrou.
+  */
+  const access = profile
+    ? planAccessOf(profile.plan, subscription === 'loading' ? null : subscription, trial)
+    : 'free'
+  const hasPaidPro = access === 'paid'
   const refresh = useCallback(async () => {
     await refreshProfile()
     await load()
   }, [refreshProfile, load])
-  const confirming = returned === 'sucesso' && !hasPro
+  const confirming = returned === 'sucesso' && !hasPaidPro
   const confirmed = useConfirmationPolling(confirming, CARD_MAX_POLLS, refresh)
-  const pixConfirmed = useConfirmationPolling(pixCharge !== null && !hasPro, PIX_MAX_POLLS, refresh)
+  const pixConfirmed = useConfirmationPolling(pixCharge !== null && !hasPaidPro, PIX_MAX_POLLS, refresh)
 
   const checkout = useAsyncAction(async () => {
     const { url } = await container.billing.startCheckout(cycle, '/app/assinatura')
@@ -97,14 +106,20 @@ export function SubscriptionPage() {
     <div className="flex flex-col gap-5 lg:gap-6">
       <PageHeader
         title="Assinatura"
-        description={hasPro ? 'O teu PRO: o que está pago, até quando, e como mudar.' : PRO_TAGLINE}
+        description={
+          hasPaidPro
+            ? 'O teu PRO: o que está pago, até quando, e como mudar.'
+            : access === 'trial'
+              ? 'Você está no teste do PRO. Assinar agora garante que nada para no fim dele.'
+              : PRO_TAGLINE
+        }
       />
 
       {returned === 'sucesso' ? (
         <ReturnNote
-          tone={hasPro ? 'positive' : confirmed === 'timeout' ? 'warn' : 'neutral'}
+          tone={hasPaidPro ? 'positive' : confirmed === 'timeout' ? 'warn' : 'neutral'}
           message={
-            hasPro
+            hasPaidPro
               ? 'Pagamento confirmado. O PRO está liberado.'
               : confirmed === 'timeout'
                 ? 'O pagamento ainda não chegou até aqui. A confirmação do cartão pode levar alguns minutos; se você pagou, recarrega a página daqui a pouco.'
@@ -113,7 +128,7 @@ export function SubscriptionPage() {
           busy={confirming && confirmed !== 'timeout'}
         />
       ) : null}
-      {pixCharge && hasPro ? <ReturnNote tone="positive" message="Pix confirmado. O PRO está liberado." /> : null}
+      {pixCharge && hasPaidPro ? <ReturnNote tone="positive" message="Pix confirmado. O PRO está liberado." /> : null}
       {returned === 'cancelado' ? (
         <ReturnNote tone="neutral" message="Você saiu do checkout sem pagar. Nada foi cobrado." />
       ) : null}
@@ -123,11 +138,19 @@ export function SubscriptionPage() {
 
       {loadError ? <ErrorNote message={loadError} /> : null}
 
+      {access === 'trial' && trial ? <TrialNote trial={trial} /> : null}
+      {access === 'free' && trial?.status === 'encerrado' ? (
+        <ReturnNote
+          tone="neutral"
+          message={`Teu teste do PRO terminou em ${formatTrialEnd(trial.endsAt)}. Tudo que você criou continua guardado; assinar libera de novo.`}
+        />
+      ) : null}
+
       {!container.billing.available ? (
         <Offer cycle={cycle} onCycleChange={setCycle} demo />
-      ) : hasPro && subscription && grantsPro(subscription) ? (
+      ) : hasPaidPro && subscription ? (
         <CurrentSubscription subscription={subscription} onChanged={() => void load()} />
-      ) : hasPro ? (
+      ) : access === 'courtesy' ? (
         <Panel className="text-sm text-ink-muted">
           Tua conta é PRO, mas não há assinatura registrada por aqui: o acesso foi concedido pela equipe.
         </Panel>
@@ -147,6 +170,31 @@ export function SubscriptionPage() {
         />
       )}
     </div>
+  )
+}
+
+/**
+ * O teste em andamento, como painel: até quando, o que acontece depois, e
+ * que assinar agora não cobra nada duas vezes. A oferta vem logo abaixo.
+ */
+function TrialNote({ trial }: { readonly trial: PlanTrial }) {
+  const days = trialDaysLeft(trial)
+  return (
+    <Panel tone="brand" className="flex flex-col gap-2">
+      <p className="inline-flex items-center gap-1.5 text-xs font-medium tracking-wide text-brand-hi uppercase">
+        <Icon name="raio" className="size-3.5" />
+        PRO de teste
+      </p>
+      <p className="text-base font-semibold text-ink">
+        Vale até {formatTrialEnd(trial.endsAt)}
+        {days > 0 ? ` (${days === 1 ? 'último dia' : `faltam ${days} dias`})` : ''}.
+      </p>
+      <p className="text-sm text-ink-muted">
+        Sem cartão e sem cobrança automática. No fim do prazo a conta volta pro gratuito: objetivos,
+        hábitos, ações e histórico ficam guardados, e o que passar do limite do gratuito volta
+        inteiro quando você assinar. Assinando agora, o PRO segue pela assinatura, sem interrupção.
+      </p>
+    </Panel>
   )
 }
 

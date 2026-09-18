@@ -93,7 +93,7 @@ const SCREENS: readonly Screen[] = [
     label: 'Progresso',
     title: 'Se o seu ritmo está de pé, o que caiu e qual é o próximo ajuste.',
     description:
-      'O Momentum Score com os quatro fatores, a curva dos últimos 14 dias e a leitura em uma frase do que mais mexeu. Em vez de gráfico bonito, uma resposta.',
+      'O Momentumm Score com os quatro fatores, a curva dos últimos 14 dias e a leitura em uma frase do que mais mexeu. Em vez de gráfico bonito, uma resposta.',
     points: [
       'Número, classificação e variação contra a semana anterior',
       'Onde você avançou e o que precisa de atenção',

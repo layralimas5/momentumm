@@ -367,7 +367,7 @@ export type TargetSource = 'declarado' | 'ritmo' | 'ajustado'
 export const ACTIVATION_READY_MESSAGE =
   'Seu plano está pronto. Você não precisa resolver o objetivo inteiro hoje. Seu próximo passo é este.'
 
-export const ACTIVATION_CTA = 'Começar meu Momentum'
+export const ACTIVATION_CTA = 'Começar meu Momentumm'
 
 export interface ActivationAnswers {
   /** A área principal: é dela que sai o plano. */

@@ -59,9 +59,9 @@ export function MomentumScore() {
   return (
     <Section id="momentum-score" className="border-t border-line">
       <SectionHeading
-        eyebrow="Momentum Score"
+        eyebrow="Momentumm Score"
         title="Um número que mede ritmo, não o seu valor."
-        description="De 0 a 100, o Momentum diz se você está avançando, constante, retomando ou desacelerando. Ele compara você com você, e é desenhado pra uma falha isolada não apagar um mês de trabalho."
+        description="De 0 a 100, o Momentumm diz se você está avançando, constante, retomando ou desacelerando. Ele compara você com você, e é desenhado pra uma falha isolada não apagar um mês de trabalho."
       />
 
       <div className="mt-12 grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-10">
@@ -69,7 +69,7 @@ export function MomentumScore() {
           <div className="surface-brand edge-light h-full rounded-card p-6 sm:p-8">
             <div className="flex items-end justify-between gap-4">
               <div>
-                <p className="text-sm text-ink-faint">Momentum</p>
+                <p className="text-sm text-ink-faint">Momentumm</p>
                 <p className="text-gradient-brand tabular mt-1 text-6xl font-semibold leading-none tracking-tight sm:text-7xl">
                   72
                 </p>

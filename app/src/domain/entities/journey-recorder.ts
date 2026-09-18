@@ -176,7 +176,7 @@ export function eventsToRecord(input: RecorderInput): RecordableEvent[] {
         type: 'momentum_record',
         sourceType: 'momentum',
         sourceId: input.today,
-        title: 'Meu momentum',
+        title: 'Meu Momentumm',
         ...momentumOf(input),
       },
       key('momentum_record', input.today),

@@ -1208,7 +1208,7 @@ function ringBlock(
 /**
  * As barras do que tem dois lados.
  *
- * Momentum antes e depois, e o avanço do objetivo. Duas barras no máximo: a
+ * Momentumm antes e depois, e o avanço do objetivo. Duas barras no máximo: a
  * terceira transformaria o card num relatório, e relatório é o que a pessoa
  * abre no app, não o que ela posta.
  */
@@ -1223,12 +1223,12 @@ function barsBlock(
 
   if (data.momentumBefore !== null && data.momentumAfter !== null) {
     bars.push({
-      label: 'Momentum antes',
+      label: 'Momentumm antes',
       ratio: data.momentumBefore / 100,
       value: `${data.momentumBefore}`,
     })
     bars.push({
-      label: 'Momentum agora',
+      label: 'Momentumm agora',
       ratio: data.momentumAfter / 100,
       value: `${data.momentumAfter}`,
     })
@@ -1359,7 +1359,7 @@ function momentumBlock(
   const value = before !== null && before !== after ? `${before} → ${after}` : `${after}`
 
   const spacing = 18
-  const labelWidth = measureText(ctx, 'Momentum', labelStyle)
+  const labelWidth = measureText(ctx, 'Momentumm', labelStyle)
   const valueWidth = measureText(ctx, value, valueStyle)
   const total = labelWidth + spacing + valueWidth
 
@@ -1371,7 +1371,7 @@ function momentumBlock(
       const startX = composition.align === 'center' ? m.x - total / 2 : m.x
       const baseline = y + valueStyle.size * 0.78
 
-      drawLine(ctx, 'Momentum', startX, baseline - 2, labelStyle, 'left')
+      drawLine(ctx, 'Momentumm', startX, baseline - 2, labelStyle, 'left')
       drawLine(ctx, value, startX + labelWidth + spacing, baseline, valueStyle, 'left')
     },
   }

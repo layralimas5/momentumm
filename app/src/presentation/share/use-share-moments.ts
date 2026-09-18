@@ -112,7 +112,7 @@ export function useShareMoments(view: DashboardView): readonly ShareMoment[] {
     if (view.hasHistory) {
       moments.push({
         id: 'momentum',
-        label: 'Compartilhar Momentum',
+        label: 'Compartilhar Momentumm',
         build: () =>
           momentumEvent({ userId, today, momentum: view.momentum, streakDays: streak.current }),
       })

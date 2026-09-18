@@ -197,7 +197,7 @@ describe('applyEvolutionEvent', () => {
     expect(snapshot.transactions.some((item) => item.kind === 'comeback')).toBe(false)
   })
 
-  it('cinco dias com movimento na semana valem o bônus e a conquista Momentum', () => {
+  it('cinco dias com movimento na semana valem o bônus e a conquista Momentumm', () => {
     const events = [0, 1, 2, 3, 4].map((offset) => habit('h1', addDays(MONDAY, offset)))
     const { snapshot, unlocked } = run(events)
     expect(snapshot.transactions.filter((item) => item.kind === 'week_consistent')).toHaveLength(1)

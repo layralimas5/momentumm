@@ -11,6 +11,7 @@ import {
   type PixCustomer,
 } from '@/domain/billing/billing-service'
 import { SUBSCRIPTION_STATUSES, type Subscription } from '@/domain/billing/subscription'
+import { TRIAL_STATUSES, type PlanTrial } from '@/domain/billing/trial'
 import { track } from '@/infrastructure/analytics/track'
 import { supabase } from '@/infrastructure/supabase/client'
 import { InfrastructureError } from '@/shared/errors'
@@ -37,6 +38,17 @@ const subscriptionRowSchema = z.object({
 })
 
 const checkoutResponseSchema = z.object({ url: z.string().url() })
+
+const settleResponseSchema = z.object({
+  plan: z.enum(['free', 'pro']),
+  trial: z
+    .object({
+      started_at: z.string(),
+      ends_at: z.string(),
+      status: z.enum(TRIAL_STATUSES),
+    })
+    .nullable(),
+})
 
 const pixResponseSchema = z.object({
   paymentId: z.string().min(1),
@@ -93,6 +105,18 @@ export class SupabaseBillingService implements BillingService {
       startedAt: new Date(chosen.started_at),
       currentPeriodEnd: chosen.current_period_end ? new Date(chosen.current_period_end) : null,
       canceledAt: chosen.canceled_at ? new Date(chosen.canceled_at) : null,
+    }
+  }
+
+  async settlePlan(): Promise<PlanTrial | null> {
+    const { data, error } = await supabase().rpc('settle_my_plan')
+    if (error) throw new InfrastructureError('Não consegui conferir o plano da conta.', error)
+    const parsed = settleResponseSchema.parse(data)
+    if (!parsed.trial) return null
+    return {
+      startedAt: new Date(parsed.trial.started_at),
+      endsAt: new Date(parsed.trial.ends_at),
+      status: parsed.trial.status,
     }
   }
 

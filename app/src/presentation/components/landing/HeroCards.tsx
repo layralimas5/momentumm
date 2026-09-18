@@ -54,7 +54,7 @@ export function ScoreCard() {
   return (
     <div className="w-44">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-medium text-ink">Momentum Score</p>
+        <p className="text-xs font-medium text-ink">Momentumm Score</p>
         <span className="text-[10px] text-ink-faint">28 dias</span>
       </div>
       <div className="mt-3 grid place-items-center">

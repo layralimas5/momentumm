@@ -1085,9 +1085,6 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
           }
         }
 
-        for (const habit of plan.habits) {
-          await createHabit({ ...habit, objectiveId: objective?.id ?? null })
-        }
 
         let order = 0
         for (const task of plan.tasks) {

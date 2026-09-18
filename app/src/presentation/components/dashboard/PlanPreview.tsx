@@ -3,7 +3,7 @@ import { activityType, formatUnit } from '@/domain/entities/activity-type'
 import { daysBetween, formatDayLabel, type DayKey } from '@/domain/entities/day'
 import type { Feasibility, PlanDraft } from '@/domain/entities/plan-builder'
 import { Button } from '@/presentation/components/ui/Button'
-import { HabitGlyph, Icon } from '@/presentation/components/ui/Icon'
+import { Icon } from '@/presentation/components/ui/Icon'
 import { Tag } from '@/presentation/components/ui/Surface'
 import { cn } from '@/shared/lib/cn'
 
@@ -99,17 +99,6 @@ export function PlanPreview({
         </div>
       ) : null}
 
-      <PlanBlock title="O hábito que sustenta" icon="habitos">
-        {plan.habits.map((habit) => (
-          <li key={habit.name} className="flex items-center gap-3 py-2">
-            <HabitGlyph icon={habit.icon} className="size-5 shrink-0 text-ink-faint" />
-            <span className="min-w-0 flex-1 text-sm text-ink">{habit.name}</span>
-            <span className="shrink-0 text-xs text-ink-faint">
-              {formatUnit(activityType(habit.axis), habit.target)}
-            </span>
-          </li>
-        ))}
-      </PlanBlock>
 
       {/*
         O caminho aparece ANTES das ações porque é ele que dá sentido a elas: a

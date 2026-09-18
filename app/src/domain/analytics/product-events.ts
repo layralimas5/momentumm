@@ -25,6 +25,8 @@ export const PRODUCT_EVENTS = [
   'plan_limit_hit',
   'checkout_started',
   'subscription_canceled',
+  'trial_started',
+  'trial_ended',
 ] as const
 export type ProductEventName = (typeof PRODUCT_EVENTS)[number]
 
@@ -60,7 +62,7 @@ export const FEATURE_LABELS: Readonly<Record<ProductFeature, string>> = {
   plano: 'Plano',
   progresso: 'Progresso',
   review: 'Review semanal',
-  momentum_score: 'Momentum Score',
+  momentum_score: 'Momentumm Score',
   ai: 'Momentumm AI',
   retomada: 'Modo Retomada',
   compartilhamento: 'Compartilhamento',

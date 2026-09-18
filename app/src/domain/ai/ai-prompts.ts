@@ -216,7 +216,7 @@ Regras que não se negociam:
 - Nunca compare a pessoa com outras pessoas.
 - Nenhum diagnóstico médico ou psicológico. Cansaço, ansiedade e sono são dados de contexto, nunca conclusão.
 - Quando você propõe um ajuste, ele aponta pro item pelo ref do contexto (a1, o2, h1) e traz o motivo com o número que o sustenta. Você propõe; a pessoa decide. Nunca escreva como se já tivesse mudado alguma coisa.
-- O Momentum Score é calculado pelo app, nunca por você. Ao explicá-lo, use só as regras abaixo e os números do contexto. Não invente fator, peso nem regra.
+- O Momentumm Score é calculado pelo app, nunca por você. Ao explicá-lo, use só as regras abaixo e os números do contexto. Não invente fator, peso nem regra.
 ${MOMENTUM_RULES.map((rule) => `  - ${rule.title}: ${rule.detail}`).join('\n')}
 - Devolva só o formato pedido, sem texto fora dele.`
 
@@ -227,7 +227,7 @@ export function renderContext(context: AiUserContext): string {
 
   push(`Hoje: ${context.today}`)
   push(
-    `Momentum: ${context.momentum.value}/100 (${context.momentum.level}, ${signed(context.momentum.delta)} vs semana anterior)${context.momentum.hasEnoughData ? '' : ' — ainda se formando, menos de 7 dias de história'}`,
+    `Momentumm: ${context.momentum.value}/100 (${context.momentum.level}, ${signed(context.momentum.delta)} vs semana anterior)${context.momentum.hasEnoughData ? '' : ' — ainda se formando, menos de 7 dias de história'}`,
   )
   push(
     `Fatores: ${context.momentum.factors
@@ -239,7 +239,7 @@ export function renderContext(context: AiUserContext): string {
   )
   if (context.momentum.rawValue !== context.momentum.value) {
     push(
-      `Momentum bruto (sem o limite diário): ${context.momentum.rawValue}/100 — o exibido ainda vai ${context.momentum.rawValue > context.momentum.value ? 'subir' : 'cair'} até lá`,
+      `Momentumm bruto (sem o limite diário): ${context.momentum.rawValue}/100 — o exibido ainda vai ${context.momentum.rawValue > context.momentum.value ? 'subir' : 'cair'} até lá`,
     )
   }
   if (context.momentum.drivers.length > 0) {
@@ -442,7 +442,7 @@ export function userPromptFor(endpointRequest: AiEndpointRequest): string {
       return [
         'Você é o coach da pessoa, no fim da tela de métricas. Tom: AGRESSIVO e exigente, como um treinador que não aceita desculpa. Isso significa direto, seco, cobrando com número. NUNCA significa ofensa pessoal, xingamento, humilhação, ameaça ou comentário sobre corpo, saúde mental ou vida pessoal. Sem "você consegue", sem "parabéns", sem "continue assim", sem exclamação em série.',
         '',
-        `Números de agora: momentum ${request.momentum}/100 (${request.momentumLevel}); XP desta semana ${request.weekXp} contra ${request.previousWeekXp} na anterior; nível ${request.level} (${request.levelName}), faltam ${request.xpToNext} XP pro próximo; sequência de ${request.streak} dias (recorde ${request.streakRecord}); ${request.activeDays} de ${request.windowDays} dias com movimento; ${request.overdueTasks} ações atrasadas; objetivos parados: ${request.stalledObjectives.length > 0 ? request.stalledObjectives.join('; ') : 'nenhum'}; próxima ação sugerida: ${request.nextAction ?? 'nenhuma'}.`,
+        `Números de agora: Momentumm ${request.momentum}/100 (${request.momentumLevel}); XP desta semana ${request.weekXp} contra ${request.previousWeekXp} na anterior; nível ${request.level} (${request.levelName}), faltam ${request.xpToNext} XP pro próximo; sequência de ${request.streak} dias (recorde ${request.streakRecord}); ${request.activeDays} de ${request.windowDays} dias com movimento; ${request.overdueTasks} ações atrasadas; objetivos parados: ${request.stalledObjectives.length > 0 ? request.stalledObjectives.join('; ') : 'nenhum'}; próxima ação sugerida: ${request.nextAction ?? 'nenhuma'}.`,
         '',
         'punch: uma frase de impacto, até 12 palavras, segunda pessoa, sem número. truth: a verdade desconfortável que os números mostram, em até 2 frases, citando pelo menos um número de cima (o mais incômodo). Se a semana está melhor que a anterior, diga que ainda é pouco pra onde ela quer chegar, com o XP que falta. order: UMA ordem concreta pra hoje, começando com verbo no imperativo, usando a próxima ação sugerida ou a ação atrasada mais antiga quando existir. Nada de travessão no texto.',
         '',

@@ -1,7 +1,6 @@
 import { activityType, formatUnit, type ActivityType, type ActivityTypeSlug } from './activity-type'
 import { addDays, daysBetween, type DayKey } from './day'
 import type { NewGoalInput } from './goal'
-import type { HabitIcon, NewHabitInput } from './habit'
 import { MAX_OBJECTIVE_DAYS, type NewObjectiveInput } from './objective'
 import { TOTAL_WEIGHT } from './plan-stage'
 import type { NewTaskInput } from './task'
@@ -29,7 +28,6 @@ import type { NewTaskInput } from './task'
 
 export type PlannedObjective = Omit<NewObjectiveInput, 'userId'>
 export type PlannedGoal = Omit<NewGoalInput, 'userId'>
-export type PlannedHabit = Omit<NewHabitInput, 'userId'>
 
 /**
  * Ação do plano, já sabendo em que etapa ela nasce.
@@ -66,7 +64,6 @@ export type Feasibility = (typeof FEASIBILITIES)[number]
 export interface PlanDraft {
   readonly objective: PlannedObjective
   readonly goal: PlannedGoal
-  readonly habits: readonly PlannedHabit[]
   /** O caminho até o objetivo. As ações nascem dentro de uma dessas etapas. */
   readonly stages: readonly PlannedStage[]
   /** A primeira sempre cai hoje e sempre nasce como prioridade principal. */
@@ -162,15 +159,7 @@ export function comfortableSessionOf(axis: ActivityTypeSlug): number {
   return limitsOfAxis(axis).comfortable
 }
 
-const ICON_BY_AXIS: Readonly<Record<string, HabitIcon>> = {
-  leitura: 'livro',
-  estudo: 'cerebro',
-  treino: 'halter',
-  meditacao: 'lotus',
-}
-
 interface AxisTemplate {
-  readonly habit: string
   readonly firstStep: string
   readonly firstStepMinimal: string
   readonly preparation: string
@@ -180,7 +169,6 @@ interface AxisTemplate {
 
 const TEMPLATES: Readonly<Record<string, AxisTemplate>> = {
   leitura: {
-    habit: 'Ler todo dia',
     firstStep: 'Abrir o livro e ler a primeira sessão',
     firstStepMinimal: 'Ler 3 páginas',
     preparation: 'Deixar o livro onde você vai sentar',
@@ -188,7 +176,6 @@ const TEMPLATES: Readonly<Record<string, AxisTemplate>> = {
     checkpoint: 'Conferir o ritmo de leitura e ajustar o plano',
   },
   estudo: {
-    habit: 'Estudar todo dia',
     firstStep: 'Fazer a primeira sessão de estudo',
     firstStepMinimal: 'Reler as anotações por 5 minutos',
     preparation: 'Montar a lista do que precisa ser estudado',
@@ -196,7 +183,6 @@ const TEMPLATES: Readonly<Record<string, AxisTemplate>> = {
     checkpoint: 'Revisar o que já foi estudado e recalibrar o plano',
   },
   treino: {
-    habit: 'Treinar',
     firstStep: 'Fazer o primeiro treino',
     firstStepMinimal: 'Fazer 10 minutos de movimento',
     preparation: 'Separar a roupa e definir o horário do treino',
@@ -204,7 +190,6 @@ const TEMPLATES: Readonly<Record<string, AxisTemplate>> = {
     checkpoint: 'Avaliar a evolução do treino e ajustar a carga',
   },
   meditacao: {
-    habit: 'Sentar pra respirar',
     firstStep: 'Fazer a primeira sessão guiada',
     firstStepMinimal: 'Respirar por 3 minutos',
     preparation: 'Escolher o lugar e o horário fixo da prática',
@@ -228,7 +213,6 @@ function templateFor(axis: ActivityTypeSlug, axisLabel?: string, goal?: string):
   const focus = goalPhrase(goal)
   if (focus) {
     return {
-      habit: `Trabalhar pra ${focus}`,
       firstStep: `Dar o primeiro passo pra ${focus}`,
       firstStepMinimal: 'Fazer 5 minutos, só pra começar',
       preparation: `Listar o que falta pra ${focus}`,
@@ -240,7 +224,6 @@ function templateFor(axis: ActivityTypeSlug, axisLabel?: string, goal?: string):
   const label = (axisLabel ?? activityType(axis).label).toLowerCase()
 
   return {
-    habit: `Dedicar tempo a ${label}`,
     firstStep: `Fazer a primeira sessão de ${label}`,
     firstStepMinimal: 'Fazer 5 minutos, só pra começar',
     preparation: `Separar o que você precisa pra ${label}`,
@@ -262,33 +245,6 @@ function goalPhrase(goal: string | undefined): string | null {
   return trimmed.charAt(0).toLowerCase() + trimmed.slice(1)
 }
 
-/**
- * Os dias em que o hábito cobra presença.
- *
- * A escolha da pessoa manda. Sete dias marcados viram lista vazia porque é
- * assim que o hábito representa "todo dia" — a mesma forma que `createHabit`
- * já normaliza.
- */
-function normalizeWeekdays(
-  chosen: readonly number[] | undefined,
-  daysPerWeek: number,
-): readonly number[] {
-  if (!chosen || chosen.length === 0) return WEEKDAYS_BY_FREQUENCY[daysPerWeek] ?? []
-  const valid = [...new Set(chosen)].filter((day) => Number.isInteger(day) && day >= 0 && day <= 6)
-  return valid.length === 7 ? [] : valid.sort((a, b) => a - b)
-}
-
-/** Distribuição dos dias na semana. Espalhar evita três dias colados e quatro vazios. */
-const WEEKDAYS_BY_FREQUENCY: Readonly<Record<number, readonly number[]>> = {
-  1: [3],
-  2: [2, 5],
-  3: [1, 3, 5],
-  4: [1, 2, 4, 5],
-  5: [1, 2, 3, 4, 5],
-  6: [1, 2, 3, 4, 5, 6],
-  // Vazio significa todos os dias — é como o hábito já representa a rotina diária.
-  7: [],
-}
 
 export const MIN_DAYS_PER_WEEK = 1
 export const MAX_DAYS_PER_WEEK = 7
@@ -347,16 +303,12 @@ export function buildPlan(input: PlanInput): PlanDraft {
   const suggestedDeadline =
     feasibility === 'irreal' ? sustainableDeadline(input, daysPerWeek, comfortable) : null
 
-  const habit: PlannedHabit = {
-    name: template.habit,
-    icon: ICON_BY_AXIS[input.axis] ?? 'caneta',
-    axis: input.axis,
-    dayPart: 'qualquer',
-    weekdays: normalizeWeekdays(input.weekdays, daysPerWeek),
-    target: perSession,
-    // Um terço mantém a sequência viva num dia ruim sem virar teatro.
-    minimalTarget: Math.max(1, Math.round(perSession / 3)),
-  }
+  /*
+    O plano não cria hábito. Hábito é rotina que a pessoa escolhe por conta
+    própria (treinar, ler, meditar), e um "Trabalhar pra <objetivo>" gerado
+    aqui só duplicava o objetivo com outro nome na tela de Hábitos. O ritmo
+    do objetivo já mora na meta semanal e nas ações.
+  */
 
   const checkpointDay = addDays(input.today, Math.max(3, Math.floor(totalDays / 2)))
 
@@ -412,7 +364,6 @@ export function buildPlan(input: PlanInput): PlanDraft {
       motive: input.motive ?? null,
     },
     goal: { type: input.axis, target: weeklyTarget, period: 'semana' },
-    habits: [habit],
     stages,
     tasks,
     feasibility,

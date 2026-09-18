@@ -7,6 +7,7 @@ import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { LogoMark, Wordmark } from '@/presentation/components/brand/Logo'
 import { MobileTabBar } from '@/presentation/components/mobile/MobileTabBar'
+import { TrialBanner } from '@/presentation/plan/TrialBanner'
 import { MobileTopBar } from '@/presentation/components/mobile/MobileTopBar'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { EvolutionNotice } from '@/presentation/evolution/EvolutionNotice'
@@ -109,6 +110,7 @@ function LayoutShell() {
             ler. O teto centraliza o conteúdo até virar dashboard de verdade.
           */}
           <div className="mx-auto w-full max-w-2xl lg:max-w-none">
+            <TrialBanner />
             <Outlet />
           </div>
         </main>
@@ -145,7 +147,7 @@ function SidebarContent({
   return (
     <div className="flex h-full flex-col px-3 py-5">
       <div className={cn('flex items-center px-1', collapsed ? 'justify-center' : 'justify-between')}>
-        {collapsed ? <LogoMark className="size-7" /> : <Wordmark className="w-24" />}
+        {collapsed ? <LogoMark className="size-7" /> : <Wordmark className="w-32" />}
         {onToggle ? (
           <button
             type="button"

@@ -35,7 +35,7 @@ import { isPending, type Task } from './task'
  * Não é a quantidade de tarefas, e não é a ordem da lista. É um score que soma
  * impacto, prioridade, vínculo com objetivo, prazo, progresso, gargalo do
  * plano, tempo estimado, sequência de hábito, quanto tempo a ação está sendo
- * arrastada e o Momentum atual. Cada parcela existe porque muda a decisão:
+ * arrastada e o Momentumm atual. Cada parcela existe porque muda a decisão:
  * duas ações de 30 minutos não são intercambiáveis quando uma destrava a etapa
  * que segura o objetivo atrasado e a outra é uma tarefa solta.
  *
@@ -49,7 +49,7 @@ import { isPending, type Task } from './task'
  */
 
 /** O título fixo da revisão. É a promessa do recurso, e ela não varia. */
-export const ADAPTIVE_TITLE = 'Vamos proteger seu Momentum'
+export const ADAPTIVE_TITLE = 'Vamos proteger seu Momentumm'
 
 export const ADAPTIVE_VERDICTS = ['manter', 'reduzir', 'reagendar'] as const
 export type AdaptiveVerdict = (typeof ADAPTIVE_VERDICTS)[number]

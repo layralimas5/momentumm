@@ -90,7 +90,7 @@ export function InsightsPage() {
         action={
           user && view.hasHistory ? (
             <ShareButton
-              label="Compartilhar Momentum"
+              label="Compartilhar Momentumm"
               build={() =>
                 momentumEvent({
                   userId: user.id,

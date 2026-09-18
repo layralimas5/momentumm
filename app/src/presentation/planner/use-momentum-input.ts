@@ -7,7 +7,7 @@ import { useObjectives } from './use-objectives'
 import { usePlanner } from './use-planner'
 
 /**
- * A ENTRADA do Momentum, montada num lugar só.
+ * A ENTRADA do Momentumm, montada num lugar só.
  *
  * Existia uma cópia dessa montagem no dashboard e outra no progresso, e elas
  * não eram iguais: só o dashboard somava o avanço do plano. O resultado era

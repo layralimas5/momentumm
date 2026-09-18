@@ -132,8 +132,11 @@ Deno.serve(async (request) => {
     return fail(400, 'invalid_request', 'Pedido malformado.')
   }
 
-  // 3. Tetos. `profiles.plan` e `ai.limits` lidos com service role: são as
-  //    fontes de verdade que o cliente não consegue forjar.
+  // 3. Tetos. O plano vem de `plan_for_user` (assinatura, cortesia ou teste
+  //    de 7 dias, avaliados AGORA) e `ai.limits` de `product_settings`, os dois
+  //    lidos com service role: são as fontes de verdade que o cliente não
+  //    consegue forjar, e um teste vencido não passa por aqui mesmo que o
+  //    agendador ainda não tenha fechado a linha.
   const admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } })
   const startedAt = Date.now()
 
@@ -155,11 +158,11 @@ Deno.serve(async (request) => {
     })
   }
 
-  const [{ data: profile }, { data: rawLimits }] = await Promise.all([
-    admin.from('profiles').select('plan').eq('id', user.id).maybeSingle(),
+  const [{ data: effectivePlan }, { data: rawLimits }] = await Promise.all([
+    admin.rpc('plan_for_user', { p_user: user.id }),
     admin.rpc('setting_value', { p_key: 'ai.limits' }),
   ])
-  const tier: PlanTier = profile?.plan === 'pro' ? 'pro' : 'free'
+  const tier: PlanTier = effectivePlan === 'pro' ? 'pro' : 'free'
   const limits = readLimits(rawLimits)
   const limit = limits.monthlyPerPlan[tier]
 

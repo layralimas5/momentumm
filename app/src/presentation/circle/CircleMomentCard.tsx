@@ -23,7 +23,7 @@ interface CircleMomentCardProps {
  * seguidor — o único gesto possível é o apoio, e ele não gera notificação nem
  * ranking.
  *
- * O Momentum aparece como VARIAÇÃO ("+7"), nunca como pontuação absoluta. O
+ * O Momentumm aparece como VARIAÇÃO ("+7"), nunca como pontuação absoluta. O
  * score é a comparação da pessoa com ela mesma; exibir "84" ao lado de "61"
  * num feed criaria a tabela de classificação que o produto recusa, mesmo sem
  * nunca chamar de tabela.
@@ -70,7 +70,7 @@ export function CircleMomentCard({
         <Tag>{JOURNEY_EVENT_TYPE_LABELS[event.type]}</Tag>
         {event.momentumChange !== null && event.momentumChange !== 0 ? (
           <Tag tone={event.momentumChange > 0 ? 'positive' : 'neutral'}>
-            Momentum {event.momentumChange > 0 ? '+' : '−'}
+            Momentumm {event.momentumChange > 0 ? '+' : '−'}
             {Math.abs(event.momentumChange)}
           </Tag>
         ) : null}

@@ -52,7 +52,7 @@ export function PanelHeader({ title, id, icon, hint, action }: PanelHeaderProps)
         </h2>
         {hint ? <p className="mt-1 text-sm text-ink-faint">{hint}</p> : null}
       </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
+      {action ? <div className="min-w-0 max-w-full shrink-0">{action}</div> : null}
     </div>
   )
 }

@@ -47,7 +47,6 @@ export function ActivationPlanView({
   onSave,
 }: ActivationPlanViewProps) {
   const type = activityType(plan.axis)
-  const habit = plan.plan.habits[0]
 
   return (
     <div className="flex flex-col gap-5">
@@ -119,13 +118,10 @@ export function ActivationPlanView({
       {/* 3. Plano (o ritmo) */}
       <ChainBlock icon="relogio" title="Plano">
         <p className="text-sm text-ink-muted">{plan.plan.rationale}</p>
-        {habit ? (
-          <p className="mt-2 text-sm text-ink">
-            Hábito: <strong className="font-medium">{habit.name}</strong>, {habit.target}{' '}
-            {type.unitLabel.many} por sessão, e {habit.minimalTarget} {type.unitLabel.many} nos dias
-            ruins, que também contam.
-          </p>
-        ) : null}
+        <p className="mt-2 text-sm text-ink">
+          <strong className="font-medium">{plan.plan.perSession}</strong> {type.unitLabel.many} por sessão.
+          Hábitos são à parte: você cria os teus (treinar, ler, meditar) na tela de Hábitos.
+        </p>
         <p className="mt-2 text-xs text-ink-faint">
           {plan.budget.daysPerWeek} {plan.budget.daysPerWeek === 1 ? 'dia' : 'dias'} por semana ·{' '}
           {formatDuration(plan.budget.minutesPerWeek)} reservados por semana

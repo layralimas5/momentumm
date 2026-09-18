@@ -251,7 +251,7 @@ Regras que n\xE3o se negociam:
 - Nunca compare a pessoa com outras pessoas.
 - Nenhum diagn\xF3stico m\xE9dico ou psicol\xF3gico. Cansa\xE7o, ansiedade e sono s\xE3o dados de contexto, nunca conclus\xE3o.
 - Quando voc\xEA prop\xF5e um ajuste, ele aponta pro item pelo ref do contexto (a1, o2, h1) e traz o motivo com o n\xFAmero que o sustenta. Voc\xEA prop\xF5e; a pessoa decide. Nunca escreva como se j\xE1 tivesse mudado alguma coisa.
-- O Momentum Score \xE9 calculado pelo app, nunca por voc\xEA. Ao explic\xE1-lo, use s\xF3 as regras abaixo e os n\xFAmeros do contexto. N\xE3o invente fator, peso nem regra.
+- O Momentumm Score \xE9 calculado pelo app, nunca por voc\xEA. Ao explic\xE1-lo, use s\xF3 as regras abaixo e os n\xFAmeros do contexto. N\xE3o invente fator, peso nem regra.
 ${MOMENTUM_RULES.map((rule) => `  - ${rule.title}: ${rule.detail}`).join("\n")}
 - Devolva s\xF3 o formato pedido, sem texto fora dele.`;
 function renderContext(context) {
@@ -259,7 +259,7 @@ function renderContext(context) {
   const push = (line) => lines.push(line);
   push(`Hoje: ${context.today}`);
   push(
-    `Momentum: ${context.momentum.value}/100 (${context.momentum.level}, ${signed(context.momentum.delta)} vs semana anterior)${context.momentum.hasEnoughData ? "" : " \u2014 ainda se formando, menos de 7 dias de hist\xF3ria"}`
+    `Momentumm: ${context.momentum.value}/100 (${context.momentum.level}, ${signed(context.momentum.delta)} vs semana anterior)${context.momentum.hasEnoughData ? "" : " \u2014 ainda se formando, menos de 7 dias de hist\xF3ria"}`
   );
   push(
     `Fatores: ${context.momentum.factors.map(
@@ -268,7 +268,7 @@ function renderContext(context) {
   );
   if (context.momentum.rawValue !== context.momentum.value) {
     push(
-      `Momentum bruto (sem o limite di\xE1rio): ${context.momentum.rawValue}/100 \u2014 o exibido ainda vai ${context.momentum.rawValue > context.momentum.value ? "subir" : "cair"} at\xE9 l\xE1`
+      `Momentumm bruto (sem o limite di\xE1rio): ${context.momentum.rawValue}/100 \u2014 o exibido ainda vai ${context.momentum.rawValue > context.momentum.value ? "subir" : "cair"} at\xE9 l\xE1`
     );
   }
   if (context.momentum.drivers.length > 0) {

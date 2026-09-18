@@ -119,7 +119,7 @@ export interface DashboardView {
   /** A frase de contexto abaixo da saudação. Muda com o estado real do dia. */
   readonly headline: string
   /**
-   * Existe semana anterior pra comparar? Sem isso o Momentum mostra o número
+   * Existe semana anterior pra comparar? Sem isso o Momentumm mostra o número
    * sem variação, em vez de comparar com o vazio e inflar o primeiro dado que
    * a pessoa vê.
    */
@@ -195,7 +195,7 @@ export function useDashboard(): DashboardView {
 
     Ela era montada nesta tela e outra vez no progresso, com uma diferença
     silenciosa: só esta somava o avanço do plano. Duas telas mostrando o mesmo
-    "Momentum" com números diferentes é como um app começa a discordar de si
+    "Momentumm" com números diferentes é como um app começa a discordar de si
     mesmo.
   */
   const momentumInput = useMomentumInput()

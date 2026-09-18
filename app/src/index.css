@@ -83,6 +83,17 @@
     -webkit-text-size-adjust: 100%;
   }
 
+  /*
+    Grid de uma coluna no celular (`grid gap-5 lg:grid-cols-2`) cria a coluna
+    implícita com tamanho `auto`, que cresce até o min-content do item: um
+    texto com `truncate` lá dentro alarga a coluna além da tela e a página
+    ganha rolagem horizontal. Com `minmax(0, 1fr)` a coluna implícita se
+    comporta como as explícitas do Tailwind. Os breakpoints continuam mandando.
+  */
+  .grid {
+    grid-auto-columns: minmax(0, 1fr);
+  }
+
   body {
     background-color: var(--color-canvas);
     color: var(--color-ink);

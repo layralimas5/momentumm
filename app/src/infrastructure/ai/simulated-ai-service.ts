@@ -109,7 +109,7 @@ export class SimulatedAiService implements AiService {
     }
 
     if (request.weakestFactor) {
-      bottlenecks.push(`O fator que mais derruba teu momentum é ${request.weakestFactor}.`)
+      bottlenecks.push(`O fator que mais derruba teu Momentumm é ${request.weakestFactor}.`)
     }
 
     // O último review é a única parte do contexto que a simulação consegue
@@ -260,7 +260,7 @@ export class SimulatedAiService implements AiService {
         : 'Os números não mentem. Você caiu.'
     const truth = better
       ? `${request.weekXp} XP contra ${request.previousWeekXp}. Ainda faltam ${request.xpToNext} pro nível ${request.level + 1}, e ${request.windowDays - request.activeDays} dos últimos ${request.windowDays} dias não tiveram nada.`
-      : `${request.activeDays} de ${request.windowDays} dias com movimento e momentum em ${request.momentum}. ${request.overdueTasks > 0 ? `${request.overdueTasks} ação atrasada esperando.` : 'A sequência está em ' + request.streak + '; o recorde é ' + request.streakRecord + '.'}`
+      : `${request.activeDays} de ${request.windowDays} dias com movimento e Momentumm em ${request.momentum}. ${request.overdueTasks > 0 ? `${request.overdueTasks} ação atrasada esperando.` : 'A sequência está em ' + request.streak + '; o recorde é ' + request.streakRecord + '.'}`
     const order = request.nextAction
       ? `Fecha "${request.nextAction}" antes de abrir qualquer outra tela.`
       : 'Marca uma ação de 25 minutos pra hoje e fecha ela agora.'
@@ -409,15 +409,15 @@ function capitalize(value: string): string {
 
 function summaryOf(request: AiProgressRequest): string {
   if (request.momentum >= 70) {
-    return `Momentum em ${request.momentum}: o ritmo está alto e você está sustentando ele.`
+    return `Momentumm em ${request.momentum}: o ritmo está alto e você está sustentando ele.`
   }
   if (request.momentum >= 45) {
-    return `Momentum em ${request.momentum}: ritmo constante, com espaço pra crescer sem forçar.`
+    return `Momentumm em ${request.momentum}: ritmo constante, com espaço pra crescer sem forçar.`
   }
   if (request.activeDays === 0) {
     return 'Sem registro na janela. O número não mede desistência, mede ausência de dado.'
   }
-  return `Momentum em ${request.momentum}: o ritmo caiu, mas ${request.activeDays} ${request.activeDays === 1 ? 'dia teve' : 'dias tiveram'} movimento.`
+  return `Momentumm em ${request.momentum}: o ritmo caiu, mas ${request.activeDays} ${request.activeDays === 1 ? 'dia teve' : 'dias tiveram'} movimento.`
 }
 
 function nextActionOf(request: AiProgressRequest): string {

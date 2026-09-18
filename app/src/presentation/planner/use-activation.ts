@@ -284,7 +284,6 @@ function withAxis(plan: PlanDraft, axis: ActivityTypeSlug): PlanDraft {
     ...plan,
     objective: { ...plan.objective, axis },
     goal: { ...plan.goal, type: axis },
-    habits: plan.habits.map((habit) => ({ ...habit, axis })),
     tasks: plan.tasks.map((task) => ({ ...task, axis })),
   }
 }

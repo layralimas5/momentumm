@@ -1,7 +1,13 @@
 import { totalMinutes } from './activity'
-import { addDays, type DayKey } from './day'
+import { addDays, dayRange, type DayKey } from './day'
 import { countsAsDone } from './habit'
-import { dailySeries, MOMENTUM_WINDOW_DAYS, type DayDot, type MomentumInput } from './momentum'
+import {
+  creditOfDay,
+  dailySeries,
+  MOMENTUM_WINDOW_DAYS,
+  type DayDot,
+  type MomentumInput,
+} from './momentum'
 
 /**
  * Progresso semanal. O objetivo é entendimento imediato, então tudo aqui existe
@@ -42,7 +48,9 @@ function totalsFor(input: MomentumInput, end: DayKey): WeekTotals {
     habitsDone: input.habitLogs.filter((log) => within(log.day) && countsAsDone(log.status)).length,
     tasksDone: input.tasks.filter((task) => within(task.day) && task.status === 'feita').length,
     focusMinutes: totalMinutes(activities),
-    activeDays: new Set(activities.map((activity) => activity.day)).size,
+    // Dia ativo é dia com QUALQUER movimento: hábito, tarefa ou foco. Contar
+    // só o timer zerava a semana de quem cumpre a rotina sem cronômetro.
+    activeDays: dayRange(start, end).filter((day) => creditOfDay(input, day) > 0).length,
   }
 }
 

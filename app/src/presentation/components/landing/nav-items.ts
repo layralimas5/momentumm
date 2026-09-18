@@ -32,7 +32,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         href: '/#telas',
       },
       {
-        label: 'Momentum Score',
+        label: 'Momentumm Score',
         description: 'Como o ritmo é medido sem punir uma falha',
         href: '/#momentum-score',
       },
