@@ -50,10 +50,9 @@ export function Problem() {
 
       <Reveal delay={0.24}>
         <p className="mx-auto mt-10 max-w-2xl text-balance text-center text-lg text-ink-muted">
-          Agenda, lista e habit tracker registram o que você planejou.{' '}
-          <span className="text-ink">
-            Nenhum deles percebe quando o plano deixou de funcionar, e é nesse dia que você desiste.
-          </span>
+          Agenda, lista e habit tracker registram o que você planejou. Nenhum deles percebe quando o
+          plano deixou de funcionar.{' '}
+          <span className="text-ink">O Momentumm foi feito pra perceber isso no dia 12, não no dia 30.</span>
         </p>
       </Reveal>
     </Section>

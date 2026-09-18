@@ -1,131 +1,126 @@
 import { Icon } from '@/presentation/components/ui/Icon'
-import { MockCard, MockLabel, MockRow, MockTag } from './PhoneMockup'
+import { cn } from '@/shared/lib/cn'
 import { Reveal } from './Reveal'
 import { Section, SectionHeading } from './Section'
 
 /**
- * As três funções que existem no contrato `AiService`: montar o plano, ler o
- * progresso e sintetizar o review. A seção descreve o que a IA recebe e o que
- * devolve, porque é a estrutura (etapas, ações, ajustes) que faz a sugestão
- * virar prévia editável em vez de texto solto.
+ * A IA mostrada como conversa, não como lista de capacidades: três trocas em
+ * que a pessoa dá pouco e recebe algo concreto. É uma demonstração escrita à
+ * mão com o formato REAL das respostas (plano em etapas, leitura de progresso,
+ * síntese da semana), sem prometer nada que o produto não devolva.
  */
-const CAPABILITIES = [
+const EXCHANGES = [
   {
-    title: 'Monta o plano a partir do objetivo',
-    input: 'O que você quer, até quando e quantos minutos por dia tem de verdade.',
-    output:
-      'Etapas em ordem, hábito de apoio com versão mínima e as ações de cada etapa, já com data. Se o prazo não fecha, ela sugere outro e diz por quê.',
+    kind: 'Plano',
+    you: 'Quero ler 6 livros até dezembro. Tenho 30 minutos por dia, de segunda a sexta.',
+    ai: [
+      'Plano em 3 etapas. Etapa 1, até 15/10: livros 1 e 2, 20 páginas por sessão.',
+      'Primeira ação hoje: abrir o livro e ler a primeira sessão.',
+      'Se o prazo apertar, a etapa 3 encolhe pra 1 livro. Você edita tudo antes de salvar.',
+    ],
   },
   {
-    title: 'Lê o progresso e aponta o gargalo',
-    input: 'Momentumm, dias ativos, taxa de hábitos e ações, objetivos parados, o que está planejado pra hoje e a sua capacidade.',
-    output:
-      'Padrões, gargalos, sinal de sobrecarga quando o dia pede mais do que você tem, e uma próxima ação concreta.',
+    kind: 'Progresso',
+    you: null,
+    ai: [
+      'Você apareceu em 5 dos últimos 7 dias, mas a prioridade do dia ficou aberta em 3 deles.',
+      'O gargalo é o horário: as sessões de noite não saem.',
+      'Próxima ação: mover a leitura pra manhã de terça.',
+    ],
   },
   {
-    title: 'Sintetiza a semana no review',
-    input: 'Execução, dias ativos, e o que você escreveu sobre conquistas, dificuldades e aprendizados.',
-    output: 'Um parágrafo sobre a semana, e a recomendação que vira prioridade da próxima.',
+    kind: 'Review',
+    you: 'Semana difícil, entreguei menos.',
+    ai: [
+      'Execução de 60%, 4 dias ativos. Dois dias com versão mínima, que contam.',
+      'Recomendação pra próxima semana: manter 20 páginas e cortar a ação extra de sábado.',
+    ],
   },
 ] as const
 
 export function MomentumAi() {
   return (
-    <Section id="ia" className="border-t border-line bg-surface-hi">
+    <Section id="ia" className="border-t border-line bg-surface">
       <SectionHeading
         eyebrow="Momentumm AI"
         title="A IA que conhece o seu plano, não uma que responde qualquer coisa."
-        description="Ela usa os seus objetivos, a sua rotina e o seu progresso pra planejar, interpretar resultados e sugerir ajustes. E devolve estrutura, não texto: cada sugestão vira uma prévia que você edita antes de salvar."
+        description="Ela lê o que você já colocou no app e devolve plano, leitura de progresso e review. Toda sugestão vira uma prévia que você edita antes de salvar."
       />
 
-      <div className="mt-12 grid items-start gap-10 lg:grid-cols-[1fr_0.9fr] lg:gap-14">
-        <ol className="flex flex-col gap-4">
-          {CAPABILITIES.map((capability, index) => (
-            <Reveal key={capability.title} delay={index * 0.06}>
-              <li className="rounded-card border border-line bg-surface p-6">
-                <div className="flex items-center gap-3">
-                  <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-dim text-brand-hi">
-                    <Icon name="ia" className="size-4.5" />
-                  </span>
-                  <h3 className="font-medium text-ink">{capability.title}</h3>
-                </div>
-                <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <dt className="text-xs font-medium uppercase tracking-wide text-ink-faint">
-                      O que ela lê
-                    </dt>
-                    <dd className="mt-1 text-pretty text-sm text-ink-muted">{capability.input}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs font-medium uppercase tracking-wide text-ink-faint">
-                      O que devolve
-                    </dt>
-                    <dd className="mt-1 text-pretty text-sm text-ink-muted">{capability.output}</dd>
-                  </div>
-                </dl>
-              </li>
-            </Reveal>
-          ))}
-        </ol>
+      <Reveal>
+        <div className="mx-auto mt-12 flex max-w-3xl flex-col gap-6 rounded-card border border-line bg-canvas p-4 sm:p-6">
+          {EXCHANGES.map((exchange, index) => (
+            <div key={exchange.kind} className="flex flex-col gap-3">
+              <p className="text-center text-[11px] font-medium tracking-wide text-ink-faint uppercase">
+                {exchange.kind}
+              </p>
 
-        <Reveal delay={0.12}>
-          <div aria-hidden="true" className="surface-brand edge-light rounded-card p-5 sm:p-6">
-            <p className="text-xs font-medium uppercase tracking-wide text-brand-hi">Prévia do plano</p>
-            <p className="mt-2 text-sm font-medium text-ink">Terminar o TCC</p>
-            <p className="text-xs text-ink-faint">Até 30 de novembro · 45 min por dia · 5 dias por semana</p>
-
-            <MockLabel>Etapas</MockLabel>
-            <ol className="space-y-1.5">
-              {['Entrar no ritmo', 'Revisão bibliográfica', 'Rascunho', 'Revisão final', 'Entrega e defesa'].map(
-                (step, index) => (
-                  <li key={step} className="flex items-center gap-2 text-xs text-ink">
-                    <span className="tabular grid size-5 place-items-center rounded-md bg-surface-hi text-[10px] text-ink-faint">
-                      {index + 1}
-                    </span>
-                    {step}
-                  </li>
-                ),
+              {exchange.you ? (
+                <Bubble side="you">{exchange.you}</Bubble>
+              ) : (
+                <p className="text-center text-xs text-ink-faint">
+                  Sem pergunta: ela lê o progresso sozinha e avisa.
+                </p>
               )}
-            </ol>
 
-            <MockLabel>Hábito de apoio</MockLabel>
-            <MockCard>
-              <p className="text-xs font-medium text-ink">Ler 20 páginas · todo dia · manhã</p>
-              <p className="mt-1 text-[11px] text-ink-muted">
-                Versão mínima: 5 páginas. Leitura diária alimenta o rascunho sem depender de sessão longa.
-              </p>
-            </MockCard>
-
-            <MockLabel>Primeiras ações</MockLabel>
-            <MockCard className="py-1">
-              <ul>
-                <MockRow label="Listar as 10 referências principais" meta="Etapa 1 · hoje · 30 min" />
-                <MockRow label="Escrever o esboço da introdução" meta="Etapa 1 · quinta · 45 min" />
-              </ul>
-            </MockCard>
-
-            <div className="mt-4 flex items-start gap-2 rounded-lg border border-flame/30 bg-flame-dim/40 px-3 py-2">
-              <MockTag tone="warn">Aviso</MockTag>
-              <p className="text-[11px] text-ink-muted">
-                Com 45 min por dia, o prazo fica apertado. Sugestão: 14 de dezembro, ou reduzir o alvo da revisão.
-              </p>
+              <Bubble side="ai" delay={index * 0.08}>
+                {exchange.ai.map((line) => (
+                  <span key={line} className="block">
+                    {line}
+                  </span>
+                ))}
+              </Bubble>
             </div>
+          ))}
+        </div>
+      </Reveal>
 
-            <div className="mt-4 flex items-center gap-3">
-              <span className="rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-white">Salvar plano</span>
-              <span className="text-xs text-ink-faint">Cada linha é editável antes disso</span>
-            </div>
-          </div>
-        </Reveal>
-      </div>
-
-      <Reveal delay={0.2}>
-        <p className="mx-auto mt-10 max-w-2xl text-balance text-center text-sm text-ink-muted">
-          A IA não é o produto. O produto é o ciclo que continua rodando depois que o plano
-          existe. Ela entra pra montar o caminho e pra ler o que os seus dados mostram, com as
-          mesmas regras de domínio de um plano feito na mão.
+      <Reveal delay={0.15}>
+        <p className="mx-auto mt-8 max-w-2xl text-balance text-center text-sm text-ink-faint">
+          A chave da IA fica no servidor. Nada roda no seu navegador, nenhum texto seu treina
+          modelo, e a franquia mensal faz parte do PRO.
         </p>
       </Reveal>
     </Section>
+  )
+}
+
+function Bubble({
+  side,
+  delay = 0,
+  children,
+}: {
+  readonly side: 'you' | 'ai'
+  readonly delay?: number
+  readonly children: React.ReactNode
+}) {
+  const ai = side === 'ai'
+  return (
+    <Reveal delay={delay} className={cn('flex', ai ? 'justify-start' : 'justify-end')}>
+      <div className={cn('flex max-w-[92%] gap-2.5 sm:max-w-[80%]', !ai && 'flex-row-reverse')}>
+        <span
+          className={cn(
+            'mt-0.5 grid size-7 shrink-0 place-items-center rounded-full text-[11px] font-semibold',
+            ai ? 'bg-brand-dim text-brand-hi' : 'bg-surface-hi text-ink-muted',
+          )}
+          aria-hidden="true"
+        >
+          {ai ? <Icon name="ia" className="size-3.5" /> : 'V'}
+        </span>
+        <div>
+          <p className={cn('text-[11px] text-ink-faint', !ai && 'text-right')}>{ai ? 'Momentumm AI' : 'Você'}</p>
+          <div
+            className={cn(
+              'mt-1 space-y-1.5 rounded-2xl px-4 py-3 text-sm leading-relaxed',
+              ai
+                ? 'rounded-tl-md border border-brand/30 bg-brand-dim/30 text-ink'
+                : 'rounded-tr-md bg-surface-hi text-ink',
+            )}
+          >
+            {children}
+          </div>
+        </div>
+      </div>
+    </Reveal>
   )
 }

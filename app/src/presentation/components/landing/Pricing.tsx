@@ -129,7 +129,7 @@ function PlanCard({ plan, cycle }: { plan: PricingPlan; cycle: BillingCycle }) {
       </Link>
       <p className="mt-2.5 text-center text-xs text-ink-faint">
         {plan.highlight
-          ? 'Sem fidelidade. Cancela quando quiser.'
+          ? 'Sem cartão no teste. Cancela quando quiser.'
           : 'Sem cartão. Sem prazo pra decidir.'}
       </p>
     </article>
