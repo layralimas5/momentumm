@@ -148,7 +148,7 @@ export function Screens() {
   }
 
   return (
-    <Section id="telas" className="bg-gradient-to-b from-brand-deep via-brand to-brand-hi">
+    <Section id="telas" className="bg-[linear-gradient(180deg,#1b1740_0%,#2a2450_50%,#332a6e_100%)]">
       <SectionHeading
         tone="brand"
         eyebrow="Por dentro"
