@@ -110,6 +110,20 @@ const SCREENS: readonly Screen[] = [
     ],
     image: '/telas/review.webp',
   },
+  {
+    id: 'perfil',
+    icon: 'trofeu',
+    label: 'Meu perfil',
+    title: 'O quanto você mudou desde que começou.',
+    description:
+      'Não é rede social: é o painel da sua evolução. Nível, XP da semana, conquistas, semanas em evolução e o Momentumm, tudo a partir do que você mesmo registrou.',
+    points: [
+      'Nível e XP crescem com dias de movimento, não com volume',
+      'Conquistas por constância, não por perfeição',
+      'Compartilhe o Momentumm em card de story quando quiser',
+    ],
+    image: '/telas/perfil.webp',
+  },
 ]
 
 const EASE = [0.22, 1, 0.36, 1] as const
@@ -137,7 +151,7 @@ export function Screens() {
       <SectionHeading
         tone="brand"
         eyebrow="Por dentro"
-        title="Seis telas. Um exemplo só atravessa todas."
+        title="Sete telas. Um exemplo só atravessa todas."
         description="O mesmo objetivo visto do dia, do plano, do progresso e do review. Nenhum número aparece diferente em duas telas."
       />
 
