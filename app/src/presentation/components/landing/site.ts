@@ -1,3 +1,5 @@
+import { TRIAL_DAYS } from '@/domain/billing/trial'
+
 /**
  * Dados da landing que mudam sem mexer em componente: estágio do produto,
  * destinos dos CTAs, contato e redes. Quando o produto sair de "primeiras
@@ -26,5 +28,5 @@ export const CTA = {
   primary: { label: 'Começar grátis', to: '/entrar' },
   secondary: { label: 'Ver por dentro, sem criar conta', to: '/app' },
   badge: 'Acesso antecipado',
-  reassurance: 'Grátis, sem cartão. O primeiro plano fica pronto em dois minutos.',
+  reassurance: `Grátis, sem cartão, com ${TRIAL_DAYS} dias de PRO. O primeiro plano fica pronto em dois minutos.`,
 } as const
