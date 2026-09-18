@@ -40,6 +40,7 @@ import { STAGE_STATUSES, type PlanStage } from '@/domain/entities/plan-stage'
 import { PRIORITIES } from '@/domain/entities/priority'
 import { normalizeRestWeekdays } from '@/domain/entities/momentum'
 import { PROFILE_VISIBILITIES, type Profile } from '@/domain/entities/profile'
+import { normalizeStatus } from '@/domain/entities/profile-banner'
 import { REVIEW_STEPS, type WeeklyReview } from '@/domain/entities/weekly-review'
 import { ParseError } from '@/shared/errors'
 
@@ -105,6 +106,10 @@ const profileRowSchema = z.object({
   plan: z.enum(PLAN_TIERS).nullish(),
   // Base anterior à 0018 responde sem a coluna: sem descanso marcado.
   rest_weekdays: z.array(z.number().int()).nullish(),
+  // 0035: status e capa. Base anterior responde sem as colunas.
+  status_emoji: z.string().nullish(),
+  status_text: z.string().nullish(),
+  banner: z.string().nullish(),
   created_at: z.string(),
 })
 
@@ -212,6 +217,8 @@ export function toProfile(row: unknown): Profile {
     visibility: parsed.profile_visibility ?? 'privado',
     plan: parsed.plan ?? 'free',
     restWeekdays: normalizeRestWeekdays(parsed.rest_weekdays ?? []),
+    status: normalizeStatus({ emoji: parsed.status_emoji ?? null, text: parsed.status_text ?? null }),
+    banner: parsed.banner ?? null,
     createdAt: new Date(parsed.created_at),
   }
 }

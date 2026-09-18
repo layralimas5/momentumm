@@ -118,6 +118,7 @@ const SCREENS: readonly Screen[] = [
     description:
       'Não é rede social: é o painel da sua evolução. Nível, XP da semana, conquistas, semanas em evolução e o Momentumm, tudo a partir do que você mesmo registrou.',
     points: [
+      'Capa e status do momento, do seu jeito: "🔥 Semana de foco"',
       'Nível e XP crescem com dias de movimento, não com volume',
       'Conquistas por constância, não por perfeição',
       'Compartilhe o Momentumm em card de story quando quiser',

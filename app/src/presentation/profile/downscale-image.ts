@@ -35,6 +35,56 @@ export async function downscaleToAvatar(file: File): Promise<string> {
   }
 }
 
+/** A capa é larga e baixa: 1024x360 cobre a largura do card em tela retina. */
+export const BANNER_WIDTH = 1024
+export const BANNER_HEIGHT = 360
+
+export async function downscaleToBanner(file: File): Promise<string> {
+  if (!file.type.startsWith('image/')) {
+    throw new DomainError('Esse arquivo não é uma imagem.')
+  }
+  if (file.size > MAX_BYTES) {
+    throw new DomainError('Essa imagem é grande demais. Tenta uma foto menor.')
+  }
+
+  const url = URL.createObjectURL(file)
+  try {
+    const image = await loadImage(url)
+    return cropCover(image, BANNER_WIDTH, BANNER_HEIGHT)
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
+/** Recorte pelo centro na proporção pedida, como `object-fit: cover`. */
+function cropCover(image: HTMLImageElement, width: number, height: number): string {
+  const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight)
+  const sourceWidth = width / scale
+  const sourceHeight = height / scale
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+
+  const ctx = canvas.getContext('2d')
+  if (!ctx) {
+    throw new DomainError('Este navegador não conseguiu preparar a imagem.')
+  }
+
+  ctx.drawImage(
+    image,
+    (image.naturalWidth - sourceWidth) / 2,
+    (image.naturalHeight - sourceHeight) / 2,
+    sourceWidth,
+    sourceHeight,
+    0,
+    0,
+    width,
+    height,
+  )
+
+  return canvas.toDataURL('image/jpeg', QUALITY)
+}
+
 /**
  * Recorte quadrado pelo centro.
  *

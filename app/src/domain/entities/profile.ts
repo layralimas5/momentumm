@@ -2,6 +2,7 @@ import { DomainError } from '@/shared/errors'
 import type { ActivityVisibility } from './activity'
 import { MAX_REST_WEEKDAYS, normalizeRestWeekdays } from './momentum'
 import type { PlanTier } from './plan'
+import type { ProfileStatus } from './profile-banner'
 
 /**
  * Quem enxerga o teu perfil.
@@ -46,6 +47,10 @@ export interface Profile {
   readonly visibility: ProfileVisibility
   /** Plano da conta. Decide limites, nunca acesso às telas. */
   readonly plan: PlanTier
+  /** Um emoji e uma frase curta sobre o momento: "🔥 Semana de foco". */
+  readonly status: ProfileStatus | null
+  /** Capa atrás do avatar: chave de preset ou foto em data URL. `null` usa o preset padrão. */
+  readonly banner: string | null
   /**
    * Dias da semana de descanso planejado (0 = domingo). Vazio é o padrão:
    * ninguém nasce com folga marcada, e o Momentumm só tira da conta o que a

@@ -19,12 +19,14 @@ const TONES: Record<Tone, string> = {
 interface PanelProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
   readonly tone?: Tone
   readonly glow?: boolean
+  /** Sem o padding padrão: pra conteúdo que encosta na borda (capa, imagem). */
+  readonly flush?: boolean
   readonly children: ReactNode
 }
 
-export function Panel({ tone = 'plain', glow = false, className, children, ...rest }: PanelProps) {
+export function Panel({ tone = 'plain', glow = false, flush = false, className, children, ...rest }: PanelProps) {
   return (
-    <section {...rest} className={cn(TONES[tone], glow && 'surface-brand-glow', 'p-5', className)}>
+    <section {...rest} className={cn(TONES[tone], glow && 'surface-brand-glow', flush ? 'overflow-hidden' : 'p-5', className)}>
       {children}
     </section>
   )

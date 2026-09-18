@@ -147,6 +147,8 @@ function seed(): DemoState {
     // o contrário do que o produto faz.
     visibility: 'privado',
     plan: 'free',
+    status: { emoji: '🔥', text: 'Semana de foco no treino' },
+    banner: 'aurora',
     restWeekdays: [],
     // Doze semanas atrás: a demo precisa ter história pra "12 semanas no
     // Momentumm" significar alguma coisa na tela.
