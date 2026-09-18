@@ -55,6 +55,11 @@ check('conta em teste continua PRO', (await one(`select plan from public.profile
 
 const owner = await one(`select plan, plan_courtesy_until from public.profiles where id = $1`, [legacyOwner])
 check('owner recebe cortesia permanente e segue PRO', owner.plan === 'pro' && owner.plan_courtesy_until !== null, JSON.stringify(owner))
+check('owner não recebe teste com prazo', (await q(`select 1 from public.plan_trials where user_id = $1`, [legacyOwner])).length === 0)
+await asUser(legacyOwner)
+const ownerSettled = await one(`select public.settle_my_plan() as r`)
+check('a tela do owner não vê aviso de prazo', ownerSettled.r.plan === 'pro' && ownerSettled.r.trial === null, JSON.stringify(ownerSettled.r))
+await asPostgres()
 
 t = await one(`select status from public.plan_trials where user_id = $1`, [legacySubscriber])
 check('quem já paga tem o teste marcado como convertido e segue PRO', t.status === 'convertido' && (await one(`select plan from public.profiles where id = $1`, [legacySubscriber])).plan === 'pro', JSON.stringify(t))

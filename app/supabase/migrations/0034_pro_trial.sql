@@ -327,6 +327,15 @@ begin
 
   current_plan := public.sync_plan_for_user(me);
 
+  -- Com cortesia valendo, o teste não é o que dá o PRO: a tela não deve
+  -- avisar prazo nenhum pra quem opera o produto.
+  if exists (
+    select 1 from public.profiles p
+     where p.id = me and p.plan_courtesy_until is not null and p.plan_courtesy_until > now()
+  ) then
+    return jsonb_build_object('plan', current_plan, 'trial', null);
+  end if;
+
   select * into t from public.plan_trials where user_id = me;
 
   return jsonb_build_object(
@@ -378,6 +387,7 @@ insert into public.plan_trials (user_id, started_at, ends_at)
 select p.id, now(), now() + make_interval(days => public.trial_days())
   from public.profiles p
  where not exists (select 1 from public.plan_trials t where t.user_id = p.id)
+   and (p.plan_courtesy_until is null or p.plan_courtesy_until <= now())
 on conflict (user_id) do nothing;
 
 -- Acerta o plano de todo mundo uma vez (o trigger já cuidou de quem recebeu teste agora).
