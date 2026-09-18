@@ -9,13 +9,13 @@ import { CTA } from './site'
  */
 export function FinalCta() {
   return (
-    <section id="comecar" className="scroll-mt-20 bg-brand-hi">
+    <section id="comecar" className="scroll-mt-20 border-t border-line bg-surface">
       <div className="mx-auto max-w-5xl px-4 py-20 sm:py-28">
         <Reveal>
-          <div className="surface-brand edge-light surface-brand-glow relative overflow-hidden rounded-card px-6 py-14 text-center sm:px-12 sm:py-20">
+          <div className="surface-brand edge-light relative overflow-hidden rounded-card px-6 py-14 text-center sm:px-12 sm:py-20">
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute -top-32 left-1/2 size-96 -translate-x-1/2 rounded-full bg-brand/25 blur-[100px]"
+              className="pointer-events-none absolute -top-32 left-1/2 size-96 -translate-x-1/2 rounded-full bg-brand/15 blur-[100px]"
             />
             <div className="relative">
               <h2 className="text-balance text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
