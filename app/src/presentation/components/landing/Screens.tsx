@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useId, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
@@ -13,6 +14,7 @@ import {
 import { PhoneMockup } from './PhoneMockup'
 import { Reveal } from './Reveal'
 import { Section, SectionHeading } from './Section'
+import { CTA } from './site'
 
 /**
  * As seis telas do ciclo, uma por vez. As abas são botões de verdade com
@@ -236,6 +238,20 @@ export function Screens() {
           </div>
         </Reveal>
       </div>
+
+      {/* O botão mora aqui, no fim das telas: quem acabou de ver o app é quem
+          quer abrir o próprio. Uma faixa solta entre seções era só mais rolagem. */}
+      <Reveal>
+        <div className="mt-12 flex flex-col items-center justify-center gap-4 text-center sm:flex-row sm:gap-6">
+          <p className="text-base font-medium text-white sm:text-lg">Quer ver essas telas com o seu objetivo?</p>
+          <Link
+            to={CTA.primary.to}
+            className="inline-flex h-13 shrink-0 items-center justify-center rounded-full bg-white px-8 text-base font-medium text-brand-deep transition-colors hover:bg-white/90"
+          >
+            {CTA.primary.label}
+          </Link>
+        </div>
+      </Reveal>
     </Section>
   )
 }

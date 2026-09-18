@@ -182,17 +182,29 @@ export function Hero() {
           <p className="mt-1 text-sm text-ink-faint">
             de estudo e treino a concurso e projeto pessoal
           </p>
-          <ul className="mt-7 flex flex-wrap items-center justify-center gap-x-9 gap-y-4">
-            {AREAS.map((area) => (
-              <li
-                key={area.label}
-                className="inline-flex items-center gap-2 text-base font-medium text-ink-muted transition-colors hover:text-ink"
-              >
-                <Icon name={area.icon} className="size-5" />
-                {area.label}
-              </li>
-            ))}
-          </ul>
+          {/*
+            Uma fileira só, correndo pra esquerda sem fim: cabe em qualquer
+            largura sem virar pilha de ícones. A lista é duplicada e o
+            deslocamento é de metade da faixa, a mesma esteira dos depoimentos.
+            Quem prefere menos movimento vê a fileira parada.
+          */}
+          <div className="marquee-fade mt-7 overflow-hidden" aria-label="Áreas que o Momentumm atende">
+            <ul className="flex w-max animate-marquee [animation-duration:28s] motion-reduce:animate-none">
+              {[0, 1].map((copy) => (
+                <li key={copy} aria-hidden={copy === 1} className="flex shrink-0 items-center gap-x-10 pr-10">
+                  {AREAS.map((area) => (
+                    <span
+                      key={area.label}
+                      className="inline-flex shrink-0 items-center gap-2 text-base font-medium whitespace-nowrap text-ink-muted"
+                    >
+                      <Icon name={area.icon} className="size-5" />
+                      {area.label}
+                    </span>
+                  ))}
+                </li>
+              ))}
+            </ul>
+          </div>
         </motion.div>
       </div>
     </section>
