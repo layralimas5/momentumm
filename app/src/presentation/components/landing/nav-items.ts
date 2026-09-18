@@ -42,11 +42,6 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         href: '/#ia',
       },
       {
-        label: 'Por que é diferente',
-        description: 'Contra Notion, agenda, lista e habit tracker',
-        href: '/#comparacao',
-      },
-      {
         label: 'Por que confiar',
         description: 'O que sustenta a promessa, sem depoimento inventado',
         href: '/#confianca',

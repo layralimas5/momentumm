@@ -1,4 +1,3 @@
-import { Comparison } from '@/presentation/components/landing/Comparison'
 import { Faq } from '@/presentation/components/landing/Faq'
 import { FinalCta } from '@/presentation/components/landing/FinalCta'
 import { Hero } from '@/presentation/components/landing/Hero'
@@ -11,7 +10,6 @@ import { Screens } from '@/presentation/components/landing/Screens'
 import { SiteFooter } from '@/presentation/components/landing/SiteFooter'
 import { SiteHeader } from '@/presentation/components/landing/SiteHeader'
 import { StickyCta } from '@/presentation/components/landing/StickyCta'
-import { Testimonials } from '@/presentation/components/landing/Testimonials'
 import { Trust } from '@/presentation/components/landing/Trust'
 
 /**
@@ -28,8 +26,8 @@ import { Trust } from '@/presentation/components/landing/Trust'
  * quem se convence nas telas ou no score não deveria precisar rolar até o
  * fim. No celular, `StickyCta` faz o mesmo papel de forma permanente.
  *
- * `Testimonials` é vitrine (ver testimonials-data.ts) até haver usuários pra
- * citar; `Trust` segue sendo prova de método, que não depende disso.
+ * Sem depoimentos até existirem relatos reais: depoimento de vitrine numa
+ * página que vende assinatura custa mais confiança do que rende.
  */
 export function LandingPage() {
   return (
@@ -45,13 +43,11 @@ export function LandingPage() {
 
       <main id="conteudo">
         <Hero />
-        <Testimonials />
         <Problem />
         <Method />
         <Screens />
         <MomentumScore />
         <MomentumAi />
-        <Comparison />
         <Trust />
         <Pricing />
         <Faq />

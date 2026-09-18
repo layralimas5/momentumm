@@ -12,7 +12,6 @@ const PRODUCT = [
 ] as const
 
 const RESOURCES = [
-  { label: 'Depoimentos', href: '/#depoimentos' },
   { label: 'Ferramentas grátis', href: '/ferramentas' },
   { label: 'Entrar', href: '/entrar' },
 ] as const

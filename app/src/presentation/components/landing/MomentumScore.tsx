@@ -103,7 +103,9 @@ export function MomentumScore() {
               ))}
             </ul>
 
-            <p className="mt-6 text-xs text-ink-faint">
+            <ScoreSparkline />
+
+            <p className="mt-5 text-xs text-ink-faint">
               Os pontos por fator somam exatamente o score. Um detalhamento que dá 47 embaixo de
               um 46 ensina a desconfiar da conta.
             </p>
@@ -137,5 +139,62 @@ export function MomentumScore() {
         </p>
       </Reveal>
     </Section>
+  )
+}
+
+/*
+  Catorze dias, um deles perdido. É a prova visual da regra "falhar um dia
+  custa pouco e nunca zera": a linha cai no dia 9 e está de volta no 11. SVG
+  inline, sem biblioteca, porque são catorze pontos e uma marca.
+*/
+const SERIES = [61, 63, 64, 66, 67, 69, 70, 71, 64, 66, 70, 71, 72, 72] as const
+const LOST_DAY = 8
+
+function ScoreSparkline() {
+  const width = 320
+  const height = 88
+  const pad = 8
+  const min = 56
+  const max = 76
+  const x = (index: number) => pad + (index * (width - pad * 2)) / (SERIES.length - 1)
+  const y = (value: number) => height - pad - ((value - min) * (height - pad * 2)) / (max - min)
+  const path = SERIES.map((value, index) => `${index === 0 ? 'M' : 'L'}${x(index).toFixed(1)} ${y(value).toFixed(1)}`).join(' ')
+  const lost = SERIES[LOST_DAY] ?? min
+
+  return (
+    <figure className="mt-7">
+      <div className="flex items-baseline justify-between text-xs">
+        <span className="font-medium text-ink">Últimos 14 dias</span>
+        <span className="text-ink-faint">um dia perdido, dois pra voltar</span>
+      </div>
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Linha do score em 14 dias: cai no dia 9 e volta no dia 11" className="mt-2 h-auto w-full">
+        <defs>
+          <linearGradient id="score-fill" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="var(--color-brand)" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="var(--color-brand)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={`${path} L${x(SERIES.length - 1).toFixed(1)} ${height} L${x(0)} ${height} Z`} fill="url(#score-fill)" />
+        <motion.path
+          d={path}
+          fill="none"
+          stroke="var(--color-brand-hi)"
+          strokeWidth="2"
+          strokeLinecap="round"
+          initial={{ pathLength: 0 }}
+          whileInView={{ pathLength: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+        />
+        <circle cx={x(LOST_DAY)} cy={y(lost)} r="4" fill="var(--color-canvas)" stroke="var(--color-flame)" strokeWidth="2" />
+        <circle cx={x(SERIES.length - 1)} cy={y(SERIES[SERIES.length - 1] ?? max)} r="3.5" fill="var(--color-brand-hi)" />
+      </svg>
+      <figcaption className="mt-1 flex justify-between text-[11px] text-ink-faint">
+        <span>
+          <span className="inline-block size-2 rounded-full border-2 border-flame align-middle" /> dia 9: dia perdido
+        </span>
+        <span>dia 11: de volta a 70</span>
+      </figcaption>
+    </figure>
   )
 }

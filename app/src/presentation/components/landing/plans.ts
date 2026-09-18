@@ -105,7 +105,7 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
       'Compartilhamento com todos os modelos e exportação de dados',
       'Lembretes personalizados, temas e preferências',
     ],
-    cta: 'Começar com PRO',
+    cta: `Testar o PRO por ${TRIAL_DAYS} dias`,
     highlight: true,
   },
 ]

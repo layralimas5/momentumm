@@ -1,23 +1,25 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { TRIAL_DAYS } from '@/domain/billing/trial'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
 import { cn } from '@/shared/lib/cn'
-import { FloatingCard, MinutesCard, ScoreCard, TodayCard, WeekCard } from './HeroCards'
+import { FloatingCard } from './HeroCards'
+import { PhoneMockup } from './PhoneMockup'
 import { CTA } from './site'
-import { TESTIMONIALS_BOTTOM, TESTIMONIALS_TOP } from './testimonials-data'
 
 /**
- * A promessa no centro, com recortes do app flutuando em volta: o score, a
- * semana, os minutos e o dia de hoje. Em vez de um celular de lado, a pessoa
- * vê de cara os quatro números que o produto entrega, cada um num card
- * inclinado como se tivesse sido tirado da tela. No tablet os cards descem
- * pra uma grade, e no celular somem: ali eles só empurravam o CTA pra baixo.
+ * O hero.
+ *
+ * Título, uma frase, dois botões e o app de verdade logo abaixo: a captura da
+ * tela Hoje, a mesma que a pessoa vai ver ao entrar. Nada de card desenhado
+ * com número inventado. Os dois cards flutuantes ao lado do celular são
+ * lidos da mesma captura (score e sequência), e somem no celular, onde só
+ * empurrariam o botão pra baixo.
  */
+
 const LINES = ['Objetivo vira plano.', 'Plano vira o que você faz hoje.'] as const
 
 const EASE = [0.22, 1, 0.36, 1] as const
-
-const AVATARS = [...TESTIMONIALS_TOP.slice(0, 2), ...TESTIMONIALS_BOTTOM.slice(0, 2)]
 
 /** A fila de "logos" do hero: aqui são as áreas que o app atende, cada uma com o próprio ícone. */
 const AREAS: readonly { readonly label: string; readonly icon: IconName }[] = [
@@ -28,101 +30,41 @@ const AREAS: readonly { readonly label: string; readonly icon: IconName }[] = [
   { label: 'Concurso', icon: 'trofeu' },
   { label: 'Projeto pessoal', icon: 'objetivo' },
   { label: 'Idioma', icon: 'globo' },
+  { label: 'Carreira', icon: 'plano' },
 ]
-
-const CARDS = [
-  {
-    key: 'score',
-    node: <ScoreCard />,
-    tilt: -6,
-    delay: 0.5,
-    float: 'left-4 top-32 2xl:left-8',
-  },
-  {
-    key: 'week',
-    node: <WeekCard />,
-    tilt: 4,
-    delay: 0.65,
-    float: 'left-10 top-[24rem] 2xl:left-24',
-  },
-  {
-    key: 'minutes',
-    node: <MinutesCard />,
-    tilt: 5,
-    delay: 0.55,
-    float: 'right-4 top-28 2xl:right-8',
-  },
-  {
-    key: 'today',
-    node: <TodayCard />,
-    tilt: -4,
-    delay: 0.7,
-    float: 'right-12 top-[23.5rem] 2xl:right-28',
-  },
-] as const
 
 export function Hero() {
   return (
     <section id="home" className="relative overflow-hidden">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-40 left-1/2 size-[48rem] -translate-x-1/2 rounded-full bg-brand/20 blur-[120px]"
+        className="pointer-events-none absolute -top-40 left-1/2 size-[48rem] -translate-x-1/2 rounded-full bg-brand/15 blur-[120px]"
       />
 
-      <div className="relative mx-auto max-w-[90rem] px-4 pb-16 pt-32 sm:px-8 sm:pt-40 lg:pb-24 xl:pt-44">
-        {CARDS.map((card) => (
-          <FloatingCard
-            key={card.key}
-            tilt={card.tilt}
-            delay={card.delay}
-            className={cn('absolute hidden xl:block', card.float)}
-          >
-            {card.node}
-          </FloatingCard>
-        ))}
-
+      <div className="relative mx-auto max-w-[90rem] px-4 pb-16 pt-28 sm:px-8 sm:pt-36 lg:pb-24 xl:pt-40">
         <div className="mx-auto max-w-3xl text-center">
           <motion.p
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="inline-flex items-center gap-3 rounded-full border border-line bg-surface/80 py-1.5 pl-1.5 pr-4 text-sm text-ink-muted backdrop-blur"
+            className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/80 px-3.5 py-1.5 text-sm text-ink-muted backdrop-blur"
           >
-            <span className="flex -space-x-2">
-              {AVATARS.map((person) => (
-                <img
-                  key={person.name}
-                  src={person.photo}
-                  alt=""
-                  width={28}
-                  height={28}
-                  decoding="async"
-                  className="size-7 rounded-full object-cover ring-2 ring-canvas"
-                />
-              ))}
-            </span>
+            <Icon name="raio" className="size-3.5 text-brand-hi" />
             <span>
-              <span className="font-medium text-ink">{CTA.badge}</span>: as primeiras pessoas já
-              estão dentro
+              <span className="font-medium text-ink">{TRIAL_DAYS} dias de PRO grátis</span>, sem cartão
             </span>
           </motion.p>
 
-          <h1 className="mt-7 text-balance text-4xl font-semibold tracking-tight text-ink sm:text-5xl xl:text-7xl">
+          <h1 className="mt-7 text-balance text-4xl font-semibold tracking-tight text-ink sm:text-5xl xl:text-6xl">
             {LINES.map((line, index) => (
               <motion.span
                 key={line}
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.08, ease: EASE }}
-                className="block"
+                className={cn('block', index === LINES.length - 1 && 'text-brand-hi')}
               >
-                {index === LINES.length - 1 ? (
-                  <span className="bg-gradient-to-r from-brand-hi to-brand-ink bg-clip-text text-transparent">
-                    {line}
-                  </span>
-                ) : (
-                  line
-                )}
+                {line}
               </motion.span>
             ))}
           </h1>
@@ -131,10 +73,10 @@ export function Hero() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="mx-auto mt-6 max-w-2xl text-pretty text-lg text-ink-muted xl:text-xl"
+            className="mx-auto mt-6 max-w-[560px] text-pretty text-lg text-ink-muted"
           >
-            Diga o que quer alcançar. O Momentumm monta o plano, te entrega a ação de hoje e ajusta
-            o caminho quando a semana não sai como o planejado.
+            O Momentumm transforma um objetivo com prazo em ações diárias, mede se o seu ritmo está de
+            pé e ajusta o plano quando ele deixa de funcionar.
           </motion.p>
 
           <motion.div
@@ -145,51 +87,78 @@ export function Hero() {
           >
             <Link
               to={CTA.primary.to}
-              className="inline-flex h-13 w-full max-w-xs items-center justify-center gap-2 rounded-full bg-brand px-7 font-medium text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-hi sm:w-auto"
+              className="inline-flex h-12 w-full max-w-xs items-center justify-center gap-2 rounded-full bg-brand px-7 font-medium text-white transition-colors hover:bg-brand-hi sm:w-auto"
             >
               {CTA.primary.label}
-              <ArrowIcon direction="up" />
             </Link>
 
             <Link
               to={CTA.secondary.to}
-              className="inline-flex h-13 w-full max-w-xs items-center justify-center gap-2 rounded-full border border-line-hi bg-surface/80 px-7 font-medium text-ink backdrop-blur transition-colors hover:bg-surface-hi sm:w-auto"
+              className="inline-flex h-12 w-full max-w-xs items-center justify-center gap-2 rounded-full border border-line-hi px-7 font-medium text-ink transition-colors hover:bg-surface-hi sm:w-auto"
             >
-              Ver por dentro
-              <ArrowIcon direction="down" />
+              {CTA.secondary.label}
+              <ArrowIcon />
             </Link>
           </motion.div>
 
           <p className="mt-6 text-sm text-ink-faint">{CTA.reassurance}</p>
         </div>
 
-        {/* No tablet os cards viram grade de quatro; no celular somem, que ali eles só empurram o CTA pra baixo. */}
-        <div className="mt-14 hidden grid-cols-4 justify-items-center gap-5 lg:grid xl:hidden">
-          {CARDS.map((card) => (
-            <FloatingCard key={card.key} tilt={card.tilt / 2} delay={card.delay}>
-              {card.node}
-            </FloatingCard>
-          ))}
-        </div>
+        {/* O app de verdade, no centro. Os cards ao lado leem a mesma captura. */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.5, ease: EASE }}
+          className="relative mx-auto mt-14 max-w-3xl sm:mt-16"
+        >
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-16 top-1/3 h-64 rounded-full bg-brand/25 blur-3xl"
+          />
+          <PhoneMockup className="relative" flush>
+            <img
+              src="/telas/hoje.webp"
+              alt="Tela Hoje do Momentumm: check-in do dia, prioridade principal e Dia Adaptável"
+              width={780}
+              height={1688}
+              decoding="async"
+              fetchPriority="high"
+              className="block h-full w-full object-cover object-top"
+            />
+          </PhoneMockup>
+
+          <FloatingCard tilt={-4} delay={0.8} className="absolute left-0 top-24 hidden w-44 lg:block xl:left-12">
+            <p className="text-[11px] font-medium tracking-wide text-ink-faint uppercase">Momentumm</p>
+            <p className="tabular mt-1 text-3xl font-semibold text-ink">
+              58<span className="text-base text-ink-faint">/100</span>
+            </p>
+            <p className="mt-1 inline-flex rounded-full border border-brand/40 bg-brand-dim/50 px-2 py-0.5 text-xs font-medium text-brand-ink">
+              Constante
+            </p>
+          </FloatingCard>
+
+          <FloatingCard tilt={3} delay={0.95} className="absolute right-0 top-56 hidden w-44 lg:block xl:right-12">
+            <p className="text-[11px] font-medium tracking-wide text-ink-faint uppercase">Hoje</p>
+            <p className="mt-1 text-sm font-medium text-ink">Treinar 45 minutos</p>
+            <p className="mt-1 text-xs text-ink-faint">Prioridade principal · versão mínima: 10 min</p>
+          </FloatingCard>
+        </motion.div>
 
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.9 }}
-          className="mx-auto mt-16 max-w-4xl text-center xl:mt-24"
+          className="mx-auto mt-16 max-w-4xl text-center xl:mt-20"
         >
           <p className="text-sm font-medium text-ink">Serve pra qualquer objetivo com prazo</p>
-          <p className="mt-1 text-sm text-ink-faint">
-            de estudo e treino a concurso e projeto pessoal
-          </p>
           {/*
             Uma fileira só, correndo pra esquerda sem fim: cabe em qualquer
             largura sem virar pilha de ícones. A lista é duplicada e o
             deslocamento é de metade da faixa, a mesma esteira dos depoimentos.
             Quem prefere menos movimento vê a fileira parada.
           */}
-          <div className="marquee-fade mt-7 overflow-hidden" aria-label="Áreas que o Momentumm atende">
-            <ul className="flex w-max animate-marquee [animation-duration:28s] motion-reduce:animate-none">
+          <div className="marquee-fade mt-6 overflow-hidden" aria-label="Áreas que o Momentumm atende">
+            <ul className="flex w-max animate-marquee [animation-duration:32s] motion-reduce:animate-none">
               {[0, 1].map((copy) => (
                 <li key={copy} aria-hidden={copy === 1} className="flex shrink-0 items-center gap-x-10 pr-10">
                   {AREAS.map((area) => (
@@ -211,12 +180,12 @@ export function Hero() {
   )
 }
 
-function ArrowIcon({ direction }: { readonly direction: 'up' | 'down' }) {
+function ArrowIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
       aria-hidden="true"
-      className={cn('size-4 shrink-0', direction === 'down' && 'rotate-90')}
+      className="size-4 shrink-0"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.5"
