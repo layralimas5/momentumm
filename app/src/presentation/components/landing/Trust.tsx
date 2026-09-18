@@ -50,7 +50,7 @@ export function Trust() {
       <ul className="mt-12 grid gap-4 sm:grid-cols-2">
         {GUARANTEES.map((item, index) => (
           <Reveal key={item.title} delay={index * 0.05} className="h-full">
-            <li className="flex h-full gap-4 rounded-card border border-line bg-surface p-6">
+            <li className="pulse-on-hover flex h-full gap-4 rounded-card border border-line bg-surface p-6">
               <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-dim text-brand-hi">
                 <Icon name={item.icon} className="size-5" />
               </span>

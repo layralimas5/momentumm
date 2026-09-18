@@ -48,7 +48,7 @@ export function MomentumAi() {
       />
 
       <Reveal>
-        <div className="mx-auto mt-12 flex max-w-3xl flex-col gap-6 rounded-card border border-line bg-canvas p-4 sm:p-6">
+        <div className="pulse-on-hover mx-auto mt-12 flex max-w-3xl flex-col gap-6 rounded-card border border-line bg-canvas p-4 sm:p-6">
           {EXCHANGES.map((exchange, index) => (
             <div key={exchange.kind} className="flex flex-col gap-3">
               <p className="text-center text-[11px] font-medium tracking-wide text-ink-faint uppercase">

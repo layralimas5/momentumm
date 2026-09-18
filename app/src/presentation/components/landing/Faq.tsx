@@ -63,7 +63,7 @@ export function Faq() {
       <div className="mx-auto mt-12 flex max-w-2xl flex-col gap-3">
         {QUESTIONS.map((item, index) => (
           <Reveal key={item.question} delay={index * 0.03}>
-            <details className="group rounded-card border border-line bg-surface transition-colors open:border-line-hi open:bg-surface-hi">
+            <details className="group pulse-on-hover rounded-card border border-line bg-surface transition-colors open:border-line-hi open:bg-surface-hi">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-left font-medium text-ink marker:hidden">
                 {item.question}
                 <span
