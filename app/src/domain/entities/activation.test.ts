@@ -173,9 +173,6 @@ describe('buildActivation — o plano que cabe', () => {
     expect(plan.ambition.message).toBeNull()
   })
 
-  it('o hábito nasce nos dias que a pessoa marcou', () => {
-    expect(plan.plan.habits[0]?.weekdays).toEqual([1, 2, 3, 4, 5])
-  })
 })
 
 describe('buildActivation — ambição maior que a disponibilidade', () => {

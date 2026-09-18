@@ -26,18 +26,21 @@ function input(overrides: Partial<PlanInput> = {}): PlanInput {
 }
 
 describe('buildPlan', () => {
-  it('área criada pela pessoa gera ações e hábito a partir do objetivo escrito', () => {
+  it('área criada pela pessoa gera ações a partir do objetivo escrito', () => {
     const plan = buildPlan(
       input({ axis: 'carreira', axisLabel: 'Carreira', title: 'Ter 30 leads do Momentumm', target: 600 }),
     )
-    expect(plan.habits[0]?.name).toBe('Trabalhar pra ter 30 leads do Momentumm')
     expect(plan.tasks.map((task) => task.title)).toContain('Dar o primeiro passo pra ter 30 leads do Momentumm')
     expect(plan.tasks.map((task) => task.title)).toContain('Listar o que falta pra ter 30 leads do Momentumm')
   })
 
   it('sem objetivo em palavras, a área criada usa o próprio nome', () => {
     const plan = buildPlan(input({ axis: 'carreira', axisLabel: 'Carreira', title: 'Carreira: primeiro passo' }))
-    expect(plan.habits[0]?.name).toBe('Dedicar tempo a carreira')
+    expect(plan.tasks.map((task) => task.title)).toContain('Fazer a primeira sessão de carreira')
+  })
+
+  it('o plano não cria hábito: hábito é escolha da pessoa, não derivado do objetivo', () => {
+    expect('habits' in buildPlan(input())).toBe(false)
   })
 
   it('divide o alvo pelas sessões que cabem no prazo', () => {
@@ -60,22 +63,6 @@ describe('buildPlan', () => {
   it('só existe uma prioridade principal no plano', () => {
     const main = buildPlan(input()).tasks.filter((task) => task.isMainPriority)
     expect(main).toHaveLength(1)
-  })
-
-  it('o hábito vem com versão mínima menor que o alvo', () => {
-    const [habit] = buildPlan(input()).habits
-    expect(habit?.minimalTarget).toBeGreaterThan(0)
-    expect(habit?.minimalTarget).toBeLessThanOrEqual(habit?.target ?? 0)
-  })
-
-  it('cinco dias por semana viram os dias úteis', () => {
-    const [habit] = buildPlan(input({ daysPerWeek: 5 })).habits
-    expect(habit?.weekdays).toEqual([1, 2, 3, 4, 5])
-  })
-
-  it('todo dia é representado por lista vazia, como o hábito já faz', () => {
-    const [habit] = buildPlan(input({ daysPerWeek: 7 })).habits
-    expect(habit?.weekdays).toEqual([])
   })
 
   it('plano folgado não gera aviso', () => {
