@@ -19,11 +19,12 @@ export function FinalCta() {
             />
             <div className="relative">
               <h2 className="text-balance text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-                Você não precisa resolver o objetivo inteiro hoje.
+                Você diz quanto tempo tem livre por dia. A gente monta o plano.
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-pretty text-lg text-ink-muted">
-                Precisa do próximo passo, do tamanho do dia que você tem. O Momentumm monta o plano,
-                protege o seu ritmo e ajusta quando a semana muda.
+                Coloca a sua meta e os minutos que sobram no seu dia. O Momentumm transforma isso em
+                etapas e ações, te mostra só o próximo passo e ajusta quando a semana não sai como o
+                planejado.
               </p>
 
               <div className="mt-9 flex flex-col items-center gap-4">
