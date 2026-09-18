@@ -2,7 +2,6 @@ import { Comparison } from '@/presentation/components/landing/Comparison'
 import { Faq } from '@/presentation/components/landing/Faq'
 import { FinalCta } from '@/presentation/components/landing/FinalCta'
 import { Hero } from '@/presentation/components/landing/Hero'
-import { InlineCta } from '@/presentation/components/landing/InlineCta'
 import { Method } from '@/presentation/components/landing/Method'
 import { MomentumAi } from '@/presentation/components/landing/MomentumAi'
 import { MomentumScore } from '@/presentation/components/landing/MomentumScore'
@@ -50,7 +49,6 @@ export function LandingPage() {
         <Problem />
         <Method />
         <Screens />
-        <InlineCta prompt="Quer ver essas telas com o seu objetivo?" />
         <MomentumScore />
         <MomentumAi />
         <Comparison />
