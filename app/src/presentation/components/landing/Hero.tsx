@@ -75,8 +75,8 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="mx-auto mt-6 max-w-[560px] text-pretty text-lg text-ink-muted"
           >
-            O Momentumm transforma um objetivo com prazo em ações diárias, mede se o seu ritmo está de
-            pé e ajusta o plano quando ele deixa de funcionar.
+            Você diz o que quer alcançar e quanto tempo tem livre por dia. O Momentumm monta o
+            plano, te entrega a ação de hoje e ajusta quando a semana não sai como o planejado.
           </motion.p>
 
           <motion.div
