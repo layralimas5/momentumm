@@ -1,4 +1,5 @@
 import { formatBRL, monthlyEquivalentCents, PRO_PRICES, type BillingCycle } from '@/domain/billing/billing-plans'
+import { TRIAL_DAYS } from '@/domain/billing/trial'
 import { PLAN_LIMITS } from '@/domain/entities/plan'
 
 /**
@@ -47,7 +48,11 @@ function plural(count: number, singular: string, pluralForm: string): string {
   return `${count} ${count === 1 ? singular : pluralForm}`
 }
 
-const FREE_PRICE: Price = { amount: 'R$ 0', period: 'para sempre' }
+const FREE_PRICE: Price = {
+  amount: 'R$ 0',
+  period: 'para sempre',
+  savings: `${TRIAL_DAYS} dias de PRO inclusos`,
+}
 
 export const PRICING_PLANS: readonly PricingPlan[] = [
   {
@@ -55,9 +60,9 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
     badge: 'FREE',
     headline: 'Organize e execute',
     prices: { mensal: FREE_PRICE, anual: FREE_PRICE },
-    description:
-      'Cria o objetivo, organiza os hábitos, acompanha as ações do dia e vê o teu Momentumm Score de hoje. É o ciclo rodando, sem cartão.',
+    description: `Toda conta nova começa com ${TRIAL_DAYS} dias de PRO completo, sem cartão. Depois, o gratuito segue pra sempre: cria o objetivo, organiza os hábitos, acompanha as ações do dia e vê o teu Momentumm Score de hoje.`,
     features: [
+      `${TRIAL_DAYS} dias com tudo do PRO ao criar a conta, sem cartão e sem cobrança`,
       `Até ${plural(free.activeObjectives, 'objetivo ativo', 'objetivos ativos')} e ${plural(free.activeHabits, 'hábito ativo', 'hábitos ativos')}`,
       `${plural(free.activePlans, 'plano ativo', 'planos ativos')} por etapas`,
       `Até ${free.actionsPerDay} ações por dia no Hoje`,
