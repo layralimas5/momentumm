@@ -1,16 +1,8 @@
 import { Link } from 'react-router-dom'
-import { useId, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useId, useState, type KeyboardEvent } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
 import { cn } from '@/shared/lib/cn'
-import {
-  HabitsScreen,
-  ObjectivesScreen,
-  PlanScreen,
-  ProgressScreen,
-  ReviewScreen,
-  TodayScreen,
-} from './AppScreens'
 import { PhoneMockup } from './PhoneMockup'
 import { Reveal } from './Reveal'
 import { Section, SectionHeading } from './Section'
@@ -28,7 +20,8 @@ interface Screen {
   readonly title: string
   readonly description: string
   readonly points: readonly string[]
-  readonly render: () => ReactNode
+  /** Captura real do app, no celular, com os dados do modo demo: o que a landing mostra é o que existe. */
+  readonly image: string
 }
 
 const SCREENS: readonly Screen[] = [
@@ -45,7 +38,7 @@ const SCREENS: readonly Screen[] = [
       'Dia Adaptável: você diz quanto tempo tem e o plano encolhe, sem empilhar tudo em amanhã',
       'Modo Retomada: depois de uma pausa, até três passos pequenos pra voltar, sem encerrar nenhuma sequência',
     ],
-    render: () => <TodayScreen />,
+    image: '/telas/hoje.webp',
   },
   {
     id: 'objetivos',
@@ -59,7 +52,7 @@ const SCREENS: readonly Screen[] = [
       'Previsão condicional: "mantendo esse ritmo, fecha em..."',
       '"Trazer pra hoje" na próxima ação de qualquer objetivo',
     ],
-    render: () => <ObjectivesScreen />,
+    image: '/telas/objetivos.webp',
   },
   {
     id: 'habitos',
@@ -73,7 +66,7 @@ const SCREENS: readonly Screen[] = [
       'Vinculado ao objetivo e, se quiser, à etapa do plano',
       'Sequência conta dias cumpridos, não dias perfeitos',
     ],
-    render: () => <HabitsScreen />,
+    image: '/telas/habitos.webp',
   },
   {
     id: 'plano',
@@ -87,7 +80,7 @@ const SCREENS: readonly Screen[] = [
       'Gargalo detectado só onde alguma etapa já andou',
       'Caixa de entrada pra ação que ainda não tem objetivo',
     ],
-    render: () => <PlanScreen />,
+    image: '/telas/plano.webp',
   },
   {
     id: 'progresso',
@@ -101,7 +94,7 @@ const SCREENS: readonly Screen[] = [
       'Onde você avançou e o que precisa de atenção',
       'O próximo ajuste, com o botão que executa',
     ],
-    render: () => <ProgressScreen />,
+    image: '/telas/progresso.webp',
   },
   {
     id: 'review',
@@ -115,7 +108,7 @@ const SCREENS: readonly Screen[] = [
       'Prioridades da semana seguinte saem do review',
       'Fica separado do dia: relatório dentro do dia vira contabilidade',
     ],
-    render: () => <ReviewScreen />,
+    image: '/telas/review.webp',
   },
 ]
 
@@ -222,17 +215,22 @@ export function Screens() {
               aria-hidden="true"
               className="pointer-events-none absolute inset-x-10 top-1/2 h-56 -translate-y-1/2 rounded-full bg-black/30 blur-3xl"
             />
-            <PhoneMockup className="relative">
+            <PhoneMockup className="relative" flush>
               <AnimatePresence mode="wait" initial={false}>
-                <motion.div
+                <motion.img
                   key={active.id}
+                  src={active.image}
+                  alt={`Tela ${active.label} do Momentumm no celular`}
+                  width={780}
+                  height={1688}
+                  loading="lazy"
+                  decoding="async"
                   initial={{ opacity: 0, scale: 0.985 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.25, ease: EASE }}
-                >
-                  {active.render()}
-                </motion.div>
+                  className="block h-full w-full object-cover object-top"
+                />
               </AnimatePresence>
             </PhoneMockup>
           </div>

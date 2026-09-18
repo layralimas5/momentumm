@@ -88,7 +88,7 @@ export function Method() {
               <Reveal
                 delay={0.05}
                 className={cn(
-                  'relative flex gap-5 pl-16 md:w-1/2 md:pl-0',
+                  'group relative flex gap-5 pl-16 md:w-1/2 md:pl-0',
                   right ? 'md:ml-auto md:pl-14' : 'md:pr-14 md:text-right',
                 )}
               >
@@ -96,11 +96,17 @@ export function Method() {
                 <span
                   className={cn(
                     'absolute top-1 grid size-12 -translate-x-1/2 place-items-center rounded-full border border-brand/50 bg-canvas text-brand-hi shadow-glow',
+                    // Passar o mouse no passo acende o nó: fundo da marca, ícone
+                    // branco (contraste maior que preto sobre o roxo) e um pulso curto.
+                    'transition-colors duration-300 group-hover:border-brand group-hover:bg-brand group-hover:text-white',
                     'left-6 md:translate-x-0',
                     right ? 'md:-left-6' : 'md:left-auto md:-right-6',
                   )}
                 >
-                  <Icon name={step.icon} className="size-5" />
+                  {/* O pulso fica num filho: o pai já usa transform pra se posicionar na linha. */}
+                  <span className="grid size-full place-items-center rounded-full group-hover:animate-pulse-once motion-reduce:group-hover:animate-none">
+                    <Icon name={step.icon} className="size-5" />
+                  </span>
                 </span>
 
                 <div className="min-w-0 flex-1">
