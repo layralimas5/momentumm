@@ -3,18 +3,14 @@ import { motion } from 'framer-motion'
 import { TRIAL_DAYS } from '@/domain/billing/trial'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
 import { cn } from '@/shared/lib/cn'
-import { FloatingCard } from './HeroCards'
-import { PhoneMockup } from './PhoneMockup'
 import { CTA } from './site'
 
 /**
  * O hero.
  *
- * Título, uma frase, dois botões e o app de verdade logo abaixo: a captura da
- * tela Hoje, a mesma que a pessoa vai ver ao entrar. Nada de card desenhado
- * com número inventado. Os dois cards flutuantes ao lado do celular são
- * lidos da mesma captura (score e sequência), e somem no celular, onde só
- * empurrariam o botão pra baixo.
+ * Título, uma frase, dois botões e a esteira das áreas. O app de verdade
+ * aparece logo abaixo, na seção do Momentumm Score, onde o número na tela
+ * tem contexto; aqui em cima ele só empurrava o botão pra baixo.
  */
 
 const LINES = ['Objetivo vira plano.', 'Plano vira o que você faz hoje.'] as const
@@ -104,51 +100,11 @@ export function Hero() {
           <p className="mt-6 text-sm text-ink-faint">{CTA.reassurance}</p>
         </div>
 
-        {/* O app de verdade, no centro. Os cards ao lado leem a mesma captura. */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.5, ease: EASE }}
-          className="relative mx-auto mt-14 max-w-3xl sm:mt-16"
-        >
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-16 top-1/3 h-64 rounded-full bg-brand/25 blur-3xl"
-          />
-          <PhoneMockup className="relative" flush>
-            <img
-              src="/telas/hoje.webp"
-              alt="Tela Hoje do Momentumm: check-in do dia, prioridade principal e Dia Adaptável"
-              width={780}
-              height={1688}
-              decoding="async"
-              fetchPriority="high"
-              className="block h-full w-full object-cover object-top"
-            />
-          </PhoneMockup>
-
-          <FloatingCard tilt={-4} delay={0.8} className="absolute left-0 top-24 hidden w-44 lg:block xl:left-12">
-            <p className="text-[11px] font-medium tracking-wide text-ink-faint uppercase">Momentumm</p>
-            <p className="tabular mt-1 text-3xl font-semibold text-ink">
-              58<span className="text-base text-ink-faint">/100</span>
-            </p>
-            <p className="mt-1 inline-flex rounded-full border border-brand/40 bg-brand-dim/50 px-2 py-0.5 text-xs font-medium text-brand-ink">
-              Constante
-            </p>
-          </FloatingCard>
-
-          <FloatingCard tilt={3} delay={0.95} className="absolute right-0 top-56 hidden w-44 lg:block xl:right-12">
-            <p className="text-[11px] font-medium tracking-wide text-ink-faint uppercase">Hoje</p>
-            <p className="mt-1 text-sm font-medium text-ink">Treinar 45 minutos</p>
-            <p className="mt-1 text-xs text-ink-faint">Prioridade principal · versão mínima: 10 min</p>
-          </FloatingCard>
-        </motion.div>
-
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.9 }}
-          className="mx-auto mt-16 max-w-4xl text-center xl:mt-20"
+          className="mx-auto mt-14 max-w-4xl text-center"
         >
           <p className="text-sm font-medium text-ink">Serve pra qualquer objetivo com prazo</p>
           {/*
