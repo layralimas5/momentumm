@@ -64,6 +64,21 @@
      a segunda copia cair onde a primeira comecou, sem emenda. */
   --animate-marquee: marquee 60s linear infinite;
 
+  /* Um pulso só, curto: o nó "responde" ao mouse e para. */
+  --animate-pulse-once: pulse-once 0.55s cubic-bezier(0.22, 1, 0.36, 1) 1 both;
+
+  @keyframes pulse-once {
+    0% {
+      transform: scale(1);
+    }
+    45% {
+      transform: scale(1.14);
+    }
+    100% {
+      transform: scale(1.06);
+    }
+  }
+
   @keyframes marquee {
     from {
       transform: translateX(0);
