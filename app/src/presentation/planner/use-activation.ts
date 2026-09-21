@@ -13,6 +13,7 @@ import {
 } from '@/domain/entities/activation'
 import type { PlanDraft } from '@/domain/entities/plan-builder'
 import { toUserMessage } from '@/shared/errors'
+import { useAuth } from '@/presentation/auth/use-auth'
 import { usePlanner } from './use-planner'
 
 /**
@@ -28,10 +29,17 @@ import { usePlanner } from './use-planner'
  * metade, não dado de negócio, e gravar objetivo incompleto no Postgres
  * sujaria o progresso de quem só estava olhando. Fechar a aba no meio do
  * terceiro passo e voltar dois dias depois cai exatamente no terceiro passo.
+ *
+ * As chaves carregam o id da conta. Sem isso, "deixar pra depois" numa conta
+ * valia pra qualquer outra que entrasse no mesmo navegador, e a conta nova
+ * caía num dashboard vazio em vez do primeiro acesso.
  */
 
 const DRAFT_KEY = 'momentumm.activation.v1'
 const SKIPPED_KEY = 'momentumm.activation.skipped.v1'
+
+/** A rota do primeiro acesso. Todo `/app/*` cai aqui enquanto a conta está vazia. */
+export const ACTIVATION_PATH = '/app/comecar'
 
 export const ACTIVATION_STEPS = ['Área', 'Objetivo', 'Prazo', 'Tempo', 'Plano'] as const
 export const ACTIVATION_PLAN_STEP = ACTIVATION_STEPS.length - 1
@@ -84,14 +92,16 @@ export interface ActivationController {
 
 export function useActivation(): ActivationController {
   const planner = usePlanner()
+  const { user } = useAuth()
+  const userId = user?.id ?? null
 
-  const stored = useMemo(loadDraft, [])
+  const stored = useMemo(() => loadDraft(userId), [userId])
   const [step, setStep] = useState(stored?.step ?? 0)
   const [draft, setDraft] = useState<ActivationDraft>(stored?.draft ?? EMPTY_DRAFT)
   const [adjustment, setAdjustment] = useState<ActivationAdjustment | null>(
     stored?.adjustment ?? null,
   )
-  const [skipped, setSkipped] = useState(loadSkipped)
+  const [skipped, setSkipped] = useState(() => isActivationSkipped(userId))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -114,8 +124,8 @@ export function useActivation(): ActivationController {
   // Rascunho persistido a cada mudança: é o que faz "retomar" existir.
   useEffect(() => {
     if (draft.area === null && draft.goal.trim().length === 0) return
-    persistDraft({ step, draft, adjustment })
-  }, [step, draft, adjustment])
+    persistDraft(userId, { step, draft, adjustment })
+  }, [userId, step, draft, adjustment])
 
   const set = useCallback((changes: Partial<ActivationDraft>) => {
     setError(null)
@@ -187,13 +197,13 @@ export function useActivation(): ActivationController {
 
   const skip = useCallback(() => {
     setSkipped(true)
-    persistSkipped(true)
-  }, [])
+    persistSkipped(userId, true)
+  }, [userId])
 
   const resume = useCallback(() => {
     setSkipped(false)
-    persistSkipped(false)
-  }, [])
+    persistSkipped(userId, false)
+  }, [userId])
 
   const save = useCallback(async () => {
     if (!plan || !plan.ready) return false
@@ -224,8 +234,8 @@ export function useActivation(): ActivationController {
 
       track('onboarding_completed')
 
-      clearDraft()
-      persistSkipped(false)
+      clearDraft(userId)
+      persistSkipped(userId, false)
       return true
     } catch (cause) {
       setError(toUserMessage(cause))
@@ -233,7 +243,7 @@ export function useActivation(): ActivationController {
     } finally {
       setSaving(false)
     }
-  }, [plan, planner])
+  }, [plan, planner, userId])
 
   return {
     step,
@@ -298,9 +308,32 @@ interface StoredDraft {
   readonly adjustment: ActivationAdjustment | null
 }
 
-function loadDraft(): StoredDraft | null {
+function scopedKey(base: string, userId: string | null): string {
+  return userId ? `${base}:${userId}` : base
+}
+
+/**
+ * A pessoa deixou o primeiro acesso pra depois? Lê direto do armazenamento,
+ * sem instanciar o hook: é o que a casca do app consulta antes de decidir se
+ * a rota pedida pode abrir ou se ainda é hora do onboarding.
+ */
+export function isActivationSkipped(userId: string | null): boolean {
   try {
-    const raw = window.localStorage.getItem(DRAFT_KEY)
+    return window.localStorage.getItem(scopedKey(SKIPPED_KEY, userId)) === 'true'
+  } catch {
+    return false
+  }
+}
+
+/** Esquece rascunho e "pulado" da conta. Recomeçar do zero passa por aqui. */
+export function forgetActivation(userId: string | null): void {
+  clearDraft(userId)
+  persistSkipped(userId, false)
+}
+
+function loadDraft(userId: string | null): StoredDraft | null {
+  try {
+    const raw = window.localStorage.getItem(scopedKey(DRAFT_KEY, userId))
     if (!raw) return null
 
     const parsed: unknown = JSON.parse(raw)
@@ -321,34 +354,27 @@ function loadDraft(): StoredDraft | null {
   }
 }
 
-function persistDraft(value: StoredDraft): void {
+function persistDraft(userId: string | null, value: StoredDraft): void {
   try {
-    window.localStorage.setItem(DRAFT_KEY, JSON.stringify(value))
+    window.localStorage.setItem(scopedKey(DRAFT_KEY, userId), JSON.stringify(value))
   } catch {
     // Sem armazenamento o onboarding continua funcionando; só não retoma.
   }
 }
 
-function clearDraft(): void {
+function clearDraft(userId: string | null): void {
   try {
-    window.localStorage.removeItem(DRAFT_KEY)
+    window.localStorage.removeItem(scopedKey(DRAFT_KEY, userId))
   } catch {
     // Nada a fazer: o plano já foi salvo, que é o que importava.
   }
 }
 
-function loadSkipped(): boolean {
+function persistSkipped(userId: string | null, value: boolean): void {
   try {
-    return window.localStorage.getItem(SKIPPED_KEY) === 'true'
-  } catch {
-    return false
-  }
-}
-
-function persistSkipped(value: boolean): void {
-  try {
-    if (value) window.localStorage.setItem(SKIPPED_KEY, 'true')
-    else window.localStorage.removeItem(SKIPPED_KEY)
+    const key = scopedKey(SKIPPED_KEY, userId)
+    if (value) window.localStorage.setItem(key, 'true')
+    else window.localStorage.removeItem(key)
   } catch {
     // Sem armazenamento o onboarding reaparece na próxima sessão.
   }

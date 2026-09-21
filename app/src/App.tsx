@@ -20,6 +20,9 @@ const ToolsPage = lazy(() =>
 const LegalPage = lazy(() =>
   import('@/presentation/pages/LegalPage').then((m) => ({ default: m.LegalPage })),
 )
+const ActivationPage = lazy(() =>
+  import('@/presentation/pages/ActivationPage').then((m) => ({ default: m.ActivationPage })),
+)
 const DashboardPage = lazy(() =>
   import('@/presentation/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
 )
@@ -172,6 +175,8 @@ export function App() {
               }
             >
               <Route index element={<DashboardPage />} />
+              {/* Primeiro acesso: a casca manda toda conta vazia pra cá. */}
+              <Route path="comecar" element={<ActivationPage />} />
               <Route path="objetivos" element={<ObjectivesPage />} />
               <Route path="objetivos/:id" element={<ObjectiveDetailPage />} />
               <Route path="habitos" element={<HabitsPage />} />

@@ -17,7 +17,6 @@ import { InsightCard } from '@/presentation/components/dashboard/InsightCard'
 import { MomentumStrip } from '@/presentation/components/dashboard/MomentumStrip'
 import { NextUpCard } from '@/presentation/components/dashboard/NextUpCard'
 import { ObjectivesCard } from '@/presentation/components/dashboard/ObjectivesCard'
-import { Activation } from '@/presentation/components/dashboard/Activation'
 import { ResumeActivationCard } from '@/presentation/components/dashboard/ResumeActivationCard'
 import { PriorityCard } from '@/presentation/components/dashboard/PriorityCard'
 import { RecoveryCard } from '@/presentation/components/dashboard/RecoveryCard'
@@ -27,7 +26,7 @@ import { TodayFocusCard } from '@/presentation/components/dashboard/TodayFocusCa
 import { WinsCard } from '@/presentation/components/dashboard/WinsCard'
 import { ErrorNote } from '@/presentation/components/ui/States'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
-import { useActivation } from '@/presentation/planner/use-activation'
+import { ACTIVATION_PATH, useActivation } from '@/presentation/planner/use-activation'
 import { useInsightActions } from '@/presentation/planner/use-insight-actions'
 import { useAdaptiveDay } from '@/presentation/planner/use-adaptive-day'
 import { useDashboard, type GoalInMotion } from '@/presentation/planner/use-dashboard'
@@ -93,9 +92,9 @@ export function DashboardPage() {
   const [aiRecoveryOpen, setAiRecoveryOpen] = useState(false)
 
   /*
-    O onboarding vive fora do `isNewUser` porque ele pode ser adiado: a pessoa
-    pula, usa o app vazio e volta depois. O estado de "onde parei" é do hook,
-    não desta tela.
+    O onboarding mora em `/app/comecar` e a casca do app leva a conta vazia
+    pra lá. Aqui só existe a porta de volta pra quem deixou pra depois: o
+    estado de "onde parei" é do hook, não desta tela.
   */
   const activation = useActivation()
 
@@ -269,23 +268,16 @@ export function DashboardPage() {
 
   if (planner.loading) return <DashboardSkeleton mobile={!isDesktop} />
 
-  if (planner.isNewUser && !activation.skipped) {
-    return (
-      <Activation
-        firstName={profile?.name.split(' ')[0] ?? null}
-        today={planner.today}
-        control={activation}
-      />
-    )
-  }
-
   /* Pulou o onboarding: o dashboard aparece, e com ele a porta de volta. */
   const resumeCard =
     planner.isNewUser && activation.skipped ? (
       <ResumeActivationCard
         step={activation.step}
         started={activation.started}
-        onResume={activation.resume}
+        onResume={() => {
+          activation.resume()
+          navigate(ACTIVATION_PATH)
+        }}
       />
     ) : null
 

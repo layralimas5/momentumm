@@ -21,6 +21,7 @@ import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 import { MobileShortcuts } from '@/presentation/components/mobile/MobileShortcuts'
 import { SecurityPanel } from '@/presentation/profile/SecurityPanel'
 import { SupportPanel } from '@/presentation/profile/SupportPanel'
+import { forgetActivation } from '@/presentation/planner/use-activation'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 
@@ -75,6 +76,7 @@ export function ProfilePage() {
    */
   const restart = useAsyncAction(async () => {
     demoStore.clear()
+    forgetActivation(user?.id ?? null)
     await planner.reload()
     navigate('/app')
   })
