@@ -26,7 +26,7 @@ export interface ProPrice {
 
 export const PRO_PRICES: Readonly<Record<BillingCycle, ProPrice>> = {
   mensal: { cycle: 'mensal', amountCents: 3990, strikeCents: 7990, providerCycle: 'MONTHLY', months: 1 },
-  anual: { cycle: 'anual', amountCents: 17990, strikeCents: 35880, providerCycle: 'YEARLY', months: 12 },
+  anual: { cycle: 'anual', amountCents: 12990, strikeCents: 47880, providerCycle: 'YEARLY', months: 12 },
 }
 
 /** O nome do item como aparece na fatura. O Asaas aceita até 30 caracteres. */
@@ -50,7 +50,7 @@ export function cycleFromProvider(providerCycle: string): BillingCycle | null {
   return null
 }
 
-/** Quanto por mês custa o anual, pra frase "equivale a R$ 14,99/mês". */
+/** Quanto por mês custa o anual, pra frase "equivale a R$ 10,83/mês". */
 export function monthlyEquivalentCents(cycle: BillingCycle): number {
   const price = PRO_PRICES[cycle]
   return Math.round(price.amountCents / price.months)

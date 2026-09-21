@@ -8,7 +8,6 @@ import {
   type BillingCycle,
   type PricingPlan,
 } from './plans'
-import { PlanMatrix } from './PlanMatrix'
 import { Reveal } from './Reveal'
 import { CycleToggle } from './CycleToggle'
 import { Section, SectionHeading } from './Section'
@@ -38,8 +37,6 @@ export function Pricing() {
           </li>
         ))}
       </ul>
-
-      <PlanMatrix className="mt-10" />
 
       <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-ink-faint">
         {PRICING_FOOTNOTE}

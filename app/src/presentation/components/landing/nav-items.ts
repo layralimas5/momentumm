@@ -32,11 +32,6 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         href: '/#telas',
       },
       {
-        label: 'Momentumm Score',
-        description: 'Como o ritmo é medido sem punir uma falha',
-        href: '/#momentum-score',
-      },
-      {
         label: 'Momentumm AI',
         description: 'A IA que monta o plano e lê o progresso',
         href: '/#ia',

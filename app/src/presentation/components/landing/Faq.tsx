@@ -32,7 +32,7 @@ const QUESTIONS = [
   },
   {
     question: 'O que tem no plano gratuito e o que muda no PRO?',
-    answer: `O gratuito organiza e executa: até ${free.activeObjectives} objetivos ativos, ${free.activeHabits} hábitos, ${free.activePlans} plano por etapas, ${free.actionsPerDay} ações por dia, os últimos ${free.historyDays} dias de histórico, o Momentumm Score de hoje e um check-in semanal manual. O PRO registra, analisa e evolui: tira os limites, abre o histórico completo, a evolução e o detalhamento do score, o review cruzando os dados reais, a Momentumm AI, métricas, relatórios, registros em texto, foto e voz, todos os modelos de compartilhamento e exportação. A tabela completa está na seção de planos.`,
+    answer: `O gratuito organiza e executa: até ${free.activeObjectives} objetivos ativos, ${free.activeHabits} hábitos, ${free.activePlans} plano por etapas, ${free.actionsPerDay} ações por dia, os últimos ${free.historyDays} dias de histórico, o Momentumm Score de hoje e um check-in semanal manual. O PRO registra, analisa e evolui: tira os limites, abre o histórico completo, a evolução e o detalhamento do score, o review cruzando os dados reais, a Momentumm AI, métricas, relatórios, registros em texto, foto e voz, todos os modelos de compartilhamento e exportação. O detalhe de cada plano está nos cards da seção de planos.`,
   },
   {
     question: 'Preciso de cartão pra experimentar o PRO?',

@@ -137,7 +137,7 @@ await asPostgres()
 console.log('\n## Assinatura durante o teste')
 const converter = (await one(`insert into auth.users (email) values ('converte@x.com') returning id`)).id
 await db.exec(`insert into public.subscriptions (user_id, provider, provider_subscription_id, plan, interval, status, amount_cents, current_period_end)
-  values ('${converter}', 'asaas', 'sub_conv', 'pro', 'anual', 'ativa', 17990, now() + interval '365 days')`)
+  values ('${converter}', 'asaas', 'sub_conv', 'pro', 'anual', 'ativa', 12990, now() + interval '365 days')`)
 t = await one(`select status from public.plan_trials where user_id = $1`, [converter])
 check('pagamento confirmado marca o teste como convertido', t.status === 'convertido', JSON.stringify(t))
 await db.exec(`update public.plan_trials set started_at = now() - interval '8 days', ends_at = now() - interval '1 minute' where user_id = '${converter}'`)
