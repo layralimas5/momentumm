@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Reveal } from './Reveal'
 import { CTA } from './site'
+import { useOffer } from './use-offer'
 import { useSiteCta } from './use-site-cta'
 
 /**
@@ -10,6 +11,8 @@ import { useSiteCta } from './use-site-cta'
  */
 export function FinalCta() {
   const cta = useSiteCta()
+  const offer = useOffer()
+  const primaryLabel = cta.signedIn ? cta.primary.label : (offer?.cta ?? cta.primary.label)
 
   return (
     <section id="comecar" className="scroll-mt-20 border-t border-line bg-surface">
@@ -22,7 +25,7 @@ export function FinalCta() {
             />
             <div className="relative">
               <h2 className="text-balance text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-                Você diz quanto tempo tem livre por dia. A gente monta o plano.
+                {offer?.closing ?? 'Você diz quanto tempo tem livre por dia. A gente monta o plano.'}
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-pretty text-lg text-ink-muted">
                 Coloca a sua meta e os minutos que sobram no seu dia. O Momentumm transforma isso em
@@ -35,7 +38,7 @@ export function FinalCta() {
                   to={cta.primary.to}
                   className="inline-flex h-14 w-full max-w-xs items-center justify-center rounded-xl bg-brand px-8 font-medium text-white transition-colors hover:bg-brand-hi sm:w-auto"
                 >
-                  {cta.primary.label}
+                  {primaryLabel}
                 </Link>
                 {cta.signedIn ? null : (
                   <Link

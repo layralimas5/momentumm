@@ -14,6 +14,7 @@ import {
 import type { PlanDraft } from '@/domain/entities/plan-builder'
 import { toUserMessage } from '@/shared/errors'
 import { useAuth } from '@/presentation/auth/use-auth'
+import { offerSource, storedOffer } from '@/presentation/components/landing/offers'
 import { usePlanner } from './use-planner'
 
 /**
@@ -232,7 +233,10 @@ export function useActivation(): ActivationController {
         if (extra.needsAxis) await planner.createAxis(extra.label)
       }
 
-      track('onboarding_completed')
+      // A oferta que trouxe a pessoa (link da bio do TikTok) vai junto: é o
+      // que separa o ângulo que traz clique do ângulo que traz gente que começa.
+      const source = offerSource(storedOffer())
+      track('onboarding_completed', null, source ? { source } : {})
 
       clearDraft(userId)
       persistSkipped(userId, false)

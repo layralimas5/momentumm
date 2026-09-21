@@ -4,6 +4,7 @@ import { TRIAL_DAYS } from '@/domain/billing/trial'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
 import { cn } from '@/shared/lib/cn'
 import { CTA } from './site'
+import { useOffer } from './use-offer'
 import { useSiteCta } from './use-site-cta'
 
 /**
@@ -14,7 +15,10 @@ import { useSiteCta } from './use-site-cta'
  * tem contexto; aqui em cima ele só empurrava o botão pra baixo.
  */
 
-const LINES = ['Objetivo vira plano.', 'Plano vira o que você faz hoje.'] as const
+/** A copy padrão. Com `?oferta=` no link, a oferta em teste assume (ver `offers.ts`). */
+const DEFAULT_LINES = ['Objetivo vira plano.', 'Plano vira o que você faz hoje.'] as const
+const DEFAULT_SUBTITLE =
+  'Você diz o que quer alcançar e quanto tempo tem livre por dia. O Momentumm monta o plano, te entrega a ação de hoje e ajusta quando a semana não sai como o planejado.'
 
 const EASE = [0.22, 1, 0.36, 1] as const
 
@@ -32,6 +36,13 @@ const AREAS: readonly { readonly label: string; readonly icon: IconName }[] = [
 
 export function Hero() {
   const cta = useSiteCta()
+  const offer = useOffer()
+  const lines = offer?.lines ?? DEFAULT_LINES
+  const subtitle = offer?.subtitle ?? DEFAULT_SUBTITLE
+  const primaryLabel = cta.signedIn ? cta.primary.label : (offer?.cta ?? cta.primary.label)
+  const reassurance = cta.signedIn
+    ? 'Você já tem conta. O plano de hoje te espera.'
+    : (offer?.reassurance ?? CTA.reassurance)
 
   return (
     <section id="home" className="relative overflow-hidden">
@@ -55,13 +66,13 @@ export function Hero() {
           </motion.p>
 
           <h1 className="mt-7 text-balance text-4xl font-semibold tracking-tight text-ink sm:text-5xl xl:text-6xl">
-            {LINES.map((line, index) => (
+            {lines.map((line, index) => (
               <motion.span
                 key={line}
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.08, ease: EASE }}
-                className={cn('block', index === LINES.length - 1 && 'text-brand-hi')}
+                className={cn('block', index === lines.length - 1 && 'text-brand-hi')}
               >
                 {line}
               </motion.span>
@@ -74,8 +85,7 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="mx-auto mt-6 max-w-[560px] text-pretty text-lg text-ink-muted"
           >
-            Você diz o que quer alcançar e quanto tempo tem livre por dia. O Momentumm monta o
-            plano, te entrega a ação de hoje e ajusta quando a semana não sai como o planejado.
+            {subtitle}
           </motion.p>
 
           <motion.div
@@ -88,7 +98,7 @@ export function Hero() {
               to={cta.primary.to}
               className="inline-flex h-12 w-full max-w-xs items-center justify-center gap-2 rounded-full bg-brand px-7 font-medium text-white transition-colors hover:bg-brand-hi sm:w-auto"
             >
-              {cta.primary.label}
+              {primaryLabel}
             </Link>
 
             {cta.signedIn ? null : (
@@ -102,9 +112,7 @@ export function Hero() {
             )}
           </motion.div>
 
-          <p className="mt-6 text-sm text-ink-faint">
-            {cta.signedIn ? 'Você já tem conta. O plano de hoje te espera.' : CTA.reassurance}
-          </p>
+          <p className="mt-6 text-sm text-ink-faint">{reassurance}</p>
         </div>
 
         <motion.div

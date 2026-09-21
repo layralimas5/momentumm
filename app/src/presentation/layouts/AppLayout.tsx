@@ -19,6 +19,7 @@ import { LegalGate } from '@/presentation/legal/LegalGate'
 import { PlannerProvider } from '@/presentation/planner/PlannerProvider'
 import { ShareStudioProvider } from '@/presentation/share/ShareStudioProvider'
 import { useIsDesktop } from '@/presentation/hooks/use-media-query'
+import { offerSource, storedOffer } from '@/presentation/components/landing/offers'
 import { ACTIVATION_PATH, isActivationSkipped } from '@/presentation/planner/use-activation'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
@@ -341,7 +342,10 @@ function useUsageEvents() {
   const { pathname } = useLocation()
 
   useEffect(() => {
-    track('session_start')
+    // A oferta do link de origem (TikTok) vai junto, pra comparar os ângulos
+    // já no primeiro acesso, antes mesmo do onboarding.
+    const source = offerSource(storedOffer())
+    track('session_start', null, source ? { source } : {})
   }, [])
 
   useEffect(() => {

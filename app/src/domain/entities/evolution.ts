@@ -242,6 +242,7 @@ export function levelOf(xpTotal: number): LevelProgress {
 // ---------------------------------------------------------------------------
 
 export const ACHIEVEMENT_KEYS = [
+  'primeiro_passo',
   'primeira_semana',
   'pegou_ritmo',
   'de_volta_ao_jogo',
@@ -281,6 +282,21 @@ export interface AchievementSpec {
 }
 
 export const ACHIEVEMENTS: readonly AchievementSpec[] = [
+  /*
+    A primeira ação concluída. É o "agora entendi" do teste grátis: a
+    pessoa informou a meta, ganhou um plano, viu o passo de hoje e fechou.
+    Vale pouco XP de propósito; o que ela entrega é a frase.
+  */
+  {
+    key: 'primeiro_passo',
+    name: 'Primeiro Passo',
+    description: 'A primeira ação concluída. Você começou de verdade.',
+    icon: 'check',
+    category: 'constancia',
+    xp: 10,
+    rarity: 'comum',
+    condition: 'Conclui a tua primeira ação no Hoje.',
+  },
   {
     key: 'primeira_semana',
     name: 'Primeira Semana',

@@ -1126,6 +1126,22 @@ onboarding sem abrir o devtools.
   fica ao lado do CTA em qualquer largura (era só no rodapé no celular) e
   também dentro do menu.
 
+### Teste de ofertas no TikTok e o primeiro resultado (21/09/2026)
+
+Três ângulos em teste por 14 dias no TikTok (A: parar de recomeçar toda
+segunda; B: meta confusa vira plano; C: voltar depois de parar). A landing
+continua a conversa de cada um: `/?oferta=a|b|c` troca título, subtítulo,
+botão e o CTA final (`components/landing/offers.ts`, `useOffer`). Sem o
+parâmetro a copy é a padrão. A oferta fica no `localStorage` e vai em
+`metadata.source` (`oferta_a`...) do `session_start` e do
+`onboarding_completed`: compara-se o ângulo que traz gente que começa, não
+só clique. Quando houver vencedora, ela vira a copy padrão.
+
+O primeiro resultado do teste grátis é meta → plano → passo de hoje →
+feito → XP → "você começou de verdade". O fecho é a conquista **Primeiro
+Passo** (10 XP, migration 0037 + engine do demo), concedida na primeira
+ação concluída e mostrada pelo `EvolutionNotice`.
+
 ### Celular
 
 O dashboard do celular é uma **árvore de componentes própria**
