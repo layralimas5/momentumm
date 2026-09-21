@@ -37,6 +37,7 @@ import { DayCompleteBanner } from '@/presentation/components/dashboard/DayComple
 import { MobileDashboard } from '@/presentation/components/mobile/MobileDashboard'
 import { ShareMomentsRow } from '@/presentation/share/ShareMomentsRow'
 import { QuoteCard } from '@/presentation/components/dashboard/QuoteCard'
+import { ReminderCard } from '@/presentation/notifications/ReminderCard'
 import { useIsDesktop } from '@/presentation/hooks/use-media-query'
 import { AiDayDialog } from '@/presentation/ai/AiDayDialog'
 import { AiRecoveryDialog } from '@/presentation/ai/AiRecoveryDialog'
@@ -300,6 +301,7 @@ export function DashboardPage() {
           onReviewOverdue={() => navigate('/app/plano')}
         />
         {resumeCard}
+        <ReminderCard />
         <RecoveryCard
           state={recovery.state}
           budgetFor={recovery.budgetFor}
@@ -359,6 +361,8 @@ export function DashboardPage() {
         />
 
         {resumeCard}
+
+        <ReminderCard />
 
         <RecoveryCard
           state={recovery.state}

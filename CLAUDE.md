@@ -1098,6 +1098,34 @@ três objetivos não podem virar três prioridades disputando o mesmo dia.
 No modo demo, Configurações tem **Recomeçar do zero** — é o caminho pra rever o
 onboarding sem abrir o devtools.
 
+### Primeiro acesso, lembrete e o caminho de volta (21/09/2026)
+
+- **O onboarding é uma rota, `/app/comecar`** (`ActivationPage`), em tela
+  cheia: sem sidebar, sem barra de abas, só o logo e "Sair". A casca
+  (`useActivationGate` em `AppLayout`) manda toda conta vazia pra lá, de
+  qualquer `/app/*`, enquanto ela não criou nada nem pediu "deixar pra
+  depois". Antes o quiz era um bloco dentro do Hoje com a barra de abas por
+  cima, e dava pra escapar tocando em qualquer aba. O rascunho e o
+  "pulado" no `localStorage` carregam o id da conta: pular numa conta não
+  vale pra outra no mesmo navegador. `forgetActivation` limpa os dois no
+  "Recomeçar do zero".
+- **Lembrete no celular (Web Push).** `domain/notifications`,
+  `infrastructure/push/browser-push` (as APIs do navegador),
+  `public/sw.js` (só mostra o aviso: sem cache, sem rota) e
+  `presentation/notifications` (hook, convite no Hoje, bloco em
+  Configurações). O app marca presença ao abrir (`touch_my_presence`, com
+  fuso); o `pg_cron` chama a Edge Function `push-reminders` a cada hora, e
+  ela avisa às 19h locais só quem não abriu o app naquele dia (migration
+  0036, `push_reminders_due`). Precisa do par VAPID: pública em
+  `VITE_VAPID_PUBLIC_KEY`, privada nos segredos da função. Sem a pública o
+  app não oferece nada. iPhone só recebe com o site na tela de início:
+  por isso existe `public/manifest.webmanifest` (`start_url=/app`).
+  Setup completo em `supabase/functions/README.md`.
+- **A landing sabe da sessão** (`useSiteCta`): com conta aberta, hero,
+  header, barra fixa e CTA final viram "Abrir o app"; sem conta, "Entrar"
+  fica ao lado do CTA em qualquer largura (era só no rodapé no celular) e
+  também dentro do menu.
+
 ### Celular
 
 O dashboard do celular é uma **árvore de componentes própria**

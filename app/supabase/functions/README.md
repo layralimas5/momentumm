@@ -127,3 +127,55 @@ Testar no sandbox: `ASAAS_ENV=sandbox` com a chave do
 cartão de teste do Asaas e conferir `billing_webhook_events.outcome` e
 `subscriptions`. Sem `ASAAS_API_KEY` a função responde `not_configured`
 e a tela diz que a assinatura não está disponível nesse ambiente.
+
+## push-reminders
+
+O lembrete no celular pra quem não abriu o app no dia. Web Push, sem
+Firebase e sem app nativo: o navegador (ou o app instalado na tela de
+início) recebe o aviso na tela de bloqueio.
+
+Como funciona: o app marca presença ao abrir (`touch_my_presence`, com o
+fuso do aparelho) e grava o aparelho quando a pessoa liga o lembrete
+(`push_subscriptions`). O `pg_cron` chama esta função a cada hora; ela lê
+`push_reminders_due(19)`, que devolve só quem está às 19h do próprio fuso,
+não abriu o app hoje e ainda não foi lembrado, e manda um aviso pra cada
+aparelho. Endpoint morto (404/410) é apagado; outro erro marca `failed_at`.
+
+```bash
+# 1. migration 0036 (supabase db push)
+
+# 2. chaves VAPID, uma vez. A pública vai também pro app (VITE_VAPID_PUBLIC_KEY
+#    no Netlify); a privada só aqui. Trocar uma sem a outra invalida toda
+#    assinatura existente.
+npx web-push generate-vapid-keys
+
+# 3. segredos da função
+supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:contato@momentumm.com.br
+supabase secrets set PUSH_REMINDER_TOKEN=<32+ caracteres aleatórios>
+
+# 4. deploy sem verificação de JWT: quem chama é o pg_cron, não uma pessoa
+supabase functions deploy push-reminders --no-verify-jwt
+
+# 5. o mesmo token no Vault, pra o agendador conseguir chamar (SQL editor)
+#    select vault.create_secret('<PUSH_REMINDER_TOKEN>', 'push_reminder_token');
+
+# 6. publicar o app com VITE_VAPID_PUBLIC_KEY preenchida
+```
+
+Testar à mão, sem esperar as 19h (a hora é a do fuso da pessoa; pra
+disparar agora, passar a hora local atual):
+
+```bash
+curl -X POST "https://hsgjlxetdopomeibdbho.supabase.co/functions/v1/push-reminders?hour=$(date +%H)" \
+  -H "x-reminder-token: <PUSH_REMINDER_TOKEN>"
+# → {"hour":14,"due":1,"sent":1,"dropped":0,"failed":0}
+```
+
+Só recebe quem não abriu o app hoje: pra testar, abrir o app ontem (ou
+`update public.user_presence set last_active_at = now() - interval '1 day'`).
+
+iPhone: o Safari só entrega push com o site adicionado à tela de início
+(iOS 16.4+). O manifest (`public/manifest.webmanifest`, `start_url=/app`)
+é o que torna isso possível; a tela de Configurações explica o passo.
+
+Testes do banco: `supabase/tests/pglite/push.mjs` (`npm run db:test`).

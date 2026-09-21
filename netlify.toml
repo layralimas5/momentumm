@@ -20,6 +20,13 @@
   to     = "/index.html"
   status = 200
 
+# O service worker do lembrete (Web Push) nunca pode ficar em cache: uma
+# versão velha presa no navegador é o que faz o aviso parar de chegar.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
 # Assets com hash no nome podem ficar em cache pra sempre; o index não.
 [[headers]]
   for = "/assets/*"

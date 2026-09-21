@@ -53,3 +53,6 @@ sms_sent = 1
 # é o header `asaas-access-token`, conferido dentro da função.
 [functions.asaas-webhook]
 verify_jwt = false
+
+[functions.push-reminders]
+verify_jwt = false

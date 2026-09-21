@@ -70,6 +70,7 @@ function LayoutShell() {
   const isDesktop = useIsDesktop()
   const { pathname } = useLocation()
   useUsageEvents()
+  usePresence()
 
   useEffect(() => {
     try {
@@ -347,6 +348,30 @@ function useUsageEvents() {
     const feature = featureForRoute(pathname)
     if (feature) trackFeatureView(feature)
   }, [pathname])
+}
+
+/**
+ * Marca "abriu o app hoje" no servidor: ao montar e ao voltar pra aba. É o
+ * que o lembrete do celular lê pra NÃO avisar quem já esteve aqui. Uma vez
+ * a cada meia hora basta; a data é o que importa, não o minuto.
+ */
+const PRESENCE_EVERY_MS = 30 * 60 * 1000
+
+function usePresence() {
+  useEffect(() => {
+    let last = 0
+    const touch = () => {
+      if (document.visibilityState !== 'visible') return
+      const now = Date.now()
+      if (now - last < PRESENCE_EVERY_MS) return
+      last = now
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+      container.push.touchPresence(timezone).catch(() => undefined)
+    }
+    touch()
+    document.addEventListener('visibilitychange', touch)
+    return () => document.removeEventListener('visibilitychange', touch)
+  }, [])
 }
 
 function OfflineBanner() {

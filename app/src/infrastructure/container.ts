@@ -21,6 +21,9 @@ import type { LegalAcceptanceRepository } from '@/domain/repositories/legal-acce
 import type { MediaRepository } from '@/domain/repositories/media-repository'
 import type { SupportRepository } from '@/domain/repositories/support-repository'
 import type { AdminGateway } from '@/domain/admin/admin-gateway'
+import type { PushSubscriptionRepository } from '@/domain/repositories/push-subscription-repository'
+import { SupabasePushSubscriptionRepository } from './supabase/supabase-push'
+import { DemoPushSubscriptionRepository } from './demo/demo-push'
 import { SupabaseAdminGateway } from './supabase/supabase-admin'
 import { SupabaseSupportRepository } from './supabase/supabase-support'
 import { DemoAdminGateway, DemoSupportRepository } from './demo/demo-support'
@@ -124,6 +127,11 @@ export interface Container {
    * assinatura; quem escreve o plano é o webhook, no servidor.
    */
   readonly billing: BillingService
+  /**
+   * O lembrete no celular: os aparelhos inscritos e o carimbo de "abriu
+   * hoje". Quem envia é o servidor, uma vez por dia, só pra quem não abriu.
+   */
+  readonly push: PushSubscriptionRepository
   readonly demo: boolean
 }
 
@@ -152,6 +160,7 @@ export const container: Container = isDemoMode
       support: new DemoSupportRepository(),
       admin: new DemoAdminGateway(),
       billing: new DemoBillingService(),
+      push: new DemoPushSubscriptionRepository(),
       demo: true,
     }
   : {
@@ -177,5 +186,6 @@ export const container: Container = isDemoMode
       support: new SupabaseSupportRepository(),
       admin: new SupabaseAdminGateway(),
       billing: new SupabaseBillingService(),
+      push: new SupabasePushSubscriptionRepository(),
       demo: false,
     }
