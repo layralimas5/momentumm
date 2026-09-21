@@ -4,6 +4,7 @@ import { TRIAL_DAYS } from '@/domain/billing/trial'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
 import { cn } from '@/shared/lib/cn'
 import { CTA } from './site'
+import { useSiteCta } from './use-site-cta'
 
 /**
  * O hero.
@@ -30,6 +31,8 @@ const AREAS: readonly { readonly label: string; readonly icon: IconName }[] = [
 ]
 
 export function Hero() {
+  const cta = useSiteCta()
+
   return (
     <section id="home" className="relative overflow-hidden">
       <div
@@ -82,22 +85,26 @@ export function Hero() {
             className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row"
           >
             <Link
-              to={CTA.primary.to}
+              to={cta.primary.to}
               className="inline-flex h-12 w-full max-w-xs items-center justify-center gap-2 rounded-full bg-brand px-7 font-medium text-white transition-colors hover:bg-brand-hi sm:w-auto"
             >
-              {CTA.primary.label}
+              {cta.primary.label}
             </Link>
 
-            <Link
-              to={CTA.secondary.to}
-              className="inline-flex h-12 w-full max-w-xs items-center justify-center gap-2 rounded-full border border-line-hi px-7 font-medium text-ink transition-colors hover:bg-surface-hi sm:w-auto"
-            >
-              {CTA.secondary.label}
-              <ArrowIcon />
-            </Link>
+            {cta.signedIn ? null : (
+              <Link
+                to={CTA.secondary.to}
+                className="inline-flex h-12 w-full max-w-xs items-center justify-center gap-2 rounded-full border border-line-hi px-7 font-medium text-ink transition-colors hover:bg-surface-hi sm:w-auto"
+              >
+                {CTA.secondary.label}
+                <ArrowIcon />
+              </Link>
+            )}
           </motion.div>
 
-          <p className="mt-6 text-sm text-ink-faint">{CTA.reassurance}</p>
+          <p className="mt-6 text-sm text-ink-faint">
+            {cta.signedIn ? 'Você já tem conta. O plano de hoje te espera.' : CTA.reassurance}
+          </p>
         </div>
 
         <motion.div

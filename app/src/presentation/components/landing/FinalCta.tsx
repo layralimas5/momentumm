@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Reveal } from './Reveal'
 import { CTA } from './site'
+import { useSiteCta } from './use-site-cta'
 
 /**
  * O fechamento repete a frase que encerra o onboarding do app: a pessoa não
@@ -8,6 +9,8 @@ import { CTA } from './site'
  * e acompanha o estágio do produto.
  */
 export function FinalCta() {
+  const cta = useSiteCta()
+
   return (
     <section id="comecar" className="scroll-mt-20 border-t border-line bg-surface">
       <div className="mx-auto max-w-5xl px-4 py-20 sm:py-28">
@@ -29,20 +32,24 @@ export function FinalCta() {
 
               <div className="mt-9 flex flex-col items-center gap-4">
                 <Link
-                  to={CTA.primary.to}
+                  to={cta.primary.to}
                   className="inline-flex h-14 w-full max-w-xs items-center justify-center rounded-xl bg-brand px-8 font-medium text-white transition-colors hover:bg-brand-hi sm:w-auto"
                 >
-                  {CTA.primary.label}
+                  {cta.primary.label}
                 </Link>
-                <Link
-                  to={CTA.secondary.to}
-                  className="text-sm text-ink-muted underline-offset-4 transition-colors hover:text-ink hover:underline"
-                >
-                  {CTA.secondary.label}
-                </Link>
+                {cta.signedIn ? null : (
+                  <Link
+                    to={CTA.secondary.to}
+                    className="text-sm text-ink-muted underline-offset-4 transition-colors hover:text-ink hover:underline"
+                  >
+                    {CTA.secondary.label}
+                  </Link>
+                )}
               </div>
 
-              <p className="mt-6 text-sm text-ink-faint">{CTA.reassurance}</p>
+              <p className="mt-6 text-sm text-ink-faint">
+                {cta.signedIn ? 'Você já tem conta. O plano de hoje te espera.' : CTA.reassurance}
+              </p>
             </div>
           </div>
         </Reveal>
