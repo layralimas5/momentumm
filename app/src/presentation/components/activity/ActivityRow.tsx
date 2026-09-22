@@ -38,7 +38,7 @@ export function ActivityRow({ activity, onRemove }: ActivityRowProps) {
         <button
           type="button"
           onClick={() => onRemove(activity.id)}
-          className="shrink-0 rounded-md px-2 py-1 text-xs text-ink-faint transition-colors hover:bg-surface-hi hover:text-danger"
+          className="tap-target shrink-0 rounded-md px-2 py-1 text-xs text-ink-faint transition-colors hover:bg-surface-hi hover:text-danger"
         >
           Apagar
           <span className="sr-only"> {describeActivity(activity)}</span>

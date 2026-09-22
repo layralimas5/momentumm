@@ -505,7 +505,7 @@ export function PersonalProfilePage() {
         <Icon name="cadeado" className="mt-0.5 size-4 shrink-0" />
         <span>
           Tudo neste perfil é só seu. Nada aqui é público, e compartilhar cria uma imagem no teu
-          aparelho — não uma publicação.
+          aparelho, não uma publicação.
         </span>
       </p>
     </div>

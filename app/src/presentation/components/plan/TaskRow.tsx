@@ -66,7 +66,7 @@ export function TaskRow({
           disabled={blocked || cancelled}
           onClick={() => void planner.setTaskDone(task.id, !done)}
           className={cn(
-            'mt-0.5 grid size-5 shrink-0 place-items-center rounded-md border transition-colors',
+            'tap-target mt-0.5 grid size-5 shrink-0 place-items-center rounded-md border transition-colors',
             done
               ? 'border-positive bg-positive/20 text-positive'
               : 'border-line-hi text-transparent hover:border-brand',

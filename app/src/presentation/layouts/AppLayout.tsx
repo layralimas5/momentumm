@@ -18,6 +18,7 @@ import { ComposerProvider } from '@/presentation/planner/ComposerProvider'
 import { LegalGate } from '@/presentation/legal/LegalGate'
 import { PlannerProvider } from '@/presentation/planner/PlannerProvider'
 import { ShareStudioProvider } from '@/presentation/share/ShareStudioProvider'
+import { useDocumentTitle } from '@/presentation/hooks/use-document-title'
 import { useIsDesktop } from '@/presentation/hooks/use-media-query'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
@@ -68,6 +69,7 @@ function LayoutShell() {
   const [collapsed, setCollapsed] = useState(readCollapsed)
   const isDesktop = useIsDesktop()
   useUsageEvents()
+  useDocumentTitle()
 
   useEffect(() => {
     try {
