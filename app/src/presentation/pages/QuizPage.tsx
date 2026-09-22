@@ -85,6 +85,8 @@ export function QuizPage() {
           answers={quiz.answers}
           direction={direction}
           onChange={quiz.set}
+          onToggleArea={quiz.toggleArea}
+          onToggleObstacle={quiz.toggleObstacle}
           onToggleWeekday={quiz.toggleWeekday}
           onSubmit={quiz.next}
         />

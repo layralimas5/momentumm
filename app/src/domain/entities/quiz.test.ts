@@ -17,9 +17,9 @@ const today = parseDayKey('2026-09-21')
 
 const answers: CompleteQuizAnswers = {
   goal: 'Lançar meu projeto',
-  area: 'projeto',
+  areas: ['projeto'],
   customArea: '',
-  obstacle: 'pouco_tempo',
+  obstacles: ['pouco_tempo'],
   time: '20',
   horizon: '90',
   weekdays: [1, 3, 5],
@@ -54,7 +54,7 @@ describe('quiz: diagnóstico', () => {
 
   it('"o Momentumm decide" resolve pro estilo recomendado pelo obstáculo', () => {
     expect(buildDiagnosis(answers).style).toBe('passos_pequenos')
-    expect(buildDiagnosis({ ...answers, obstacle: 'sem_comeco' }).style).toBe('rotina_definida')
+    expect(buildDiagnosis({ ...answers, obstacles: ['sem_comeco'] }).style).toBe('rotina_definida')
     expect(buildDiagnosis({ ...answers, style: 'liberdade' }).style).toBe('liberdade')
   })
 
@@ -73,12 +73,12 @@ describe('quiz: ponte pro gerador', () => {
   })
 
   it('relacionamentos e "outra" viram área custom', () => {
-    expect(toActivationAnswers({ ...answers, area: 'relacionamentos' }, today)).toMatchObject({
+    expect(toActivationAnswers({ ...answers, areas: ['relacionamentos'] }, today)).toMatchObject({
       area: 'outro',
       customArea: 'Relacionamentos',
     })
     expect(
-      toActivationAnswers({ ...answers, area: 'outra', customArea: 'Música' }, today),
+      toActivationAnswers({ ...answers, areas: ['outra'], customArea: 'Música' }, today),
     ).toMatchObject({ area: 'outro', customArea: 'Música' })
   })
 
@@ -107,7 +107,7 @@ describe('quiz: ponte pro gerador', () => {
     const ambitious: CompleteQuizAnswers = {
       ...answers,
       goal: 'Estudar 40 horas',
-      area: 'estudos',
+      areas: ['estudos'],
       time: '10',
       horizon: '30',
       weekdays: [6],
@@ -115,6 +115,18 @@ describe('quiz: ponte pro gerador', () => {
     const preview = buildQuizPlan({ answers: ambitious, today, existingAxes: [] })
     expect(preview.plan.ready).toBe(true)
     expect(preview.adjustmentNote).not.toBeNull()
+  })
+
+  it('várias áreas: a primeira vira o plano, as outras viram eixo', () => {
+    const activation = toActivationAnswers({ ...answers, areas: ['saude', 'carreira', 'outra'] }, today)
+    expect(activation.area).toBe('saude')
+    expect(activation.extraAreas).toEqual(['carreira'])
+  })
+
+  it('várias dificuldades: a primeira dá o perfil, todas aparecem no diagnóstico', () => {
+    const diagnosis = buildDiagnosis({ ...answers, obstacles: ['abandono', 'motivacao'] })
+    expect(diagnosis.profile).toBe('Começa forte, perde o fio')
+    expect(diagnosis.obstacle).toBe('Começo e abandono, Perco a motivação rapidamente')
   })
 
   it('o hábito respeita o tempo declarado', () => {

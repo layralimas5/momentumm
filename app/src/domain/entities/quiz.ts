@@ -135,10 +135,12 @@ export const MAX_GOAL_LENGTH = 120
 
 export interface QuizAnswers {
   readonly goal: string
-  readonly area: QuizAreaKey | null
-  /** Nome escrito pela pessoa quando a área é "Outra". */
+  /** As áreas marcadas, na ordem do toque. A primeira é a principal: é dela que sai o plano. */
+  readonly areas: readonly QuizAreaKey[]
+  /** Nome escrito pela pessoa quando marcou "Outra". */
   readonly customArea: string
-  readonly obstacle: QuizObstacleKey | null
+  /** As dificuldades marcadas, na ordem do toque. A primeira dá o perfil. */
+  readonly obstacles: readonly QuizObstacleKey[]
   readonly time: QuizTimeKey | null
   readonly horizon: QuizHorizonKey | null
   /** Dias da semana (0 = domingo). */
@@ -148,9 +150,9 @@ export interface QuizAnswers {
 
 export const EMPTY_QUIZ_ANSWERS: QuizAnswers = {
   goal: '',
-  area: null,
+  areas: [],
   customArea: '',
-  obstacle: null,
+  obstacles: [],
   time: null,
   horizon: null,
   weekdays: [],
@@ -159,8 +161,6 @@ export const EMPTY_QUIZ_ANSWERS: QuizAnswers = {
 
 /** As respostas com todas as perguntas fechadas: só assim existe diagnóstico. */
 export interface CompleteQuizAnswers extends QuizAnswers {
-  readonly area: QuizAreaKey
-  readonly obstacle: QuizObstacleKey
   readonly time: QuizTimeKey
   readonly horizon: QuizHorizonKey
   readonly style: QuizStyleKey
@@ -177,10 +177,9 @@ export function quizBlocker(step: number, answers: QuizAnswers): string | null {
         ? 'Escreve o que você quer conquistar.'
         : null
     case 1:
-      if (answers.area === null) return 'Escolhe a área que mais combina.'
-      return null
+      return answers.areas.length === 0 ? 'Escolhe pelo menos uma área.' : null
     case 2:
-      return answers.obstacle === null ? 'Escolhe a que mais acontece com você.' : null
+      return answers.obstacles.length === 0 ? 'Escolhe pelo menos uma.' : null
     case 3:
       return answers.time === null ? 'Escolhe o tempo que cabe de verdade.' : null
     case 4:
@@ -192,6 +191,16 @@ export function quizBlocker(step: number, answers: QuizAnswers): string | null {
     default:
       return null
   }
+}
+
+/** A área principal é a primeira marcada. */
+export function primaryArea(answers: QuizAnswers): QuizAreaKey {
+  return answers.areas[0] ?? 'pessoal'
+}
+
+/** A dificuldade principal é a primeira marcada. */
+export function primaryObstacle(answers: QuizAnswers): QuizObstacleKey {
+  return answers.obstacles[0] ?? 'procrastino'
 }
 
 export function isQuizComplete(answers: QuizAnswers): answers is CompleteQuizAnswers {
@@ -336,14 +345,16 @@ const READINGS: Readonly<Record<QuizObstacleKey, ObstacleReading>> = {
 }
 
 export function buildDiagnosis(answers: CompleteQuizAnswers): QuizDiagnosis {
-  const reading = READINGS[answers.obstacle]
+  const obstacle = primaryObstacle(answers)
+  const reading = READINGS[obstacle]
   const style = answers.style === 'momentumm_decide' ? reading.recommendedStyle : answers.style
   const short = answers.time === '10' || answers.time === '20' || answers.time === 'depende'
 
   return {
     profile: reading.profile[short ? 0 : 1],
     goal: answers.goal.trim(),
-    obstacle: QUIZ_OBSTACLE_LABELS[answers.obstacle],
+    // Todas as marcadas, a principal primeiro: a pessoa reconhece o que ela mesma disse.
+    obstacle: answers.obstacles.map((key) => QUIZ_OBSTACLE_LABELS[key]).join(', '),
     time:
       answers.time === 'depende'
         ? `Depende do dia (o plano usa ${VARIABLE_DAY_MINUTES} minutos como base)`
@@ -414,14 +425,25 @@ export function horizonOf(key: QuizHorizonKey, today: DayKey): Horizon {
 }
 
 export function toActivationAnswers(answers: CompleteQuizAnswers, today: DayKey): ActivationAnswers {
+  const area = primaryArea(answers)
   const customArea =
-    answers.area === 'relacionamentos'
+    area === 'relacionamentos'
       ? QUIZ_AREA_LABELS.relacionamentos
       : answers.customArea.trim() || 'Minha área'
 
+  /*
+    As outras áreas marcadas não viram plano: viram eixo na conta, como no
+    onboarding (`extraAreas`). "Relacionamentos" e "Outra" caem no mesmo
+    `outro` e dividiriam o `customArea`, então só a principal leva o nome.
+  */
+  const extraAreas = answers.areas
+    .slice(1)
+    .map((key) => AREA_TO_LIFE_AREA[key])
+    .filter((key) => key !== 'outro')
+
   return {
-    area: AREA_TO_LIFE_AREA[answers.area],
-    extraAreas: [],
+    area: AREA_TO_LIFE_AREA[area],
+    extraAreas: [...new Set(extraAreas)],
     customArea,
     goal: answers.goal.trim(),
     horizon: horizonOf(answers.horizon, today),
@@ -474,11 +496,12 @@ export function suggestHabit(answers: CompleteQuizAnswers, minutesPerDay: number
     liberdade: `Dedicar tempo a ${focus}`,
     momentumm_decide: `Um passo pequeno pra ${focus}`,
   }
-  const style = answers.style === 'momentumm_decide' ? READINGS[answers.obstacle].recommendedStyle : answers.style
+  const style =
+    answers.style === 'momentumm_decide' ? READINGS[primaryObstacle(answers)].recommendedStyle : answers.style
 
   return {
     name: nameByStyle[style].slice(0, 60),
-    icon: HABIT_ICON_BY_AREA[answers.area],
+    icon: HABIT_ICON_BY_AREA[primaryArea(answers)],
     dayPart: 'qualquer',
     weekdays: [...answers.weekdays].sort((a, b) => a - b),
     target,

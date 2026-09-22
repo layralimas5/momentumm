@@ -15,7 +15,9 @@ import {
   quizBlocker,
   quizIntro,
   type QuizAnswers,
+  type QuizAreaKey,
   type QuizDiagnosis,
+  type QuizObstacleKey,
   type QuizIntro,
   type QuizPlanPreview,
 } from '@/domain/entities/quiz'
@@ -59,6 +61,9 @@ export interface QuizController {
   readonly diagnosis: QuizDiagnosis | null
   readonly preview: QuizPlanPreview | null
   set(changes: Partial<QuizAnswers>): void
+  /** Marca ou desmarca. A ordem do toque é a ordem de importância. */
+  toggleArea(area: QuizAreaKey): void
+  toggleObstacle(obstacle: QuizObstacleKey): void
   toggleWeekday(day: number): void
   start(): void
   next(): void
@@ -134,6 +139,14 @@ export function useQuiz(): QuizController {
     setAnswers((current) => ({ ...current, ...changes }))
   }, [])
 
+  const toggleArea = useCallback((area: QuizAreaKey) => {
+    setAnswers((current) => ({ ...current, areas: toggled(current.areas, area) }))
+  }, [])
+
+  const toggleObstacle = useCallback((obstacle: QuizObstacleKey) => {
+    setAnswers((current) => ({ ...current, obstacles: toggled(current.obstacles, obstacle) }))
+  }, [])
+
   const toggleWeekday = useCallback((day: number) => {
     setAnswers((current) => ({
       ...current,
@@ -207,6 +220,8 @@ export function useQuiz(): QuizController {
     diagnosis,
     preview,
     set,
+    toggleArea,
+    toggleObstacle,
     toggleWeekday,
     start,
     next,
@@ -218,5 +233,10 @@ export function useQuiz(): QuizController {
 }
 
 function hasStarted(answers: QuizAnswers): boolean {
-  return answers.goal.trim().length > 0 || answers.area !== null
+  return answers.goal.trim().length > 0 || answers.areas.length > 0
+}
+
+/** Mantém a ordem do toque: desmarcar tira, marcar vai pro fim. */
+function toggled<T>(list: readonly T[], item: T): readonly T[] {
+  return list.includes(item) ? list.filter((value) => value !== item) : [...list, item]
 }

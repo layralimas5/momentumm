@@ -15,6 +15,8 @@ import {
   QUIZ_TIMES,
   WEEKDAY_SHORT,
   type QuizAnswers,
+  type QuizAreaKey,
+  type QuizObstacleKey,
 } from '@/domain/entities/quiz'
 import { TextInput } from '@/presentation/components/ui/Field'
 import { Icon } from '@/presentation/components/ui/Icon'
@@ -32,6 +34,8 @@ interface QuizQuestionProps {
   /** Pra qual lado a pergunta entrou: 1 avança, -1 volta. */
   readonly direction: 1 | -1
   readonly onChange: (changes: Partial<QuizAnswers>) => void
+  readonly onToggleArea: (area: QuizAreaKey) => void
+  readonly onToggleObstacle: (obstacle: QuizObstacleKey) => void
   readonly onToggleWeekday: (day: number) => void
   readonly onSubmit: () => void
 }
@@ -41,6 +45,8 @@ export function QuizQuestion({
   answers,
   direction,
   onChange,
+  onToggleArea,
+  onToggleObstacle,
   onToggleWeekday,
   onSubmit,
 }: QuizQuestionProps) {
@@ -58,14 +64,16 @@ export function QuizQuestion({
         className="flex flex-col"
       >
         {step === 0 ? <GoalQuestion answers={answers} onChange={onChange} onSubmit={onSubmit} /> : null}
-        {step === 1 ? <AreaQuestion answers={answers} onChange={onChange} /> : null}
+        {step === 1 ? (
+          <AreaQuestion answers={answers} onChange={onChange} onToggle={onToggleArea} />
+        ) : null}
         {step === 2 ? (
-          <OptionQuestion
+          <MultiQuestion
             title="O que mais dificulta sua constância hoje?"
-            hint="Escolhe a que mais acontece com você."
+            hint="Marca todas que acontecem. A primeira que você tocar é a principal."
             options={QUIZ_OBSTACLES.map((key) => ({ value: key, label: QUIZ_OBSTACLE_LABELS[key] }))}
-            value={answers.obstacle}
-            onChange={(obstacle) => onChange({ obstacle })}
+            values={answers.obstacles}
+            onToggle={onToggleObstacle}
           />
         ) : null}
         {step === 3 ? (
@@ -189,23 +197,24 @@ function GoalQuestion({
 function AreaQuestion({
   answers,
   onChange,
+  onToggle,
 }: {
   readonly answers: QuizAnswers
   readonly onChange: (changes: Partial<QuizAnswers>) => void
+  readonly onToggle: (area: QuizAreaKey) => void
 }) {
   const id = useId()
 
   return (
     <div>
-      <OptionQuestion
+      <MultiQuestion
         title="Em qual área da sua vida esse objetivo se encaixa?"
-        hint="A área vira um eixo no seu app, com cor própria."
+        hint="Pode marcar mais de uma. A primeira vira o plano; as outras viram eixos no app."
         options={QUIZ_AREAS.map((key) => ({ value: key, label: QUIZ_AREA_LABELS[key] }))}
-        value={answers.area}
-        onChange={(area) => onChange({ area })}
-        columns
+        values={answers.areas}
+        onToggle={onToggle}
       />
-      {answers.area === 'outra' ? (
+      {answers.areas.includes('outra') ? (
         <div className="mt-4">
           <label htmlFor={id} className="text-sm font-medium text-ink">
             Qual área? <span className="font-normal text-ink-faint">(opcional)</span>
@@ -225,13 +234,82 @@ function AreaQuestion({
 }
 
 // ---------------------------------------------------------------------------
-// escolha única
+// escolha múltipla (chips)
 // ---------------------------------------------------------------------------
 
 interface Option<T extends string> {
   readonly value: T
   readonly label: string
 }
+
+/**
+ * Chips que quebram linha: cada opção ocupa só a largura do próprio texto,
+ * então "Desenvolvimento pessoal" não espreme o ícone nem vaza da coluna.
+ * A ordem do toque vira a ordem de importância, e o número no chip diz isso.
+ */
+function MultiQuestion<T extends string>({
+  title,
+  hint,
+  options,
+  values,
+  onToggle,
+}: {
+  readonly title: string
+  readonly hint: string
+  readonly options: readonly Option<T>[]
+  readonly values: readonly T[]
+  readonly onToggle: (value: T) => void
+}) {
+  return (
+    <div>
+      <Title hint={hint}>{title}</Title>
+
+      <div role="group" aria-label={title} className="flex flex-wrap gap-2">
+        {options.map((option) => {
+          const position = values.indexOf(option.value)
+          const selected = position >= 0
+          return (
+            <button
+              key={option.value}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => onToggle(option.value)}
+              className={cn(
+                'inline-flex min-h-11 max-w-full items-center gap-2 rounded-full border px-3.5 text-left text-sm font-medium transition-colors',
+                selected
+                  ? 'border-brand bg-brand-dim/60 text-ink shadow-[0_0_0_1px_var(--color-brand)]'
+                  : 'border-line bg-surface-hi/60 text-ink-muted hover:border-line-hi hover:text-ink active:bg-surface-top',
+              )}
+            >
+              <span
+                aria-hidden="true"
+                className={cn(
+                  'grid size-5 shrink-0 place-items-center rounded-full border text-[11px] font-semibold transition-colors',
+                  selected ? 'border-brand bg-brand text-white' : 'border-line-hi',
+                )}
+              >
+                {selected ? position + 1 : null}
+              </span>
+              <span className="min-w-0 text-pretty">{option.label}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      <p className="mt-3 text-xs text-ink-faint" aria-live="polite">
+        {values.length === 0
+          ? 'Nada marcado ainda.'
+          : values.length === 1
+            ? '1 marcada.'
+            : `${values.length} marcadas, nessa ordem.`}
+      </p>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// escolha única
+// ---------------------------------------------------------------------------
 
 function OptionQuestion<T extends string>({
   title,
