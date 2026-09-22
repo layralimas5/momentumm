@@ -7,7 +7,7 @@ import { GoogleIcon } from '@/presentation/components/brand/GoogleIcon'
 import { Wordmark } from '@/presentation/components/brand/Logo'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
-import { Field, TextInput } from '@/presentation/components/ui/Field'
+import { Field, PasswordInput, TextInput } from '@/presentation/components/ui/Field'
 import { ErrorNote } from '@/presentation/components/ui/States'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 import { MIN_PASSWORD_LENGTH } from '@/domain/auth/password'
@@ -231,9 +231,8 @@ export function AuthPage() {
             }
           >
             {(id, describedBy) => (
-              <TextInput
+              <PasswordInput
                 id={id}
-                type="password"
                 aria-describedby={describedBy}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
