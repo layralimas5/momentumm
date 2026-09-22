@@ -37,20 +37,20 @@ export function QuizDiagnosisView({ diagnosis }: QuizDiagnosisProps) {
       </motion.p>
       <motion.h1
         {...enter(0.05)}
-        className="mt-2 text-3xl font-semibold tracking-tight text-balance text-ink sm:text-4xl"
+        className="mt-1.5 text-2xl font-semibold tracking-tight text-balance text-ink sm:text-3xl"
       >
         {diagnosis.profile}.
       </motion.h1>
 
-      <motion.p {...enter(0.12)} className="mt-5 text-base text-pretty text-ink-muted sm:text-lg">
+      <motion.p {...enter(0.12)} className="mt-4 text-sm text-pretty text-ink-muted sm:text-base">
         {diagnosis.explanation}
       </motion.p>
 
-      <motion.dl {...enter(0.2)} className="mt-8 flex flex-col divide-y divide-line rounded-2xl border border-line bg-surface/60">
+      <motion.dl {...enter(0.2)} className="mt-6 flex flex-col divide-y divide-line rounded-2xl border border-line bg-surface/60">
         {rows.map((row) => (
-          <div key={row.label} className="flex items-start gap-3 px-4 py-3.5">
-            <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full border border-brand/30 bg-brand-dim/50 text-brand-ink">
-              <Icon name={row.icon} className="size-4" />
+          <div key={row.label} className="flex items-start gap-3 px-3.5 py-3">
+            <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full border border-brand/30 bg-brand-dim/50 text-brand-ink">
+              <Icon name={row.icon} className="size-3.5" />
             </span>
             <div className="min-w-0">
               <dt className="text-xs text-ink-faint">{row.label}</dt>

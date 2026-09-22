@@ -105,8 +105,8 @@ export function QuizQuestion({
 
 function Title({ children, hint }: { readonly children: string; readonly hint: string }) {
   return (
-    <header className="mb-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-balance text-ink sm:text-3xl">
+    <header className="mb-5">
+      <h1 className="text-xl font-semibold tracking-tight text-balance text-ink sm:text-2xl">
         {children}
       </h1>
       <p className="mt-2 text-sm text-pretty text-ink-muted">{hint}</p>
@@ -152,7 +152,7 @@ function GoalQuestion({
         autoComplete="off"
         enterKeyHint="next"
         autoFocus
-        className="min-h-14 text-base"
+        className="min-h-12 text-base"
       />
 
       <p className="mt-5 text-xs font-medium tracking-wide text-ink-faint uppercase">Exemplos</p>
@@ -285,7 +285,7 @@ function OptionQuestion<T extends string>({
                 }
               }}
               className={cn(
-                'flex min-h-14 items-center justify-between gap-3 rounded-2xl border px-4 text-left text-sm font-medium transition-colors sm:text-base',
+                'flex min-h-12 items-center justify-between gap-3 rounded-xl border px-3.5 text-left text-sm font-medium transition-colors',
                 selected
                   ? 'border-brand bg-brand-dim/60 text-ink shadow-[0_0_0_1px_var(--color-brand)]'
                   : 'border-line bg-surface-hi/60 text-ink-muted hover:border-line-hi hover:text-ink active:bg-surface-top',
@@ -336,7 +336,7 @@ function WeekdaysQuestion({
               aria-pressed={selected}
               onClick={() => onToggle(day.value)}
               className={cn(
-                'min-h-14 rounded-2xl border text-sm font-medium transition-colors',
+                'min-h-12 rounded-xl border text-sm font-medium transition-colors',
                 selected
                   ? 'border-brand bg-brand-dim/60 text-ink shadow-[0_0_0_1px_var(--color-brand)]'
                   : 'border-line bg-surface-hi/60 text-ink-muted hover:border-line-hi hover:text-ink active:bg-surface-top',

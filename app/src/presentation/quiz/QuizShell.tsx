@@ -59,7 +59,7 @@ export function QuizShell({ children, footer, progress, progressLabel, tallFoote
       <main
         id="conteudo"
         className={cn(
-          'relative mx-auto flex w-full max-w-lg flex-1 flex-col px-4 pt-6 sm:px-6 sm:pt-8',
+          'relative mx-auto flex w-full max-w-lg flex-1 flex-col px-4 pt-5 sm:px-6 sm:pt-6',
           footer ? (tallFooter ? 'pb-44' : 'pb-32') : 'pb-10',
         )}
       >

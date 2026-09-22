@@ -32,10 +32,10 @@ export function QuizPlanPreviewView({ preview, today }: QuizPlanPreviewProps) {
         }
 
   return (
-    <div className="flex flex-col gap-4 py-2">
+    <div className="flex flex-col gap-3 py-1">
       <motion.header {...enter(0)}>
         <p className="text-xs font-medium tracking-wide text-brand-ink uppercase">Seu plano</p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-balance text-ink sm:text-3xl">
+        <h1 className="mt-1.5 text-xl font-semibold tracking-tight text-balance text-ink sm:text-2xl">
           {plan.objectiveTitle} em {days} dias.
         </h1>
         <div className="mt-3 flex flex-wrap gap-1.5">
@@ -109,7 +109,7 @@ export function QuizPlanPreviewView({ preview, today }: QuizPlanPreviewProps) {
       {plan.firstStep ? (
         <motion.div {...enter(0.26)}>
           <Block icon="raio" title="Primeiro passo de hoje" highlight>
-            <p className="text-base font-semibold text-balance text-ink">{plan.firstStep.title}</p>
+            <p className="text-sm font-semibold text-balance text-ink sm:text-base">{plan.firstStep.title}</p>
             {plan.firstStep.minimalVersion ? (
               <p className="mt-1.5 text-sm text-ink-muted">
                 Dia cheio? Vale a versão mínima: {plan.firstStep.minimalVersion.toLowerCase()}
@@ -143,15 +143,15 @@ function Block({
     <section
       className={
         highlight
-          ? 'rounded-2xl border border-brand/50 bg-brand-dim/30 p-4 surface-brand-glow'
-          : 'rounded-2xl border border-line bg-surface/60 p-4'
+          ? 'rounded-xl border border-brand/50 bg-brand-dim/30 p-3.5 surface-brand-glow'
+          : 'rounded-xl border border-line bg-surface/60 p-3.5'
       }
     >
       <h2 className="flex items-center gap-2 text-xs font-medium tracking-wide text-ink-faint uppercase">
         <Icon name={icon} className="size-4 text-brand-ink" />
         {title}
       </h2>
-      <div className="mt-3">{children}</div>
+      <div className="mt-2.5">{children}</div>
     </section>
   )
 }
