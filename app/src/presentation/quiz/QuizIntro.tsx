@@ -57,7 +57,7 @@ export function QuizIntro({ copy, started, onStart }: QuizIntroProps) {
       </motion.ul>
 
       <motion.div {...enter(0.24)} className="mt-8">
-        <Button size="lg" className="w-full min-h-12" onClick={onStart}>
+        <Button className="w-full" onClick={onStart}>
           {started ? 'Continuar de onde parei' : 'Criar meu plano'}
           <Icon name="seta" className="size-4" />
         </Button>

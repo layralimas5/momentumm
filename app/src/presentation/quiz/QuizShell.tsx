@@ -31,7 +31,7 @@ export function QuizShell({ children, footer, progress, progressLabel, tallFoote
       <header className="relative mx-auto grid w-full max-w-lg grid-cols-[1fr_auto_1fr] items-center px-4 pt-safe sm:px-6">
         <span aria-hidden="true" />
         <Link to="/" aria-label="Momentumm" className="rounded-lg py-2">
-          <Wordmark className="w-28" />
+          <Wordmark className="w-36" />
         </Link>
         {progress !== undefined ? (
           <span className="justify-self-end text-xs tabular-nums text-ink-faint">{progressLabel}</span>
