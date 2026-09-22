@@ -63,14 +63,13 @@ export function QuizPage() {
         progressLabel={`${quiz.step + 1} de ${QUIZ_QUESTION_COUNT}`}
         footer={
           <>
-            <Button variant="ghost" className="min-h-12 shrink-0" onClick={quiz.back}>
+            <Button variant="ghost" className="shrink-0" onClick={quiz.back}>
               <Icon name="setaEsq" className="size-4" />
               Voltar
             </Button>
             <div className="min-w-0 flex-1">
               <Button
-                size="lg"
-                className="w-full min-h-12"
+                className="w-full"
                 onClick={quiz.next}
                 disabled={!quiz.canAdvance}
               >
@@ -108,7 +107,7 @@ export function QuizPage() {
     return (
       <QuizShell
         footer={
-          <Button size="lg" className="w-full min-h-12" onClick={quiz.showPlan}>
+          <Button className="w-full" onClick={quiz.showPlan}>
             Ver meu plano
             <Icon name="seta" className="size-4" />
           </Button>
@@ -121,14 +120,13 @@ export function QuizPage() {
 
   return (
     <QuizShell
-      tallFooter
       footer={
         <div className="flex w-full flex-col gap-2">
-          <Button size="lg" className="w-full min-h-12" onClick={activate}>
+          <Button className="w-full" onClick={activate}>
             Ativar meu plano no Momentumm
             <Icon name="seta" className="size-4" />
           </Button>
-          <Button variant="ghost" className="w-full min-h-10" onClick={quiz.review}>
+          <Button variant="ghost" size="sm" className="w-full" onClick={quiz.review}>
             Ajustar minhas respostas
           </Button>
         </div>
