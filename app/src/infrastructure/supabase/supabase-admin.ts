@@ -24,6 +24,7 @@ import {
   overviewSchema,
   requestDetailSchema,
   requestListSchema,
+  quizFunnelSchema,
   retentionSchema,
   settingSchema,
   subscriptionListSchema,
@@ -186,6 +187,10 @@ export class SupabaseAdminGateway implements AdminGateway {
 
   featureUsage(period: Period) {
     return rpc('admin_feature_usage', { p_from: period.from, p_to: period.to }, featureUsageSchema)
+  }
+
+  quizFunnel(period: Period) {
+    return rpc('admin_quiz_funnel', { p_from: period.from, p_to: period.to }, quizFunnelSchema)
   }
 
   evolutionMetrics() {

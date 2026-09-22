@@ -17,6 +17,14 @@ const NewPasswordPage = lazy(() =>
 const ToolsPage = lazy(() =>
   import('@/presentation/pages/ToolsPage').then((m) => ({ default: m.ToolsPage })),
 )
+const QuizPage = lazy(() =>
+  import('@/presentation/pages/QuizPage').then((m) => ({ default: m.QuizPage })),
+)
+const QuizActivationPage = lazy(() =>
+  import('@/presentation/pages/QuizActivationPage').then((m) => ({
+    default: m.QuizActivationPage,
+  })),
+)
 const LegalPage = lazy(() =>
   import('@/presentation/pages/LegalPage').then((m) => ({ default: m.LegalPage })),
 )
@@ -127,6 +135,9 @@ const AdminRetentionPage = lazy(() =>
 const AdminFeaturesPage = lazy(() =>
   import('@/presentation/admin/pages/AdminFeaturesPage').then((m) => ({ default: m.AdminFeaturesPage })),
 )
+const AdminFunnelPage = lazy(() =>
+  import('@/presentation/admin/pages/AdminFunnelPage').then((m) => ({ default: m.AdminFunnelPage })),
+)
 const AdminErrorsPage = lazy(() =>
   import('@/presentation/admin/pages/AdminErrorsPage').then((m) => ({ default: m.AdminErrorsPage })),
 )
@@ -163,6 +174,8 @@ export function App() {
             */}
             <Route path="/nova-senha" element={<NewPasswordPage />} />
             <Route path="/ferramentas" element={<ToolsPage />} />
+            {/* A entrada do funil: quiz público, sem conta. */}
+            <Route path="/criar-meu-plano" element={<QuizPage />} />
             <Route path="/termos" element={<LegalPage kind="termos" />} />
             <Route path="/privacidade" element={<LegalPage kind="privacidade" />} />
 
@@ -177,6 +190,8 @@ export function App() {
               <Route index element={<DashboardPage />} />
               {/* Primeiro acesso: a casca manda toda conta vazia pra cá. */}
               <Route path="comecar" element={<ActivationPage />} />
+              {/* Plano do quiz esperando no navegador: grava e manda pro Hoje. */}
+              <Route path="ativar" element={<QuizActivationPage />} />
               <Route path="objetivos" element={<ObjectivesPage />} />
               <Route path="objetivos/:id" element={<ObjectiveDetailPage />} />
               <Route path="habitos" element={<HabitsPage />} />
@@ -221,6 +236,7 @@ export function App() {
               <Route path="ia" element={<AdminAiPage />} />
               <Route path="retencao" element={<AdminRetentionPage />} />
               <Route path="recursos" element={<AdminFeaturesPage />} />
+              <Route path="funil" element={<AdminFunnelPage />} />
               <Route path="erros" element={<AdminErrorsPage />} />
               <Route path="solicitacoes" element={<AdminRequestsPage />} />
               <Route path="solicitacoes/:id" element={<AdminRequestDetailPage />} />

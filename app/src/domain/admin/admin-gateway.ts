@@ -10,6 +10,7 @@ import type {
   AdminFeatureUsage,
   AdminMember,
   AdminOverview,
+  AdminQuizFunnel,
   AdminRequestDetail,
   AdminRequestList,
   AdminRetention,
@@ -130,6 +131,8 @@ export interface AdminGateway {
 
   retention(period: Period): Promise<AdminRetention>
   featureUsage(period: Period): Promise<AdminFeatureUsage>
+  /** Funil de aquisição pelo quiz (`/criar-meu-plano`), agregado por sessão. */
+  quizFunnel(period: Period): Promise<AdminQuizFunnel>
   /** Distribuição por nível e XP da semana. Agregado, sem dado individual. */
   evolutionMetrics(): Promise<AdminEvolutionMetrics>
 

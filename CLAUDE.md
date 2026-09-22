@@ -1142,6 +1142,39 @@ feito → XP → "você começou de verdade". O fecho é a conquista **Primeiro
 Passo** (10 XP, migration 0037 + engine do demo), concedida na primeira
 ação concluída e mostrada pelo `EvolutionNotice`.
 
+### Funil do quiz (21/09/2026)
+
+Entrada pública em `/criar-meu-plano`: intro curta → sete perguntas (uma
+por tela, respostas no `localStorage`) → processamento curto → diagnóstico
+→ prévia do plano → cadastro → `/app/ativar` grava tudo → Hoje com a
+primeira vitória. Links dos carrosséis levam pra lá com `utm_*` e `tema=`
+(só título e introdução mudam; `QUIZ_INTROS`).
+
+- **Não existe gerador novo.** `domain/entities/quiz.ts` converte as
+  respostas em `ActivationAnswers` e o plano sai do mesmo `buildActivation`
+  do onboarding. O que o quiz acrescenta: diagnóstico por obstáculo
+  (`buildDiagnosis`), hábito de sustentação (`suggestHabit`) e a regra de
+  que plano impossível é ajustado sozinho (primeiro remédio que cabe) com
+  nota na prévia, porque quem ainda não tem conta não negocia com aviso.
+- **Sessão anônima** (migration 0038: `quiz_sessions`, `quiz_events`).
+  O id nasce no navegador e é o portador; sem política nenhuma, só RPCs
+  `security definer` (`quiz_track`, `quiz_save`, `quiz_link_to_me`,
+  `quiz_mark_activated`). Depois do vínculo só o dono escreve. Eventos do
+  funil em `domain/analytics/funnel-events` (lista batida com o SQL por
+  teste). Painel em `/admin/funil` (`admin_quiz_funnel`). Teste PGlite em
+  `supabase/tests/pglite/quiz.mjs`.
+- **A casca prefere o plano pendente**: `useActivationGate` manda pra
+  `/app/ativar` antes de `/app/comecar` quando há quiz no navegador. É o
+  que faz o login com Google (volta em `/entrar` sem estado) cair no lugar
+  certo. `/app/ativar` recalcula o plano com o `today` da conta, cria o
+  eixo se precisar, `applyPlan`, hábito, vincula a sessão e marca a
+  primeira vitória (`use-first-win`, por título e dia). Trial não é
+  criado aqui: já nasce no `handle_new_user`; só o evento é registrado.
+- A sessão do quiz continua no navegador depois do vínculo pra
+  `first_action_completed`, `checkout_started` e `subscription_completed`
+  caírem na mesma linha (`trackFunnelIfLinked`); abrir o quiz de novo
+  descarta a sessão de outra conta (`startFreshQuizSession`).
+
 ### Celular
 
 O dashboard do celular é uma **árvore de componentes própria**

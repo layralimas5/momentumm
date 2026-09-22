@@ -362,6 +362,16 @@ export const featureUsageSchema = z.object({
 })
 export type AdminFeatureUsage = z.infer<typeof featureUsageSchema>
 
+/** O funil do quiz: sessões distintas por evento, abandono por passo, origem e tema. */
+export const quizFunnelSchema = z.object({
+  period: z.object({ from: z.string(), to: z.string() }),
+  stages: z.record(count),
+  abandoned_by_step: z.record(count),
+  by_source: z.record(count),
+  by_theme: z.record(count),
+})
+export type AdminQuizFunnel = z.infer<typeof quizFunnelSchema>
+
 /** Só agregados: quantas pessoas em cada nível, nunca o histórico de alguém. */
 export const evolutionMetricsSchema = z.object({
   people: count,

@@ -21,6 +21,7 @@ import { ShareStudioProvider } from '@/presentation/share/ShareStudioProvider'
 import { useIsDesktop } from '@/presentation/hooks/use-media-query'
 import { offerSource, storedOffer } from '@/presentation/components/landing/offers'
 import { ACTIVATION_PATH, isActivationSkipped } from '@/presentation/planner/use-activation'
+import { hasPendingQuizPlan, QUIZ_ACTIVATION_PATH } from '@/presentation/quiz/quiz-activation'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 import { AppHeader } from './AppHeader'
@@ -88,7 +89,7 @@ function LayoutShell() {
     O primeiro acesso não tem casca: sem sidebar, sem barra de abas, sem
     atalho pra outra tela. Quatro perguntas e um plano, e só depois o app.
   */
-  if (pathname === ACTIVATION_PATH) return <ActivationShell />
+  if (pathname === ACTIVATION_PATH || pathname === QUIZ_ACTIVATION_PATH) return <ActivationShell />
 
   return (
     <div className="min-h-dvh bg-canvas lg:flex">
@@ -146,8 +147,18 @@ function useActivationGate(pathname: string) {
   const { user } = useAuth()
   const planner = usePlanner()
 
-  if (planner.loading || !planner.isNewUser) return null
-  if (pathname === ACTIVATION_PATH) return null
+  if (planner.loading) return null
+  if (pathname === ACTIVATION_PATH || pathname === QUIZ_ACTIVATION_PATH) return null
+
+  /*
+    Plano do quiz esperando no navegador: ele vem antes de qualquer tela,
+    inclusive do onboarding. É o que faz o login com Google (que volta em
+    `/entrar` sem estado nenhum) cair na ativação do plano, e não em quatro
+    perguntas que a pessoa acabou de responder.
+  */
+  if (hasPendingQuizPlan()) return <Navigate to={QUIZ_ACTIVATION_PATH} replace />
+
+  if (!planner.isNewUser) return null
   if (isActivationSkipped(user?.id ?? null)) return null
 
   return <Navigate to={ACTIVATION_PATH} replace />

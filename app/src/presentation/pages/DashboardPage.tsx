@@ -18,6 +18,8 @@ import { MomentumStrip } from '@/presentation/components/dashboard/MomentumStrip
 import { NextUpCard } from '@/presentation/components/dashboard/NextUpCard'
 import { ObjectivesCard } from '@/presentation/components/dashboard/ObjectivesCard'
 import { ResumeActivationCard } from '@/presentation/components/dashboard/ResumeActivationCard'
+import { FirstWinCard } from '@/presentation/quiz/FirstWinCard'
+import { useFirstWin } from '@/presentation/quiz/use-first-win'
 import { PriorityCard } from '@/presentation/components/dashboard/PriorityCard'
 import { RecoveryCard } from '@/presentation/components/dashboard/RecoveryCard'
 import { WeeklyProgressCard } from '@/presentation/components/dashboard/WeeklyProgressCard'
@@ -98,6 +100,9 @@ export function DashboardPage() {
     estado de "onde parei" é do hook, não desta tela.
   */
   const activation = useActivation()
+
+  /* Quem chegou pelo quiz: a ação de hoje em destaque até virar a primeira vitória. */
+  const firstWin = useFirstWin()
 
   /*
     Começar uma ação, encolher pra versão mínima e aplicar a recomendação são
@@ -282,6 +287,18 @@ export function DashboardPage() {
       />
     ) : null
 
+  const firstWinCard =
+    firstWin.task || firstWin.justCompleted ? (
+      <FirstWinCard
+        task={firstWin.task}
+        justCompleted={firstWin.justCompleted}
+        nextUp={view.nextUp}
+        onComplete={completeTask}
+        onStartFocus={startFocus}
+        onDismiss={firstWin.dismiss}
+      />
+    ) : null
+
   /*
     Duas árvores, não uma encolhida: o celular reordena o dia inteiro em torno
     de "registrar, decidir, começar" e manda a análise pra depois. Os dados, as
@@ -301,6 +318,7 @@ export function DashboardPage() {
           onReviewOverdue={() => navigate('/app/plano')}
         />
         {resumeCard}
+        {firstWinCard}
         <ReminderCard />
         <RecoveryCard
           state={recovery.state}
@@ -361,6 +379,8 @@ export function DashboardPage() {
         />
 
         {resumeCard}
+
+        {firstWinCard}
 
         <ReminderCard />
 
