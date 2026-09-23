@@ -1,20 +1,14 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import {
-  formatPhone,
-  MAX_LEAD_EMAIL,
-  MAX_LEAD_NAME,
-  type LeadErrors,
-  type QuizLead,
-} from '@/domain/entities/quiz-lead'
+import { formatPhone, MAX_LEAD_EMAIL, MAX_LEAD_NAME, type LeadErrors, type QuizLead } from '@/domain/entities/quiz-lead'
 import { Field, TextInput } from '@/presentation/components/ui/Field'
 
 /**
  * A tela entre a última pergunta e o diagnóstico: pra onde mandar o plano.
  *
- * Dois campos obrigatórios e dois opcionais. Cada campo obrigatório a mais
- * aqui é gente desistindo no pior lugar possível, então WhatsApp e idade
- * pedem licença em vez de exigir: quem quiser deixar, deixa.
+ * Dois campos obrigatórios e um opcional. Cada campo a mais aqui é gente
+ * desistindo no pior lugar possível, então o WhatsApp pede licença em vez de
+ * exigir: quem quiser deixar, deixa.
  *
  * A finalidade é dita na tela, não escondida num termo: a pessoa lê que o
  * plano vai pro e-mail dela e que o Momentumm pode falar com ela. É o que a
@@ -107,20 +101,6 @@ export function QuizContact({ lead, warnings, onChange, onSubmit }: QuizContactP
           )}
         </Field>
 
-        <Field label="Idade" hint="Opcional. Ajuda a calibrar o ritmo do plano." error={warnings.age ?? null}>
-          {(id, describedBy) => (
-            <TextInput
-              id={id}
-              inputMode="numeric"
-              value={lead.age}
-              onChange={(event) => onChange({ age: event.target.value.replace(/\D/g, '').slice(0, 3) })}
-              aria-describedby={describedBy}
-              enterKeyHint="done"
-              placeholder="29"
-              className="min-h-12 max-w-28 text-base"
-            />
-          )}
-        </Field>
       </div>
 
       <p className="mt-4 text-xs text-pretty text-ink-faint">

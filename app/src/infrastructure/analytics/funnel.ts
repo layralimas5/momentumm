@@ -122,7 +122,9 @@ export async function saveQuizLead(lead: NormalizedLead): Promise<boolean> {
       p_name: lead.name,
       p_email: lead.email,
       p_phone: lead.phone,
-      p_age: lead.age,
+      // A coluna existe na 0039 e segue reservada: o quiz parou de pedir
+      // idade porque ela não mudava nada no plano nem na conversa.
+      p_age: null,
     })
     if (error) throw error
     clearPendingLead()
@@ -160,7 +162,6 @@ function readPendingLead(): NormalizedLead | null {
       name: lead.name,
       email: lead.email,
       phone: typeof lead.phone === 'string' ? lead.phone : null,
-      age: typeof lead.age === 'number' ? lead.age : null,
     }
   } catch {
     return null

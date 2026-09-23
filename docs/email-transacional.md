@@ -68,3 +68,47 @@ verificar `momentumm.com.br`, criar os registros SPF e DKIM no DNS e apontar o
 host pro provedor. Remetente vira `Momentumm <conta@momentumm.com.br>`, a
 entrega melhora e o teto diário deixa de existir na prática. Os modelos em
 português continuam valendo sem mudar uma linha.
+
+## O aviso do sexto dia (teste do PRO acabando)
+
+Além dos e-mails de conta, o mesmo SMTP manda um aviso pra quem está no
+sexto dia do teste de 7 dias: o PRO acaba amanhã, nada é apagado, e o
+botão leva pra assinatura. Quem já assinou não recebe.
+
+Quem decide é o banco (`trial_notices_due()`, migration 0040) e quem envia é
+a função de borda `trial-ending`. O agendador roda todo dia às 12h UTC (9h
+em Brasília).
+
+Pra ligar, uma vez:
+
+```powershell
+# a mesma senha de app do Gmail, agora como segredo da função
+supabase secrets set SMTP_HOSTNAME=smtp.gmail.com SMTP_PORT=465 SMTP_SECURE=true
+supabase secrets set SMTP_USERNAME=momentumm.suport@gmail.com SMTP_PASSWORD=<senha de app>
+
+# um token qualquer de 32+ caracteres, só pra ninguém chamar a função de fora
+supabase secrets set TRIAL_NOTICE_TOKEN=<32+ caracteres>
+
+npm run billing:bundle
+supabase functions deploy trial-ending --no-verify-jwt
+```
+
+E no SQL editor do projeto, o mesmo token no Vault (é assim que o cron
+autentica a chamada):
+
+```sql
+select vault.create_secret('<o mesmo TRIAL_NOTICE_TOKEN>', 'trial_notice_token');
+```
+
+Pra testar sem esperar seis dias: no SQL editor, puxe o fim do teste de uma
+conta sua pra daqui a um dia e chame a função na mão.
+
+```sql
+update public.plan_trials
+   set ends_at = now() + interval '20 hours', notice_sent_at = null
+ where user_id = '<teu id>';
+select public.call_trial_ending();
+```
+
+O envio que falha não é carimbado: a pessoa volta pra fila do dia seguinte,
+que ainda está dentro da janela.

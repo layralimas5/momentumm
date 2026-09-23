@@ -20,17 +20,13 @@ export interface QuizLead {
   readonly email: string
   /** Só dígitos, com DDD. Vazio quando não informado. */
   readonly phone: string
-  /** Vazio quando não informado. */
-  readonly age: string
 }
 
-export const EMPTY_QUIZ_LEAD: QuizLead = { name: '', email: '', phone: '', age: '' }
+export const EMPTY_QUIZ_LEAD: QuizLead = { name: '', email: '', phone: '' }
 
 export const MIN_LEAD_NAME = 2
 export const MAX_LEAD_NAME = 60
 export const MAX_LEAD_EMAIL = 160
-export const MIN_LEAD_AGE = 13
-export const MAX_LEAD_AGE = 120
 
 /**
  * Forma de e-mail, não existência: `@` com alguma coisa dos dois lados e um
@@ -63,12 +59,11 @@ export interface LeadErrors {
   readonly name?: string
   readonly email?: string
   readonly phone?: string
-  readonly age?: string
 }
 
 /** Os erros do formulário. Objeto vazio quando dá pra enviar. */
 export function leadErrors(lead: QuizLead): LeadErrors {
-  const errors: { name?: string; email?: string; phone?: string; age?: string } = {}
+  const errors: { name?: string; email?: string; phone?: string } = {}
 
   if (lead.name.trim().length < MIN_LEAD_NAME) {
     errors.name = 'Escreve teu nome ou como você quer ser chamado.'
@@ -82,11 +77,6 @@ export function leadErrors(lead: QuizLead): LeadErrors {
     errors.phone = 'O WhatsApp precisa ter DDD e 8 ou 9 dígitos.'
   }
 
-  const age = Number(lead.age)
-  if (lead.age.trim().length > 0 && (!Number.isInteger(age) || age < MIN_LEAD_AGE || age > MAX_LEAD_AGE)) {
-    errors.age = `Idade entre ${MIN_LEAD_AGE} e ${MAX_LEAD_AGE}.`
-  }
-
   return errors
 }
 
@@ -98,17 +88,14 @@ export interface NormalizedLead {
   readonly name: string
   readonly email: string
   readonly phone: string | null
-  readonly age: number | null
 }
 
 /** O contato pronto pra gravar. Só chame com `isLeadReady`. */
 export function normalizeLead(lead: QuizLead): NormalizedLead {
   const digits = onlyDigits(lead.phone)
-  const age = Number(lead.age)
   return {
     name: lead.name.trim().slice(0, MAX_LEAD_NAME),
     email: lead.email.trim().toLowerCase().slice(0, MAX_LEAD_EMAIL),
     phone: digits.length >= 10 ? digits : null,
-    age: lead.age.trim().length > 0 && Number.isInteger(age) ? age : null,
   }
 }
