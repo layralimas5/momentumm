@@ -4,11 +4,12 @@ import { activityType } from '@/domain/entities/activity-type'
 import { countsAsDone, habitsScheduledOn, statusOf } from '@/domain/entities/habit'
 import { AccountMenu } from '@/presentation/components/account/AccountMenu'
 import { ThemeToggle } from '@/presentation/theme/ThemeToggle'
-import { isPending } from '@/domain/entities/task'
+import { isDone, isPending } from '@/domain/entities/task'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
 import { usePlanner } from '@/presentation/planner/use-planner'
+import { markShareNudgeSeen, shareNudgeSeen } from '@/presentation/share/share-nudge'
 import { useMyRequests, withAnswer } from '@/presentation/support/use-my-requests'
 import { cn } from '@/shared/lib/cn'
 import { CommandPalette } from './CommandPalette'
@@ -187,6 +188,7 @@ function Notifications() {
     })
   }
 
+
   if (planner.streak.atRisk) {
     items.push({
       id: 'streak',
@@ -212,6 +214,20 @@ function Notifications() {
       id: 'atrasadas',
       text: `${overdue.length} ${overdue.length === 1 ? 'ação atrasada' : 'ações atrasadas'}. Dá pra adiar sem culpa.`,
       to: '/app',
+    })
+  }
+
+  // O mesmo convite do celular: dia com movimento, uma vez por dia.
+  const movedToday =
+    planner.tasks.some((task) => isDone(task) && task.day === planner.today) ||
+    habitsScheduledOn(planner.habits, planner.today).some((habit) =>
+      countsAsDone(statusOf(planner.habitLogs, habit.id, planner.today)),
+    )
+  if (movedToday && !shareNudgeSeen(planner.today)) {
+    items.push({
+      id: 'compartilhar',
+      text: 'Teu dia rendeu. Mostra o teu Momentumm nos stories.',
+      to: '/app#compartilhar',
     })
   }
 
@@ -263,6 +279,8 @@ function Notifications() {
                     type="button"
                     onClick={() => {
                       setOpen(false)
+                      // Convite atendido não volta no mesmo dia.
+                      if (item.id === 'compartilhar') markShareNudgeSeen(planner.today)
                       navigate(item.to)
                     }}
                     className="w-full px-4 py-3 text-left text-sm text-ink-muted transition-colors hover:bg-surface-hi hover:text-ink"

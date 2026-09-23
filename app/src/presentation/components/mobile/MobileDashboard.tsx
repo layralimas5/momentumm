@@ -114,6 +114,11 @@ export function MobileDashboard({
   */
   return (
     <div className="flex flex-col gap-5">
+      {/* A frase abre a tela: é o empurrão pra encarar o que vem depois dela,
+          e por isso vem antes de qualquer número. Compacta, cabe em uma faixa
+          e não empurra a ação pra fora da primeira dobra. */}
+      <QuoteCard today={planner.today} compact />
+
       {/* Onde estou na semana: a data e os sete dias na mesma faixa. */}
       <MobileWeekStrip week={view.week} />
 
@@ -217,10 +222,6 @@ export function MobileDashboard({
         onCreate={() => composer.open('habito')}
       />
 
-      {/* A frase e o compartilhar fecham a tela: os dois são expressão, não
-          decisão, e no topo empurravam a ação pra fora da primeira dobra. */}
-      <QuoteCard today={planner.today} compact />
-
       {/*
         O compartilhar fica na rolagem principal, colado no avanço da semana:
         é logo depois de ver o progresso que dá vontade de mostrar. Dentro do
@@ -230,7 +231,9 @@ export function MobileDashboard({
         A fileira continua aparecendo só quando existe momento digno de card,
         pela mesma razão de sempre: botão sempre visível vira mobília.
       */}
-      <ShareMomentsRow view={view} />
+      <div id="compartilhar" className="scroll-mt-24">
+        <ShareMomentsRow view={view} />
+      </div>
 
       {/*
         Consulta e registro do fim do dia, recolhidos.

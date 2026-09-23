@@ -5,11 +5,12 @@ import { countsAsDone, habitsScheduledOn, statusOf } from '@/domain/entities/hab
 import { AccountMenu } from '@/presentation/components/account/AccountMenu'
 import { ThemeToggle } from '@/presentation/theme/ThemeToggle'
 import { LogoMark } from '@/presentation/components/brand/Logo'
-import { isPending } from '@/domain/entities/task'
+import { isDone, isPending } from '@/domain/entities/task'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { BottomSheet } from '@/presentation/components/ui/BottomSheet'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { usePlanner } from '@/presentation/planner/use-planner'
+import { markShareNudgeSeen, shareNudgeSeen } from '@/presentation/share/share-nudge'
 import { useMyRequests, withAnswer } from '@/presentation/support/use-my-requests'
 import { TAB_ROUTES } from './MobileTabBar'
 import { navItemFor } from '@/presentation/layouts/nav-items'
@@ -30,6 +31,7 @@ import { navItemFor } from '@/presentation/layouts/nav-items'
  */
 export function MobileTopBar() {
   const { profile } = useAuth()
+  const planner = usePlanner()
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const [alertsOpen, setAlertsOpen] = useState(false)
@@ -131,6 +133,8 @@ export function MobileTopBar() {
                   type="button"
                   onClick={() => {
                     setAlertsOpen(false)
+                    // Convite atendido não volta no mesmo dia.
+                    if (alert.id === 'compartilhar') markShareNudgeSeen(planner.today)
                     navigate(alert.to)
                   }}
                   className="min-h-14 w-full rounded-xl px-3 py-3 text-left text-sm text-ink-muted transition-colors active:bg-surface-hi"
@@ -201,6 +205,25 @@ function useAlerts(): Alert[] {
       id: 'atrasadas',
       text: `${overdue.length} ${overdue.length === 1 ? 'ação atrasada' : 'ações atrasadas'}. Dá pra adiar sem culpa.`,
       to: '/app',
+    })
+  }
+
+
+  /*
+    O convite de mostrar o Momentumm. Depois de um dia com movimento e uma vez
+    por dia: o card e o que traz gente nova, e quem acabou de fechar uma acao e
+    quem tem o que mostrar.
+  */
+  const movedToday =
+    planner.tasks.some((task) => isDone(task) && task.day === planner.today) ||
+    habitsScheduledOn(planner.habits, planner.today).some((habit) =>
+      countsAsDone(statusOf(planner.habitLogs, habit.id, planner.today)),
+    )
+  if (movedToday && !shareNudgeSeen(planner.today)) {
+    alerts.push({
+      id: 'compartilhar',
+      text: 'Teu dia rendeu. Mostra o teu Momentumm nos stories.',
+      to: '/app#compartilhar',
     })
   }
 
