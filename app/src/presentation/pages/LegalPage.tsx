@@ -99,7 +99,7 @@ const DOCUMENTS: Readonly<Record<LegalKind, LegalDocument>> = {
           'Dados de conta: e-mail, nome, foto e bio (opcionais) e as credenciais de acesso. Se você entrar com o Google, recebemos o e-mail e o nome do seu perfil Google.',
           'Dados de uso do produto: objetivos, planos, etapas, hábitos, ações, registros de atividade, check-ins, reviews e as respostas que você escreve. Também derivamos números a partir deles, como o Momentumm Score.',
           'Dados técnicos: registros de acesso, tipo de navegador e eventos de uso agregados (por exemplo, "compartilhou um card"), nunca o conteúdo que você escreveu.',
-          'Contato deixado no quiz: se você responder o quiz em /criar-meu-plano, pedimos nome, e-mail e, se você quiser, WhatsApp e idade, junto das respostas que você deu ali. Usamos isso pra te mandar o plano e falar com você sobre ele. Sem criar conta, esses dados são apagados em até 90 dias, e você pode pedir a remoção antes disso.',
+          'Contato deixado no quiz: se você responder o quiz em /criar-meu-plano, pedimos nome, e-mail e, se você quiser, WhatsApp e idade, junto das respostas que você deu ali. Usamos isso pra falar com você sobre o plano que você montou ali. Sem criar conta, esses dados são apagados em até 90 dias, e você pode pedir a remoção antes disso.',
         ],
       },
       {

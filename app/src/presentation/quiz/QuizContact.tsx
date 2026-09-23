@@ -4,15 +4,18 @@ import { formatPhone, MAX_LEAD_EMAIL, MAX_LEAD_NAME, type LeadErrors, type QuizL
 import { Field, TextInput } from '@/presentation/components/ui/Field'
 
 /**
- * A tela entre a última pergunta e o diagnóstico: pra onde mandar o plano.
+ * A tela entre a última pergunta e o diagnóstico: por onde falar com a pessoa
+ * depois.
  *
  * Dois campos obrigatórios e um opcional. Cada campo a mais aqui é gente
  * desistindo no pior lugar possível, então o WhatsApp pede licença em vez de
  * exigir: quem quiser deixar, deixa.
  *
- * A finalidade é dita na tela, não escondida num termo: a pessoa lê que o
- * plano vai pro e-mail dela e que o Momentumm pode falar com ela. É o que a
- * LGPD chama de consentimento informado, e é o mínimo pra usar isso depois.
+ * A finalidade é dita na tela, não escondida num termo, e ela é a VERDADEIRA:
+ * o contato serve pra o Momentumm falar com a pessoa depois. O plano aparece
+ * na tela seguinte, não no e-mail — nenhum envio existe, e prometer um seria
+ * a primeira promessa quebrada do produto, logo na porta de entrada. É o que
+ * a LGPD chama de consentimento informado, e é o mínimo pra usar isso depois.
  */
 
 interface QuizContactProps {
@@ -39,11 +42,11 @@ export function QuizContact({ lead, warnings, onChange, onSubmit }: QuizContactP
       <header className="mb-5">
         <p className="text-xs font-medium tracking-wide text-brand-ink uppercase">Último passo</p>
         <h1 className="mt-1.5 text-xl font-semibold tracking-tight text-balance text-ink sm:text-2xl">
-          Pra onde eu mando teu plano?
+          Como eu falo com você depois?
         </h1>
         <p className="mt-2 text-sm text-pretty text-ink-muted">
-          Teu diagnóstico e teu plano já estão prontos. Deixa onde te achar pra eles não se
-          perderem.
+          Teu diagnóstico e teu plano estão prontos, na próxima tela. Deixa teu contato pra eu
+          poder te chamar depois e saber como o plano está indo.
         </p>
       </header>
 
@@ -104,8 +107,8 @@ export function QuizContact({ lead, warnings, onChange, onSubmit }: QuizContactP
       </div>
 
       <p className="mt-4 text-xs text-pretty text-ink-faint">
-        Ao continuar, você recebe o plano no e-mail e aceita que o Momentumm entre em contato
-        sobre ele. Nada de lista de terceiros, e dá pra pedir a remoção quando quiser. Ver a{' '}
+        Ao continuar, você aceita que o Momentumm entre em contato sobre o teu plano. Nada de
+        lista de terceiros, e dá pra pedir a remoção quando quiser. Ver a{' '}
         <Link to="/privacidade" target="_blank" rel="noreferrer" className="text-brand-hi hover:underline">
           política de privacidade
         </Link>
