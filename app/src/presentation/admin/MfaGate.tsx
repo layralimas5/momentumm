@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ADMIN_ROLE_LABELS, ADMIN_SESSION_MINUTES } from '@/domain/admin/admin-role'
+import { ADMIN_ROLE_LABELS } from '@/domain/admin/admin-role'
 import type { MfaEnrollment, MfaFactor } from '@/domain/auth/auth-service'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { LogoMark } from '@/presentation/components/brand/Logo'
@@ -150,7 +150,7 @@ function VerifyStep() {
       </h1>
       <p className="text-sm text-ink-muted">
         {expired
-          ? `O painel fica aberto por ${ADMIN_SESSION_MINUTES} minutos depois de cada verificação. Digite o código pra continuar.`
+          ? 'A sessão do painel venceu. Digite o código pra continuar de onde parou.'
           : 'Digite o código do seu app autenticador pra abrir o painel.'}
       </p>
 

@@ -80,8 +80,14 @@ export function can(role: AdminRole | null, capability: AdminCapability): boolea
   return ROLE_CAPABILITIES[role].has(capability)
 }
 
-/** A sessão administrativa vence uma hora depois da última verificação do fator. */
-export const ADMIN_SESSION_MINUTES = 60
+/**
+ * Quanto a sessão do painel dura, só como rótulo.
+ *
+ * Quem decide é `admin.security.sessionMinutes` no banco, e a tela lê o
+ * vencimento pronto em `admin_me()`. Esta constante existe pro texto que
+ * fala da configuração, não pra calcular nada.
+ */
+export const ADMIN_SESSION_MINUTES_DEFAULT = 480
 /** Ação crítica exige fator verificado nos últimos cinco minutos. */
 export const ADMIN_STEP_UP_MINUTES = 5
 

@@ -21,6 +21,7 @@ export const ADMIN_NAV: readonly AdminNavItem[] = [
   { to: '/admin/retencao', label: 'Retenção', icon: 'progresso', end: false, requires: 'metrics.read', readOnly: true },
   { to: '/admin/recursos', label: 'Recursos', icon: 'insights', end: false, requires: 'metrics.read', readOnly: true },
   { to: '/admin/funil', label: 'Funil do quiz', icon: 'play', end: false, requires: 'metrics.read', readOnly: true },
+  { to: '/admin/funis', label: 'Funis de quiz', icon: 'config', end: false, requires: 'metrics.read', readOnly: false },
   { to: '/admin/contatos', label: 'Contatos do quiz', icon: 'sino', end: false, requires: 'users.read', readOnly: true },
   { to: '/admin/erros', label: 'Erros e saúde', icon: 'raio', end: false, requires: 'errors.read', readOnly: true },
   { to: '/admin/solicitacoes', label: 'Solicitações', icon: 'sino', end: false, requires: 'requests.read', readOnly: false },

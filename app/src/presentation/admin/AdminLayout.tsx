@@ -32,10 +32,11 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         Pular para o conteúdo
       </a>
 
-      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-line bg-surface/40 lg:flex">
+      {/* A coluna cresce com a tela, e a marca dentro dela cresce junto. */}
+      <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col border-r border-line bg-surface/40 lg:flex xl:w-64 2xl:w-72">
         <div className="flex h-full flex-col px-3 py-5">
           <div className="flex flex-col items-start gap-3 px-1">
-            <Wordmark className="w-20" />
+            <Wordmark className="w-28 xl:w-32 2xl:w-36" />
             <span className="rounded-full border border-brand/40 bg-brand-dim/40 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-brand-ink uppercase">
               painel admin
             </span>
@@ -57,8 +58,8 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-30 border-b border-line bg-canvas/85 backdrop-blur lg:hidden">
           <div className="flex items-center justify-between gap-3 px-4 pt-safe py-3">
             <div className="flex items-center gap-2">
-              <LogoMark className="size-7" />
-              <span className="text-sm font-semibold text-ink">{current?.label ?? 'Painel'}</span>
+              <LogoMark className="size-6 sm:size-7" />
+              <span className="truncate text-sm font-semibold text-ink sm:text-base">{current?.label ?? 'Painel'}</span>
             </div>
             <div className="flex items-center gap-2">
               <NavLink to="/app" className="rounded-full border border-line px-2.5 py-1 text-[11px] font-medium text-ink-muted hover:text-ink">

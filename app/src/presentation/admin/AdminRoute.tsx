@@ -21,7 +21,12 @@ export function AdminRoute() {
   const { user, loading } = useAuth()
 
   if (loading) return <FullscreenSpinner />
-  if (!user) return <Navigate to="/entrar" replace state={{ from: '/admin' }} />
+  /*
+    `destino=admin` deixa a tela de entrada saber de onde veio mesmo quando o
+    histórico perde o `state` (link colado, recarga em aba nova). Sem isso, o
+    caminho do painel voltaria a oferecer "criar conta".
+  */
+  if (!user) return <Navigate to="/entrar?destino=admin" replace state={{ from: '/admin' }} />
 
   if (container.demo) {
     return (
