@@ -21,6 +21,7 @@ import { MobileInsight } from './MobileInsight'
 import { MobileObjectives } from './MobileObjectives'
 import { MobilePriority } from './MobilePriority'
 import { MobileWins } from './MobileWins'
+import { ShareInvite } from '@/presentation/share/ShareInvite'
 import { ShareMomentsRow } from '@/presentation/share/ShareMomentsRow'
 import { QuoteCard } from '@/presentation/components/dashboard/QuoteCard'
 
@@ -174,6 +175,10 @@ export function MobileDashboard({
         onSeeAll={() => navigate('/app/plano')}
         onPlanDay={() => composer.open('acao')}
       />
+
+      {/* Entre a lista e o que vem depois: o convite chega logo abaixo do item
+          que a pessoa acabou de marcar. */}
+      <ShareInvite view={view} />
 
       <NextUpCard
         nextUp={view.nextUp}

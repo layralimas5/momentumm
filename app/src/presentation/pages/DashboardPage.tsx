@@ -40,6 +40,7 @@ import { DayCompleteBanner } from '@/presentation/components/dashboard/DayComple
 import { CompletionNotice } from '@/presentation/components/dashboard/CompletionNotice'
 import { useCompletionNotice } from '@/presentation/planner/use-completion-notice'
 import { MobileDashboard } from '@/presentation/components/mobile/MobileDashboard'
+import { ShareInvite } from '@/presentation/share/ShareInvite'
 import { ShareMomentsRow } from '@/presentation/share/ShareMomentsRow'
 import { QuoteCard } from '@/presentation/components/dashboard/QuoteCard'
 import { useIsDesktop } from '@/presentation/hooks/use-media-query'
@@ -487,6 +488,10 @@ export function DashboardPage() {
           onSeeAll={() => navigate('/app/plano')}
           onPlanDay={() => composer.open('acao')}
         />
+
+        {/* Entre a lista e o que vem depois: o convite chega logo abaixo do
+            item que a pessoa acabou de marcar. */}
+        <ShareInvite view={view} />
 
         <NextUpCard
           nextUp={view.nextUp}
