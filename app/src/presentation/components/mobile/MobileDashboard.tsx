@@ -19,6 +19,7 @@ import { WeekPulse } from '@/presentation/components/dashboard/WeekPulse'
 import { NextUpCard } from '@/presentation/components/dashboard/NextUpCard'
 import { TodayFocusCard } from '@/presentation/components/dashboard/TodayFocusCard'
 import { MobileInsight } from './MobileInsight'
+import { MobileMore } from './MobileMore'
 import { MobileObjectives } from './MobileObjectives'
 import { MobilePriority } from './MobilePriority'
 import { MobileWins } from './MobileWins'
@@ -206,20 +207,6 @@ export function MobileDashboard({
           que a pessoa acabou de marcar. */}
       <ShareInvite view={view} />
 
-      <NextUpCard
-        nextUp={view.nextUp}
-        mainPriority={view.mainPriority}
-        today={planner.today}
-        onStartFocus={onStartFocus}
-        onBringToToday={(task) => void onBringToToday(task)}
-      />
-
-      <MobileObjectives
-        objectives={view.objectives}
-        onCreate={() => composer.open('objetivo')}
-        onOpenReview={() => navigate('/app/review')}
-      />
-
       <MobileHabits
         states={view.habitStates}
         hideIds={focusedHabitIds}
@@ -233,38 +220,60 @@ export function MobileDashboard({
       {/* 3. Estou avançando? Sete pontos, sem cobrança de sequência. */}
       <WeekPulse week={view.week} />
 
-      <MobileInsight
-        insight={view.insight}
-        onApply={onApplyInsight}
-        onDismiss={view.dismissInsight}
-      />
+      {/*
+        Consulta e registro do fim do dia, recolhidos.
 
-      {/* Daqui pra baixo é consulta e registro do fim do dia. */}
-      <div ref={focusRef}>
-        <MobileFocus
-          task={view.mainPriority}
-          capacity={view.capacity}
-          minutesToday={view.focusMinutesToday}
+        Nada saiu do app: a próxima do plano, os objetivos, o insight, as
+        sessões, as metas e as vitórias continuam aqui, a um toque, e também
+        nas telas próprias. O que mudou é que eles pararam de disputar a
+        rolagem com a decisão do dia.
+      */}
+      <MobileMore>
+        <NextUpCard
+          nextUp={view.nextUp}
+          mainPriority={view.mainPriority}
+          today={planner.today}
+          onStartFocus={onStartFocus}
+          onBringToToday={(task) => void onBringToToday(task)}
         />
-      </div>
 
-      <MobileGoals
-        goals={view.goalsInMotion}
-        onContinue={onContinueGoal}
-        onCreateTask={(goal) => composer.open('acao', { presetGoalId: goal.progress.goal.id })}
-        onManage={() => navigate('/app/metas')}
-        onCreateGoal={() => composer.open('meta')}
-      />
+        <MobileObjectives
+          objectives={view.objectives}
+          onCreate={() => composer.open('objetivo')}
+          onOpenReview={() => navigate('/app/review')}
+        />
 
-      <MobileWins
-        wins={planner.wins}
-        todayWin={view.todayWin}
-        today={planner.today}
-        onSave={(text) => planner.saveWin({ day: planner.today, text })}
-      />
+        <MobileInsight
+          insight={view.insight}
+          onApply={onApplyInsight}
+          onDismiss={view.dismissInsight}
+        />
 
-      {/* O card de progresso fecha a tela: é o que se guarda depois de fazer. */}
-      <ShareMomentsRow view={view} />
+        <div ref={focusRef}>
+          <MobileFocus
+            task={view.mainPriority}
+            capacity={view.capacity}
+            minutesToday={view.focusMinutesToday}
+          />
+        </div>
+
+        <MobileGoals
+          goals={view.goalsInMotion}
+          onContinue={onContinueGoal}
+          onCreateTask={(goal) => composer.open('acao', { presetGoalId: goal.progress.goal.id })}
+          onManage={() => navigate('/app/metas')}
+          onCreateGoal={() => composer.open('meta')}
+        />
+
+        <MobileWins
+          wins={planner.wins}
+          todayWin={view.todayWin}
+          today={planner.today}
+          onSave={(text) => planner.saveWin({ day: planner.today, text })}
+        />
+
+        <ShareMomentsRow view={view} />
+      </MobileMore>
 
       {/*
         Um botão flutuante por vez, e só quando o card que já oferece a ação

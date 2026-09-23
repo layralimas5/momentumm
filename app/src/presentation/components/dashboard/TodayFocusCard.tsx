@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { activityType } from '@/domain/entities/activity-type'
 import { addDays } from '@/domain/entities/day'
 import type { Task } from '@/domain/entities/task'
 import type { FocusItem, TodayFocus } from '@/presentation/planner/use-dashboard'
@@ -206,6 +207,10 @@ function FocusRow({
   const planner = usePlanner()
   const [busy, setBusy] = useState(false)
 
+  // Ação e hábito guardam o eixo em lugares diferentes; a faixa é a mesma.
+  const axisSlug = item.task?.axis ?? item.habitState?.habit.axis ?? null
+  const axis = axisSlug ? activityType(axisSlug) : null
+
   const toggle = async () => {
     setBusy(true)
     try {
@@ -230,7 +235,16 @@ function FocusRow({
   }
 
   return (
-    <li className="flex items-start gap-3 py-3">
+    <li className="relative flex items-start gap-3 py-3 pl-3">
+      {/* A mesma faixa de eixo do card principal, na espessura de uma linha. */}
+      {axis ? (
+        <span
+          aria-hidden="true"
+          className={cn('absolute inset-y-2 left-0 w-0.5 rounded-full', item.done && 'opacity-40')}
+          style={{ backgroundColor: axis.colorToken }}
+        />
+      ) : null}
+
       {/*
         Alvo de 44px: é o mínimo confortável no polegar, e essa é a única ação
         da tela que a pessoa repete várias vezes por dia.

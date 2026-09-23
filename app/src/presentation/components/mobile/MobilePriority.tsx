@@ -92,7 +92,25 @@ export function MobilePriority({
 
   return (
     <>
-      <Panel tone="brand" glow aria-labelledby="prioridade-titulo" className="p-5">
+      <Panel
+        tone="brand"
+        glow
+        aria-labelledby="prioridade-titulo"
+        className="relative overflow-hidden p-5 pl-6"
+      >
+        {/*
+          A faixa do eixo na lateral. É a cor que já identifica leitura, estudo,
+          treino e meditação no resto do app, aqui do lado de fora do card: dá
+          pra saber de que tipo é a ação do dia antes de ler o título.
+        */}
+        {axis ? (
+          <span
+            aria-hidden="true"
+            className="absolute inset-y-0 left-0 w-1.5"
+            style={{ backgroundColor: axis.colorToken }}
+          />
+        ) : null}
+
         <div className="flex items-start justify-between gap-3">
           <Eyebrow />
           <button
