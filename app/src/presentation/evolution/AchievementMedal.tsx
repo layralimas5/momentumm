@@ -6,9 +6,13 @@ import { cn } from '@/shared/lib/cn'
  * A medalha de uma conquista.
  *
  * Três estados, e a diferença entre eles é o material, não só a cor: bloqueada
- * é uma peça fosca com cadeado, conquistada comum é metal claro, conquistada
- * rara é a cor da marca com brilho próprio. Assim a estante tem hierarquia à
- * distância, que é o que faz alguém querer colecionar.
+ * é uma peça fosca, conquistada é ouro, e a rara é ouro com o brilho da marca
+ * por trás. Assim a estante tem hierarquia à distância, que é o que faz alguém
+ * querer colecionar.
+ *
+ * O ouro só existe aqui. Laranja continua exclusivo do streak e violeta, da
+ * marca: uma cor que aparece em um lugar só é uma cor que significa alguma
+ * coisa quando aparece.
  *
  * O hexágono é desenhado em SVG e não em imagem: cada conquista nova entra sem
  * pedir um arquivo novo, e a peça acompanha o tema claro e o escuro.
@@ -46,17 +50,11 @@ export function AchievementMedal({
       <svg viewBox="0 0 100 100" className="absolute inset-0 size-full">
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0.4" y2="1">
-            {state === 'rara' ? (
+            {state === 'rara' || state === 'conquistada' ? (
               <>
-                <stop offset="0%" stopColor="var(--color-brand-hi)" />
-                <stop offset="55%" stopColor="var(--color-brand)" />
-                <stop offset="100%" stopColor="var(--color-brand-deep)" />
-              </>
-            ) : state === 'conquistada' ? (
-              <>
-                <stop offset="0%" stopColor="var(--color-surface-top)" />
-                <stop offset="50%" stopColor="var(--color-line-hi)" />
-                <stop offset="100%" stopColor="var(--color-surface-hi)" />
+                <stop offset="0%" stopColor="var(--color-medal-hi)" />
+                <stop offset="55%" stopColor="var(--color-medal)" />
+                <stop offset="100%" stopColor="var(--color-medal-deep)" />
               </>
             ) : (
               <>
@@ -72,11 +70,7 @@ export function AchievementMedal({
           d="M50 3 92 27v46L50 97 8 73V27z"
           fill={`url(#${gradientId})`}
           stroke={
-            state === 'rara'
-              ? 'var(--color-brand-hi)'
-              : state === 'conquistada'
-                ? 'var(--color-line-hi)'
-                : 'var(--color-line)'
+            state === 'bloqueada' ? 'var(--color-line)' : 'var(--color-medal-hi)'
           }
           strokeWidth="3"
           strokeLinejoin="round"
@@ -94,18 +88,16 @@ export function AchievementMedal({
         className={cn(
           'relative',
           dimension.icon,
-          state === 'rara'
-            ? 'text-white'
-            : state === 'conquistada'
-              ? 'text-ink'
-              : 'text-ink-faint opacity-60',
+          // Sobre ouro o ícone é escuro: é o par que passa em contraste nos dois temas.
+          state === 'bloqueada' ? 'text-ink-faint opacity-60' : 'text-[#1a1408]',
         )}
         strokeWidth={2.25}
       />
 
+      {/* A rara não muda de metal: ganha o halo da marca atrás do ouro. */}
       {state === 'rara' ? (
         <span
-          className="absolute -inset-1 -z-10 rounded-full bg-brand/25 blur-lg"
+          className="absolute -inset-1.5 -z-10 rounded-full bg-brand/35 blur-lg"
           aria-hidden="true"
         />
       ) : null}

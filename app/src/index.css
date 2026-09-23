@@ -34,6 +34,13 @@
   --color-positive: #3ecf8e;
   --color-danger: #f05252;
 
+  /* Medalha conquistada. Ouro e reservado a conquista: nao e cor de interface,
+     nao aparece em botao, aviso ou grafico. O laranja continua exclusivo do
+     streak e o violeta, da marca. */
+  --color-medal: #e8b44a;
+  --color-medal-hi: #f7d489;
+  --color-medal-deep: #a8762a;
+
   --color-axis-leitura: #f2b544;
   --color-axis-estudo: #4a9eff;
   --color-axis-treino: #ff5c8a;
@@ -373,6 +380,11 @@
 
   --color-positive: #16a068;
   --color-danger: #d93a3a;
+
+  /* No claro o ouro escurece: o mesmo tom do escuro sumiria no branco. */
+  --color-medal: #b8862b;
+  --color-medal-hi: #d9a94e;
+  --color-medal-deep: #8a6220;
 
   --shadow-raised: 0 1px 2px 0 rgb(22 21 31 / 0.04), 0 1px 0 0 rgb(255 255 255 / 0.6) inset;
   --shadow-glow: 0 0 0 1px rgb(91 72 240 / 0.2), 0 18px 50px -24px rgb(91 72 240 / 0.55);

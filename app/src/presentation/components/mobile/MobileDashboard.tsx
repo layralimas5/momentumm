@@ -221,6 +221,17 @@ export function MobileDashboard({
       <WeekPulse week={view.week} />
 
       {/*
+        O compartilhar fica na rolagem principal, colado no avanço da semana:
+        é logo depois de ver o progresso que dá vontade de mostrar. Dentro do
+        "ver mais" ele virava um recurso que só quem procura encontra, e o
+        card do Momentumm é o que traz gente nova pro app.
+
+        A fileira continua aparecendo só quando existe momento digno de card,
+        pela mesma razão de sempre: botão sempre visível vira mobília.
+      */}
+      <ShareMomentsRow view={view} />
+
+      {/*
         Consulta e registro do fim do dia, recolhidos.
 
         Nada saiu do app: a próxima do plano, os objetivos, o insight, as
@@ -271,8 +282,6 @@ export function MobileDashboard({
           today={planner.today}
           onSave={(text) => planner.saveWin({ day: planner.today, text })}
         />
-
-        <ShareMomentsRow view={view} />
       </MobileMore>
 
       {/*
