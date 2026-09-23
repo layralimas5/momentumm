@@ -45,9 +45,12 @@ export function DayHeader({
         contexto — e é ela que diz em que pé o dia está. Some o cabeçalho,
         fica a frase.
       */}
-      {compact ? (
-        <p className="text-[0.95rem] text-ink-muted">{headline}</p>
-      ) : (
+      {/*
+        No celular a frase de contexto saiu: a faixa da semana diz em que dia a
+        pessoa está e os três números dizem em que pé o dia está. "Seu plano de
+        hoje está pronto" era uma linha a mais antes do que importa.
+      */}
+      {compact ? null : (
         <div>
           <h2 className="text-2xl font-semibold tracking-tight text-ink lg:text-[1.75rem]">
             {greeting(new Date().getHours())}

@@ -14,8 +14,8 @@ import { MobileFocus } from './MobileFocus'
 import { MobileGoals } from './MobileGoals'
 import { MobileHabits } from './MobileHabits'
 import { AdaptiveDayCard } from '@/presentation/components/dashboard/AdaptiveDayCard'
-import { MomentumStrip } from '@/presentation/components/dashboard/MomentumStrip'
-import { WeekPulse } from '@/presentation/components/dashboard/WeekPulse'
+import { MobileTodayStats } from './MobileTodayStats'
+import { MobileWeekStrip } from './MobileWeekStrip'
 import { NextUpCard } from '@/presentation/components/dashboard/NextUpCard'
 import { TodayFocusCard } from '@/presentation/components/dashboard/TodayFocusCard'
 import { MobileInsight } from './MobileInsight'
@@ -114,21 +114,21 @@ export function MobileDashboard({
   */
   return (
     <div className="flex flex-col gap-5">
-      {/* 1. Como estou? O estado atual em um número, na primeira dobra. */}
-      <MomentumStrip
+      {/* Onde estou na semana: a data e os sete dias na mesma faixa. */}
+      <MobileWeekStrip week={view.week} />
+
+      {/* 1. Como estou? Três números e nada de texto solto entre eles. */}
+      <MobileTodayStats
         momentum={view.momentum}
         history={view.momentumSeries}
         today={planner.today}
-        streak={planner.streak}
         recommendation={view.recommendation}
         detail={planner.limits.momentumDetail}
         nextAction={view.nextAction}
-        compact
+        done={view.dayProgress.done}
+        total={view.dayProgress.total}
+        focusMinutes={view.focusMinutesToday}
       />
-
-      {/* O gás pra encarar o que vem, em uma faixa: a frase não pode empurrar
-          a ação do dia pra fora da primeira dobra. */}
-      <QuoteCard today={planner.today} compact />
 
       {/* A pergunta que monta o dia: vem antes dele, nunca depois. */}
       <div ref={checkInRef} className="scroll-mt-20">
@@ -217,8 +217,9 @@ export function MobileDashboard({
         onCreate={() => composer.open('habito')}
       />
 
-      {/* 3. Estou avançando? Sete pontos, sem cobrança de sequência. */}
-      <WeekPulse week={view.week} />
+      {/* A frase e o compartilhar fecham a tela: os dois são expressão, não
+          decisão, e no topo empurravam a ação pra fora da primeira dobra. */}
+      <QuoteCard today={planner.today} compact />
 
       {/*
         O compartilhar fica na rolagem principal, colado no avanço da semana:

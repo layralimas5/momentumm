@@ -62,10 +62,9 @@ export function MobileCheckIn({ checkIn, capacity, onSave }: MobileCheckInProps)
 
   return (
     <Panel tone="brand" aria-labelledby="checkin-titulo" className="p-4">
-      <h2 id="checkin-titulo" className="text-base font-semibold text-ink">
+      <h2 id="checkin-titulo" className="text-sm font-semibold text-ink">
         Como você está chegando hoje?
       </h2>
-      <p className="mt-1 text-sm text-ink-muted">Um toque. Isso muda o plano do dia.</p>
 
       {/*
         Faixa horizontal: os cinco estados cabem numa passada de polegar e o
@@ -75,7 +74,7 @@ export function MobileCheckIn({ checkIn, capacity, onSave }: MobileCheckInProps)
       <div
         role="group"
         aria-label="Como você está chegando hoje"
-        className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {MOOD_OPTIONS.map((option) => {
           const selected = option.slug === (pending ?? checkIn?.mood)
@@ -87,7 +86,7 @@ export function MobileCheckIn({ checkIn, capacity, onSave }: MobileCheckInProps)
               onClick={() => choose(option.slug)}
               disabled={save.running}
               className={cn(
-                'flex min-h-16 shrink-0 flex-col items-start justify-center gap-1.5 rounded-2xl border px-3.5 py-2.5',
+                'flex min-h-14 shrink-0 flex-col items-start justify-center gap-1 rounded-2xl border px-3.5 py-2',
                 'transition-colors disabled:opacity-60',
                 selected
                   ? 'border-brand bg-brand-dim/70 text-ink'
@@ -135,7 +134,9 @@ export function MobileCheckIn({ checkIn, capacity, onSave }: MobileCheckInProps)
         ) : null}
       </AnimatePresence>
 
-      <div aria-live="polite" className="min-h-5">
+      {/* Sem altura reservada: o espaço vazio embaixo dos chips fazia o card
+          parecer inacabado. O aviso empurra o conteúdo quando existir. */}
+      <div aria-live="polite">
         {save.error ? <p className="mt-2 text-sm text-danger">{save.error}</p> : null}
       </div>
 

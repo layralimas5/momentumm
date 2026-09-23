@@ -126,14 +126,13 @@ export function MobilePriority({
           </button>
         </div>
 
-        <h2
-          id="prioridade-titulo"
-          className="mt-2 text-xs font-semibold tracking-wide text-ink-muted uppercase"
-        >
+        {/* O rótulo mora na pílula acima; repetir "o que importa hoje" numa
+            segunda linha empurrava o título sem dizer nada de novo. */}
+        <h2 id="prioridade-titulo" className="sr-only">
           O que importa hoje
         </h2>
 
-        <p className="mt-2 text-2xl leading-snug font-semibold tracking-tight text-balance text-ink">
+        <p className="mt-3 text-2xl leading-snug font-semibold tracking-tight text-balance text-ink">
           {task.title}
         </p>
 
@@ -295,7 +294,7 @@ function Eyebrow({ done = false }: { done?: boolean }) {
         aria-hidden="true"
         className={done ? 'size-1.5 rounded-full bg-positive' : 'glow-pulse size-1.5 rounded-full bg-brand-hi'}
       />
-      {done ? 'Dia fechado' : 'Ação principal'}
+      {done ? 'Dia fechado' : 'O que importa hoje'}
     </span>
   )
 }
