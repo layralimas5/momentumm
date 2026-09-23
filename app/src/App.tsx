@@ -67,6 +67,9 @@ const ProfilePage = lazy(() =>
 const SubscriptionPage = lazy(() =>
   import('@/presentation/pages/SubscriptionPage').then((m) => ({ default: m.SubscriptionPage })),
 )
+const SupportPage = lazy(() =>
+  import('@/presentation/pages/SupportPage').then((m) => ({ default: m.SupportPage })),
+)
 const CircleLockedPage = lazy(() =>
   import('@/presentation/pages/CircleLockedPage').then((m) => ({ default: m.CircleLockedPage })),
 )
@@ -234,6 +237,7 @@ export function App() {
               )}
               <Route path="configuracoes" element={<ProfilePage />} />
               <Route path="assinatura" element={<SubscriptionPage />} />
+              <Route path="suporte" element={<SupportPage />} />
 
               {/* Rotas antigas continuam válidas: link salvo não pode virar 404. */}
               <Route path="atividades" element={<Navigate to="/app/jornada" replace />} />

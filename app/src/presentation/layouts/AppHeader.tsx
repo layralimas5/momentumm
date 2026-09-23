@@ -9,6 +9,7 @@ import { Button } from '@/presentation/components/ui/Button'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
 import { usePlanner } from '@/presentation/planner/use-planner'
+import { useMyRequests, withAnswer } from '@/presentation/support/use-my-requests'
 import { cn } from '@/shared/lib/cn'
 import { CommandPalette } from './CommandPalette'
 import { navItemFor } from './nav-items'
@@ -150,11 +151,13 @@ function AddMenu() {
 }
 
 /**
- * Notificações que existem de verdade: sequência em risco, hábito pendente,
- * ação atrasada. Sino com bolinha sem conteúdo é ruído.
+ * Notificações que existem de verdade: resposta de suporte, sequência em
+ * risco, hábito pendente, ação atrasada. Sino com bolinha sem conteúdo é
+ * ruído.
  */
 function Notifications() {
   const planner = usePlanner()
+  const { requests } = useMyRequests()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -169,6 +172,20 @@ function Notifications() {
   }, [open])
 
   const items: { id: string; text: string; to: string }[] = []
+
+  // A resposta da equipe abre a lista: é a única que vem de fora.
+  const answered = withAnswer(requests)
+  if (answered.length > 0) {
+    const first = answered[0]
+    items.push({
+      id: 'suporte',
+      text:
+        answered.length === 1 && first
+          ? `A equipe respondeu o chamado ${first.protocol}.`
+          : `${answered.length} chamados com resposta da equipe.`,
+      to: '/app/suporte',
+    })
+  }
 
   if (planner.streak.atRisk) {
     items.push({

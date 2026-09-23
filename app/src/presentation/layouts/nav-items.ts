@@ -197,6 +197,14 @@ const ALL_NAV: readonly AppNavItem[] = [
     description: 'O PRO: assinar, ver a renovação ou cancelar',
     secondary: true,
   },
+  {
+    to: '/app/suporte',
+    label: 'Suporte',
+    end: false,
+    icon: 'sino',
+    description: 'Abrir um chamado e acompanhar a resposta',
+    secondary: true,
+  },
 ]
 
 /** Tudo que a pessoa pode abrir hoje. Com o Círculo fechado, ele e os desafios somem daqui. */

@@ -10,6 +10,7 @@ import { useAuth } from '@/presentation/auth/use-auth'
 import { BottomSheet } from '@/presentation/components/ui/BottomSheet'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { usePlanner } from '@/presentation/planner/use-planner'
+import { useMyRequests, withAnswer } from '@/presentation/support/use-my-requests'
 import { TAB_ROUTES } from './MobileTabBar'
 import { navItemFor } from '@/presentation/layouts/nav-items'
 
@@ -154,7 +155,26 @@ interface Alert {
 /** Notificação só existe quando há algo real pendente. Sino sem conteúdo é ruído. */
 function useAlerts(): Alert[] {
   const planner = usePlanner()
+  const { requests } = useMyRequests()
   const alerts: Alert[] = []
+
+  /*
+    Resposta de suporte primeiro: é a única notificação que vem de outra
+    pessoa, e a única que a pessoa não descobre sozinha olhando a tela Hoje.
+    Sai do estado do chamado no servidor, não de um contador local.
+  */
+  const answered = withAnswer(requests)
+  if (answered.length > 0) {
+    const first = answered[0]
+    alerts.push({
+      id: 'suporte',
+      text:
+        answered.length === 1 && first
+          ? `A equipe respondeu o chamado ${first.protocol}.`
+          : `${answered.length} chamados com resposta da equipe.`,
+      to: '/app/suporte',
+    })
+  }
 
   if (planner.streak.atRisk) {
     alerts.push({
