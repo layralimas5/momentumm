@@ -7,6 +7,7 @@ import {
   type DayDot,
   type MomentumFactor,
 } from '@/domain/entities/momentum'
+import { EvolutionTeaser } from '@/presentation/evolution/EvolutionTeaser'
 import { MomentumNextAction } from '@/presentation/components/dashboard/MomentumNextAction'
 import { MomentumRules } from '@/presentation/components/dashboard/MomentumRules'
 import { deltaLabel } from '@/domain/entities/week'
@@ -146,6 +147,13 @@ export function ProgressPage() {
               </div>
             ) : null}
           </Panel>
+
+          {/*
+            Logo abaixo do Momentumm: os dois números do app ficam um embaixo do
+            outro, e a diferença entre estado de hoje e patrimonio acumulado
+            aparece sem precisar de explicação.
+          */}
+          <EvolutionTeaser />
 
           {ai.enabled ? <AiProgressPanel ai={ai} className="xl:col-span-2" /> : null}
 

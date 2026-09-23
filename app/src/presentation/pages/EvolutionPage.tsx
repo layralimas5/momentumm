@@ -12,6 +12,7 @@ import {
 import { AiCoachPanel } from '@/presentation/ai/AiCoachPanel'
 import { useAi } from '@/presentation/ai/use-ai'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
+import { AchievementMedal } from '@/presentation/evolution/AchievementMedal'
 import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { Stat, StatGrid } from '@/presentation/components/ui/Stat'
 import { Panel, PanelHeader, Tag } from '@/presentation/components/ui/Surface'
@@ -416,14 +417,10 @@ function AchievementCard({ item }: { readonly item: AchievementView }) {
           : 'border-line bg-surface-hi/30 text-ink-muted',
       )}
     >
-      <span
-        className={cn(
-          'mt-0.5 grid size-9 shrink-0 place-items-center rounded-full',
-          done ? 'bg-brand/15 text-brand-ink' : 'bg-surface text-ink-faint',
-        )}
-      >
-        <Icon name={achievementIcon(item.icon)} className="size-4.5" />
-      </span>
+      <AchievementMedal
+        icon={achievementIcon(item.icon)}
+        state={done ? (item.rarity === 'rara' ? 'rara' : 'conquistada') : 'bloqueada'}
+      />
       <span className="min-w-0 flex-1">
         <span className={cn('flex items-center gap-2 text-sm font-medium', done ? 'text-ink' : 'text-ink-muted')}>
           <span className="truncate">{item.name}</span>

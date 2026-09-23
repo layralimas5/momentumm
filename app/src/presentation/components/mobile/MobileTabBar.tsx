@@ -14,7 +14,12 @@ interface TabItem {
 }
 
 /** As rotas que a barra leva: o topo e os atalhos do perfil leem daqui. */
-export const TAB_ROUTES: readonly string[] = ['/app', '/app/objetivos', '/app/plano', '/app/perfil']
+export const TAB_ROUTES: readonly string[] = [
+  '/app',
+  '/app/objetivos',
+  '/app/progresso',
+  '/app/perfil',
+]
 
 /** Dois de cada lado do botão central. Mais que isso vira alvo pequeno demais. */
 const LEFT: readonly TabItem[] = [
@@ -22,7 +27,18 @@ const LEFT: readonly TabItem[] = [
   { to: '/app/objetivos', label: 'Objetivos', icon: 'objetivo', end: false },
 ]
 
-const RIGHT: readonly TabItem[] = [{ to: '/app/plano', label: 'Plano', icon: 'plano', end: false }]
+/*
+  Progresso no lugar do Plano.
+
+  A barra responde as três perguntas do app: como estou (Hoje), pra onde vou
+  (Objetivos) e estou avançando (Progresso). O Plano é a lista do dia inteiro,
+  e chega por dentro do Hoje ("Ver tudo do dia") e pelos atalhos do perfil, que
+  montam sozinhos tudo que não está aqui. Progresso, antes, só existia em dois
+  links soltos e no fim do Review.
+*/
+const RIGHT: readonly TabItem[] = [
+  { to: '/app/progresso', label: 'Progresso', icon: 'progresso', end: false },
+]
 
 const PROFILE: TabItem = { to: '/app/perfil', label: 'Perfil', icon: 'trofeu', end: false }
 
