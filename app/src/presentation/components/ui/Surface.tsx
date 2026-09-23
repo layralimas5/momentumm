@@ -81,7 +81,11 @@ export function Tag({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium',
+        // shrink-0 e whitespace-nowrap: o rótulo é curto por natureza e fica ao
+        // lado de títulos de tamanho livre. Sem isso, um título comprido espreme
+        // a pílula e quebra "No prazo" em duas linhas, deixando dois cards
+        // vizinhos com alturas e formatos diferentes.
+        'inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium',
         tones[tone],
         className,
       )}
