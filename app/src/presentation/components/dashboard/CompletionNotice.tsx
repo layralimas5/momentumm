@@ -1,5 +1,7 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { useEvolution } from '@/presentation/evolution/use-evolution'
 import { Icon } from '@/presentation/components/ui/Icon'
+import { ProgressBar } from '@/presentation/components/ui/Surface'
 import { cn } from '@/shared/lib/cn'
 import type { CompletionNotice as Notice } from '@/presentation/planner/use-completion-notice'
 
@@ -23,6 +25,7 @@ export function CompletionNotice({
   readonly onDismiss: () => void
 }) {
   const reduceMotion = useReducedMotion()
+  const { lastGain } = useEvolution()
 
   return (
     <AnimatePresence>
@@ -57,9 +60,57 @@ export function CompletionNotice({
             </span>
 
             <span className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold text-ink">{notice.title}</span>
+              <span className="flex items-center justify-between gap-2">
+                <span className="text-sm font-semibold text-ink">{notice.title}</span>
+
+                {/*
+                  O XP entra depois do servidor conceder, e é por isso que ele
+                  aparece com atraso e sozinho: é recompensa complementar, não
+                  o motivo. Sem concessão, nada aparece.
+                */}
+                <AnimatePresence>
+                  {lastGain ? (
+                    <motion.span
+                      key={lastGain.id}
+                      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 6, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+                      className="tabular shrink-0 rounded-full border border-brand/40 bg-brand-dim/50 px-2 py-0.5 text-xs font-semibold text-brand-ink"
+                    >
+                      +{lastGain.amount} XP
+                    </motion.span>
+                  ) : null}
+                </AnimatePresence>
+              </span>
+
               {notice.detail ? (
                 <span className="mt-0.5 block text-sm text-ink-muted">{notice.detail}</span>
+              ) : null}
+
+              {/*
+                A recompensa principal: o objetivo andou. A barra é a mesma do
+                resto do app, com o número escrito ao lado pra quem não lê
+                barra.
+              */}
+              {notice.objective ? (
+                <motion.span
+                  initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.24, delay: 0.06, ease: [0.22, 1, 0.36, 1] }}
+                  className="mt-2.5 block"
+                >
+                  <span className="flex items-baseline justify-between gap-2 text-xs">
+                    <span className="min-w-0 truncate text-ink-muted">{notice.objective.title}</span>
+                    <span className="tabular shrink-0 text-ink-faint">
+                      {Math.round(notice.objective.ratio * 100)}%
+                    </span>
+                  </span>
+                  <ProgressBar
+                    className="mt-1.5"
+                    value={notice.objective.ratio}
+                    label={`Progresso de ${notice.objective.title}`}
+                  />
+                </motion.span>
               ) : null}
             </span>
 

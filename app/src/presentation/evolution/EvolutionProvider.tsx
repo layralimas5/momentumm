@@ -10,7 +10,12 @@ import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { toUserMessage } from '@/shared/errors'
-import { EvolutionContext, type EvolutionNotice, type EvolutionState } from './evolution-context'
+import {
+  EvolutionContext,
+  type EvolutionNotice,
+  type EvolutionState,
+  type XpGain,
+} from './evolution-context'
 
 /**
  * A evolução como estado, ao lado do planner.
@@ -38,6 +43,7 @@ export function EvolutionProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<EvolutionNotice | null>(null)
+  const [lastGain, setLastGain] = useState<XpGain | null>(null)
   const previous = useRef<EvolutionSnapshot | null>(null)
   const mounted = useRef(true)
 
@@ -63,6 +69,9 @@ export function EvolutionProvider({ children }: { children: ReactNode }) {
 
       const before = previous.current
       if (before) {
+        const gained = next.xpTotal - before.xpTotal
+        if (gained > 0) setLastGain({ id: `${next.xpTotal}`, amount: gained })
+
         const fromLevel = levelOf(before.xpTotal).level
         const progress = levelOf(next.xpTotal)
         const known = new Set(before.achievements.map((item) => item.key))
@@ -122,8 +131,8 @@ export function EvolutionProvider({ children }: { children: ReactNode }) {
   const dismissNotice = useCallback(() => setNotice(null), [])
 
   const value = useMemo<EvolutionState>(
-    () => ({ snapshot, summary, loading, error, notice, dismissNotice, refresh }),
-    [snapshot, summary, loading, error, notice, dismissNotice, refresh],
+    () => ({ snapshot, summary, loading, error, notice, lastGain, dismissNotice, refresh }),
+    [snapshot, summary, loading, error, notice, lastGain, dismissNotice, refresh],
   )
 
   return <EvolutionContext.Provider value={value}>{children}</EvolutionContext.Provider>

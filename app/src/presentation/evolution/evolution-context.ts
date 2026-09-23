@@ -16,12 +16,24 @@ export interface EvolutionNotice {
   readonly achievements: readonly AchievementKey[]
 }
 
+/** O XP que o servidor acabou de conceder. Medido, nunca estimado. */
+export interface XpGain {
+  readonly id: string
+  readonly amount: number
+}
+
 export interface EvolutionState {
   readonly snapshot: EvolutionSnapshot
   readonly summary: EvolutionSummary
   readonly loading: boolean
   readonly error: string | null
   readonly notice: EvolutionNotice | null
+  /**
+   * A última variação positiva do XP total, pra tela de conclusão poder dizer
+   * quanto entrou. Vem da diferença entre duas leituras do servidor: se o
+   * banco não concedeu, nada aparece.
+   */
+  readonly lastGain: XpGain | null
   dismissNotice(): void
   refresh(): Promise<void>
 }

@@ -16,7 +16,9 @@ const AUTO_HIDE_MS = 9000
  * trabalho, e a celebração à altura disso é a informação bem escrita.
  *
  * Fica um degrau acima do aviso de conclusão, que é o frequente: nível novo é
- * raro demais pra ser coberto por um "feito" de cinco segundos.
+ * raro demais pra ser coberto por um "feito" de cinco segundos. A folga
+ * considera o aviso de conclusão no tamanho maior, com a barra do objetivo:
+ * os dois caem juntos quando a primeira ação fecha uma conquista.
  */
 export function EvolutionNotice() {
   const { notice, dismissNotice } = useEvolution()
@@ -39,7 +41,7 @@ export function EvolutionNotice() {
           animate={{ opacity: 1, y: 0 }}
           exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
           transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed inset-x-4 bottom-44 z-40 mx-auto max-w-md lg:bottom-26 lg:right-6 lg:left-auto lg:mx-0"
+          className="fixed inset-x-4 bottom-60 z-40 mx-auto max-w-md lg:bottom-40 lg:right-6 lg:left-auto lg:mx-0"
         >
           <div className="surface-brand edge-light flex items-start gap-3 rounded-2xl p-4 shadow-xl">
             <span className="grid size-10 shrink-0 place-items-center rounded-full bg-brand/15 text-brand-ink">
