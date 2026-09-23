@@ -8,6 +8,7 @@ import { useAuth } from '@/presentation/auth/use-auth'
 import { LogoMark, Wordmark } from '@/presentation/components/brand/Logo'
 import { MobileTabBar } from '@/presentation/components/mobile/MobileTabBar'
 import { TrialBanner } from '@/presentation/plan/TrialBanner'
+import { SUBSCRIPTION_PATH } from '@/presentation/plan/subscription-path'
 import { MobileTopBar } from '@/presentation/components/mobile/MobileTopBar'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { EvolutionNotice } from '@/presentation/evolution/EvolutionNotice'
@@ -149,6 +150,14 @@ function useActivationGate(pathname: string) {
 
   if (planner.loading) return null
   if (pathname === ACTIVATION_PATH || pathname === QUIZ_ACTIVATION_PATH) return null
+
+  /*
+    A assinatura é a única saída que o gate deixa aberta: quem esbarrou no
+    limite do gratuito ao ativar o plano do quiz vai justamente assinar pra
+    destravá-lo. Ao sair de lá, o gate traz de volta pra ativação, que dessa
+    vez passa.
+  */
+  if (pathname.startsWith(SUBSCRIPTION_PATH)) return null
 
   /*
     Plano do quiz esperando no navegador: ele vem antes de qualquer tela,

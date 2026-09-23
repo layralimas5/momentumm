@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { isTrialActive } from '@/domain/billing/trial'
 import type { ActivityTypeSlug } from '@/domain/entities/activity-type'
 import type { PlanDraft } from '@/domain/entities/plan-builder'
+import { PlanLimitError } from '@/domain/entities/plan-usage'
 import { buildQuizPlan } from '@/domain/entities/quiz'
 import { linkQuizSessionToMe, markQuizActivated, trackFunnel } from '@/infrastructure/analytics/funnel'
 import { track } from '@/infrastructure/analytics/track'
@@ -18,11 +19,19 @@ export function hasPendingQuizPlan(): boolean {
   return loadPendingQuizPlan() !== null
 }
 
-export type QuizActivationStatus = 'ativando' | 'pronto' | 'sem-plano' | 'erro'
+export type QuizActivationStatus = 'ativando' | 'pronto' | 'sem-plano' | 'erro' | 'limite'
+
+/** O limite que barrou a ativação, pra tela oferecer o que destrava. */
+export interface QuizActivationLimit {
+  readonly feature: string
+  readonly message: string
+}
 
 export interface QuizActivation {
   readonly status: QuizActivationStatus
   readonly error: string | null
+  /** Preenchido só no status `limite`. */
+  readonly limit: QuizActivationLimit | null
   retry(): void
 }
 
@@ -42,6 +51,7 @@ export function useQuizActivation(): QuizActivation {
   const planner = usePlanner()
   const [status, setStatus] = useState<QuizActivationStatus>('ativando')
   const [error, setError] = useState<string | null>(null)
+  const [limit, setLimit] = useState<QuizActivationLimit | null>(null)
   const startedRef = useRef(false)
   // O provider muda a cada gravação; o callback lê sempre a versão mais nova.
   const plannerRef = useRef(planner)
@@ -57,6 +67,7 @@ export function useQuizActivation(): QuizActivation {
 
     setStatus('ativando')
     setError(null)
+    setLimit(null)
 
     try {
       const existingAxes: ActivityTypeSlug[] = planner.axes.map((axis) => axis.slug)
@@ -122,6 +133,17 @@ export function useQuizActivation(): QuizActivation {
       clearPendingQuizPlan()
       setStatus('pronto')
     } catch (cause) {
+      /*
+        Limite do plano não é falha: a conta antiga que já tem dois objetivos
+        em andamento esbarra aqui com o plano pronto na mão. "Tentar de novo"
+        falharia igual, então a tela precisa saber QUAL limite parou, pra
+        oferecer o que destrava (liberar espaço ou assinar o PRO).
+      */
+      if (cause instanceof PlanLimitError) {
+        setLimit({ feature: cause.feature, message: cause.message })
+        setStatus('limite')
+        return
+      }
       setError(toUserMessage(cause))
       setStatus('erro')
     }
@@ -138,7 +160,7 @@ export function useQuizActivation(): QuizActivation {
     void run()
   }, [run])
 
-  return { status, error, retry }
+  return { status, error, limit, retry }
 }
 
 function withAxis(plan: PlanDraft, axis: ActivityTypeSlug): PlanDraft {
