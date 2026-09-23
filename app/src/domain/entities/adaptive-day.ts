@@ -180,6 +180,38 @@ export interface AdaptiveDayPlan {
   readonly summary: string
 }
 
+/**
+ * A ação por onde começar, quando a revisão do dia termina.
+ *
+ * Confirmar o plano respondia "como fica o meu dia" e deixava a pessoa na
+ * frente de uma tela ajustada, sem dizer por onde pegar. O começo ficava a
+ * cargo dela: fechar o diálogo, procurar o card certo e achar o botão de
+ * play. É muito caminho entre decidir e fazer, e é nesse caminho que o dia
+ * curto termina sem nada feito.
+ *
+ * A escolha é a ação de maior peso que continua no dia. Hábito não entra: o
+ * app não marca hábito por ninguém, e um cronômetro que começa sozinho num
+ * hábito grava um tempo que a pessoa não pediu. Protegido vem na frente,
+ * porque ele é o que segura a trajetória do objetivo.
+ */
+export function startableAction(plan: AdaptiveDayPlan): AdaptiveItem | null {
+  const candidates = plan.items.filter(
+    (item) =>
+      item.kind === 'acao' &&
+      (item.verdict === 'manter' || item.verdict === 'reduzir') &&
+      item.adaptedMin > 0,
+  )
+
+  if (candidates.length === 0) return null
+
+  const ordered = [...candidates].sort((a, b) => {
+    if (a.locked !== b.locked) return a.locked ? -1 : 1
+    return b.score - a.score
+  })
+
+  return ordered[0] ?? null
+}
+
 /** Candidato antes da decisão: o item com custo e score já apurados. */
 interface Candidate {
   readonly kind: 'acao' | 'habito'

@@ -2,6 +2,8 @@ import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Insight } from '@/domain/entities/insight'
 import { addDays } from '@/domain/entities/day'
+import type { AdaptiveItem } from '@/domain/entities/adaptive-day'
+import { shrinkToMinimal } from '@/domain/entities/task'
 import type { RecoveryStep } from '@/domain/entities/recovery'
 import type { Task } from '@/domain/entities/task'
 import { useAuth } from '@/presentation/auth/use-auth'
@@ -205,7 +207,35 @@ export function DashboardPage() {
     const applied = await adaptive.confirm()
     // Escolheu o passo: o recado de retomada já foi respondido por hoje.
     if (applied && fromRecovery) recovery.dismiss()
+    return applied
   }, [adaptive, recovery])
+
+  /**
+   * Confirmar a revisão do dia e já começar, no tamanho escolhido.
+   *
+   * O encolhimento acontece ANTES do cronômetro porque é ele que define o que
+   * a sessão está medindo: começar a versão inteira e encolher depois
+   * deixaria um registro de 45 minutos numa ação que virou de 10.
+   */
+  const startFromReview = useCallback(
+    async (item: AdaptiveItem, size: 'completa' | 'minima') => {
+      const applied = await confirmAdaptive()
+      if (!applied) return
+
+      const task = planner.tasks.find((candidate) => candidate.id === item.id)
+      if (!task) return
+
+      if (size === 'minima' && task.minimalVersion) {
+        await shrinkTask(task)
+        const smaller = shrinkToMinimal(task)
+        startFocus({ ...task, ...smaller }, smaller.estimatedMin)
+        return
+      }
+
+      startFocus(task, task.estimatedMin)
+    },
+    [confirmAdaptive, planner.tasks, shrinkTask, startFocus],
+  )
 
   /**
    * Título de cada etapa por id. O dia inteiro lê daqui pra dizer a que ponto
@@ -249,6 +279,7 @@ export function DashboardPage() {
         applying={adaptive.applying}
         error={adaptive.error}
         onConfirm={() => void confirmAdaptive()}
+        onStart={(item, size) => void startFromReview(item, size)}
         onClose={adaptive.close}
       />
       <AiDayDialog

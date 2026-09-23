@@ -1,5 +1,6 @@
 import {
   ADAPTIVE_VERDICT_LABELS,
+  startableAction,
   type AdaptiveDayPlan,
   type AdaptiveItem,
   type AdaptiveVerdict,
@@ -32,6 +33,11 @@ interface AdaptiveDayReviewProps {
   readonly error: string | null
   readonly onConfirm: () => void
   readonly onClose: () => void
+  /**
+   * Confirmar e já começar, no tamanho escolhido. Sem isso a revisão termina
+   * com a pessoa na frente de um dia ajustado e nenhum lugar pra tocar.
+   */
+  readonly onStart?: (item: AdaptiveItem, size: 'completa' | 'minima') => void
 }
 
 const GROUPS: readonly { readonly verdict: AdaptiveVerdict; readonly icon: IconName }[] = [
@@ -47,17 +53,20 @@ export function AdaptiveDayReview({
   error,
   onConfirm,
   onClose,
+  onStart,
 }: AdaptiveDayReviewProps) {
   const isDesktop = useIsDesktop()
 
-  const body = plan ? (
-    <ReviewBody
+  const body = plan ? <ReviewBody plan={plan} intro={intro} /> : null
+
+  const actions = plan ? (
+    <ReviewActions
       plan={plan}
-      intro={intro}
       applying={applying}
       error={error}
       onConfirm={onConfirm}
       onClose={onClose}
+      {...(onStart ? { onStart } : {})}
     />
   ) : null
 
@@ -69,6 +78,7 @@ export function AdaptiveDayReview({
         {...(plan ? { description: plan.summary } : {})}
         size="lg"
         onClose={onClose}
+        footer={actions}
       >
         {body}
       </Dialog>
@@ -81,6 +91,7 @@ export function AdaptiveDayReview({
       title={plan?.title ?? ''}
       description={plan?.summary}
       onClose={onClose}
+      footer={actions}
     >
       {body}
     </BottomSheet>
@@ -90,11 +101,7 @@ export function AdaptiveDayReview({
 function ReviewBody({
   plan,
   intro,
-  applying,
-  error,
-  onConfirm,
-  onClose,
-}: AdaptiveDayReviewProps & { readonly plan: AdaptiveDayPlan }) {
+}: Pick<AdaptiveDayReviewProps, 'intro'> & { readonly plan: AdaptiveDayPlan }) {
   const groups = GROUPS.map((group) => ({
     ...group,
     items: plan.items.filter((item) => item.verdict === group.verdict),
@@ -153,19 +160,132 @@ function ReviewBody({
         </p>
       ) : null}
 
-      <div aria-live="polite" className="min-h-5">
+    </div>
+  )
+}
+
+/**
+ * As ações da revisão, presas no rodapé.
+ *
+ * Elas moravam no fim do conteúdo, depois da lista item a item. Num dia com
+ * cinco ajustes isso são duas telas de rolagem entre ler o plano e poder
+ * fazer alguma coisa a respeito — e quem não rolasse até o fim não descobria
+ * que dava pra começar dali.
+ *
+ * Os dois tamanhos ficam lado a lado com o nome e os minutos de cada um,
+ * porque "completa ou mínima" não diz nada solto: o que decide é ver "Treinar
+ * 45 minutos" ao lado de "Fazer 10 minutos de movimento" e saber qual dos
+ * dois cabe hoje.
+ */
+function ReviewActions({
+  plan,
+  applying,
+  error,
+  onConfirm,
+  onClose,
+  onStart,
+}: AdaptiveDayReviewProps & { readonly plan: AdaptiveDayPlan }) {
+  const startable = onStart ? startableAction(plan) : null
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div aria-live="polite">
         {error ? <p className="text-sm text-danger">{error}</p> : null}
       </div>
 
+      {startable && onStart ? (
+        <div className="grid gap-2 sm:grid-cols-2">
+          <StartButton
+            title={startable.title}
+            minutes={startable.minutes}
+            label="Fazer a versão completa"
+            disabled={applying}
+            onClick={() => onStart(startable, 'completa')}
+          />
+
+          {startable.minimalTitle ? (
+            <StartButton
+              title={startable.minimalTitle}
+              minutes={startable.adaptedMin}
+              label="Fazer a versão mínima"
+              tone="soft"
+              disabled={applying}
+              onClick={() => onStart(startable, 'minima')}
+            />
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap gap-2">
-        <Button onClick={onConfirm} loading={applying} disabled={plan.writes === 0 && plan.fits}>
-          {plan.writes === 0 ? 'Entendi' : `Confirmar ${plan.writes === 1 ? 'a mudança' : `as ${plan.writes} mudanças`}`}
+        <Button
+          variant={startable && onStart ? 'secondary' : 'primary'}
+          onClick={onConfirm}
+          loading={applying}
+          disabled={plan.writes === 0 && plan.fits}
+        >
+          {plan.writes === 0
+            ? 'Entendi'
+            : startable && onStart
+              ? 'Só confirmar'
+              : `Confirmar ${plan.writes === 1 ? 'a mudança' : `as ${plan.writes} mudanças`}`}
         </Button>
         <Button variant="ghost" onClick={onClose} disabled={applying}>
           Cancelar
         </Button>
       </div>
     </div>
+  )
+}
+
+/**
+ * O botão de começar: um alvo grande com o que vai acontecer escrito dentro.
+ *
+ * Três linhas em ordem de leitura — o que é, o que vai ser feito, quanto
+ * tempo leva. Quem lê devagar termina sabendo exatamente no que está tocando,
+ * e ninguém precisa voltar na lista acima pra lembrar o nome da ação.
+ */
+function StartButton({
+  title,
+  minutes,
+  label,
+  tone = 'brand',
+  disabled,
+  onClick,
+}: {
+  readonly title: string
+  readonly minutes: number
+  readonly label: string
+  readonly tone?: 'brand' | 'soft'
+  readonly disabled: boolean
+  readonly onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        'flex min-h-16 flex-col justify-center gap-0.5 rounded-xl border px-4 py-3 text-left transition-colors',
+        tone === 'brand'
+          ? 'border-brand bg-brand text-white hover:bg-brand/90'
+          : 'border-line-hi bg-surface-hi text-ink hover:bg-surface',
+        disabled && 'cursor-not-allowed opacity-60',
+      )}
+    >
+      <span className="flex items-center gap-2 text-sm font-semibold">
+        <Icon name="play" className="size-4 shrink-0" />
+        {label}
+      </span>
+      <span
+        className={cn(
+          'text-sm text-balance',
+          tone === 'brand' ? 'text-white/85' : 'text-ink-muted',
+        )}
+      >
+        {title}
+        {minutes > 0 ? ` · ${minutes} min` : ''}
+      </span>
+    </button>
   )
 }
 

@@ -13,6 +13,11 @@ interface DialogProps {
   readonly size?: 'md' | 'lg' | 'xl'
   /** Sessão de foco: tela cheia, sem nada além do essencial. */
   readonly fullscreen?: boolean
+  /**
+   * As ações do diálogo, presas embaixo enquanto o conteúdo rola. Mesma regra
+   * do bottom sheet: uma lista longa não pode esconder a decisão.
+   */
+  readonly footer?: ReactNode
 }
 
 /**
@@ -26,6 +31,7 @@ export function Dialog({
   description,
   onClose,
   children,
+  footer,
   size = 'md',
   fullscreen = false,
 }: DialogProps) {
@@ -65,7 +71,8 @@ export function Dialog({
               fullscreen
                 ? 'flex w-full flex-col bg-canvas'
                 : cn(
-                    'surface-card max-h-[85dvh] w-full overflow-y-auto p-6',
+                    'surface-card max-h-[85dvh] w-full p-6',
+                    footer ? 'flex flex-col overflow-hidden' : 'overflow-y-auto',
                     // `xl` existe pro Share Studio: preview grande e controles
                     // lado a lado não cabem em 2xl sem espremer os dois.
                     size === 'xl' ? 'max-w-5xl' : size === 'lg' ? 'max-w-2xl' : 'max-w-lg',
@@ -101,7 +108,13 @@ export function Dialog({
                     <span className="sr-only">Fechar</span>
                   </button>
                 </div>
-                <div className="mt-5">{children}</div>
+                <div className={cn('mt-5', footer ? 'min-h-0 flex-1 overflow-y-auto' : null)}>
+                  {children}
+                </div>
+
+                {footer ? (
+                  <div className="mt-5 shrink-0 border-t border-line pt-4">{footer}</div>
+                ) : null}
               </>
             )}
           </motion.div>

@@ -12,6 +12,14 @@ interface BottomSheetProps {
   readonly children: ReactNode
   /** Esconde o título na tela e deixa só pro leitor de tela. */
   readonly hideTitle?: boolean
+  /**
+   * As ações do sheet, presas embaixo enquanto o conteúdo rola.
+   *
+   * Sheet com lista longa empurrava o botão pro fim da rolagem: pra confirmar
+   * era preciso ler tudo, ou adivinhar que havia algo lá embaixo. A decisão
+   * fica sempre na tela, no lugar onde o polegar já está.
+   */
+  readonly footer?: ReactNode
 }
 
 /**
@@ -32,6 +40,7 @@ export function BottomSheet({
   onClose,
   children,
   hideTitle = false,
+  footer,
 }: BottomSheetProps) {
   const panelRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
@@ -74,13 +83,19 @@ export function BottomSheet({
               // gesto aqui é atalho, nunca o único caminho.
               if (info.offset.y > 96 || info.velocity.y > 600) onClose()
             }}
-            className="max-h-[88dvh] w-full overflow-hidden rounded-t-3xl border-t border-line-hi bg-surface"
+            /*
+              Coluna flex, não alturas calculadas: cabeçalho e rodapé têm o
+              tamanho que o conteúdo deles pede, e só a área do meio rola.
+              Com `max-h` subtraindo um número fixo, um título de duas linhas
+              já empurrava o rodapé pra fora da tela.
+            */
+            className="flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-3xl border-t border-line-hi bg-surface"
           >
-            <div className="flex justify-center pt-2.5 pb-1">
+            <div className="flex shrink-0 justify-center pt-2.5 pb-1">
               <span aria-hidden="true" className="h-1 w-10 rounded-full bg-line-hi" />
             </div>
 
-            <div className="flex items-start justify-between gap-4 px-5 pt-2">
+            <div className="flex shrink-0 items-start justify-between gap-4 px-5 pt-2">
               <div className="min-w-0">
                 <h2
                   id={titleId}
@@ -120,9 +135,15 @@ export function BottomSheet({
             </div>
 
             {/* pb-safe: sem isso o último botão fica embaixo do risco de gestos. */}
-            <div className="max-h-[calc(88dvh-5rem)] overflow-y-auto px-5 pt-4 pb-safe">
+            <div className={cn('min-h-0 flex-1 overflow-y-auto px-5 pt-4', !footer && 'pb-safe')}>
               <div className="pb-4">{children}</div>
             </div>
+
+            {footer ? (
+              <div className="shrink-0 border-t border-line bg-surface-hi/40 px-5 pt-3 pb-safe">
+                <div className="pb-3">{footer}</div>
+              </div>
+            ) : null}
           </motion.div>
         </motion.div>
       ) : null}

@@ -36,8 +36,14 @@ export interface InsightContext {
 export interface InsightActions {
   /** Executa a recomendação. Não dispensa o insight: quem decide isso é a tela. */
   apply(insight: Insight): Promise<void>
-  /** Abre o cronômetro nessa ação. Usado pelo dia e pelas recomendações. */
-  startFocus(task: Task): void
+  /**
+   * Abre o cronômetro nessa ação. Usado pelo dia e pelas recomendações.
+   *
+   * `plannedMin` só é passado por quem já negociou o tamanho da sessão com a
+   * pessoa: quem escolheu "fazer os 10 minutos" precisa ver 10 no relógio, e
+   * não o piso de 15 que vale pra uma ação começada de qualquer outro lugar.
+   */
+  startFocus(task: Task, plannedMin?: number): void
   /** Troca a ação pela versão mínima dela. É a saída pro dia ruim. */
   shrinkTask(task: Task): Promise<void>
 }
@@ -49,11 +55,11 @@ export function useInsightActions(context: InsightContext): InsightActions {
   const navigate = useNavigate()
 
   const startFocus = useCallback(
-    (task: Task) => {
+    (task: Task, plannedMin?: number) => {
       focus.start({
         axis: task.axis ?? 'estudo',
         label: task.title,
-        plannedMin: Math.min(60, Math.max(15, task.estimatedMin)),
+        plannedMin: plannedMin ?? Math.min(60, Math.max(15, task.estimatedMin)),
         taskId: task.id,
       })
       focus.setImmersive(true)
