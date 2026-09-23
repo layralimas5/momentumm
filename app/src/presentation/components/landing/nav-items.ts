@@ -22,24 +22,29 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     label: 'Produto',
     links: [
       {
-        label: 'O método',
-        description: 'Objetivo, plano, hoje, progresso, review, ajuste',
-        href: '/#metodo',
+        label: 'Como funciona',
+        description: 'Do objetivo ao próximo passo, em quatro momentos',
+        href: '/#como-funciona',
       },
       {
-        label: 'Por dentro',
-        description: 'As seis telas do ciclo, com um exemplo só',
-        href: '/#telas',
+        label: 'Quando a rotina muda',
+        description: 'Dia adaptável e retomada, sem voltar ao zero',
+        href: '/#retomada',
+      },
+      {
+        label: 'A tela de hoje',
+        description: 'O que importa agora, em uma tela',
+        href: '/#hoje',
+      },
+      {
+        label: 'Progresso',
+        description: 'O número que mostra a sua constância',
+        href: '/#progresso',
       },
       {
         label: 'Momentumm AI',
-        description: 'A IA que monta o plano e lê o progresso',
+        description: 'Sugestões que conhecem a sua meta',
         href: '/#ia',
-      },
-      {
-        label: 'Por que confiar',
-        description: 'O que sustenta a promessa, sem depoimento inventado',
-        href: '/#confianca',
       },
     ],
   },

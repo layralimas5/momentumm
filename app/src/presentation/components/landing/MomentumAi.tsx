@@ -1,126 +1,88 @@
-import { Icon } from '@/presentation/components/ui/Icon'
-import { cn } from '@/shared/lib/cn'
+import { Icon, type IconName } from '@/presentation/components/ui/Icon'
 import { Reveal } from './Reveal'
 import { Section, SectionHeading } from './Section'
 
 /**
- * A IA mostrada como conversa, não como lista de capacidades: três trocas em
- * que a pessoa dá pouco e recebe algo concreto. É uma demonstração escrita à
- * mão com o formato REAL das respostas (plano em etapas, leitura de progresso,
- * síntese da semana), sem prometer nada que o produto não devolva.
+ * A IA vendida pelo resultado, não pela tecnologia.
+ *
+ * Quem está decidindo se o app resolve o problema dela não quer saber quais
+ * campos o modelo lê nem onde a chave fica: quer saber o que acontece na
+ * quinta-feira em que o dia apertou. Por isso são três perguntas do dia a
+ * dia, com a resposta em uma linha, e uma prova de que a última palavra é
+ * sempre da pessoa.
  */
-const EXCHANGES = [
+const CASES: readonly { readonly icon: IconName; readonly when: string; readonly what: string }[] = [
   {
-    kind: 'Plano',
-    you: 'Quero ler 6 livros até dezembro. Tenho 30 minutos por dia, de segunda a sexta.',
-    ai: [
-      'Plano em 3 etapas. Etapa 1, até 15/10: livros 1 e 2, 20 páginas por sessão.',
-      'Primeira ação hoje: abrir o livro e ler a primeira sessão.',
-      'Se o prazo apertar, a etapa 3 encolhe pra 1 livro. Você edita tudo antes de salvar.',
-    ],
+    icon: 'relogio',
+    when: 'Seu dia apertou?',
+    what: 'Ajuda a adaptar a ação ao tempo que sobrou.',
   },
   {
-    kind: 'Progresso',
-    you: null,
-    ai: [
-      'Você apareceu em 5 dos últimos 7 dias, mas a prioridade do dia ficou aberta em 3 deles.',
-      'O gargalo é o horário: as sessões de noite não saem.',
-      'Próxima ação: mover a leitura pra manhã de terça.',
-    ],
+    icon: 'plano',
+    when: 'Seu plano travou?',
+    what: 'Ajuda a identificar o gargalo que está segurando o objetivo.',
   },
   {
-    kind: 'Review',
-    you: 'Semana difícil, entreguei menos.',
-    ai: [
-      'Execução de 60%, 4 dias ativos. Dois dias com versão mínima, que contam.',
-      'Recomendação pra próxima semana: manter 20 páginas e cortar a ação extra de sábado.',
-    ],
+    icon: 'calendario',
+    when: 'Terminou a semana?',
+    what: 'Ajuda a escolher o próximo foco, com o que a semana mostrou.',
   },
-] as const
+]
 
 export function MomentumAi() {
   return (
-    <Section id="ia" className="border-t border-line bg-surface">
+    <Section id="ia" className="border-t border-line bg-surface/30">
       <SectionHeading
         eyebrow="Momentumm AI"
-        title="A IA que conhece o seu plano, não uma que responde qualquer coisa."
-        description="Ela lê o que você já colocou no app e devolve plano, leitura de progresso e review. Toda sugestão vira uma prévia que você edita antes de salvar."
+        title="Uma IA que conhece sua meta antes de sugerir o próximo passo."
+        description="O Momentumm usa seu objetivo, plano, disponibilidade e progresso para sugerir próximos passos e ajustes mais compatíveis com sua realidade."
       />
 
-      <Reveal>
-        <div className="pulse-on-hover mx-auto mt-12 flex max-w-3xl flex-col gap-6 rounded-card border border-line bg-canvas p-4 sm:p-6">
-          {EXCHANGES.map((exchange, index) => (
-            <div key={exchange.kind} className="flex flex-col gap-3">
-              <p className="text-center text-[11px] font-medium tracking-wide text-ink-faint uppercase">
-                {exchange.kind}
-              </p>
+      <ul className="mt-10 grid gap-3 md:grid-cols-3">
+        {CASES.map((item, index) => (
+          <li key={item.when} className="h-full">
+            <Reveal delay={index * 0.06} className="h-full">
+              <div className="pulse-on-hover flex h-full gap-4 rounded-card border border-line bg-surface p-5 md:flex-col md:gap-0 md:p-6">
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-dim text-brand-hi">
+                  <Icon name={item.icon} className="size-5" />
+                </span>
+                <div className="min-w-0">
+                  <h3 className="font-medium text-ink md:mt-4">{item.when}</h3>
+                  <p className="mt-1.5 text-pretty text-sm text-ink-muted">{item.what}</p>
+                </div>
+              </div>
+            </Reveal>
+          </li>
+        ))}
+      </ul>
 
-              {exchange.you ? (
-                <Bubble side="you">{exchange.you}</Bubble>
-              ) : (
-                <p className="text-center text-xs text-ink-faint">
-                  Sem pergunta: ela lê o progresso sozinha e avisa.
-                </p>
-              )}
-
-              <Bubble side="ai" delay={index * 0.08}>
-                {exchange.ai.map((line) => (
-                  <span key={line} className="block">
-                    {line}
-                  </span>
-                ))}
-              </Bubble>
-            </div>
-          ))}
+      {/* A prova da frase: a sugestão chega como proposta, com os dois botões. */}
+      <Reveal delay={0.2}>
+        <div className="mx-auto mt-8 max-w-xl rounded-card border border-brand/30 bg-brand-dim/20 p-5 sm:p-6">
+          <p className="flex items-center gap-2 text-xs font-medium tracking-wide text-brand-hi uppercase">
+            <Icon name="ia" className="size-4" />
+            Sugestão
+          </p>
+          <p className="mt-2.5 text-pretty text-ink">
+            Mover “Revisar anotações” pra manhã de terça, logo depois da leitura. É o horário em que
+            você conclui mais.
+          </p>
+          <div aria-hidden="true" className="mt-4 flex flex-wrap items-center gap-2.5">
+            <span className="rounded-lg bg-brand px-3.5 py-2 text-sm font-medium text-white">
+              Aplicar
+            </span>
+            <span className="rounded-lg border border-line px-3.5 py-2 text-sm text-ink-muted">
+              Editar
+            </span>
+          </div>
         </div>
       </Reveal>
 
-      <Reveal delay={0.15}>
-        <p className="mx-auto mt-8 max-w-2xl text-balance text-center text-sm text-ink-faint">
-          A chave da IA fica no servidor. Nada roda no seu navegador, nenhum texto seu treina
-          modelo, e a franquia mensal faz parte do PRO.
+      <Reveal delay={0.28}>
+        <p className="mx-auto mt-5 max-w-2xl text-balance text-center text-lg font-medium text-ink">
+          Nada muda sem você confirmar.
         </p>
       </Reveal>
     </Section>
-  )
-}
-
-function Bubble({
-  side,
-  delay = 0,
-  children,
-}: {
-  readonly side: 'you' | 'ai'
-  readonly delay?: number
-  readonly children: React.ReactNode
-}) {
-  const ai = side === 'ai'
-  return (
-    <Reveal delay={delay} className={cn('flex', ai ? 'justify-start' : 'justify-end')}>
-      <div className={cn('flex max-w-[92%] gap-2.5 sm:max-w-[80%]', !ai && 'flex-row-reverse')}>
-        <span
-          className={cn(
-            'mt-0.5 grid size-7 shrink-0 place-items-center rounded-full text-[11px] font-semibold',
-            ai ? 'bg-brand-dim text-brand-hi' : 'bg-surface-hi text-ink-muted',
-          )}
-          aria-hidden="true"
-        >
-          {ai ? <Icon name="ia" className="size-3.5" /> : 'V'}
-        </span>
-        <div>
-          <p className={cn('text-[11px] text-ink-faint', !ai && 'text-right')}>{ai ? 'Momentumm AI' : 'Você'}</p>
-          <div
-            className={cn(
-              'mt-1 space-y-1.5 rounded-2xl px-4 py-3 text-sm leading-relaxed',
-              ai
-                ? 'rounded-tl-md border border-brand/30 bg-brand-dim/30 text-ink'
-                : 'rounded-tr-md bg-surface-hi text-ink',
-            )}
-          >
-            {children}
-          </div>
-        </div>
-      </div>
-    </Reveal>
   )
 }

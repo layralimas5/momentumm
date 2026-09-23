@@ -32,6 +32,9 @@
   --color-flame-dim: #3a1f14;
 
   --color-positive: #3ecf8e;
+  /* O verde do selo pequeno. No escuro é o mesmo; no claro precisa escurecer
+     pra um texto de 10px sobre fundo esverdeado chegar no AA. */
+  --color-positive-ink: #3ecf8e;
   --color-danger: #f05252;
 
   /* Medalha conquistada. Ouro e reservado a conquista: nao e cor de interface,
@@ -379,6 +382,7 @@
   --color-flame-dim: #fde8dd;
 
   --color-positive: #16a068;
+  --color-positive-ink: #0b7a4f;
   --color-danger: #d93a3a;
 
   /* No claro o ouro escurece: o mesmo tom do escuro sumiria no branco. */

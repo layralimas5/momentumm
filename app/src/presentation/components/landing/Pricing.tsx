@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { TRIAL_DAYS } from '@/domain/billing/trial'
+import { Icon, type IconName } from '@/presentation/components/ui/Icon'
 import { cn } from '@/shared/lib/cn'
+import { trackLanding, useSectionView } from './landing-analytics'
 import {
   ANNUAL_EXTRAS,
   PRICING_FOOTNOTE,
@@ -11,61 +14,93 @@ import {
 import { Reveal } from './Reveal'
 import { CycleToggle } from './CycleToggle'
 import { Section, SectionHeading } from './Section'
-import { CTA } from './site'
+import { TRIAL_PROMISE_VERIFIED } from './site'
+import { useSiteCta } from './use-site-cta'
+
+/**
+ * As garantias ficam coladas no preço, que é onde o risco aparece. Cada uma
+ * é uma decisão do produto que dá pra verificar, não uma frase de confiança.
+ */
+const GUARANTEES: readonly { readonly icon: IconName; readonly text: string }[] = [
+  { icon: 'cadeado', text: 'Seus dados são seus: privados por padrão e exportáveis a qualquer hora.' },
+  { icon: 'saida', text: 'Cancela num clique, sem ligação. O PRO vale até o fim do período pago.' },
+  { icon: 'check', text: 'Nada é apagado se você voltar pro gratuito. Só fica guardado.' },
+]
 
 export function Pricing() {
   const [cycle, setCycle] = useState<BillingCycle>('anual')
+  const viewRef = useSectionView('pricing_viewed')
 
   return (
     <Section id="planos" className="border-t border-line">
-      <SectionHeading
-        eyebrow="Planos"
-        title="O gratuito organiza e executa. O PRO registra, analisa e evolui."
-        description="No gratuito você cria objetivo, organiza hábitos, acompanha o dia e vê o Momentumm Score de hoje. O PRO libera entender os próprios padrões, registrar a jornada, ver métricas e ajustar o plano com a leitura da IA."
-      />
+      <div ref={viewRef}>
+        <SectionHeading
+          eyebrow="Planos"
+          title="Comece de graça. Assine quando fizer diferença."
+          description="O gratuito roda o ciclo inteiro. O PRO tira os limites, abre o histórico completo e a leitura da IA."
+        />
 
-      <div className="mt-10 flex justify-center">
-        <CycleToggle value={cycle} onChange={setCycle} />
+        <div className="mt-8 flex justify-center">
+          <CycleToggle value={cycle} onChange={setCycle} />
+        </div>
+
+        <ul className="mx-auto mt-8 grid max-w-4xl items-stretch gap-4 md:grid-cols-2">
+          {PRICING_PLANS.map((plan, index) => (
+            <li key={plan.id} className="h-full">
+              <Reveal delay={index * 0.08} className="h-full">
+                <PlanCard plan={plan} cycle={cycle} />
+              </Reveal>
+            </li>
+          ))}
+        </ul>
+
+        <Reveal delay={0.16}>
+          <ul className="mx-auto mt-8 grid max-w-4xl gap-2.5 sm:grid-cols-3">
+            {GUARANTEES.map((item) => (
+              <li
+                key={item.text}
+                className="flex gap-3 rounded-card border border-line bg-surface p-3.5 text-sm text-ink-muted"
+              >
+                <Icon name={item.icon} className="mt-0.5 size-4 shrink-0 text-brand-hi" />
+                <span className="text-pretty">{item.text}</span>
+              </li>
+            ))}
+          </ul>
+        </Reveal>
+
+        <p className="mx-auto mt-6 max-w-2xl text-center text-sm text-ink-faint">
+          {PRICING_FOOTNOTE}
+        </p>
       </div>
-
-      <ul className="mx-auto mt-8 grid max-w-4xl items-stretch gap-4 md:grid-cols-2">
-        {PRICING_PLANS.map((plan, index) => (
-          <li key={plan.id} className="h-full">
-            <Reveal delay={index * 0.08} className="h-full">
-              <PlanCard plan={plan} cycle={cycle} />
-            </Reveal>
-          </li>
-        ))}
-      </ul>
-
-      <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-ink-faint">
-        {PRICING_FOOTNOTE}
-      </p>
     </Section>
   )
 }
 
 function PlanCard({ plan, cycle }: { plan: PricingPlan; cycle: BillingCycle }) {
+  const cta = useSiteCta('lp-precos')
   const price = plan.prices[cycle]
-  const showAnnualExtras = plan.highlight === true && cycle === 'anual'
+  const isPro = plan.highlight === true
+  const showAnnualExtras = isPro && cycle === 'anual'
+
+  // O card do gratuito usa o CTA da página inteira; o do PRO leva pro checkout.
+  const to = isPro ? `/app/assinatura?ciclo=${cycle}` : cta.primary.to
+  const label = isPro ? plan.cta : cta.primary.label
 
   return (
     <article
       aria-labelledby={`plano-${plan.id}`}
       className={cn(
         'pulse-on-hover flex h-full flex-col rounded-card border p-6',
-        plan.highlight
-          ? 'border-brand bg-brand-dim/30 shadow-xl shadow-brand/10'
-          : 'border-line bg-surface',
+        isPro ? 'border-brand bg-brand-dim/30 shadow-xl shadow-brand/10' : 'border-line bg-surface',
       )}
     >
       <p
         className={cn(
           'inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wide',
-          plan.highlight ? 'bg-brand text-white' : 'border border-line text-ink-muted',
+          isPro ? 'bg-brand text-white' : 'border border-line text-ink-muted',
         )}
       >
-        {plan.highlight ? <BoltIcon /> : null}
+        {isPro ? <BoltIcon /> : null}
         {plan.badge}
       </p>
 
@@ -79,10 +114,9 @@ function PlanCard({ plan, cycle }: { plan: PricingPlan; cycle: BillingCycle }) {
           <span className="text-sm text-ink-muted">{price.period}</span>
           {price.strike ? (
             <>
-              <span className="sr-only">, de</span>
-              <s className="tabular ml-2 text-sm text-ink-faint decoration-danger/70">
-                {price.strike}
-              </s>
+              <span className="sr-only">, contra</span>
+              <s className="tabular ml-2 text-sm text-ink-faint">{price.strike}</s>
+              <span className="sr-only">pagando mês a mês</span>
             </>
           ) : null}
         </p>
@@ -96,7 +130,7 @@ function PlanCard({ plan, cycle }: { plan: PricingPlan; cycle: BillingCycle }) {
 
       <p className="mt-2 text-pretty text-sm text-ink-muted">{plan.description}</p>
 
-      <ul className="mt-6 flex flex-1 flex-col gap-2.5 border-t border-line pt-6">
+      <ul className="mt-5 flex flex-1 flex-col gap-2 border-t border-line pt-5">
         {plan.features.map((feature) => (
           <li key={feature} className="flex gap-2.5 text-sm text-ink-muted">
             <CheckIcon />
@@ -114,20 +148,23 @@ function PlanCard({ plan, cycle }: { plan: PricingPlan; cycle: BillingCycle }) {
       </ul>
 
       <Link
-        to={plan.highlight ? `/app/assinatura?ciclo=${cycle}` : CTA.primary.to}
+        to={to}
+        onClick={() => trackLanding('pricing_cta_clicked')}
         className={cn(
           'mt-6 inline-flex h-11 items-center justify-center rounded-xl px-4 text-sm font-medium transition-colors',
-          plan.highlight
+          isPro
             ? 'bg-brand text-white hover:bg-brand-hi'
             : 'border border-line text-ink hover:border-line-hi',
         )}
       >
-        {plan.cta}
+        {label}
       </Link>
       <p className="mt-2.5 text-center text-xs text-ink-faint">
-        {plan.highlight
-          ? 'Sem cartão no teste. Cancela quando quiser.'
-          : 'Sem cartão. Sem prazo pra decidir.'}
+        {isPro
+          ? TRIAL_PROMISE_VERIFIED
+            ? `${TRIAL_DAYS} dias de teste, sem cartão. Cancela quando quiser.`
+            : 'Cancela quando quiser.'
+          : 'Grátis e sem cartão. Sem prazo pra decidir.'}
       </p>
     </article>
   )
