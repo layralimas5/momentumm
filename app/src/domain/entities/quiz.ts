@@ -53,6 +53,11 @@ export const QUIZ_AREA_LABELS: Readonly<Record<QuizAreaKey, string>> = {
   outra: 'Outra',
 }
 
+/** A chave veio de fora (banco, URL) e precisa ser provada antes de virar rótulo. */
+export function isQuizArea(value: string): value is QuizAreaKey {
+  return (QUIZ_AREAS as readonly string[]).includes(value)
+}
+
 export const QUIZ_OBSTACLES = [
   'procrastino',
   'abandono',

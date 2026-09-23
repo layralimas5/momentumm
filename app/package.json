@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:test": "node supabase/tests/pglite/harness.mjs && node supabase/tests/pglite/trial.mjs && node supabase/tests/pglite/push.mjs && node supabase/tests/pglite/first-step.mjs",
+    "db:test": "node supabase/tests/pglite/harness.mjs && node supabase/tests/pglite/trial.mjs && node supabase/tests/pglite/push.mjs && node supabase/tests/pglite/first-step.mjs && node supabase/tests/pglite/quiz.mjs",
     "ai:bundle": "esbuild src/domain/ai/edge-shared.ts --bundle --format=esm --platform=neutral --target=es2022 --external:zod --external:zod/* --alias:@=./src --banner:js=\"// GERADO por 'npm run ai:bundle' a partir de src/domain/ai/edge-shared.ts. Nao editar.\" --outfile=supabase/functions/momentumm-ai/shared.ts",
     "ai:deploy": "npm run ai:bundle && supabase functions deploy momentumm-ai",
     "billing:bundle": "esbuild src/domain/billing/edge-shared.ts --bundle --format=esm --platform=neutral --target=es2022 --external:zod --external:zod/* --alias:@=./src --banner:js=\"// GERADO por 'npm run billing:bundle' a partir de src/domain/billing/edge-shared.ts. Nao editar.\" --outfile=supabase/functions/_shared/billing.ts",

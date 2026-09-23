@@ -5,6 +5,7 @@ import { QUIZ_QUESTION_COUNT } from '@/domain/entities/quiz'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
+import { QuizContact } from '@/presentation/quiz/QuizContact'
 import { QuizDiagnosisView } from '@/presentation/quiz/QuizDiagnosis'
 import { QuizIntro } from '@/presentation/quiz/QuizIntro'
 import { QuizPlanPreviewView } from '@/presentation/quiz/QuizPlanPreview'
@@ -73,7 +74,7 @@ export function QuizPage() {
                 não explica nada, e quem toca e lê o aviso entende o que falta.
               */}
               <Button className="w-full" onClick={quiz.next}>
-                {quiz.step === QUIZ_QUESTION_COUNT - 1 ? 'Ver meu diagnóstico' : 'Continuar'}
+                {quiz.step === QUIZ_QUESTION_COUNT - 1 ? 'Ver meu plano' : 'Continuar'}
                 <Icon name="seta" className="size-4" />
               </Button>
             </div>
@@ -93,6 +94,36 @@ export function QuizPage() {
         <p aria-live="polite" className="mt-4 min-h-5 text-sm text-ink-faint">
           {quiz.warning ?? ''}
         </p>
+      </QuizShell>
+    )
+  }
+
+  if (quiz.phase === 'contato') {
+    return (
+      <QuizShell
+        progress={1}
+        progressLabel="Plano pronto"
+        footer={
+          <>
+            <Button variant="ghost" className="shrink-0" onClick={quiz.back}>
+              <Icon name="setaEsq" className="size-4" />
+              Voltar
+            </Button>
+            <div className="min-w-0 flex-1">
+              <Button className="w-full" onClick={quiz.submitLead} loading={quiz.savingLead}>
+                Ver meu diagnóstico
+                <Icon name="seta" className="size-4" />
+              </Button>
+            </div>
+          </>
+        }
+      >
+        <QuizContact
+          lead={quiz.lead}
+          warnings={quiz.leadWarnings}
+          onChange={quiz.setLead}
+          onSubmit={quiz.submitLead}
+        />
       </QuizShell>
     )
   }

@@ -11,6 +11,7 @@ import type {
   AdminMember,
   AdminOverview,
   AdminQuizFunnel,
+  AdminQuizLeadList,
   AdminRequestDetail,
   AdminRequestList,
   AdminRetention,
@@ -133,6 +134,8 @@ export interface AdminGateway {
   featureUsage(period: Period): Promise<AdminFeatureUsage>
   /** Funil de aquisição pelo quiz (`/criar-meu-plano`), agregado por sessão. */
   quizFunnel(period: Period): Promise<AdminQuizFunnel>
+  /** Contatos deixados no quiz. `pending` filtra quem ainda não virou conta. */
+  quizLeads(period: Period, pending: boolean | null, page: number): Promise<AdminQuizLeadList>
   /** Distribuição por nível e XP da semana. Agregado, sem dado individual. */
   evolutionMetrics(): Promise<AdminEvolutionMetrics>
 

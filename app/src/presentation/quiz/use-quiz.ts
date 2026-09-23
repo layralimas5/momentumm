@@ -22,7 +22,17 @@ import {
   type QuizPlanPreview,
 } from '@/domain/entities/quiz'
 import {
+  EMPTY_QUIZ_LEAD,
+  isLeadReady,
+  leadErrors,
+  normalizeLead,
+  type LeadErrors,
+  type QuizLead,
+} from '@/domain/entities/quiz-lead'
+import {
+  flushPendingLead,
   saveQuizAnswers,
+  saveQuizLead,
   startFreshQuizSession,
   trackFunnel,
   trackFunnelOnLeave,
@@ -32,8 +42,13 @@ import { clearQuizDraft, loadQuizDraft, savePendingQuizPlan, saveQuizDraft } fro
 /**
  * O quiz como estado, separado do desenho.
  *
- * Cinco fases numa linha: intro → perguntas → processando → diagnóstico →
- * plano. As respostas ficam no `localStorage` a cada mudança (a página
+ * Seis fases numa linha: intro → perguntas → contato → processando →
+ * diagnóstico → plano.
+ *
+ * O contato fica ANTES do diagnóstico de propósito. Depois do plano a
+ * pessoa já teve o que veio buscar e não tem motivo nenhum pra deixar
+ * e-mail; antes dele, o plano pronto é o motivo. É o único ponto do funil
+ * onde dá pra alcançar quem não vai criar conta hoje. As respostas ficam no `localStorage` a cada mudança (a página
  * atualizada volta na mesma pergunta) e vão pro servidor a cada avanço,
  * junto do evento do funil. O plano é calculado aqui, no navegador, pelo
  * mesmo gerador do onboarding: não existe chamada de rede entre a última
@@ -42,7 +57,14 @@ import { clearQuizDraft, loadQuizDraft, savePendingQuizPlan, saveQuizDraft } fro
 
 export const QUIZ_PATH = '/criar-meu-plano'
 
-export const QUIZ_PHASES = ['intro', 'perguntas', 'processando', 'diagnostico', 'plano'] as const
+export const QUIZ_PHASES = [
+  'intro',
+  'perguntas',
+  'contato',
+  'processando',
+  'diagnostico',
+  'plano',
+] as const
 export type QuizPhase = (typeof QUIZ_PHASES)[number]
 
 /** O tempo da animação de processamento. Curto de propósito: o plano já está pronto. */
@@ -67,6 +89,10 @@ export interface QuizController {
   readonly canAdvance: boolean
   readonly diagnosis: QuizDiagnosis | null
   readonly preview: QuizPlanPreview | null
+  readonly lead: QuizLead
+  /** Os erros do contato, só depois que a pessoa tentou enviar. */
+  readonly leadWarnings: LeadErrors
+  readonly savingLead: boolean
   set(changes: Partial<QuizAnswers>): void
   /** Marca ou desmarca. A ordem do toque é a ordem de importância. */
   toggleArea(area: QuizAreaKey): void
@@ -75,6 +101,9 @@ export interface QuizController {
   start(): void
   next(): void
   back(): void
+  setLead(changes: Partial<QuizLead>): void
+  /** Guarda o contato e segue pro diagnóstico. */
+  submitLead(): void
   /** Do diagnóstico pra prévia. */
   showPlan(): void
   /** Ajustar as respostas: volta pra primeira pergunta com tudo preenchido. */
@@ -89,6 +118,9 @@ export function useQuiz(): QuizController {
 
   const stored = useMemo(() => loadQuizDraft(), [])
   const [phase, setPhase] = useState<QuizPhase>('intro')
+  const [lead, setLeadState] = useState<QuizLead>(EMPTY_QUIZ_LEAD)
+  const [leadAttempted, setLeadAttempted] = useState(false)
+  const [savingLead, setSavingLead] = useState(false)
   const [step, setStep] = useState(stored?.step ?? 0)
   const [answers, setAnswers] = useState<QuizAnswers>(stored?.answers ?? EMPTY_QUIZ_ANSWERS)
 
@@ -175,9 +207,7 @@ export function useQuiz(): QuizController {
     setPhase('perguntas')
   }, [attribution])
 
-  const finish = useCallback((final: QuizAnswers) => {
-    trackFunnel('quiz_completed', QUIZ_QUESTION_COUNT)
-    saveQuizAnswers(final, isQuizComplete(final) ? buildDiagnosis(final) : null, QUIZ_QUESTION_COUNT)
+  const finish = useCallback(() => {
     setPhase('processando')
     window.setTimeout(() => {
       setPhase('diagnostico')
@@ -194,21 +224,51 @@ export function useQuiz(): QuizController {
     saveQuizAnswers(answers, null, step + 1)
 
     if (step >= QUIZ_QUESTION_COUNT - 1) {
-      finish(answers)
+      trackFunnel('quiz_completed', QUIZ_QUESTION_COUNT)
+      saveQuizAnswers(answers, isQuizComplete(answers) ? buildDiagnosis(answers) : null, QUIZ_QUESTION_COUNT)
+      setPhase('contato')
       return
     }
     setStep(step + 1)
-  }, [blocker, step, answers, finish])
+  }, [blocker, step, answers])
 
   const back = useCallback(() => {
+    if (phase === 'contato') {
+      setPhase('perguntas')
+      return
+    }
     if (step === 0) {
       setPhase('intro')
       return
     }
     setStep(step - 1)
-  }, [step])
+  }, [phase, step])
+
+  const setLead = useCallback((changes: Partial<QuizLead>) => {
+    setLeadState((current) => ({ ...current, ...changes }))
+    setLeadAttempted(false)
+  }, [])
+
+  /*
+    O contato é aguardado, mas nunca é barreira: rede caída não pode segurar
+    o plano de quem respondeu sete perguntas. A gravação guarda o que falhou
+    pra tentar de novo sozinha, e a tela segue em frente.
+  */
+  const submitLead = useCallback(() => {
+    if (!isLeadReady(lead)) {
+      setLeadAttempted(true)
+      return
+    }
+    setSavingLead(true)
+    void saveQuizLead(normalizeLead(lead)).then((saved) => {
+      setSavingLead(false)
+      if (saved) trackFunnel('lead_captured', QUIZ_QUESTION_COUNT)
+      finish()
+    })
+  }, [lead, finish])
 
   const showPlan = useCallback(() => {
+    flushPendingLead()
     setPhase('plano')
     trackFunnel('plan_preview_viewed', null)
   }, [])
@@ -237,6 +297,9 @@ export function useQuiz(): QuizController {
     canAdvance: blocker === null,
     diagnosis,
     preview,
+    lead,
+    leadWarnings: leadAttempted ? leadErrors(lead) : {},
+    savingLead,
     set,
     toggleArea,
     toggleObstacle,
@@ -244,6 +307,8 @@ export function useQuiz(): QuizController {
     start,
     next,
     back,
+    setLead,
+    submitLead,
     showPlan,
     review,
     activate,

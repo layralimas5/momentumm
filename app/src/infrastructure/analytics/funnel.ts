@@ -1,4 +1,5 @@
 import type { FunnelEventName, QuizAttribution } from '@/domain/analytics/funnel-events'
+import type { NormalizedLead } from '@/domain/entities/quiz-lead'
 import type { QuizAnswers, QuizDiagnosis } from '@/domain/entities/quiz'
 import { isDemoMode, supabaseConfig } from '@/infrastructure/config/env'
 import { supabase } from '@/infrastructure/supabase/client'
@@ -100,6 +101,78 @@ export function saveQuizAnswers(
       p_step: step,
     })
     .then(() => undefined, () => undefined)
+}
+
+const PENDING_LEAD_KEY = 'momentumm.quiz.lead.pending.v1'
+
+/**
+ * O contato de quem respondeu o quiz.
+ *
+ * Aguardado, ao contrário do resto deste arquivo: a pessoa está parada na
+ * tela esperando, e um contato perdido em silêncio é exatamente o problema
+ * que esta função existe pra resolver. Quando a rede falha, o contato fica
+ * guardado no navegador e sobe na próxima oportunidade (`flushPendingLead`),
+ * porque fazer a pessoa digitar tudo de novo é pior do que tentar outra vez.
+ */
+export async function saveQuizLead(lead: NormalizedLead): Promise<boolean> {
+  if (isDemoMode) return true
+  try {
+    const { error } = await supabase().rpc('quiz_save_lead', {
+      p_session: quizSessionId(),
+      p_name: lead.name,
+      p_email: lead.email,
+      p_phone: lead.phone,
+      p_age: lead.age,
+    })
+    if (error) throw error
+    clearPendingLead()
+    return true
+  } catch {
+    rememberPendingLead(lead)
+    return false
+  }
+}
+
+/** Nova tentativa do contato que ficou pra trás. Silenciosa: ninguém espera por ela. */
+export function flushPendingLead(): void {
+  const pending = readPendingLead()
+  if (!pending) return
+  void saveQuizLead(pending)
+}
+
+function rememberPendingLead(lead: NormalizedLead): void {
+  try {
+    window.localStorage.setItem(PENDING_LEAD_KEY, JSON.stringify(lead))
+  } catch {
+    // Sem armazenamento, resta a tentativa que acabou de falhar.
+  }
+}
+
+function readPendingLead(): NormalizedLead | null {
+  try {
+    const raw = window.localStorage.getItem(PENDING_LEAD_KEY)
+    if (!raw) return null
+    const parsed: unknown = JSON.parse(raw)
+    if (typeof parsed !== 'object' || parsed === null) return null
+    const lead = parsed as Partial<NormalizedLead>
+    if (typeof lead.name !== 'string' || typeof lead.email !== 'string') return null
+    return {
+      name: lead.name,
+      email: lead.email,
+      phone: typeof lead.phone === 'string' ? lead.phone : null,
+      age: typeof lead.age === 'number' ? lead.age : null,
+    }
+  } catch {
+    return null
+  }
+}
+
+function clearPendingLead(): void {
+  try {
+    window.localStorage.removeItem(PENDING_LEAD_KEY)
+  } catch {
+    // Nada a fazer.
+  }
 }
 
 /** Depois do cadastro. Aguardado de propósito: o vínculo precisa existir antes do `plan_activated`. */

@@ -147,6 +147,9 @@ const AdminFeaturesPage = lazy(() =>
 const AdminFunnelPage = lazy(() =>
   import('@/presentation/admin/pages/AdminFunnelPage').then((m) => ({ default: m.AdminFunnelPage })),
 )
+const AdminLeadsPage = lazy(() =>
+  import('@/presentation/admin/pages/AdminLeadsPage').then((m) => ({ default: m.AdminLeadsPage })),
+)
 const AdminErrorsPage = lazy(() =>
   import('@/presentation/admin/pages/AdminErrorsPage').then((m) => ({ default: m.AdminErrorsPage })),
 )
@@ -246,6 +249,7 @@ export function App() {
               <Route path="retencao" element={<AdminRetentionPage />} />
               <Route path="recursos" element={<AdminFeaturesPage />} />
               <Route path="funil" element={<AdminFunnelPage />} />
+              <Route path="contatos" element={<AdminLeadsPage />} />
               <Route path="erros" element={<AdminErrorsPage />} />
               <Route path="solicitacoes" element={<AdminRequestsPage />} />
               <Route path="solicitacoes/:id" element={<AdminRequestDetailPage />} />

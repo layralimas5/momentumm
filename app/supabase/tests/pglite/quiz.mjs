@@ -107,6 +107,66 @@ await asUser(other)
 r = await expectError(() => db.exec(`select public.admin_quiz_funnel(current_date - 1, current_date)`), /.+/)
 check('quem não é admin não lê o funil', r.ok, r.detail)
 
+console.log('\n## Contato do lead')
+await asPostgres()
+const leadSession = '33333333-3333-4333-8333-333333333333'
+await asAnon()
+await db.exec(`select public.quiz_track('${leadSession}', 'quiz_viewed', 0)`)
+await db.exec(`select public.quiz_save('${leadSession}', '{"goal":"Correr 5 km","areas":["saude"]}', null, 7)`)
+
+r = await expectError(() => db.exec(`select public.quiz_save_lead('${leadSession}', 'A', 'lay@x.com')`), /nome obrigat/)
+check('nome curto demais é recusado', r.ok, r.detail)
+r = await expectError(() => db.exec(`select public.quiz_save_lead('${leadSession}', 'Layra', 'lay@sem-ponto')`), /mail inv/)
+check('e-mail sem forma de e-mail é recusado', r.ok, r.detail)
+
+const saved = (await one(`select public.quiz_save_lead('${leadSession}', '  Lay  ', ' LAY@Teste.COM ', '(11) 91234-5678', 29) as ok`)).ok
+check('contato gravado pelo anônimo que tem o id', saved === true)
+
+await asPostgres()
+let lead = await one(`select * from public.quiz_sessions where id = $1`, [leadSession])
+check('nome e e-mail normalizados', lead.lead_name === 'Lay' && lead.lead_email === 'lay@teste.com', String(lead.lead_email))
+check('telefone guardado só com dígitos', lead.lead_phone === '11912345678', String(lead.lead_phone))
+check('idade e consentimento carimbados', lead.lead_age === 29 && lead.lead_consent_at !== null)
+
+await asAnon()
+const again = (await one(`select public.quiz_save_lead('${leadSession}', 'Outro', 'outro@x.com') as ok`)).ok
+await asPostgres()
+lead = await one(`select * from public.quiz_sessions where id = $1`, [leadSession])
+check('segunda gravação não sobrescreve o contato', again === false && lead.lead_email === 'lay@teste.com')
+
+await asAnon()
+const semSessao = await expectError(
+  () => db.exec(`select public.quiz_save_lead('44444444-4444-4444-8444-444444444444', 'Lay', 'lay@x.com')`),
+  /não encontrada/,
+)
+check('sessão inexistente não vira contato', semSessao.ok, semSessao.detail)
+
+// Telefone quebrado não derruba o contato: entra nulo e o resto grava.
+const curto = '55555555-5555-4555-8555-555555555555'
+await db.exec(`select public.quiz_track('${curto}', 'quiz_viewed', 0)`)
+await db.exec(`select public.quiz_save_lead('${curto}', 'Curto', 'curto@x.com', '123', null)`)
+await asPostgres()
+check('telefone fora de forma entra nulo', (await one(`select lead_phone from public.quiz_sessions where id = $1`, [curto])).lead_phone === null)
+
+console.log('\n## Contatos no painel')
+await db.exec(`select set_config('role', 'authenticated', false); select set_config('request.jwt.claims', '${JSON.stringify({ sub: me, role: 'authenticated', aal: 'aal2' })}', false)`)
+const leads = (await one(`select public.admin_quiz_leads(current_date - 1, current_date) as l`)).l
+check('lista traz quem deixou contato', leads.total === 2 && leads.items.length === 2, String(leads.total))
+check(
+  'item carrega objetivo e contato',
+  leads.items.some((i) => i.email === 'lay@teste.com' && i.goal === 'Correr 5 km' && i.phone === '11912345678'),
+  JSON.stringify(leads.items[0]),
+)
+check('quem não tem conta é contado à parte', leads.pending === 2 && leads.items.every((i) => i.has_account === false))
+
+const pendentes = (await one(`select public.admin_quiz_leads(current_date - 1, current_date, true) as l`)).l
+const comConta = (await one(`select public.admin_quiz_leads(current_date - 1, current_date, false) as l`)).l
+check('filtro de pendentes separa os dois lados', pendentes.total === 2 && comConta.total === 0)
+
+await asUser(other)
+r = await expectError(() => db.exec(`select public.admin_quiz_leads(current_date - 1, current_date)`), /.+/)
+check('quem não é admin não lê contato de ninguém', r.ok, r.detail)
+
 console.log('\n## Limpeza')
 await asPostgres()
 const stale = '22222222-2222-4222-8222-222222222222'
