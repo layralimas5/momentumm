@@ -76,4 +76,31 @@ export function installGlobalErrorReporter(): void {
   window.addEventListener('unhandledrejection', (event) => {
     reportCaughtError(event.reason, 'window.unhandledrejection', 'alta')
   })
+
+  /*
+    Violação da Content-Security-Policy.
+    
+    Enquanto a política está em Report-Only, é isto que diz se ela pode ser
+    promovida: cada aviso aqui é uma origem que a regra esqueceu e que
+    quebraria a tela de alguém se a regra passasse a bloquear. Silêncio por
+    alguns dias de uso normal é o sinal verde.
+
+    Só a diretiva e a origem, nunca a URL inteira: ela pode carregar token,
+    e este relato vai parar numa tabela que o painel lê.
+  */
+  window.addEventListener('securitypolicyviolation', (event) => {
+    const origem = (() => {
+      try {
+        return new URL(event.blockedURI).origin
+      } catch {
+        return event.blockedURI || 'inline'
+      }
+    })()
+    reportError({
+      code: 'csp.violation',
+      module: 'app',
+      message: `${event.effectiveDirective} bloquearia ${origem}`,
+      severity: 'baixa',
+    })
+  })
 }
