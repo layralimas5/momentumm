@@ -51,16 +51,20 @@ import { useAi } from '@/presentation/ai/use-ai'
  *
  * A tela tem TRÊS níveis de atenção, e a diferença entre eles é deliberada:
  *
- *   1. Saudação e **a ação de hoje** — a primeira dobra. Responde "o que eu
- *      faço agora", que é o motivo de a pessoa abrir o app.
+ *   1. A abertura do dia, e ela tem uma ordem exata:
  *
- *      A ação vem ANTES da frase do dia, do check-in e do Dia Adaptável. Os
- *      três estavam na frente dela, e o efeito medido era esse: num monitor de
- *      900px a prioridade principal começava em 1579px, quase duas telas
- *      abaixo. Cada um tinha a sua justificativa, e somados eles transformavam
- *      a tela que responde "o que eu faço hoje" numa que pede três respostas
- *      antes de responder. Calibrar o dia continua possível logo abaixo; o que
- *      mudou é que nada disso é mais pedágio pra ver a ação.
+ *        estado -> frase -> energia -> o dia.
+ *
+ *      Primeiro a pessoa vê o que ficou pra trás: a linha do dia, as ações
+ *      atrasadas e, quando ele existe, o Modo Retomada. Depois a frase, que é
+ *      o gás pra encarar o que ela acabou de ver. Depois o check-in, que é
+ *      onde ela diz com que energia chegou. E só então o dia, já montado em
+ *      cima dessa resposta.
+ *
+ *      A ordem é do produto, não de conveniência de layout: o Momentumm não
+ *      serve o mesmo dia pra quem chegou sem energia e pra quem chegou em
+ *      alta, e perguntar isso DEPOIS de mostrar o dia inverteria a única
+ *      pergunta que muda o que a tela oferece.
  *   2. Objetivos, hábitos e insight — responde "estou avançando".
  *   3. Semana, check-in, foco cronometrado, metas e vitórias — consulta.
  *
@@ -397,9 +401,33 @@ export function DashboardPage() {
 
         {view.dayComplete ? <DayCompleteBanner win={view.todayWin} /> : null}
 
-        {/* A ação de hoje abre a tela. A prioridade principal só ganha bloco
-            próprio enquanto está aberta: concluída, ela aparece riscada na
-            lista do foco logo abaixo. */}
+        {/* O gás pra encarar o que veio acima, antes da pergunta que monta o
+            dia. */}
+        <QuoteCard today={planner.today} />
+
+        {/*
+          A pergunta que muda o resto da tela. Ela vem antes do dia porque é
+          dela que sai o tamanho do dia: energia baixa encolhe a sessão, muda a
+          sugestão de foco e faz a versão mínima aparecer na frente.
+        */}
+        <CheckInCard
+          checkIn={view.checkIn}
+          capacity={view.capacity}
+          textLogs={planner.limits.textLogs}
+          onSave={(input) => planner.saveCheckIn({ ...input, day: planner.today })}
+        />
+
+        <AdaptiveDayCard
+          plannedMin={adaptive.load.minutes}
+          openItems={adaptive.load.items}
+          capacity={view.capacity}
+          onAdapt={adaptDay}
+          aiEntry={aiDayEntry}
+        />
+
+        {/* O dia, montado em cima do que ela acabou de responder. A prioridade
+            só ganha bloco próprio enquanto está aberta: concluída, ela aparece
+            riscada na lista do foco logo abaixo. */}
         {view.mainPriority && view.mainPriority.status !== 'feita' ? (
           <PriorityCard
             task={view.mainPriority}
@@ -435,27 +463,6 @@ export function DashboardPage() {
           today={planner.today}
           onStartFocus={startFocus}
           onBringToToday={(task) => void bringToToday(task)}
-        />
-
-        {/*
-          Calibrar o dia vem DEPOIS de ele estar visível: "como estou chegando"
-          e "quanto tempo eu tenho" mudam o tamanho do que aparece acima, e as
-          duas perguntas fazem mais sentido com o dia já na frente do que como
-          formulário de entrada.
-        */}
-        <CheckInCard
-          checkIn={view.checkIn}
-          capacity={view.capacity}
-          textLogs={planner.limits.textLogs}
-          onSave={(input) => planner.saveCheckIn({ ...input, day: planner.today })}
-        />
-
-        <AdaptiveDayCard
-          plannedMin={adaptive.load.minutes}
-          openItems={adaptive.load.items}
-          capacity={view.capacity}
-          onAdapt={adaptDay}
-          aiEntry={aiDayEntry}
         />
 
         {/* O momentum vem depois do que precisa sair: é leitura, não ação. */}
@@ -576,18 +583,12 @@ export function DashboardPage() {
         </Section>
 
         {/*
-          Frase e cards de compartilhar fecham a tela.
-
-          Eram os dois primeiros blocos do dia, e nenhum dos dois é decisão: a
-          frase é o que a pessoa lê quando já sabe o que vai fazer, e o card de
-          progresso é o que ela guarda depois de fazer. Aqui embaixo eles
-          continuam inteiros, e param de ocupar o lugar da ação.
+          O card de progresso fecha a tela: ele é o que a pessoa guarda depois
+          de fazer, não o que a ajuda a decidir. A frase ficou lá em cima, onde
+          ela serve de impulso.
         */}
         <Section title="Pra levar com você" level={3}>
-          <div className="flex flex-col gap-4">
-            <QuoteCard today={planner.today} />
-            <ShareMomentsRow view={view} />
-          </div>
+          <ShareMomentsRow view={view} />
         </Section>
       </div>
 

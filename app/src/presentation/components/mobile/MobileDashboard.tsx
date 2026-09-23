@@ -93,21 +93,46 @@ export function MobileDashboard({
   )
 
   /*
-    A ordem do celular é uma narrativa vertical, não o desktop espremido.
+    A ordem do celular é uma narrativa vertical, não o desktop espremido, e é a
+    MESMA narrativa do monitor:
 
-    A ação de hoje, o resto do dia, o que vem depois; então calibrar (check-in
-    e tempo disponível), e por último ler (momentum, objetivos, hábitos,
-    insight). A pessoa desce a tela e vai encontrando as coisas na ordem em que
-    elas mudam a decisão do dia.
+      estado -> frase -> energia -> o dia -> ler.
 
-    Frase e check-in abriam a tela. Os dois são bons e nenhum dos dois é a
-    resposta que a pessoa veio buscar: com eles na frente, a ação de hoje só
-    aparecia depois de três blocos de rolagem. Quem quer calibrar antes tem os
-    dois a um polegar de distância, e o botão flutuante continua levando ao
-    check-in enquanto ele não foi feito.
+    O que ficou pra trás primeiro (a linha do dia, as atrasadas, a retomada),
+    a frase como impulso pra encarar aquilo, o check-in pra dizer com que
+    energia se chegou, e então o dia montado em cima dessa resposta. Momentum,
+    objetivos, hábitos e insight vêm depois: ninguém interpreta gráfico de pé
+    no ponto de ônibus.
   */
   return (
     <div className="flex flex-col gap-7">
+      {/* O gás pra encarar o que veio acima. */}
+      <QuoteCard today={planner.today} />
+
+      {/* A pergunta que monta o dia: vem antes dele, nunca depois. */}
+      <div ref={checkInRef} className="scroll-mt-20">
+        <MobileCheckIn
+          checkIn={view.checkIn}
+          capacity={view.capacity}
+          onSave={async (input) => {
+            await planner.saveCheckIn({ ...input, day: planner.today })
+            // Respondeu, a tela desce pro dia já ajustado à energia: é a
+            // resposta à pergunta que acabou de ser feita.
+            planRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }}
+        />
+      </div>
+
+      <div ref={planRef} className="scroll-mt-20">
+        <AdaptiveDayCard
+          plannedMin={dayLoad.minutes}
+          openItems={dayLoad.items}
+          capacity={view.capacity}
+          onAdapt={onAdaptDay}
+          aiEntry={aiDayEntry}
+        />
+      </div>
+
       {view.dayComplete ? (
         <p
           role="status"
@@ -120,8 +145,8 @@ export function MobileDashboard({
         </p>
       ) : null}
 
-      {/* A ação de hoje abre a tela. Só ganha bloco próprio enquanto está
-          aberta: concluída, ela aparece riscada na lista do foco. */}
+      {/* O dia, montado em cima do check-in. Só ganha bloco próprio enquanto
+          está aberta: concluída, ela aparece riscada na lista do foco. */}
       {view.mainPriority && view.mainPriority.status !== 'feita' ? (
         <div ref={priorityRef}>
           <MobilePriority
@@ -157,31 +182,6 @@ export function MobileDashboard({
         onStartFocus={onStartFocus}
         onBringToToday={(task) => void onBringToToday(task)}
       />
-
-      {/* Calibrar o dia: as duas perguntas que mudam o tamanho do que está
-          acima, agora depois dele e não na frente dele. */}
-      <div ref={checkInRef} className="scroll-mt-20">
-        <MobileCheckIn
-          checkIn={view.checkIn}
-          capacity={view.capacity}
-          onSave={async (input) => {
-            await planner.saveCheckIn({ ...input, day: planner.today })
-            // Respondeu, a tela volta pro dia já ajustado à energia: é a
-            // resposta à pergunta que acabou de ser feita.
-            planRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-          }}
-        />
-      </div>
-
-      <div ref={planRef} className="scroll-mt-20">
-        <AdaptiveDayCard
-          plannedMin={dayLoad.minutes}
-          openItems={dayLoad.items}
-          capacity={view.capacity}
-          onAdapt={onAdaptDay}
-          aiEntry={aiDayEntry}
-        />
-      </div>
 
       <MobileObjectives
         objectives={view.objectives}
@@ -240,21 +240,17 @@ export function MobileDashboard({
         onSave={(text) => planner.saveWin({ day: planner.today, text })}
       />
 
-      {/* Frase e cards de compartilhar fecham a tela: um é o que se lê depois
-          de saber o que fazer, o outro é o que se guarda depois de fazer. */}
-      <QuoteCard today={planner.today} />
-
+      {/* O card de progresso fecha a tela: é o que se guarda depois de fazer. */}
       <ShareMomentsRow view={view} />
 
       {/*
         Um botão flutuante por vez, e só quando o card que já oferece a ação
-        saiu da tela. A ordem é a da urgência: sessão aberta, depois a ação de
-        hoje, e o check-in por último.
+        saiu da tela. A ordem é a da urgência: sessão aberta, depois o
+        check-in, depois a ação de hoje.
 
-        O check-in vinha antes da prioridade, e com ele no fim da tela o botão
-        nascia visível: a pessoa abria o app e o primeiro elemento flutuante
-        cobria a barra do próprio dia. Executar vem antes de calibrar, e é essa
-        a ordem que o botão passa a seguir.
+        O check-in vem primeiro porque é ele que monta o dia: quem rolou pra
+        longe sem responder ainda não viu o app trabalhar. Com ele de volta ao
+        topo da tela, o botão só aparece depois que a pessoa passou por ele.
       */}
       {focus.session ? (
         <ContextualFab
@@ -263,19 +259,19 @@ export function MobileDashboard({
           anchor={focusRef}
           onClick={() => focus.setImmersive(true)}
         />
-      ) : view.mainPriority && view.mainPriority.status !== 'feita' ? (
-        <ContextualFab
-          label="Começar prioridade"
-          icon="play"
-          anchor={priorityRef}
-          onClick={() => view.mainPriority && onStartFocus(view.mainPriority)}
-        />
       ) : !view.checkIn ? (
         <ContextualFab
           label="Fazer check-in"
           icon="raio"
           anchor={checkInRef}
           onClick={() => checkInRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+        />
+      ) : view.mainPriority && view.mainPriority.status !== 'feita' ? (
+        <ContextualFab
+          label="Começar prioridade"
+          icon="play"
+          anchor={priorityRef}
+          onClick={() => view.mainPriority && onStartFocus(view.mainPriority)}
         />
       ) : null}
 
