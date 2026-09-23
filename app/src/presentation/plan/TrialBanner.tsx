@@ -3,6 +3,7 @@ import { isTrialActive, trialDaysLeft } from '@/domain/billing/trial'
 import { isPro } from '@/domain/entities/plan'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { Icon } from '@/presentation/components/ui/Icon'
+import { SUBSCRIPTION_PATH } from './subscription-path'
 
 /** "24 de setembro", sem ano: o teste dura sete dias, o ano é sempre este. */
 export function formatTrialEnd(date: Date): string {
@@ -23,7 +24,7 @@ export function TrialBanner() {
   const { pathname } = useLocation()
 
   if (!profile || !isPro(profile.plan) || !isTrialActive(trial)) return null
-  if (pathname.startsWith('/app/assinatura')) return null
+  if (pathname.startsWith(SUBSCRIPTION_PATH)) return null
 
   const days = trialDaysLeft(trial)
 

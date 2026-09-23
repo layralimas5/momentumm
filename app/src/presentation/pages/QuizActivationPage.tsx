@@ -3,14 +3,15 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { ErrorNote } from '@/presentation/components/ui/States'
+import { QuizActivationLimitView } from '@/presentation/quiz/QuizActivationLimit'
 import { useQuizActivation } from '@/presentation/quiz/quiz-activation'
 import { QUIZ_PATH } from '@/presentation/quiz/use-quiz'
 
 /**
  * `/app/ativar`: a pessoa acabou de criar a conta com um plano do quiz
- * esperando no navegador. Esta tela grava o plano e manda pro Hoje. Ela
- * não tem interação além de "tentar de novo": tudo que havia pra decidir
- * foi decidido no quiz.
+ * esperando no navegador. Esta tela grava o plano e manda pro Hoje. Fora o
+ * limite do plano gratuito (que ela resolve no lugar), não há o que decidir
+ * aqui: tudo foi decidido no quiz.
  */
 export function QuizActivationPage() {
   const activation = useQuizActivation()
@@ -22,6 +23,14 @@ export function QuizActivationPage() {
 
   // Sem plano pendente não há o que ativar: o Hoje (ou o onboarding) assume.
   if (activation.status === 'sem-plano') return <Navigate to="/app" replace />
+
+  if (activation.status === 'limite' && activation.limit) {
+    return (
+      <div className="mx-auto flex min-h-[60dvh] w-full max-w-md flex-col justify-center py-10">
+        <QuizActivationLimitView limit={activation.limit} onRetry={activation.retry} />
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto flex min-h-[60dvh] w-full max-w-md flex-col items-center justify-center py-10 text-center">
