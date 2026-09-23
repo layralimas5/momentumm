@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { QUIZ_SHORT_PATH } from '@/domain/analytics/quiz-links'
 import { circleOpen, isAuthBypass } from '@/infrastructure/config/env'
 import { AuthProvider } from '@/presentation/auth/AuthProvider'
 import { ProtectedRoute } from '@/presentation/auth/ProtectedRoute'
@@ -186,8 +187,17 @@ export function App() {
             */}
             <Route path="/nova-senha" element={<NewPasswordPage />} />
             <Route path="/ferramentas" element={<ToolsPage />} />
-            {/* A entrada do funil: quiz público, sem conta. */}
+            {/*
+              A entrada do funil: quiz público, sem conta.
+
+              `/plano/<codigo>` é o link curto que vai na resposta de um
+              comentário, no direct e na bio — o código carrega a origem
+              inteira (`domain/analytics/quiz-links`). O `/criar-meu-plano`
+              continua valendo: link já enviado não pode morrer.
+            */}
             <Route path="/criar-meu-plano" element={<QuizPage />} />
+            <Route path={QUIZ_SHORT_PATH} element={<QuizPage />} />
+            <Route path={`${QUIZ_SHORT_PATH}/:codigo`} element={<QuizPage />} />
             <Route path="/termos" element={<LegalPage kind="termos" />} />
             <Route path="/privacidade" element={<LegalPage kind="privacidade" />} />
 
