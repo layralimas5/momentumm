@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { TRIAL_DAYS } from '@/domain/billing/trial'
+import { quizPathFor } from '@/domain/analytics/quiz-links'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
 import { cn } from '@/shared/lib/cn'
 import { CTA } from './site'
@@ -103,7 +104,7 @@ export function Hero() {
 
             {cta.signedIn ? null : (
               <Link
-                to={CTA.secondary.to}
+                to={quizPathFor('lp-hero')}
                 className="inline-flex h-12 w-full max-w-xs items-center justify-center gap-2 rounded-full border border-line-hi px-7 font-medium text-ink transition-colors hover:bg-surface-hi sm:w-auto"
               >
                 {CTA.secondary.label}
@@ -151,6 +152,7 @@ export function Hero() {
   )
 }
 
+/* Seta pra frente, não a diagonal de link externo: o quiz é a página seguinte. */
 function ArrowIcon() {
   return (
     <svg
@@ -163,7 +165,7 @@ function ArrowIcon() {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M7 17 17 7M8 7h9v9" />
+      <path d="M5 12h13M12 5l7 7-7 7" />
     </svg>
   )
 }

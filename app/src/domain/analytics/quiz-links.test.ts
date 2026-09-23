@@ -56,11 +56,34 @@ describe('códigos de link do quiz', () => {
     expect(attributionForCode(null)).toBeNull()
   })
 
-  it('o canal padrão é o comentário, e apelido conhecido vale', () => {
-    expect(readQuizChannel(new URLSearchParams())).toBe('comentario')
+  /*
+    Sem `?c=`, a URL não pediu canal nenhum: quem decide passa a ser o código
+    (a landing tem o próprio meio) e, na falta dele, o comentário.
+  */
+  it('o canal só existe quando o link pede, e apelido desconhecido não vale', () => {
+    expect(readQuizChannel(new URLSearchParams())).toBeNull()
     expect(readQuizChannel(new URLSearchParams('c=dm'))).toBe('dm')
     expect(readQuizChannel(new URLSearchParams('c=BIO'))).toBe('bio')
-    expect(readQuizChannel(new URLSearchParams('c=qualquer'))).toBe('comentario')
+    expect(readQuizChannel(new URLSearchParams('c=qualquer'))).toBeNull()
+    expect(attributionForCode('ig-proc', readQuizChannel(new URLSearchParams()))?.medium).toBe(
+      'comentario',
+    )
+  })
+
+  /* Os botões da landing não são comentário nem direct: o código diz o meio. */
+  it('o código da landing traz o próprio meio', () => {
+    expect(attributionForCode('lp-hero')).toEqual({
+      source: 'site',
+      medium: 'landing',
+      campaign: 'hero',
+      content: 'lp-hero',
+      theme: null,
+    })
+    expect(attributionForCode('lp-fim')?.campaign).toBe('cta-final')
+  })
+
+  it('o canal pedido na URL vence o meio do código', () => {
+    expect(attributionForCode('lp-hero', 'dm')?.medium).toBe('dm')
   })
 
   it('o link do comentário não carrega parâmetro nenhum', () => {

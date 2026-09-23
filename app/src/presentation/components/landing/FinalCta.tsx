@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { quizPathFor } from '@/domain/analytics/quiz-links'
 import { Reveal } from './Reveal'
 import { CTA } from './site'
 import { useOffer } from './use-offer'
@@ -42,7 +43,7 @@ export function FinalCta() {
                 </Link>
                 {cta.signedIn ? null : (
                   <Link
-                    to={CTA.secondary.to}
+                    to={quizPathFor('lp-fim')}
                     className="text-sm text-ink-muted underline-offset-4 transition-colors hover:text-ink hover:underline"
                   >
                     {CTA.secondary.label}

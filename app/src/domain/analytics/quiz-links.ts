@@ -39,6 +39,12 @@ const CHANNEL_ALIASES: Readonly<Record<string, QuizChannel>> = {
 interface QuizLinkCode {
   /** `utm_source`: a rede de onde a pessoa veio. */
   readonly source: string
+  /**
+   * `utm_medium` fixo do código, quando ele não vem de envio manual — é o
+   * caso dos botões da própria landing, que não são comentário nem direct.
+   * `?c=` continua vencendo, pra um link ser reaproveitado em outro canal.
+   */
+  readonly medium?: string
   /** `utm_campaign`: o assunto que trouxe ela, pra somar os envios do mesmo tema. */
   readonly campaign: string
   /** O tema troca o título e a introdução do quiz. Sem tema, a copy é a padrão. */
@@ -124,6 +130,25 @@ export const QUIZ_LINK_CODES: Readonly<Record<string, QuizLinkCode>> = {
     theme: null,
     note: 'TikTok, link do perfil (copy padrão)',
   },
+  /*
+    Os botões da própria landing entram pelo mesmo caminho: sem código, quem
+    vem do site cai como "direto" no funil e some junto com quem digitou o
+    endereço. São os dois pontos da página que oferecem o quiz.
+  */
+  'lp-hero': {
+    source: 'site',
+    medium: 'landing',
+    campaign: 'hero',
+    theme: null,
+    note: 'Botão do hero da landing',
+  },
+  'lp-fim': {
+    source: 'site',
+    medium: 'landing',
+    campaign: 'cta-final',
+    theme: null,
+    note: 'Botão do CTA final da landing',
+  },
 }
 
 export type QuizLinkCodeKey = keyof typeof QUIZ_LINK_CODES
@@ -135,9 +160,10 @@ export function isQuizLinkCode(value: string | null | undefined): boolean {
   return value !== null && value !== undefined && value.toLowerCase() in QUIZ_LINK_CODES
 }
 
-export function readQuizChannel(params: URLSearchParams): QuizChannel {
+/** O canal pedido na URL, ou `null` quando o link não disse nada. */
+export function readQuizChannel(params: URLSearchParams): QuizChannel | null {
   const raw = params.get(CHANNEL_PARAM)?.trim().toLowerCase()
-  return (raw ? CHANNEL_ALIASES[raw] : undefined) ?? DEFAULT_QUIZ_CHANNEL
+  return (raw ? CHANNEL_ALIASES[raw] : undefined) ?? null
 }
 
 /**
@@ -147,26 +173,33 @@ export function readQuizChannel(params: URLSearchParams): QuizChannel {
  */
 export function attributionForCode(
   code: string | null | undefined,
-  channel: QuizChannel = DEFAULT_QUIZ_CHANNEL,
+  channel: QuizChannel | null = null,
 ): QuizAttribution | null {
   if (!code) return null
   const entry = QUIZ_LINK_CODES[code.toLowerCase()]
   if (!entry) return null
   return {
     source: entry.source,
-    medium: channel,
+    medium: channel ?? entry.medium ?? DEFAULT_QUIZ_CHANNEL,
     campaign: entry.campaign,
     content: code.toLowerCase(),
     theme: entry.theme,
   }
 }
 
+/** O caminho interno do quiz com o código, pros botões da própria landing. */
+export function quizPathFor(code: string): string {
+  return `${QUIZ_SHORT_PATH}/${code}`
+}
+
 /** O link pronto pra copiar, com o canal só quando ele não é o padrão. */
 export function quizLinkFor(
   origin: string,
   code: string | null = null,
-  channel: QuizChannel = DEFAULT_QUIZ_CHANNEL,
+  channel: QuizChannel | null = null,
 ): string {
   const base = `${origin}${QUIZ_SHORT_PATH}${code ? `/${code}` : ''}`
-  return channel === DEFAULT_QUIZ_CHANNEL ? base : `${base}?${CHANNEL_PARAM}=${channel}`
+  return channel === null || channel === DEFAULT_QUIZ_CHANNEL
+    ? base
+    : `${base}?${CHANNEL_PARAM}=${channel}`
 }
