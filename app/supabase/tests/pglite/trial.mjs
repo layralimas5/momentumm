@@ -137,7 +137,7 @@ await asPostgres()
 console.log('\n## Assinatura durante o teste')
 const converter = (await one(`insert into auth.users (email) values ('converte@x.com') returning id`)).id
 await db.exec(`insert into public.subscriptions (user_id, provider, provider_subscription_id, plan, interval, status, amount_cents, current_period_end)
-  values ('${converter}', 'asaas', 'sub_conv', 'pro', 'anual', 'ativa', 17990, now() + interval '365 days')`)
+  values ('${converter}', 'asaas', 'sub_conv', 'pro', 'anual', 'ativa', 12990, now() + interval '365 days')`)
 t = await one(`select status from public.plan_trials where user_id = $1`, [converter])
 check('pagamento confirmado marca o teste como convertido', t.status === 'convertido', JSON.stringify(t))
 await db.exec(`update public.plan_trials set started_at = now() - interval '8 days', ends_at = now() - interval '1 minute' where user_id = '${converter}'`)
@@ -166,6 +166,48 @@ check('assinatura vencida derruba pro gratuito, sem o teste segurar', (await one
 // cancelamento dentro do período pago continua PRO (regra da 0026 intacta)
 await db.exec(`update public.subscriptions set status = 'cancelada' where provider_subscription_id = 'sub_conv'`)
 check('cancelada dentro do período pago continua PRO', (await one(`select plan from public.profiles where id = $1`, [converter])).plan === 'pro')
+
+console.log('\n## Aviso do sexto dia')
+await asPostgres()
+
+// Quem começou o teste há 6 dias: falta 1 dia, entra na fila.
+const seisDias = (await one(`insert into auth.users (email) values ('sexto@x.com') returning id`)).id
+await db.exec(`update public.plan_trials set started_at = now() - interval '6 days', ends_at = now() + interval '1 day' where user_id = '${seisDias}'`)
+
+// Quem começou hoje: falta muito, não entra.
+const hoje = (await one(`insert into auth.users (email) values ('hoje@x.com') returning id`)).id
+
+let fila = await q(`select * from public.trial_notices_due()`)
+check('quem está no sexto dia entra na fila', fila.some((r) => r.user_id === seisDias), JSON.stringify(fila.map((r) => r.email)))
+check('quem acabou de começar não entra', !fila.some((r) => r.user_id === hoje))
+check('a fila traz e-mail e quanto falta', fila.find((r) => r.user_id === seisDias)?.email === 'sexto@x.com' && fila.find((r) => r.user_id === seisDias)?.hours_left <= 24)
+
+// Quem já assinou não recebe cobrança disfarçada de aviso.
+const assinante = (await one(`insert into auth.users (email) values ('assinante@x.com') returning id`)).id
+await db.exec(`update public.plan_trials set ends_at = now() + interval '1 day' where user_id = '${assinante}'`)
+await db.exec(`insert into public.subscriptions (user_id, provider, provider_subscription_id, plan, interval, status, amount_cents, current_period_end) values ('${assinante}', 'asaas', 'sub_aviso', 'pro', 'mensal', 'ativa', 3990, now() + interval '30 days')`)
+fila = await q(`select * from public.trial_notices_due()`)
+check('quem já assinou sai da fila', !fila.some((r) => r.user_id === assinante))
+
+// O carimbo impede o segundo envio.
+const marcados = (await one(`select public.mark_trial_notice_sent(array['${seisDias}']::uuid[]) as n`)).n
+fila = await q(`select * from public.trial_notices_due()`)
+check('carimbar tira da fila e não repete', marcados === 1 && !fila.some((r) => r.user_id === seisDias))
+check('carimbar de novo não conta duas vezes', (await one(`select public.mark_trial_notice_sent(array['${seisDias}']::uuid[]) as n`)).n === 0)
+
+// Conta apagada não recebe e-mail.
+const apagada = (await one(`insert into auth.users (email, deleted_at) values ('apagada@x.com', now()) returning id`)).id
+await db.exec(`update public.plan_trials set ends_at = now() + interval '1 day' where user_id = '${apagada}'`)
+fila = await q(`select * from public.trial_notices_due()`)
+check('conta apagada não entra na fila', !fila.some((r) => r.user_id === apagada))
+
+await asUser(seisDias)
+let aviso = await expectError(() => db.exec(`select public.trial_notices_due()`), /.+/)
+check('a fila é fechada pra quem está logado', aviso.ok, aviso.detail)
+aviso = await expectError(() => db.exec(`select public.mark_trial_notice_sent(array['${seisDias}']::uuid[])`), /.+/)
+check('carimbar é fechado pra quem está logado', aviso.ok, aviso.detail)
+await asPostgres()
+
 
 console.log(`\n${passed} ok, ${failed} falhas`)
 process.exit(failed ? 1 : 0)

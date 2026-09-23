@@ -138,6 +138,12 @@ export class DemoAdminGateway implements AdminGateway {
   featureUsage(): never {
     throw new DomainError(UNAVAILABLE)
   }
+  quizFunnel(): never {
+    throw new DomainError(UNAVAILABLE)
+  }
+  quizLeads(): never {
+    throw new DomainError(UNAVAILABLE)
+  }
   evolutionMetrics(): never {
     throw new DomainError(UNAVAILABLE)
   }

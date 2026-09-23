@@ -4,7 +4,7 @@
 var BILLING_CYCLES = ["mensal", "anual"];
 var PRO_PRICES = {
   mensal: { cycle: "mensal", amountCents: 3990, strikeCents: 7990, providerCycle: "MONTHLY", months: 1 },
-  anual: { cycle: "anual", amountCents: 17990, strikeCents: 35880, providerCycle: "YEARLY", months: 12 }
+  anual: { cycle: "anual", amountCents: 12990, strikeCents: 47880, providerCycle: "YEARLY", months: 12 }
 };
 var PRO_PRODUCT_NAME = "Momentumm PRO";
 function isBillingCycle(value) {

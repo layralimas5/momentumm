@@ -20,6 +20,8 @@ export const ADMIN_NAV: readonly AdminNavItem[] = [
   { to: '/admin/ia', label: 'Momentumm AI', icon: 'ia', end: false, requires: 'metrics.read', readOnly: true },
   { to: '/admin/retencao', label: 'Retenção', icon: 'progresso', end: false, requires: 'metrics.read', readOnly: true },
   { to: '/admin/recursos', label: 'Recursos', icon: 'insights', end: false, requires: 'metrics.read', readOnly: true },
+  { to: '/admin/funil', label: 'Funil do quiz', icon: 'play', end: false, requires: 'metrics.read', readOnly: true },
+  { to: '/admin/contatos', label: 'Contatos do quiz', icon: 'sino', end: false, requires: 'users.read', readOnly: true },
   { to: '/admin/erros', label: 'Erros e saúde', icon: 'raio', end: false, requires: 'errors.read', readOnly: true },
   { to: '/admin/solicitacoes', label: 'Solicitações', icon: 'sino', end: false, requires: 'requests.read', readOnly: false },
   { to: '/admin/auditoria', label: 'Auditoria', icon: 'arquivar', end: false, requires: 'audit.read', readOnly: true },

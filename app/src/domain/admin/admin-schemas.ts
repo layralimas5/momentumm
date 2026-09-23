@@ -362,6 +362,47 @@ export const featureUsageSchema = z.object({
 })
 export type AdminFeatureUsage = z.infer<typeof featureUsageSchema>
 
+/** O funil do quiz: sessões distintas por evento, abandono por passo, origem e tema. */
+export const quizFunnelSchema = z.object({
+  period: z.object({ from: z.string(), to: z.string() }),
+  stages: z.record(count),
+  abandoned_by_step: z.record(count),
+  by_source: z.record(count),
+  by_theme: z.record(count),
+})
+export type AdminQuizFunnel = z.infer<typeof quizFunnelSchema>
+
+/**
+ * Quem deixou contato no quiz. Dado pessoal de gente que ainda não é
+ * usuária: existe pra ser respondido, não pra ficar bonito no painel.
+ */
+export const quizLeadSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  phone: z.string().nullable(),
+  age: z.number().nullable(),
+  goal: z.string(),
+  area: z.string(),
+  status: z.string(),
+  step: z.number(),
+  source: z.string(),
+  has_account: z.boolean(),
+  entered_at: z.string(),
+  consent_at: z.string().nullable(),
+})
+export type AdminQuizLead = z.infer<typeof quizLeadSchema>
+
+export const quizLeadListSchema = z.object({
+  total: count,
+  /** Quantos ainda não viraram conta: é com esses que dá pra falar. */
+  pending: count,
+  page: count,
+  page_size: count,
+  items: z.array(quizLeadSchema),
+})
+export type AdminQuizLeadList = z.infer<typeof quizLeadListSchema>
+
 /** Só agregados: quantas pessoas em cada nível, nunca o histórico de alguém. */
 export const evolutionMetricsSchema = z.object({
   people: count,

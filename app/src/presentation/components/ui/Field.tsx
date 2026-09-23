@@ -1,4 +1,11 @@
-import { useId, type InputHTMLAttributes, type SelectHTMLAttributes, type ReactNode } from 'react'
+import {
+  useId,
+  useState,
+  type InputHTMLAttributes,
+  type SelectHTMLAttributes,
+  type ReactNode,
+} from 'react'
+import { Icon } from '@/presentation/components/ui/Icon'
 import { cn } from '@/shared/lib/cn'
 
 const CONTROL =
@@ -43,4 +50,36 @@ export function TextInput({ className, ...rest }: InputHTMLAttributes<HTMLInputE
 
 export function Select({ className, ...rest }: SelectHTMLAttributes<HTMLSelectElement>) {
   return <select {...rest} className={cn(CONTROL, 'appearance-none pr-8', className)} />
+}
+
+/**
+ * Campo de senha com o olho de mostrar e esconder.
+ *
+ * Digitar senha no escuro erra, e quem erra no cadastro acha que o app
+ * quebrou. O botão nasce escondendo (`type="password"`), nunca entra no
+ * `Tab` antes do campo e diz em voz alta o que faz: o leitor de tela anuncia
+ * "Mostrar senha" e o estado fica em `aria-pressed`.
+ */
+export function PasswordInput({ className, ...rest }: InputHTMLAttributes<HTMLInputElement>) {
+  const [visible, setVisible] = useState(false)
+
+  return (
+    <div className="relative">
+      <input
+        {...rest}
+        type={visible ? 'text' : 'password'}
+        className={cn(CONTROL, 'pr-12', className)}
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((shown) => !shown)}
+        aria-pressed={visible}
+        aria-label={visible ? 'Ocultar senha' : 'Mostrar senha'}
+        title={visible ? 'Ocultar senha' : 'Mostrar senha'}
+        className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-xl text-ink-faint transition-colors hover:text-ink"
+      >
+        <Icon name={visible ? 'oculto' : 'visivel'} className="size-5" />
+      </button>
+    </div>
+  )
 }

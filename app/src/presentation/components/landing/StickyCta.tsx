@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { CTA } from './site'
+import { useSiteCta } from './use-site-cta'
 
 /**
  * Barra de conversão fixa no rodapé do celular. Aparece depois que o hero
@@ -12,6 +12,7 @@ import { CTA } from './site'
 export function StickyCta() {
   const [visible, setVisible] = useState(false)
   const reduced = useReducedMotion()
+  const { primary, signedIn } = useSiteCta()
 
   useEffect(() => {
     const hero = document.getElementById('home')
@@ -50,14 +51,23 @@ export function StickyCta() {
         >
           <div className="flex items-center gap-3 rounded-2xl border border-line-hi bg-surface/95 p-2 pl-4 shadow-2xl shadow-black/50 backdrop-blur-xl">
             <p className="min-w-0 flex-1 text-xs leading-tight text-ink-muted">
-              <span className="block font-medium text-ink">Grátis, sem cartão.</span>O plano leva
-              dois minutos.
+              {signedIn ? (
+                <>
+                  <span className="block font-medium text-ink">Você já tem conta.</span>O plano de
+                  hoje te espera.
+                </>
+              ) : (
+                <>
+                  <span className="block font-medium text-ink">Grátis, sem cartão.</span>O plano
+                  leva dois minutos.
+                </>
+              )}
             </p>
             <Link
-              to={CTA.primary.to}
+              to={primary.to}
               className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-brand px-5 text-sm font-medium text-white transition-colors hover:bg-brand-hi"
             >
-              {CTA.primary.label}
+              {primary.label}
             </Link>
           </div>
         </motion.div>

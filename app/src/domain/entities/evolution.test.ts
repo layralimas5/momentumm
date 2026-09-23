@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { addDays, parseDayKey, type DayKey } from './day'
 import {
   ACHIEVEMENTS,
+  achievementSpec,
   EMPTY_EVOLUTION,
   LEVELS,
   levelOf,
@@ -86,17 +87,21 @@ describe('levelOf', () => {
 // concessão
 // ---------------------------------------------------------------------------
 
+/** A primeira ação concluída traz a conquista Primeiro Passo, e o XP dela. */
+const FIRST_STEP_XP = achievementSpec('primeiro_passo').xp
+
 describe('applyEvolutionEvent', () => {
-  it('uma ação comum concede XP uma vez só', () => {
-    const { snapshot, awarded } = run([task('t1', MONDAY), task('t1', MONDAY), task('t1', MONDAY)])
-    expect(awarded).toBe(1)
-    expect(snapshot.xpTotal).toBe(XP_RULES.task_done.points)
+  it('uma ação comum concede XP uma vez só, mais a conquista da primeira', () => {
+    const { snapshot, awarded, unlocked } = run([task('t1', MONDAY), task('t1', MONDAY), task('t1', MONDAY)])
+    expect(unlocked).toEqual(['primeiro_passo'])
+    expect(awarded).toBe(2)
+    expect(snapshot.xpTotal).toBe(XP_RULES.task_done.points + FIRST_STEP_XP)
   })
 
   it('prioridade vale 10 e não soma os 5 da ação comum', () => {
     const { snapshot } = run([task('t1', MONDAY, true)])
-    expect(snapshot.xpTotal).toBe(10)
-    expect(snapshot.transactions.map((item) => item.kind)).toEqual(['priority_done'])
+    expect(snapshot.xpTotal).toBe(10 + FIRST_STEP_XP)
+    expect(snapshot.transactions.map((item) => item.kind)).toEqual(['priority_done', 'achievement'])
   })
 
   it('desmarcar e marcar de novo não gera XP infinito: a chave é da ação', () => {
@@ -105,7 +110,7 @@ describe('applyEvolutionEvent', () => {
     // agora como ação comum, bate na mesma chave.
     const second = run([task('t1', MONDAY, false)], first.snapshot)
     expect(second.awarded).toBe(0)
-    expect(second.snapshot.xpTotal).toBe(10)
+    expect(second.snapshot.xpTotal).toBe(10 + FIRST_STEP_XP)
   })
 
   it('hábitos respeitam o teto diário', () => {
@@ -180,7 +185,7 @@ describe('applyEvolutionEvent', () => {
       task('t2', MONDAY, false, { total: 2, done: 2 }),
     ])
     expect(two.snapshot.transactions.some((item) => item.kind === 'priorities_day')).toBe(true)
-    expect(two.snapshot.xpTotal).toBe(10 + 5 + 15)
+    expect(two.snapshot.xpTotal).toBe(10 + 5 + 15 + FIRST_STEP_XP)
   })
 
   it('retomada: voltar depois de dois dias parado vale 20, uma vez', () => {
@@ -234,6 +239,7 @@ describe('applyEvolutionEvent', () => {
     const { snapshot } = run([task('t1', MONDAY, true), habit('h1', MONDAY)])
     expect(snapshot.transactions.map((item) => [item.kind, item.sourceType, item.sourceId])).toEqual([
       ['priority_done', 'task', 't1'],
+      ['achievement', 'achievement', 'primeiro_passo'],
       ['habit_done', 'habit', 'h1'],
     ])
   })
@@ -281,7 +287,7 @@ describe('summarizeEvolution', () => {
       habit('h', MONDAY),
     ])
     const summary = summarizeEvolution(snapshot, addDays(MONDAY, 2), 'free')
-    expect(summary.previousWeekXp).toBe(10)
+    expect(summary.previousWeekXp).toBe(10 + FIRST_STEP_XP)
     expect(summary.weekXp).toBe(10 + 5 + 3)
     expect(summary.weekSources[0]?.kind).toBe('priority_done')
     expect(summary.weeksInEvolution).toBe(2)
@@ -294,11 +300,13 @@ describe('summarizeEvolution', () => {
 // paridade com o banco
 // ---------------------------------------------------------------------------
 
-describe('a migration 0031 aplica os mesmos números do domínio', () => {
-  const sql = readFileSync(
-    join(import.meta.dirname, '..', '..', '..', 'supabase', 'migrations', '0031_evolution.sql'),
-    'utf-8',
-  )
+describe('as migrations aplicam os mesmos números do domínio', () => {
+  // A 0037 acrescenta uma conquista à tabela da 0031: as duas juntas são a fonte.
+  const sql = ['0031_evolution.sql', '0037_first_step_achievement.sql']
+    .map((file) =>
+      readFileSync(join(import.meta.dirname, '..', '..', '..', 'supabase', 'migrations', file), 'utf-8'),
+    )
+    .join('\n')
 
   it('regras de XP', () => {
     for (const rule of Object.values(XP_RULES)) {

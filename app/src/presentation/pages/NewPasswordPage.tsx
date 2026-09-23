@@ -4,7 +4,7 @@ import { MIN_PASSWORD_LENGTH, passwordStrength } from '@/domain/auth/password'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { Wordmark } from '@/presentation/components/brand/Logo'
 import { Button } from '@/presentation/components/ui/Button'
-import { Field, TextInput } from '@/presentation/components/ui/Field'
+import { Field, PasswordInput } from '@/presentation/components/ui/Field'
 import { ErrorNote } from '@/presentation/components/ui/States'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 import { cn } from '@/shared/lib/cn'
@@ -79,9 +79,8 @@ export function NewPasswordPage() {
           hint={`Pelo menos ${MIN_PASSWORD_LENGTH} caracteres. Uma frase curta funciona melhor que um código.`}
         >
           {(id, describedBy) => (
-            <TextInput
+            <PasswordInput
               id={id}
-              type="password"
               aria-describedby={describedBy}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
@@ -116,9 +115,8 @@ export function NewPasswordPage() {
           error={matches ? null : 'As duas senhas precisam ser iguais.'}
         >
           {(id, describedBy) => (
-            <TextInput
+            <PasswordInput
               id={id}
-              type="password"
               aria-describedby={describedBy}
               value={confirmation}
               onChange={(event) => setConfirmation(event.target.value)}

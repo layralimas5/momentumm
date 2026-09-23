@@ -118,6 +118,14 @@ export interface PlanInput {
    * cara de identificador.
    */
   readonly axisLabel?: string
+  /**
+   * O roteiro da ÁREA, quando ela não tem eixo de fábrica equivalente.
+   *
+   * Sem isso, "Saúde" e "Finanças" caem no roteiro genérico e a ação de hoje
+   * vira "Dar o primeiro passo pra <o objetivo que a pessoa escreveu>", que é
+   * o app devolvendo a frase dela em vez de dizer o que fazer hoje.
+   */
+  readonly template?: AxisTemplate
   readonly motive?: string | null
 }
 
@@ -159,7 +167,7 @@ export function comfortableSessionOf(axis: ActivityTypeSlug): number {
   return limitsOfAxis(axis).comfortable
 }
 
-interface AxisTemplate {
+export interface AxisTemplate {
   readonly firstStep: string
   readonly firstStepMinimal: string
   readonly preparation: string
@@ -206,9 +214,15 @@ const TEMPLATES: Readonly<Record<string, AxisTemplate>> = {
  * carreira" é um formulário preenchido com o que sobrou. A área só entra
  * quando não há objetivo em palavras.
  */
-function templateFor(axis: ActivityTypeSlug, axisLabel?: string, goal?: string): AxisTemplate {
+function templateFor(
+  axis: ActivityTypeSlug,
+  axisLabel?: string,
+  goal?: string,
+  given?: AxisTemplate,
+): AxisTemplate {
   const known = TEMPLATES[axis]
   if (known) return known
+  if (given) return given
 
   const focus = goalPhrase(goal)
   if (focus) {
@@ -271,7 +285,7 @@ function capacityPerSession(axis: ActivityTypeSlug, minutesPerDay: number): numb
 
 export function buildPlan(input: PlanInput): PlanDraft {
   const type = activityType(input.axis)
-  const template = templateFor(input.axis, input.axisLabel, input.title)
+  const template = templateFor(input.axis, input.axisLabel, input.title, input.template)
   const limits = limitsOfAxis(input.axis)
 
   const daysPerWeek = clamp(Math.round(input.daysPerWeek), MIN_DAYS_PER_WEEK, MAX_DAYS_PER_WEEK)
@@ -312,7 +326,7 @@ export function buildPlan(input: PlanInput): PlanDraft {
 
   const checkpointDay = addDays(input.today, Math.max(3, Math.floor(totalDays / 2)))
 
-  const stages = stagesFor(input, totalDays, type)
+  const stages = stagesFor(input, totalDays, type, { totalSessions, perSession, daysPerWeek })
 
   /*
     Cada ação já nasce dentro de uma etapa. As duas primeiras constroem a
@@ -399,24 +413,52 @@ export function buildPlan(input: PlanInput): PlanDraft {
  * constrói do objetivo. Dar 33% a ele faria a barra pular pra um terço com a
  * pessoa tendo lido três páginas.
  */
-function stagesFor(input: PlanInput, totalDays: number, type: ActivityType): PlannedStage[] {
+function stagesFor(
+  input: PlanInput,
+  totalDays: number,
+  type: ActivityType,
+  rhythm: { totalSessions: number; perSession: number; daysPerWeek: number },
+): PlannedStage[] {
   const target = Math.round(input.target)
   const half = Math.max(1, Math.round(target / 2))
+
+  /*
+    Num eixo medido em tempo, o total acumulado não diz nada: "acumular 765
+    minutos" é um número que ninguém consegue imaginar. O que a pessoa
+    reconhece é quantas vezes ela vai aparecer, então o degrau é contado em
+    sessões. Nos eixos com unidade própria (páginas, por exemplo) o acumulado
+    continua valendo: 120 páginas é uma imagem, 120 minutos não.
+
+    As sessões saem do mesmo peso que distribui as datas: uma etapa que ocupa
+    40% do calendário ocupa 40% das sessões.
+  */
+  const byTime = type.unit === 'minutos'
+  const sessionsUntil = (weight: number) =>
+    Math.max(1, Math.round((weight / TOTAL_WEIGHT) * rhythm.totalSessions))
+  const firstSessions = sessionsUntil(20)
+  const halfSessions = sessionsUntil(60)
+  const sessionWord = (count: number) => `${count} ${count === 1 ? 'sessão' : 'sessões'}`
 
   const drafts: readonly { title: string; description: string; weight: number }[] = [
     {
       title: 'Entrar no ritmo',
-      description: 'Preparar o que precisa e fazer as primeiras sessões, até a rotina existir.',
+      description: byTime
+        ? `Fazer as primeiras ${sessionWord(firstSessions)} de ${rhythm.perSession} min, até a rotina existir.`
+        : 'Preparar o que precisa e fazer as primeiras sessões, até a rotina existir.',
       weight: 20,
     },
     {
       title: 'Chegar na metade',
-      description: `Acumular ${formatUnit(type, half)} e conferir se o ritmo está de pé.`,
+      description: byTime
+        ? `Chegar a ${sessionWord(halfSessions)} e conferir se o ritmo está de pé.`
+        : `Acumular ${formatUnit(type, half)} e conferir se o ritmo está de pé.`,
       weight: 40,
     },
     {
       title: 'Fechar o objetivo',
-      description: `Ir de ${formatUnit(type, half)} até ${formatUnit(type, target)}.`,
+      description: byTime
+        ? `Ir de ${halfSessions} até as ${sessionWord(rhythm.totalSessions)} do plano.`
+        : `Ir de ${formatUnit(type, half)} até ${formatUnit(type, target)}.`,
       weight: 40,
     },
   ]

@@ -21,6 +21,8 @@ import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 import { MobileShortcuts } from '@/presentation/components/mobile/MobileShortcuts'
 import { SecurityPanel } from '@/presentation/profile/SecurityPanel'
 import { SupportPanel } from '@/presentation/profile/SupportPanel'
+import { ReminderSettings } from '@/presentation/notifications/ReminderSettings'
+import { forgetActivation } from '@/presentation/planner/use-activation'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 
@@ -75,6 +77,7 @@ export function ProfilePage() {
    */
   const restart = useAsyncAction(async () => {
     demoStore.clear()
+    forgetActivation(user?.id ?? null)
     await planner.reload()
     navigate('/app')
   })
@@ -243,6 +246,8 @@ export function ProfilePage() {
               <dd className="truncate text-ink">@{profile.handle}</dd>
             </div>
           </dl>
+
+          <ReminderSettings />
 
           <div className="border-t border-line pt-4">
             <div className="flex items-center justify-between gap-3">

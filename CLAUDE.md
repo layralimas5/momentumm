@@ -1098,6 +1098,83 @@ três objetivos não podem virar três prioridades disputando o mesmo dia.
 No modo demo, Configurações tem **Recomeçar do zero** — é o caminho pra rever o
 onboarding sem abrir o devtools.
 
+### Primeiro acesso, lembrete e o caminho de volta (21/09/2026)
+
+- **O onboarding é uma rota, `/app/comecar`** (`ActivationPage`), em tela
+  cheia: sem sidebar, sem barra de abas, só o logo e "Sair". A casca
+  (`useActivationGate` em `AppLayout`) manda toda conta vazia pra lá, de
+  qualquer `/app/*`, enquanto ela não criou nada nem pediu "deixar pra
+  depois". Antes o quiz era um bloco dentro do Hoje com a barra de abas por
+  cima, e dava pra escapar tocando em qualquer aba. O rascunho e o
+  "pulado" no `localStorage` carregam o id da conta: pular numa conta não
+  vale pra outra no mesmo navegador. `forgetActivation` limpa os dois no
+  "Recomeçar do zero".
+- **Lembrete no celular (Web Push).** `domain/notifications`,
+  `infrastructure/push/browser-push` (as APIs do navegador),
+  `public/sw.js` (só mostra o aviso: sem cache, sem rota) e
+  `presentation/notifications` (hook, convite no Hoje, bloco em
+  Configurações). O app marca presença ao abrir (`touch_my_presence`, com
+  fuso); o `pg_cron` chama a Edge Function `push-reminders` a cada hora, e
+  ela avisa às 19h locais só quem não abriu o app naquele dia (migration
+  0036, `push_reminders_due`). Precisa do par VAPID: pública em
+  `VITE_VAPID_PUBLIC_KEY`, privada nos segredos da função. Sem a pública o
+  app não oferece nada. iPhone só recebe com o site na tela de início:
+  por isso existe `public/manifest.webmanifest` (`start_url=/app`).
+  Setup completo em `supabase/functions/README.md`.
+- **A landing sabe da sessão** (`useSiteCta`): com conta aberta, hero,
+  header, barra fixa e CTA final viram "Abrir o app"; sem conta, "Entrar"
+  fica ao lado do CTA em qualquer largura (era só no rodapé no celular) e
+  também dentro do menu.
+
+### Teste de ofertas no TikTok e o primeiro resultado (21/09/2026)
+
+Três ângulos em teste por 14 dias no TikTok (A: parar de recomeçar toda
+segunda; B: meta confusa vira plano; C: voltar depois de parar). A landing
+continua a conversa de cada um: `/?oferta=a|b|c` troca título, subtítulo,
+botão e o CTA final (`components/landing/offers.ts`, `useOffer`). Sem o
+parâmetro a copy é a padrão. A oferta fica no `localStorage` e vai em
+`metadata.source` (`oferta_a`...) do `session_start` e do
+`onboarding_completed`: compara-se o ângulo que traz gente que começa, não
+só clique. Quando houver vencedora, ela vira a copy padrão.
+
+O primeiro resultado do teste grátis é meta → plano → passo de hoje →
+feito → XP → "você começou de verdade". O fecho é a conquista **Primeiro
+Passo** (10 XP, migration 0037 + engine do demo), concedida na primeira
+ação concluída e mostrada pelo `EvolutionNotice`.
+
+### Funil do quiz (21/09/2026)
+
+Entrada pública em `/criar-meu-plano`: intro curta → sete perguntas (uma
+por tela, respostas no `localStorage`) → processamento curto → diagnóstico
+→ prévia do plano → cadastro → `/app/ativar` grava tudo → Hoje com a
+primeira vitória. Links dos carrosséis levam pra lá com `utm_*` e `tema=`
+(só título e introdução mudam; `QUIZ_INTROS`).
+
+- **Não existe gerador novo.** `domain/entities/quiz.ts` converte as
+  respostas em `ActivationAnswers` e o plano sai do mesmo `buildActivation`
+  do onboarding. O que o quiz acrescenta: diagnóstico por obstáculo
+  (`buildDiagnosis`), hábito de sustentação (`suggestHabit`) e a regra de
+  que plano impossível é ajustado sozinho (primeiro remédio que cabe) com
+  nota na prévia, porque quem ainda não tem conta não negocia com aviso.
+- **Sessão anônima** (migration 0038: `quiz_sessions`, `quiz_events`).
+  O id nasce no navegador e é o portador; sem política nenhuma, só RPCs
+  `security definer` (`quiz_track`, `quiz_save`, `quiz_link_to_me`,
+  `quiz_mark_activated`). Depois do vínculo só o dono escreve. Eventos do
+  funil em `domain/analytics/funnel-events` (lista batida com o SQL por
+  teste). Painel em `/admin/funil` (`admin_quiz_funnel`). Teste PGlite em
+  `supabase/tests/pglite/quiz.mjs`.
+- **A casca prefere o plano pendente**: `useActivationGate` manda pra
+  `/app/ativar` antes de `/app/comecar` quando há quiz no navegador. É o
+  que faz o login com Google (volta em `/entrar` sem estado) cair no lugar
+  certo. `/app/ativar` recalcula o plano com o `today` da conta, cria o
+  eixo se precisar, `applyPlan`, hábito, vincula a sessão e marca a
+  primeira vitória (`use-first-win`, por título e dia). Trial não é
+  criado aqui: já nasce no `handle_new_user`; só o evento é registrado.
+- A sessão do quiz continua no navegador depois do vínculo pra
+  `first_action_completed`, `checkout_started` e `subscription_completed`
+  caírem na mesma linha (`trackFunnelIfLinked`); abrir o quiz de novo
+  descarta a sessão de outra conta (`startFreshQuizSession`).
+
 ### Celular
 
 O dashboard do celular é uma **árvore de componentes própria**

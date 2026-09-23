@@ -3,7 +3,6 @@ import { FinalCta } from '@/presentation/components/landing/FinalCta'
 import { Hero } from '@/presentation/components/landing/Hero'
 import { Method } from '@/presentation/components/landing/Method'
 import { MomentumAi } from '@/presentation/components/landing/MomentumAi'
-import { MomentumScore } from '@/presentation/components/landing/MomentumScore'
 import { Pricing } from '@/presentation/components/landing/Pricing'
 import { Problem } from '@/presentation/components/landing/Problem'
 import { Screens } from '@/presentation/components/landing/Screens'
@@ -46,7 +45,6 @@ export function LandingPage() {
         <Problem />
         <Method />
         <Screens />
-        <MomentumScore />
         <MomentumAi />
         <Trust />
         <Pricing />

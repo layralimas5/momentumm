@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { Link, Navigate, useLocation } from 'react-router-dom'
+import { Link, Navigate, useLocation, useSearchParams } from 'react-router-dom'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { googleLoginEnabled } from '@/infrastructure/config/env'
 import { GoogleIcon } from '@/presentation/components/brand/GoogleIcon'
 import { Wordmark } from '@/presentation/components/brand/Logo'
 import { Button } from '@/presentation/components/ui/Button'
-import { Field, TextInput } from '@/presentation/components/ui/Field'
+import { Icon } from '@/presentation/components/ui/Icon'
+import { Field, PasswordInput, TextInput } from '@/presentation/components/ui/Field'
 import { ErrorNote } from '@/presentation/components/ui/States'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 import { MIN_PASSWORD_LENGTH } from '@/domain/auth/password'
@@ -16,6 +17,9 @@ type Mode = 'entrar' | 'criar' | 'recuperar'
 export function AuthPage() {
   const { user, loading, signIn, signUp, signInWithGoogle, requestPasswordReset } = useAuth()
   const location = useLocation()
+  const [params] = useSearchParams()
+  // Veio do quiz com um plano pronto: a tela diz isso, e nada mais muda.
+  const fromQuiz = params.get('intent') === 'plano'
   const [mode, setMode] = useState<Mode>('criar')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -124,15 +128,32 @@ export function AuthPage() {
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-4 py-10">
       <Wordmark className="mx-auto mb-4 w-32 sm:w-36" />
 
-      <h1 className="mt-10 text-2xl font-semibold tracking-tight text-ink">
-        {mode === 'criar' ? 'Criar conta' : mode === 'recuperar' ? 'Recuperar acesso' : 'Entrar'}
+      {fromQuiz && mode !== 'recuperar' ? (
+        <p className="mt-10 inline-flex items-center gap-2 self-start rounded-full border border-brand/40 bg-brand-dim/40 px-3 py-1 text-xs font-medium text-brand-ink">
+          <Icon name="check" className="size-3.5" />
+          Seu plano está pronto e te espera
+        </p>
+      ) : null}
+
+      <h1 className={fromQuiz && mode !== 'recuperar' ? 'mt-4 text-2xl font-semibold tracking-tight text-ink' : 'mt-10 text-2xl font-semibold tracking-tight text-ink'}>
+        {mode === 'criar'
+          ? fromQuiz
+            ? 'Crie sua conta pra ativar o plano'
+            : 'Criar conta'
+          : mode === 'recuperar'
+            ? 'Recuperar acesso'
+            : 'Entrar'}
       </h1>
       <p className="mt-1 text-sm text-ink-muted">
         {mode === 'criar'
-          ? 'Leva menos de um minuto. Depois é só registrar o primeiro dia.'
+          ? fromQuiz
+            ? 'Grátis, sem cartão. Assim que entrar, o objetivo, os marcos e a ação de hoje já estarão no seu Momentumm.'
+            : 'Leva menos de um minuto. Depois é só registrar o primeiro dia.'
           : mode === 'recuperar'
             ? 'Diz teu e-mail e a gente manda um link pra criar uma senha nova.'
-            : 'Bom te ver de novo.'}
+            : fromQuiz
+              ? 'Entra e o plano do quiz é ativado na sua conta.'
+              : 'Bom te ver de novo.'}
       </p>
 
       {container.demo ? (
@@ -210,9 +231,8 @@ export function AuthPage() {
             }
           >
             {(id, describedBy) => (
-              <TextInput
+              <PasswordInput
                 id={id}
-                type="password"
                 aria-describedby={describedBy}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}

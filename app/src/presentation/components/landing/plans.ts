@@ -13,8 +13,8 @@ import { PLAN_LIMITS } from '@/domain/entities/plan'
  * que o domínio não sabe: texto e a frase de cada plano.
  *
  * A separação é uma frase: o gratuito ORGANIZA E EXECUTA, o PRO REGISTRA,
- * ANALISA E EVOLUI. A tabela completa (`planMatrix`) fica logo abaixo dos
- * cards; aqui entram só os pontos que decidem.
+ * ANALISA E EVOLUI. Não existe tabela comparativa: o que cada plano inclui
+ * está inteiro dentro do próprio card, pra ler no celular sem cruzar coluna.
  *
  * O PRO é um plano só com dois ciclos de cobrança. Dois cards pro mesmo
  * produto dividiam a atenção e escondiam o desconto do anual.
@@ -62,14 +62,16 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
     prices: { mensal: FREE_PRICE, anual: FREE_PRICE },
     description: `Toda conta nova começa com ${TRIAL_DAYS} dias de PRO completo, sem cartão. Depois, o gratuito segue pra sempre: cria o objetivo, organiza os hábitos, acompanha as ações do dia e vê o teu Momentumm Score de hoje.`,
     features: [
-      `${TRIAL_DAYS} dias com tudo do PRO ao criar a conta, sem cartão e sem cobrança`,
-      `Até ${plural(free.activeObjectives, 'objetivo ativo', 'objetivos ativos')} e ${plural(free.activeHabits, 'hábito ativo', 'hábitos ativos')}`,
-      `${plural(free.activePlans, 'plano ativo', 'planos ativos')} por etapas`,
+      `${TRIAL_DAYS} dias com tudo do PRO ao criar a conta, sem cartão`,
+      `Até ${plural(free.activeObjectives, 'objetivo ativo', 'objetivos ativos')}, ${plural(free.activeHabits, 'hábito ativo', 'hábitos ativos')} e ${plural(free.activePlans, 'plano por etapas', 'planos por etapas')}`,
       `Até ${free.actionsPerDay} ações por dia no Hoje`,
       `Histórico dos últimos ${free.historyDays} dias`,
-      'Momentumm Score de hoje',
+      'Momentumm Score de hoje (só a pontuação atual)',
       'Check-in semanal manual',
       'Dia Adaptável e Modo Retomada',
+      `${free.objectiveTemplates} modelos de objetivo`,
+      'Compartilhamento: 3 arranjos, todas as cores, em PNG',
+      '1 lembrete por hábito',
     ],
     cta: 'Começar grátis',
   },
@@ -94,15 +96,17 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
     description:
       'Entender os próprios padrões, registrar a jornada, ver as métricas e ajustar o plano com a leitura da IA. É a proposta inteira do Momentumm.',
     features: [
-      'Tudo do gratuito, sem limite de quantidade',
+      'Objetivos, hábitos, planos e ações por dia ilimitados',
       'Histórico completo',
       'Momentumm Score com evolução e detalhamento',
-      'Review semanal cruzando os teus dados reais',
-      'Momentumm AI com franquia mensal',
+      'Review semanal completo, cruzando os teus dados reais',
+      `Momentumm AI: ${PLAN_LIMITS.pro.aiCallsPerMonth} leituras por mês`,
+      'Análises de IA: padrões, gargalos e recomendações',
       'Métricas detalhadas e relatórios semanais e mensais',
       'Registros em texto, foto e voz',
-      'Análises de IA: padrões, gargalos e recomendações',
-      'Compartilhamento com todos os modelos e exportação de dados',
+      'Biblioteca completa de modelos de objetivo',
+      'Compartilhamento com todos os modelos e personalização',
+      'Exportação dos teus dados em PDF, imagem e CSV',
       'Lembretes personalizados, temas e preferências',
     ],
     cta: `Testar o PRO por ${TRIAL_DAYS} dias`,

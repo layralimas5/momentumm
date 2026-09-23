@@ -5,7 +5,6 @@ import { CTA, SITE } from './site'
 const PRODUCT = [
   { label: 'O método', href: '/#metodo' },
   { label: 'Por dentro', href: '/#telas' },
-  { label: 'Momentumm Score', href: '/#momentum-score' },
   { label: 'Momentumm AI', href: '/#ia' },
   { label: 'Planos', href: '/#planos' },
   { label: 'Dúvidas', href: '/#faq' },
