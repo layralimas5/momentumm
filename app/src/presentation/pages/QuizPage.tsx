@@ -68,11 +68,11 @@ export function QuizPage() {
               Voltar
             </Button>
             <div className="min-w-0 flex-1">
-              <Button
-                className="w-full"
-                onClick={quiz.next}
-                disabled={!quiz.canAdvance}
-              >
+              {/*
+                O botão fica clicável mesmo faltando resposta: botão apagado
+                não explica nada, e quem toca e lê o aviso entende o que falta.
+              */}
+              <Button className="w-full" onClick={quiz.next}>
                 {quiz.step === QUIZ_QUESTION_COUNT - 1 ? 'Ver meu diagnóstico' : 'Continuar'}
                 <Icon name="seta" className="size-4" />
               </Button>
@@ -91,7 +91,7 @@ export function QuizPage() {
           onSubmit={quiz.next}
         />
         <p aria-live="polite" className="mt-4 min-h-5 text-sm text-ink-faint">
-          {quiz.blocker ?? ''}
+          {quiz.warning ?? ''}
         </p>
       </QuizShell>
     )

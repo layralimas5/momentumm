@@ -3,10 +3,19 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 import { circleOpen, isAuthBypass } from '@/infrastructure/config/env'
 import { AuthProvider } from '@/presentation/auth/AuthProvider'
 import { ProtectedRoute } from '@/presentation/auth/ProtectedRoute'
-import { AppLayout } from '@/presentation/layouts/AppLayout'
-import { LandingPage } from '@/presentation/pages/LandingPage'
 
 // As telas internas só carregam depois do login: mantém o primeiro load leve.
+//
+// A landing e o AppLayout também entram aqui, e por um motivo de funil: quem
+// cai em `/criar-meu-plano` vindo de um anúncio não pode pagar pelo download
+// da home nem pelos provedores da área logada (planner, foco, evolução,
+// share) pra responder sete perguntas.
+const LandingPage = lazy(() =>
+  import('@/presentation/pages/LandingPage').then((m) => ({ default: m.LandingPage })),
+)
+const AppLayout = lazy(() =>
+  import('@/presentation/layouts/AppLayout').then((m) => ({ default: m.AppLayout })),
+)
 const AuthPage = lazy(() =>
   import('@/presentation/pages/AuthPage').then((m) => ({ default: m.AuthPage })),
 )

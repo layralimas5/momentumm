@@ -278,6 +278,8 @@ export interface QuizDiagnosis {
   readonly profile: string
   readonly goal: string
   readonly obstacle: string
+  /** Quantas dificuldades a pessoa marcou: com mais de uma, o rótulo vira plural. */
+  readonly obstacleCount: number
   readonly time: string
   /** O estilo de execução recomendado, já resolvido quando a pessoa deixou o app decidir. */
   readonly style: QuizStyleKey
@@ -353,8 +355,11 @@ export function buildDiagnosis(answers: CompleteQuizAnswers): QuizDiagnosis {
   return {
     profile: reading.profile[short ? 0 : 1],
     goal: answers.goal.trim(),
-    // Todas as marcadas, a principal primeiro: a pessoa reconhece o que ela mesma disse.
-    obstacle: answers.obstacles.map((key) => QUIZ_OBSTACLE_LABELS[key]).join(', '),
+    // Todas as marcadas, a principal primeiro: a pessoa reconhece o que ela
+    // mesma disse. O separador é o ponto, não a vírgula: "Começo e abandono"
+    // já tem um "e" dentro, e a vírgula fazia as duas virarem uma frase só.
+    obstacle: answers.obstacles.map((key) => QUIZ_OBSTACLE_LABELS[key]).join(' · '),
+    obstacleCount: answers.obstacles.length,
     time:
       answers.time === 'depende'
         ? `Depende do dia (o plano usa ${VARIABLE_DAY_MINUTES} minutos como base)`

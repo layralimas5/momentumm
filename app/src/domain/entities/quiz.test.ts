@@ -126,7 +126,8 @@ describe('quiz: ponte pro gerador', () => {
   it('várias dificuldades: a primeira dá o perfil, todas aparecem no diagnóstico', () => {
     const diagnosis = buildDiagnosis({ ...answers, obstacles: ['abandono', 'motivacao'] })
     expect(diagnosis.profile).toBe('Começa forte, perde o fio')
-    expect(diagnosis.obstacle).toBe('Começo e abandono, Perco a motivação rapidamente')
+    expect(diagnosis.obstacle).toBe('Começo e abandono · Perco a motivação rapidamente')
+    expect(diagnosis.obstacleCount).toBe(2)
   })
 
   it('o hábito respeita o tempo declarado', () => {

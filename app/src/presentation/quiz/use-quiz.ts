@@ -56,7 +56,14 @@ export interface QuizController {
   readonly attribution: QuizAttribution
   /** Já respondeu alguma coisa: o botão da intro vira "continuar". */
   readonly started: boolean
+  /** O que falta responder pra sair da pergunta. Null quando dá pra avançar. */
   readonly blocker: string | null
+  /**
+   * O mesmo `blocker`, mas só depois que a pessoa tentou avançar. A tela
+   * mostra este, nunca o outro: cobrar resposta numa pergunta recém-aberta
+   * parece erro de quem acabou de chegar.
+   */
+  readonly warning: string | null
   readonly canAdvance: boolean
   readonly diagnosis: QuizDiagnosis | null
   readonly preview: QuizPlanPreview | null
@@ -135,6 +142,13 @@ export function useQuiz(): QuizController {
 
   const blocker = useMemo(() => quizBlocker(step, answers), [step, answers])
 
+  // Zera a cada pergunta nova e a cada resposta: o aviso some assim que a
+  // pessoa mexe em alguma coisa, sem esperar ela tentar avançar de novo.
+  const [attempted, setAttempted] = useState(false)
+  useEffect(() => {
+    setAttempted(false)
+  }, [step, answers])
+
   const set = useCallback((changes: Partial<QuizAnswers>) => {
     setAnswers((current) => ({ ...current, ...changes }))
   }, [])
@@ -172,7 +186,10 @@ export function useQuiz(): QuizController {
   }, [])
 
   const next = useCallback(() => {
-    if (blocker) return
+    if (blocker) {
+      setAttempted(true)
+      return
+    }
     trackFunnel('quiz_question_answered', step)
     saveQuizAnswers(answers, null, step + 1)
 
@@ -216,6 +233,7 @@ export function useQuiz(): QuizController {
     attribution,
     started: hasStarted(answers),
     blocker,
+    warning: attempted ? blocker : null,
     canAdvance: blocker === null,
     diagnosis,
     preview,

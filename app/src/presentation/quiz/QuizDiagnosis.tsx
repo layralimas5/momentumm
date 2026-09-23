@@ -25,7 +25,11 @@ export function QuizDiagnosisView({ diagnosis }: QuizDiagnosisProps) {
 
   const rows: readonly { readonly icon: IconName; readonly label: string; readonly value: string }[] = [
     { icon: 'objetivo', label: 'Objetivo identificado', value: diagnosis.goal },
-    { icon: 'raio', label: 'Principal dificuldade', value: diagnosis.obstacle },
+    {
+      icon: 'raio',
+      label: diagnosis.obstacleCount > 1 ? 'O que trava você' : 'Principal dificuldade',
+      value: diagnosis.obstacle,
+    },
     { icon: 'relogio', label: 'Tempo disponível', value: diagnosis.time },
     { icon: 'plano', label: 'Estilo de execução recomendado', value: diagnosis.styleLabel },
   ]
