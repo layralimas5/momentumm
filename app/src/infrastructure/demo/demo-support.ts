@@ -135,6 +135,12 @@ export class DemoAdminGateway implements AdminGateway {
   retention(): never {
     throw new DomainError(UNAVAILABLE)
   }
+  engagement(): never {
+    throw new DomainError(UNAVAILABLE)
+  }
+  pairComparison(): never {
+    throw new DomainError(UNAVAILABLE)
+  }
   featureUsage(): never {
     throw new DomainError(UNAVAILABLE)
   }

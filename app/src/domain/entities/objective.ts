@@ -25,6 +25,29 @@ export const MAX_OBJECTIVE_TARGET = 1_000_000
 export const MAX_OBJECTIVE_DAYS = 366
 export const MIN_OBJECTIVE_DAYS = 7
 
+/**
+ * Já existe um objetivo ativo nessa área.
+ *
+ * É uma regra do banco (`objectives_one_active_per_axis`, 0003) e não uma
+ * falha: dois objetivos disputando o mesmo eixo tornam o progresso ambíguo,
+ * porque os dois somam das mesmas atividades.
+ *
+ * O erro carrega o EIXO porque quem for mostrar isso precisa dizer qual
+ * objetivo está ocupando o lugar. Uma mensagem sem o eixo obriga a tela a
+ * adivinhar — ou a não oferecer saída nenhuma, que foi o que aconteceu na
+ * ativação do plano do quiz: a pessoa ficava presa fora do app, com um
+ * "tentar de novo" que falhava sempre pelo mesmo motivo.
+ */
+export class ObjectiveAxisConflictError extends DomainError {
+  readonly axis: ActivityTypeSlug
+
+  constructor(axis: ActivityTypeSlug, message: string) {
+    super(message)
+    this.name = 'ObjectiveAxisConflictError'
+    this.axis = axis
+  }
+}
+
 export interface Objective {
   readonly id: string
   readonly userId: string

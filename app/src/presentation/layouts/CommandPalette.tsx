@@ -4,7 +4,8 @@ import { Dialog } from '@/presentation/components/ui/Dialog'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
 import { cn } from '@/shared/lib/cn'
-import { APP_NAV } from './nav-items'
+import { useFeature } from '@/presentation/plan/use-feature'
+import { APP_NAV, visibleNav } from './nav-items'
 
 interface Command {
   readonly id: string
@@ -23,10 +24,12 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   const navigate = useNavigate()
   const composer = useComposer()
   const [query, setQuery] = useState('')
+  const juntos = useFeature('juntos')
   const [active, setActive] = useState(0)
 
   const commands = useMemo<Command[]>(() => {
-    const navigation: Command[] = APP_NAV.map((item) => ({
+    // Buscar por uma tela que a conta não tem seria achar a porta e bater nela.
+    const navigation: Command[] = visibleNav(APP_NAV, { juntos: juntos.enabled }).map((item) => ({
       id: `nav-${item.to}`,
       label: `Ir para ${item.label}`,
       hint: item.description,
@@ -66,7 +69,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     ]
 
     return [...creation, ...navigation]
-  }, [navigate, composer])
+  }, [navigate, composer, juntos.enabled])
 
   const filtered = useMemo(() => {
     const term = normalize(query)

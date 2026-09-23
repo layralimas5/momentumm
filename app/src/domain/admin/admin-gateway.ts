@@ -14,6 +14,8 @@ import type {
   AdminQuizLeadList,
   AdminRequestDetail,
   AdminRequestList,
+  AdminEngagement,
+  AdminPairComparison,
   AdminRetention,
   AdminSetting,
   AdminSubscriptionList,
@@ -131,6 +133,10 @@ export interface AdminGateway {
   setErrorStatus(id: string, status: ErrorStatus, severity?: ErrorSeverity): Promise<void>
 
   retention(period: Period): Promise<AdminRetention>
+  /** O laço: ativação, retenção por avanço, tempo até a primeira ação. */
+  engagement(period: Period): Promise<AdminEngagement>
+  /** Com dupla x sem dupla. Descritivo: correlação, não efeito. */
+  pairComparison(period: Period): Promise<AdminPairComparison>
   featureUsage(period: Period): Promise<AdminFeatureUsage>
   /** Funil de aquisição pelo quiz (`/criar-meu-plano`), agregado por sessão. */
   quizFunnel(period: Period): Promise<AdminQuizFunnel>

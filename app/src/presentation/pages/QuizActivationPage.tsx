@@ -3,15 +3,25 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { ErrorNote } from '@/presentation/components/ui/States'
+import { QuizActivationConflictView } from '@/presentation/quiz/QuizActivationConflict'
 import { QuizActivationLimitView } from '@/presentation/quiz/QuizActivationLimit'
 import { useQuizActivation } from '@/presentation/quiz/quiz-activation'
 import { QUIZ_PATH } from '@/presentation/quiz/use-quiz'
 
 /**
  * `/app/ativar`: a pessoa acabou de criar a conta com um plano do quiz
- * esperando no navegador. Esta tela grava o plano e manda pro Hoje. Fora o
- * limite do plano gratuito (que ela resolve no lugar), não há o que decidir
- * aqui: tudo foi decidido no quiz.
+ * esperando no navegador. Esta tela grava o plano e manda pro Hoje. Quase
+ * nada se decide aqui: tudo foi decidido no quiz.
+ *
+ * ## A regra que esta tela não pode quebrar
+ *
+ * A casca do app manda pra cá SEMPRE que existe plano pendente, antes de
+ * qualquer outra tela. Isso significa que um erro sem saída aqui prende a
+ * pessoa fora do produto: conta criada, nada acessível, e um "tentar de
+ * novo" que falha sempre pelo mesmo motivo.
+ *
+ * Por isso todo estado de erro oferece "entrar no app sem esse plano". O
+ * plano do quiz é valioso, mas nunca mais valioso que o acesso à conta.
  */
 export function QuizActivationPage() {
   const activation = useQuizActivation()
@@ -28,6 +38,22 @@ export function QuizActivationPage() {
     return (
       <div className="mx-auto flex min-h-[60dvh] w-full max-w-md flex-col justify-center py-10">
         <QuizActivationLimitView limit={activation.limit} onRetry={activation.retry} />
+        <Button variant="ghost" className="mt-2 min-h-10" onClick={activation.skip}>
+          Entrar no app sem esse plano
+        </Button>
+      </div>
+    )
+  }
+
+  /* Área ocupada: a tela mostra quem ocupa e oferece liberar ou seguir sem. */
+  if (activation.status === 'conflito' && activation.conflictAxis) {
+    return (
+      <div className="mx-auto flex min-h-[60dvh] w-full max-w-md flex-col justify-center py-10">
+        <QuizActivationConflictView
+          axis={activation.conflictAxis}
+          onRetry={activation.retry}
+          onSkip={activation.skip}
+        />
       </div>
     )
   }
@@ -53,6 +79,14 @@ export function QuizActivationPage() {
             </Button>
             <Button variant="ghost" className="min-h-10" onClick={() => navigate(QUIZ_PATH)}>
               Refazer o quiz
+            </Button>
+            {/*
+              A saída. Ela vale pra QUALQUER erro, inclusive os que ainda não
+              existem: enquanto houver plano pendente, a casca traz a pessoa
+              de volta pra cá, e sem esta porta a conta fica inacessível.
+            */}
+            <Button variant="ghost" className="min-h-10" onClick={activation.skip}>
+              Entrar no app sem esse plano
             </Button>
           </div>
         </>

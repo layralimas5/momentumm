@@ -4,6 +4,7 @@ import type { CapacityProfile } from '@/domain/entities/checkin'
 import { addDays } from '@/domain/entities/day'
 import type { Insight } from '@/domain/entities/insight'
 import { isPending, shrinkToMinimal, type Task } from '@/domain/entities/task'
+import { track } from '@/infrastructure/analytics/track'
 import { useFocus } from '@/presentation/focus/use-focus'
 import { useComposer } from './ComposerProvider'
 import { usePlanner } from './use-planner'
@@ -56,6 +57,18 @@ export function useInsightActions(context: InsightContext): InsightActions {
 
   const startFocus = useCallback(
     (task: Task, plannedMin?: number) => {
+      /*
+        "Começou" é aqui, e só aqui: toda tela que oferece o botão passa por
+        esta função. Instrumentar cada botão daria dois eventos pro mesmo
+        clique em umas telas e nenhum em outras.
+      */
+      track('action_started', 'hoje', {
+        action_id: task.id,
+        primary: task.isMainPriority,
+        minutes: plannedMin ?? task.estimatedMin,
+        ...(task.objectiveId ? { objective_id: task.objectiveId } : {}),
+      })
+
       focus.start({
         axis: task.axis ?? 'estudo',
         label: task.title,

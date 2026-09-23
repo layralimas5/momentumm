@@ -1,3 +1,7 @@
+import {
+  DEFAULT_PREFERENCES,
+  type NotificationPreferences,
+} from '@/domain/notifications/notification-types'
 import type { PushDevice } from '@/domain/notifications/push-device'
 import type { PushSubscriptionRepository } from '@/domain/repositories/push-subscription-repository'
 
@@ -7,6 +11,7 @@ import type { PushSubscriptionRepository } from '@/domain/repositories/push-subs
  */
 export class DemoPushSubscriptionRepository implements PushSubscriptionRepository {
   private readonly endpoints = new Set<string>()
+  private preferences: NotificationPreferences = DEFAULT_PREFERENCES
 
   async save(device: PushDevice): Promise<void> {
     this.endpoints.add(device.endpoint)
@@ -22,5 +27,21 @@ export class DemoPushSubscriptionRepository implements PushSubscriptionRepositor
 
   async touchPresence(): Promise<void> {
     // Sem servidor não há presença a marcar.
+  }
+
+  async loadPreferences(): Promise<NotificationPreferences> {
+    return this.preferences
+  }
+
+  async savePreferences(preferences: NotificationPreferences): Promise<void> {
+    this.preferences = preferences
+  }
+
+  async markOpened(): Promise<void> {
+    // Sem servidor não existe aviso a carimbar.
+  }
+
+  async markConverted(): Promise<void> {
+    // Idem.
   }
 }

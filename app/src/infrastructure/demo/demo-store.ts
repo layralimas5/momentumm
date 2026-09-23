@@ -44,6 +44,7 @@ import {
 } from '@/domain/entities/journey-event'
 import {
   createObjective,
+  ObjectiveAxisConflictError,
   type NewObjectiveInput,
   type Objective,
 } from '@/domain/entities/objective'
@@ -1013,7 +1014,10 @@ export const demoStore = {
       (objective) => objective.archivedAt === null && objective.axis === input.axis,
     )
     if (duplicate) {
-      throw new DomainError(
+      // O mesmo erro tipado do Supabase: o modo demo precisa reproduzir o
+      // caminho inteiro, inclusive o da saída que a tela oferece.
+      throw new ObjectiveAxisConflictError(
+        input.axis,
         'Você já tem um objetivo ativo nessa área. Fecha ou arquiva ele antes de abrir outro.',
       )
     }

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { track } from '@/infrastructure/analytics/track'
 import { Link } from 'react-router-dom'
 import { addDays, formatDayLabel } from '@/domain/entities/day'
 import { habitConsistency } from '@/domain/entities/habit'
@@ -111,6 +112,15 @@ export function ReviewPage() {
     steps.includes(stored.lastStep) ? stored.lastStep : (steps[0] ?? 'resumo'),
   )
   const [showHistory, setShowHistory] = useState(false)
+
+  /*
+    "Abriu o review" é o denominador de `review_completed`: sem ele, dá pra
+    saber quantas pessoas terminaram, mas não quantas desistiram no meio — que
+    é a informação que diz se o review está longo demais.
+  */
+  useEffect(() => {
+    track('review_started', 'review')
+  }, [])
 
   const index = steps.indexOf(step)
   const meta = metas[index]

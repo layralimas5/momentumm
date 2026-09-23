@@ -29,6 +29,43 @@ export const PRODUCT_EVENTS = [
   'trial_ended',
   'reminder_enabled',
   'reminder_disabled',
+
+  /*
+    O laço de retenção. Nada aqui duplica o que já existia: "abriu o app" é
+    `session_start`, "viu o Hoje" é `feature_view`, "concluiu uma ação" é
+    `task_completed`. Só entram os passos que ainda não tinham registro.
+  */
+  'primary_action_viewed',
+  'action_started',
+  'day_completed',
+  'day_adapt_requested',
+  'day_adapt_completed',
+  'recovery_shown',
+  'recovery_completed',
+  'review_started',
+  'achievement_unlocked',
+
+  /* Juntos — a dupla de accountability. */
+  'pair_invite_created',
+  'pair_invite_opened',
+  'pair_invite_accepted',
+  'pair_created',
+  'pair_viewed',
+  'encouragement_sent',
+  'encouragement_received',
+  'pair_return_started',
+  'pair_left',
+
+  /*
+    Gatilhos de retorno.
+
+    Não existe `notification_scheduled`: a arquitetura não agenda nada com
+    antecedência. O banco DECIDE o aviso na hora do envio (`decide_notification`),
+    e um evento de agendamento seria um nome sem fato por trás.
+  */
+  'notification_sent',
+  'notification_opened',
+  'notification_converted',
 ] as const
 export type ProductEventName = (typeof PRODUCT_EVENTS)[number]
 
@@ -54,6 +91,8 @@ export const PRODUCT_FEATURES = [
   'evolucao',
   'configuracoes',
   'assinatura',
+  'juntos',
+  'notificacoes',
 ] as const
 export type ProductFeature = (typeof PRODUCT_FEATURES)[number]
 
@@ -79,6 +118,8 @@ export const FEATURE_LABELS: Readonly<Record<ProductFeature, string>> = {
   evolucao: 'Evolução',
   configuracoes: 'Configurações',
   assinatura: 'Assinatura',
+  juntos: 'Juntos',
+  notificacoes: 'Notificações',
 }
 
 /** Só estas chaves entram. O banco descarta o resto. */
@@ -91,6 +132,22 @@ export interface ProductEventMetadata {
   readonly duration_ms?: number
   readonly result?: string
   readonly limit?: string
+  /** uuid da ação. Cabe no teto de 40 caracteres que o banco aplica. */
+  readonly action_id?: string
+  readonly objective_id?: string
+  /** A ação era a destacada como "o que importa hoje"? */
+  readonly primary?: boolean
+  readonly xp?: number
+  readonly minutes?: number
+  /** Estado da tela Hoje no momento do evento (`TodayStateKey`). */
+  readonly state?: string
+  readonly days_since_signup?: number
+  readonly days_since_activity?: number
+  readonly notification_type?: string
+  readonly trigger?: string
+  readonly destination?: string
+  /** Tempo entre o envio da notificação e a abertura dela. */
+  readonly elapsed_ms?: number
 }
 
 /**
@@ -116,6 +173,7 @@ export function featureForRoute(pathname: string): ProductFeature | null {
     ['/app/evolucao', 'evolucao'],
     ['/app/configuracoes', 'configuracoes'],
     ['/app/assinatura', 'assinatura'],
+    ['/app/juntos', 'juntos'],
   ]
   for (const [prefix, feature] of table) {
     if (path === prefix || path.startsWith(`${prefix}/`)) return feature

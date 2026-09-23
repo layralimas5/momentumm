@@ -26,6 +26,8 @@ import {
   requestListSchema,
   quizFunnelSchema,
   quizLeadListSchema,
+  engagementSchema,
+  pairComparisonSchema,
   retentionSchema,
   settingSchema,
   subscriptionListSchema,
@@ -180,6 +182,14 @@ export class SupabaseAdminGateway implements AdminGateway {
 
   setErrorStatus(id: string, status: ErrorStatus, severity?: ErrorSeverity) {
     return rpcVoid('admin_set_error_status', { p_error: id, p_status: status, p_severity: severity ?? null })
+  }
+
+  engagement(period: Period) {
+    return rpc('admin_engagement', { p_from: period.from, p_to: period.to }, engagementSchema)
+  }
+
+  pairComparison(period: Period) {
+    return rpc('admin_pair_comparison', { p_from: period.from, p_to: period.to }, pairComparisonSchema)
   }
 
   retention(period: Period) {

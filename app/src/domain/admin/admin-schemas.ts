@@ -345,6 +345,64 @@ export const retentionSchema = z.object({
 })
 export type AdminRetention = z.infer<typeof retentionSchema>
 
+/**
+ * O laço de retenção: ativação, retenção nas duas réguas, tempo até a
+ * primeira ação, funil da retomada e desempenho das notificações.
+ *
+ * `retention` vem com as duas leituras lado a lado de propósito. `opened` é
+ * quem voltou a abrir; `advanced` é quem voltou a AVANÇAR. A distância entre
+ * as duas é a métrica que diz se o produto está funcionando ou só sendo
+ * visitado.
+ */
+export const engagementSchema = z.object({
+  cohort_size: count,
+  activation: z.object({
+    signed_up: count,
+    planned: count,
+    saw_today: count,
+    first_action: count,
+  }),
+  retention: z
+    .record(z.object({ opened: nullableNumber, advanced: nullableNumber }))
+    .nullable(),
+  time_to_first_action_hours: z.object({
+    median: nullableNumber,
+    p90: nullableNumber,
+  }),
+  recovery: z.object({
+    shown: count,
+    started: count,
+    completed: count,
+    advanced_after: count,
+  }),
+  notifications: z.record(
+    z.object({ sent: count, opened: count, converted: count }),
+  ),
+})
+export type AdminEngagement = z.infer<typeof engagementSchema>
+
+/**
+ * Com dupla x sem dupla.
+ *
+ * Nenhum campo aqui se chama "efeito" ou "lift", e isso é decisão de produto:
+ * quem aceita um convite já é, em média, alguém mais engajado. Os dois grupos
+ * ficam lado a lado pra a leitura ser feita por quem sabe disso.
+ */
+export const pairComparisonSchema = z.object({
+  pairs_created: count,
+  pairs_ended: count,
+  invites: z.record(count),
+  encouragements: count,
+  groups: z.record(
+    z.object({
+      users: count,
+      advanced_days_median: nullableNumber,
+      d7_advanced: nullableNumber,
+    }),
+  ),
+})
+export type AdminPairComparison = z.infer<typeof pairComparisonSchema>
+
 export const featureUsageSchema = z.object({
   features: z.array(
     z.object({

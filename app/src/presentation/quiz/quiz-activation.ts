@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { isTrialActive } from '@/domain/billing/trial'
 import type { ActivityTypeSlug } from '@/domain/entities/activity-type'
 import type { PlanDraft } from '@/domain/entities/plan-builder'
+import { ObjectiveAxisConflictError } from '@/domain/entities/objective'
 import { PlanLimitError } from '@/domain/entities/plan-usage'
 import { buildQuizPlan } from '@/domain/entities/quiz'
 import { linkQuizSessionToMe, markQuizActivated, trackFunnel } from '@/infrastructure/analytics/funnel'
@@ -19,7 +20,14 @@ export function hasPendingQuizPlan(): boolean {
   return loadPendingQuizPlan() !== null
 }
 
-export type QuizActivationStatus = 'ativando' | 'pronto' | 'sem-plano' | 'erro' | 'limite'
+export type QuizActivationStatus =
+  | 'ativando'
+  | 'pronto'
+  | 'sem-plano'
+  | 'erro'
+  | 'limite'
+  /** Já existe um objetivo ativo na mesma área do plano do quiz. */
+  | 'conflito'
 
 /** O limite que barrou a ativação, pra tela oferecer o que destrava. */
 export interface QuizActivationLimit {
@@ -32,7 +40,18 @@ export interface QuizActivation {
   readonly error: string | null
   /** Preenchido só no status `limite`. */
   readonly limit: QuizActivationLimit | null
+  /** O eixo disputado. Preenchido só no status `conflito`. */
+  readonly conflictAxis: ActivityTypeSlug | null
   retry(): void
+  /**
+   * Descarta o plano do quiz e libera o caminho pro app.
+   *
+   * Existe porque a casca do app manda pra esta tela sempre que há plano
+   * pendente: sem uma saída, um erro que "tentar de novo" não resolve prende
+   * a pessoa FORA do produto, com a conta criada e nada acessível. Isso
+   * aconteceu de verdade — é o motivo deste método existir.
+   */
+  skip(): void
 }
 
 /**
@@ -52,6 +71,7 @@ export function useQuizActivation(): QuizActivation {
   const [status, setStatus] = useState<QuizActivationStatus>('ativando')
   const [error, setError] = useState<string | null>(null)
   const [limit, setLimit] = useState<QuizActivationLimit | null>(null)
+  const [conflictAxis, setConflictAxis] = useState<ActivityTypeSlug | null>(null)
   const startedRef = useRef(false)
   // O provider muda a cada gravação; o callback lê sempre a versão mais nova.
   const plannerRef = useRef(planner)
@@ -68,6 +88,7 @@ export function useQuizActivation(): QuizActivation {
     setStatus('ativando')
     setError(null)
     setLimit(null)
+    setConflictAxis(null)
 
     try {
       const existingAxes: ActivityTypeSlug[] = planner.axes.map((axis) => axis.slug)
@@ -144,6 +165,20 @@ export function useQuizActivation(): QuizActivation {
         setStatus('limite')
         return
       }
+
+      /*
+        Mesma natureza do limite: o plano do quiz quer uma área que já tem
+        objetivo ativo. "Tentar de novo" falharia sempre pelo mesmo motivo, e
+        "refazer o quiz" também, porque a pessoa escolheria a mesma área. A
+        tela precisa saber QUAL área é pra oferecer o que destrava.
+      */
+      if (cause instanceof ObjectiveAxisConflictError) {
+        setConflictAxis(cause.axis)
+        setError(cause.message)
+        setStatus('conflito')
+        return
+      }
+
       setError(toUserMessage(cause))
       setStatus('erro')
     }
@@ -160,7 +195,12 @@ export function useQuizActivation(): QuizActivation {
     void run()
   }, [run])
 
-  return { status, error, limit, retry }
+  const skip = useCallback(() => {
+    clearPendingQuizPlan()
+    setStatus('sem-plano')
+  }, [])
+
+  return { status, error, limit, conflictAxis, retry, skip }
 }
 
 function withAxis(plan: PlanDraft, axis: ActivityTypeSlug): PlanDraft {

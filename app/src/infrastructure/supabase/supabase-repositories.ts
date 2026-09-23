@@ -39,6 +39,7 @@ import type { WeeklyReview, WeeklyReviewDraft } from '@/domain/entities/weekly-r
 import { createGoal, type Goal, type NewGoalInput } from '@/domain/entities/goal'
 import {
   createObjective,
+  ObjectiveAxisConflictError,
   type NewObjectiveInput,
   type Objective,
 } from '@/domain/entities/objective'
@@ -361,7 +362,13 @@ export class SupabaseObjectiveRepository implements ObjectiveRepository {
 
     if (error) {
       if (error.code === UNIQUE_VIOLATION) {
-        throw new DomainError(
+        /*
+          Erro TIPADO, com o eixo junto. Quem chama precisa saber qual área
+          está ocupada pra oferecer a saída — sem isso a tela só sabe repetir
+          a mensagem e mandar "tentar de novo", que falha igual.
+        */
+        throw new ObjectiveAxisConflictError(
+          draft.axis,
           'Você já tem um objetivo ativo nessa área. Fecha ou arquiva ele antes de abrir outro.',
         )
       }

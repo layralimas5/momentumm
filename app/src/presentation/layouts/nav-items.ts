@@ -1,5 +1,6 @@
 import { circleOpen } from '@/infrastructure/config/env'
 import type { IconName } from '@/presentation/components/ui/Icon'
+import type { FeatureKey } from '@/presentation/plan/use-feature'
 
 export interface AppNavItem {
   readonly to: string
@@ -12,6 +13,12 @@ export interface AppNavItem {
   readonly secondary?: boolean
   /** Só existe com o Círculo aberto (ver `circleOpen`). */
   readonly requiresCircle?: boolean
+  /**
+   * Só aparece com essa chave de `features` ligada no servidor. Diferente do
+   * `requiresCircle`, que é decidido no build, esta é decidida por conta — é
+   * assim que o Juntos pode ser liberado aos poucos.
+   */
+  readonly requiresFeature?: FeatureKey
 }
 
 /**
@@ -198,6 +205,14 @@ const ALL_NAV: readonly AppNavItem[] = [
     secondary: true,
   },
   {
+    to: '/app/juntos',
+    label: 'Juntos',
+    end: false,
+    icon: 'metas',
+    description: 'A dupla que acompanha se você avançou no dia — e você, a dela',
+    requiresFeature: 'juntos',
+  },
+  {
     to: '/app/suporte',
     label: 'Suporte',
     end: false,
@@ -214,6 +229,20 @@ export const APP_NAV: readonly AppNavItem[] = ALL_NAV.filter(
 
 /** A navegação principal: só o ciclo do produto. */
 export const PRIMARY_NAV = APP_NAV.filter((item) => !item.secondary)
+
+/**
+ * Itens que dependem de uma flag do servidor.
+ *
+ * As listas acima continuam constantes — a busca rápida e os atalhos leem
+ * delas sem esperar rede. Quem monta menu visível usa `visibleNav`, que recebe
+ * as flags já resolvidas.
+ */
+export function visibleNav(
+  items: readonly AppNavItem[],
+  features: Readonly<Record<string, boolean>>,
+): readonly AppNavItem[] {
+  return items.filter((item) => !item.requiresFeature || features[item.requiresFeature] === true)
+}
 
 export const SECONDARY_NAV = APP_NAV.filter((item) => item.secondary)
 

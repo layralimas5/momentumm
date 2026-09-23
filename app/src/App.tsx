@@ -34,6 +34,12 @@ const QuizActivationPage = lazy(() =>
     default: m.QuizActivationPage,
   })),
 )
+const JuntosPage = lazy(() =>
+  import('@/presentation/pages/JuntosPage').then((m) => ({ default: m.JuntosPage })),
+)
+const PairInvitePage = lazy(() =>
+  import('@/presentation/pages/PairInvitePage').then((m) => ({ default: m.PairInvitePage })),
+)
 const LegalPage = lazy(() =>
   import('@/presentation/pages/LegalPage').then((m) => ({ default: m.LegalPage })),
 )
@@ -191,6 +197,13 @@ export function App() {
             <Route path="/ferramentas" element={<ToolsPage />} />
             {/* A entrada do funil: quiz público, sem conta. */}
             <Route path="/criar-meu-plano" element={<QuizPage />} />
+            {/*
+              O link de convite do Juntos. Público porque quem recebe pode não
+              ter conta ainda, e mandar essa pessoa pro login sem dizer do que
+              se trata é perder o convite. O que aparece antes do login quem
+              decide é o servidor.
+            */}
+            <Route path="/juntos/:token" element={<PairInvitePage />} />
             <Route path="/termos" element={<LegalPage kind="termos" />} />
             <Route path="/privacidade" element={<LegalPage kind="privacidade" />} />
 
@@ -221,6 +234,8 @@ export function App() {
               <Route path="insights" element={<InsightsPage />} />
               <Route path="perfil" element={<PersonalProfilePage />} />
               <Route path="evolucao" element={<EvolutionPage />} />
+              {/* A dupla. A própria tela consulta a flag `features.juntos`. */}
+              <Route path="juntos" element={<JuntosPage />} />
               {circleOpen ? (
                 <>
                   <Route path="circulo" element={<CirclePage />} />

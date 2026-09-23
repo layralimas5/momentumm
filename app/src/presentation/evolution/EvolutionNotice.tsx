@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { achievementSpec } from '@/domain/entities/evolution'
+import { track } from '@/infrastructure/analytics/track'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { useEvolution } from './use-evolution'
 
@@ -26,6 +27,16 @@ export function EvolutionNotice() {
 
   useEffect(() => {
     if (!notice) return
+
+    /*
+      A conquista vira evento aqui porque é aqui que ela EXISTE pra pessoa: o
+      XP é concedido por trigger no banco, e o app só descobre na releitura.
+      Registrar do lado do servidor daria a hora do trigger, não a hora em que
+      alguém viu — e o que a métrica quer saber é se a conquista foi vista.
+    */
+    for (const key of notice.achievements) {
+      track('achievement_unlocked', 'evolucao', { kind: key })
+    }
     const timer = window.setTimeout(dismissNotice, AUTO_HIDE_MS)
     return () => window.clearTimeout(timer)
   }, [notice, dismissNotice])

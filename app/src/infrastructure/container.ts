@@ -21,7 +21,10 @@ import type { LegalAcceptanceRepository } from '@/domain/repositories/legal-acce
 import type { MediaRepository } from '@/domain/repositories/media-repository'
 import type { SupportRepository } from '@/domain/repositories/support-repository'
 import type { AdminGateway } from '@/domain/admin/admin-gateway'
+import type { PairRepository } from '@/domain/repositories/pair-repository'
 import type { PushSubscriptionRepository } from '@/domain/repositories/push-subscription-repository'
+import { SupabasePairRepository } from './supabase/supabase-pairs'
+import { DemoPairRepository } from './demo/demo-pairs'
 import { SupabasePushSubscriptionRepository } from './supabase/supabase-push'
 import { DemoPushSubscriptionRepository } from './demo/demo-push'
 import { SupabaseAdminGateway } from './supabase/supabase-admin'
@@ -132,6 +135,12 @@ export interface Container {
    * hoje". Quem envia é o servidor, uma vez por dia, só pra quem não abriu.
    */
   readonly push: PushSubscriptionRepository
+  /**
+   * Juntos — a dupla de accountability. Seis chamadas de função e nenhum
+   * `select` em tabela de outra pessoa: o contrato de privacidade é o próprio
+   * tamanho desta superfície.
+   */
+  readonly pairs: PairRepository
   readonly demo: boolean
 }
 
@@ -161,6 +170,7 @@ export const container: Container = isDemoMode
       admin: new DemoAdminGateway(),
       billing: new DemoBillingService(),
       push: new DemoPushSubscriptionRepository(),
+      pairs: new DemoPairRepository(),
       demo: true,
     }
   : {
@@ -187,5 +197,6 @@ export const container: Container = isDemoMode
       admin: new SupabaseAdminGateway(),
       billing: new SupabaseBillingService(),
       push: new SupabasePushSubscriptionRepository(),
+      pairs: new SupabasePairRepository(),
       demo: false,
     }

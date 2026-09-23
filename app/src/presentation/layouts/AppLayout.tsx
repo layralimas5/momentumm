@@ -27,7 +27,9 @@ import { hasPendingQuizPlan, QUIZ_ACTIVATION_PATH } from '@/presentation/quiz/qu
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 import { AppHeader } from './AppHeader'
-import { PRIMARY_NAV, type AppNavItem } from './nav-items'
+import { useNotificationOpen } from '@/presentation/notifications/use-notification-open'
+import { useFeature } from '@/presentation/plan/use-feature'
+import { PRIMARY_NAV, visibleNav, type AppNavItem } from './nav-items'
 import { SystemNotice } from './SystemNotice'
 
 const COLLAPSED_KEY = 'momentumm.sidebar.collapsed'
@@ -74,6 +76,8 @@ function LayoutShell() {
   const isDesktop = useIsDesktop()
   const { pathname } = useLocation()
   useUsageEvents()
+  /* Abriu por um aviso? Carimba a abertura e limpa o `?n=` da URL. */
+  useNotificationOpen()
   useDocumentTitle()
   usePresence()
 
@@ -223,6 +227,9 @@ function SidebarContent({
   onToggle?: () => void
 }) {
   const { profile, user, session, signOut } = useAuth()
+  /* O Juntos entra na barra só pra quem já tem o recurso ligado. */
+  const juntos = useFeature('juntos')
+  const nav = visibleNav(PRIMARY_NAV, { juntos: juntos.enabled })
 
   return (
     <div className="flex h-full flex-col px-3 py-5">
@@ -245,7 +252,7 @@ function SidebarContent({
 
       <nav aria-label="Navegação principal" className={cn('flex-1', collapsed ? 'mt-14' : 'mt-8')}>
         <ul className="flex flex-col gap-1">
-          {PRIMARY_NAV.map((item) => (
+          {nav.map((item) => (
             <li key={item.to}>
               <SidebarLink item={item} collapsed={collapsed} />
             </li>

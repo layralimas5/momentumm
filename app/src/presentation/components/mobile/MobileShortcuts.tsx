@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { Icon } from '@/presentation/components/ui/Icon'
-import { APP_NAV } from '@/presentation/layouts/nav-items'
+import { APP_NAV, visibleNav } from '@/presentation/layouts/nav-items'
+import { useFeature } from '@/presentation/plan/use-feature'
 import { TAB_ROUTES } from './MobileTabBar'
 
 /**
@@ -21,6 +22,8 @@ const SHORTCUTS = APP_NAV.filter((item) => !TAB_ROUTES.includes(item.to))
 
 export function MobileShortcuts() {
   const { session } = useAuth()
+  const juntos = useFeature('juntos')
+  const shortcuts = visibleNav(SHORTCUTS, { juntos: juntos.enabled })
 
   return (
     <nav aria-label="Outras telas" className="lg:hidden">
@@ -48,7 +51,7 @@ export function MobileShortcuts() {
             </Link>
           </li>
         ) : null}
-        {SHORTCUTS.map((item) => (
+        {shortcuts.map((item) => (
           <li key={item.to}>
             <Link
               to={item.to}
