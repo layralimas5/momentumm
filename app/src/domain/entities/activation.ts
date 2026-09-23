@@ -3,6 +3,7 @@ import { addDays, daysBetween, type DayKey } from './day'
 import {
   buildPlan,
   comfortableSessionOf,
+  type AxisTemplate,
   MAX_DAYS_PER_WEEK,
   MAX_MINUTES_PER_DAY,
   MIN_DAYS_PER_WEEK,
@@ -69,6 +70,13 @@ export interface LifeArea {
    * módulo.
    */
   readonly builtinAxis?: ActivityTypeSlug
+  /**
+   * O roteiro da área: o que fazer hoje, o que preparar e o que conferir no
+   * meio do caminho. Só existe pras áreas sem eixo de fábrica; com ele, a
+   * ação de hoje fala da área ("levantar os números de hoje") em vez de
+   * devolver o objetivo que a pessoa escreveu.
+   */
+  readonly template?: AxisTemplate
 }
 
 export const LIFE_AREAS: readonly LifeArea[] = [
@@ -78,6 +86,13 @@ export const LIFE_AREAS: readonly LifeArea[] = [
     hint: 'Treino, sono, alimentação, energia.',
     icon: 'halter',
     example: 'Correr 5 km sem parar',
+    template: {
+      firstStep: 'Mexer o corpo hoje, nem que seja uma caminhada',
+      firstStepMinimal: 'Caminhar 5 minutos',
+      preparation: 'Separar a roupa e marcar o horário no calendário',
+      preparationMinimal: 'Separar a roupa',
+      checkpoint: 'Ver o que mudou na energia e no corpo, e ajustar',
+    },
   },
   {
     key: 'carreira',
@@ -85,6 +100,13 @@ export const LIFE_AREAS: readonly LifeArea[] = [
     hint: 'Promoção, transição, portfólio, rede.',
     icon: 'subir',
     example: 'Montar um portfólio com 3 cases',
+    template: {
+      firstStep: 'Abrir o que está parado e avançar um pedaço hoje',
+      firstStepMinimal: 'Escrever o próximo passo em uma linha',
+      preparation: 'Listar o que falta, na ordem em que precisa sair',
+      preparationMinimal: 'Anotar os três primeiros itens',
+      checkpoint: 'Rever o que avançou e o que travou no caminho',
+    },
   },
   {
     key: 'estudos',
@@ -100,6 +122,13 @@ export const LIFE_AREAS: readonly LifeArea[] = [
     hint: 'Aquilo teu que está parado no papel.',
     icon: 'objetivo',
     example: 'Lançar a primeira versão',
+    template: {
+      firstStep: 'Fazer a primeira parte do projeto hoje',
+      firstStepMinimal: 'Escrever o próximo passo em uma linha',
+      preparation: 'Quebrar o projeto em partes pequenas o bastante',
+      preparationMinimal: 'Anotar as três primeiras partes',
+      checkpoint: 'Rever o que já saiu do papel e o que sobrou',
+    },
   },
   {
     key: 'financas',
@@ -107,6 +136,13 @@ export const LIFE_AREAS: readonly LifeArea[] = [
     hint: 'Reserva, dívida, organização, renda.',
     icon: 'progresso',
     example: 'Montar a reserva de emergência',
+    template: {
+      firstStep: 'Levantar os números de hoje e anotar onde dá pra ver',
+      firstStepMinimal: 'Anotar o gasto do dia',
+      preparation: 'Juntar extrato, faturas e as contas fixas do mês',
+      preparationMinimal: 'Abrir o extrato do mês',
+      checkpoint: 'Comparar com o mês anterior e ajustar o alvo',
+    },
   },
   {
     key: 'pessoal',
@@ -114,6 +150,13 @@ export const LIFE_AREAS: readonly LifeArea[] = [
     hint: 'Relações, prática, rotina, cabeça.',
     icon: 'lotus',
     example: 'Voltar a tocar violão toda semana',
+    template: {
+      firstStep: 'Fazer a primeira vez hoje, do jeito mais simples',
+      firstStepMinimal: 'Cinco minutos, só pra começar',
+      preparation: 'Escolher o horário e o lugar da prática',
+      preparationMinimal: 'Escolher o horário',
+      checkpoint: 'Ver como está encaixando na rotina e ajustar',
+    },
   },
   {
     key: 'outro',
@@ -133,6 +176,8 @@ export interface ResolvedArea {
   readonly axis: ActivityTypeSlug
   /** O eixo ainda não existe na conta e precisa ser criado ao salvar. */
   readonly needsAxis: boolean
+  /** O roteiro da área, quando ela tem um. Ver `LifeArea.template`. */
+  readonly template?: AxisTemplate
 }
 
 /**
@@ -154,13 +199,17 @@ export function resolveArea(
     return { label: activityType(area.builtinAxis).label, axis: area.builtinAxis, needsAxis: false }
   }
 
+  // A área que a pessoa nomeou ("Outra") não tem roteiro: aí o plano usa o
+  // objetivo dela, que é a única coisa que se sabe sobre o assunto.
+  const template = key === 'outro' ? undefined : area.template
+
   const slug = slugify(label)
   // A área criada vive no banco com o prefixo do dono (`ec19a1b4-carreira`).
   // Reconhecer o sufixo evita criar "Carreira" de novo quando ela já existe,
   // e aponta o plano pro slug que o banco tem, não pro que o domínio calculou.
   const existing = existingAxes.find((item) => item === slug || item.endsWith(`-${slug}`))
-  if (existing) return { label, axis: existing, needsAxis: false }
-  return { label, axis: slug, needsAxis: slug.length > 0 }
+  if (existing) return { label, axis: existing, needsAxis: false, ...(template ? { template } : {}) }
+  return { label, axis: slug, needsAxis: slug.length > 0, ...(template ? { template } : {}) }
 }
 
 /**
@@ -511,6 +560,7 @@ function core(input: ActivationInput): Core {
     daysPerWeek,
     minutesPerDay: budget.minutesPerDay,
     axisLabel: area.label,
+    ...(area.template ? { template: area.template } : {}),
     // Mexer na frequência devolve a distribuição dos dias pro gerador: os
     // dias que a pessoa marcou eram cinco, e agora são outros três.
     ...(adjustment?.daysPerWeek ? {} : { weekdays: budget.weekdays }),

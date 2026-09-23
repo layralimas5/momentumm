@@ -491,15 +491,26 @@ const HABIT_ICON_BY_AREA: Readonly<Record<QuizAreaKey, HabitIcon>> = {
  * versão mínima de cinco minutos. Ele não mede o objetivo (execução é
  * execução); ele existe pra a pessoa aparecer nos dias combinados.
  */
-export function suggestHabit(answers: CompleteQuizAnswers, minutesPerDay: number): QuizHabit {
+export function suggestHabit(
+  answers: CompleteQuizAnswers,
+  minutesPerDay: number,
+  areaLabel: string,
+): QuizHabit {
   const target = Math.max(5, Math.min(minutesPerDay, 30))
-  const focus = goalPhrase(answers.goal)
+  /*
+    O nome do hábito sai da ÁREA, não do objetivo.
+
+    A prévia já mostra o objetivo no título e na ação de hoje; com o hábito
+    repetindo a mesma frase, a pessoa lia o que escreveu três vezes na mesma
+    tela e o plano parecia um eco. A área também é o que distingue um hábito
+    do outro na lista do app, quando ela tiver três.
+  */
   const nameByStyle: Record<QuizStyleKey, string> = {
-    passos_pequenos: `Um passo pequeno pra ${focus}`,
-    rotina_definida: `Sessão de ${target} min pra ${focus}`,
-    metas_semanais: `Avançar em ${focus}`,
-    liberdade: `Dedicar tempo a ${focus}`,
-    momentumm_decide: `Um passo pequeno pra ${focus}`,
+    passos_pequenos: `${areaLabel}: um passo de ${target} min`,
+    rotina_definida: `${areaLabel}: sessão de ${target} min`,
+    metas_semanais: `${areaLabel}: avançar ${target} min`,
+    liberdade: `${areaLabel}: ${target} min quando der`,
+    momentumm_decide: `${areaLabel}: um passo de ${target} min`,
   }
   const style =
     answers.style === 'momentumm_decide' ? READINGS[primaryObstacle(answers)].recommendedStyle : answers.style
@@ -568,7 +579,7 @@ export function buildQuizPlan(input: QuizPlanInput): QuizPlanPreview {
 
   return {
     plan,
-    habit: suggestHabit(input.answers, minutes),
+    habit: suggestHabit(input.answers, minutes, plan.areaLabel),
     routine: `${days} ${days === 1 ? 'dia' : 'dias'} por semana, ${minutes} min por vez`,
     adjustmentNote,
   }

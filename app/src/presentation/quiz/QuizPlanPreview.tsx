@@ -65,7 +65,15 @@ export function QuizPlanPreviewView({ preview, today }: QuizPlanPreviewProps) {
                 </span>
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-ink">{stage.title}</p>
-                  <p className="text-xs text-ink-faint">até {formatDayLong(stage.dueOn, today)}</p>
+                  {/*
+                    A descrição é o que separa o marco de um título de capítulo:
+                    "Chegar na metade" serve pra qualquer objetivo, "Chegar a 26
+                    sessões e conferir se o ritmo está de pé" só serve pra este.
+                  */}
+                  <p className="mt-0.5 text-xs text-pretty text-ink-muted">{stage.description}</p>
+                  <p className="mt-0.5 text-xs text-ink-faint">
+                    até {formatDayLong(stage.dueOn, today)}
+                  </p>
                 </div>
               </li>
             ))}

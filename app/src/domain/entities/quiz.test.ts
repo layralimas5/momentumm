@@ -131,8 +131,14 @@ describe('quiz: ponte pro gerador', () => {
   })
 
   it('o hábito respeita o tempo declarado', () => {
-    expect(suggestHabit(answers, 20).target).toBe(20)
-    expect(suggestHabit(answers, 90).target).toBe(30)
+    expect(suggestHabit(answers, 20, 'Saúde').target).toBe(20)
+    expect(suggestHabit(answers, 90, 'Saúde').target).toBe(30)
+  })
+
+  it('o hábito se chama pela área, não repete o objetivo', () => {
+    const habit = suggestHabit(answers, 30, 'Saúde')
+    expect(habit.name).toBe('Saúde: um passo de 30 min')
+    expect(habit.name).not.toContain(answers.goal)
   })
 
   it('o tema muda só a introdução', () => {
