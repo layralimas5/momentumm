@@ -144,7 +144,7 @@ describe('período e preços', () => {
 
   it('centavos sem erro de ponto flutuante', () => {
     expect(toCents(39.9)).toBe(3990)
-    expect(toCents(179.9)).toBe(17990)
+    expect(toCents(129.9)).toBe(12990)
     expect(toCents(0.1 + 0.2)).toBe(30)
   })
 
@@ -156,9 +156,9 @@ describe('período e preços', () => {
 
   it('o preço da landing sai do mesmo número do checkout', () => {
     expect(formatBRL(PRO_PRICES.mensal.amountCents)).toBe('R$ 39,90')
-    expect(formatBRL(PRO_PRICES.anual.amountCents)).toBe('R$ 179,90')
-    expect(formatBRL(PRO_PRICES.anual.strikeCents)).toBe('R$ 358,80')
-    expect(formatBRL(monthlyEquivalentCents('anual'))).toBe('R$ 14,99')
+    expect(formatBRL(PRO_PRICES.anual.amountCents)).toBe('R$ 129,90')
+    expect(formatBRL(PRO_PRICES.anual.strikeCents)).toBe('R$ 478,80')
+    expect(formatBRL(monthlyEquivalentCents('anual'))).toBe('R$ 10,83')
     expect(formatBRL(100000)).toBe('R$ 1.000,00')
   })
 })

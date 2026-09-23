@@ -457,6 +457,7 @@ function achievementIcon(name: string): IconName {
 }
 
 const KNOWN_ICONS: Readonly<Record<string, true>> = {
+  check: true,
   calendario: true,
   plano: true,
   jornada: true,

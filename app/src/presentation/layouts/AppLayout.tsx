@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Navigate, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { featureForRoute } from '@/domain/analytics/product-events'
 import { track, trackFeatureView } from '@/infrastructure/analytics/track'
 import { Avatar } from '@/presentation/components/ui/Avatar'
@@ -8,6 +8,7 @@ import { useAuth } from '@/presentation/auth/use-auth'
 import { LogoMark, Wordmark } from '@/presentation/components/brand/Logo'
 import { MobileTabBar } from '@/presentation/components/mobile/MobileTabBar'
 import { TrialBanner } from '@/presentation/plan/TrialBanner'
+import { SUBSCRIPTION_PATH } from '@/presentation/plan/subscription-path'
 import { MobileTopBar } from '@/presentation/components/mobile/MobileTopBar'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { EvolutionNotice } from '@/presentation/evolution/EvolutionNotice'
@@ -20,6 +21,9 @@ import { PlannerProvider } from '@/presentation/planner/PlannerProvider'
 import { ShareStudioProvider } from '@/presentation/share/ShareStudioProvider'
 import { useDocumentTitle } from '@/presentation/hooks/use-document-title'
 import { useIsDesktop } from '@/presentation/hooks/use-media-query'
+import { offerSource, storedOffer } from '@/presentation/components/landing/offers'
+import { ACTIVATION_PATH, isActivationSkipped } from '@/presentation/planner/use-activation'
+import { hasPendingQuizPlan, QUIZ_ACTIVATION_PATH } from '@/presentation/quiz/quiz-activation'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 import { AppHeader } from './AppHeader'
@@ -68,8 +72,10 @@ export function AppLayout() {
 function LayoutShell() {
   const [collapsed, setCollapsed] = useState(readCollapsed)
   const isDesktop = useIsDesktop()
+  const { pathname } = useLocation()
   useUsageEvents()
   useDocumentTitle()
+  usePresence()
 
   useEffect(() => {
     try {
@@ -78,6 +84,15 @@ function LayoutShell() {
       // Preferência de layout não vale quebrar a tela por causa de storage.
     }
   }, [collapsed])
+
+  const gate = useActivationGate(pathname)
+  if (gate) return gate
+
+  /*
+    O primeiro acesso não tem casca: sem sidebar, sem barra de abas, sem
+    atalho pra outra tela. Quatro perguntas e um plano, e só depois o app.
+  */
+  if (pathname === ACTIVATION_PATH || pathname === QUIZ_ACTIVATION_PATH) return <ActivationShell />
 
   return (
     <div className="min-h-dvh bg-canvas lg:flex">
@@ -119,6 +134,69 @@ function LayoutShell() {
       </div>
 
       {isDesktop ? null : <MobileTabBar />}
+    </div>
+  )
+}
+
+/**
+ * Conta vazia abre no onboarding, e só nele.
+ *
+ * Enquanto a pessoa não criou nada e não pediu pra deixar pra depois, toda
+ * rota de `/app/*` vira o primeiro acesso: o quiz é o começo do produto, não
+ * um card que a barra de abas deixa ignorar. "Deixar pra depois" libera o
+ * app e o Hoje passa a mostrar a porta de volta.
+ */
+function useActivationGate(pathname: string) {
+  const { user } = useAuth()
+  const planner = usePlanner()
+
+  if (planner.loading) return null
+  if (pathname === ACTIVATION_PATH || pathname === QUIZ_ACTIVATION_PATH) return null
+
+  /*
+    A assinatura é a única saída que o gate deixa aberta: quem esbarrou no
+    limite do gratuito ao ativar o plano do quiz vai justamente assinar pra
+    destravá-lo. Ao sair de lá, o gate traz de volta pra ativação, que dessa
+    vez passa.
+  */
+  if (pathname.startsWith(SUBSCRIPTION_PATH)) return null
+
+  /*
+    Plano do quiz esperando no navegador: ele vem antes de qualquer tela,
+    inclusive do onboarding. É o que faz o login com Google (que volta em
+    `/entrar` sem estado nenhum) cair na ativação do plano, e não em quatro
+    perguntas que a pessoa acabou de responder.
+  */
+  if (hasPendingQuizPlan()) return <Navigate to={QUIZ_ACTIVATION_PATH} replace />
+
+  if (!planner.isNewUser) return null
+  if (isActivationSkipped(user?.id ?? null)) return null
+
+  return <Navigate to={ACTIVATION_PATH} replace />
+}
+
+function ActivationShell() {
+  const { signOut } = useAuth()
+
+  return (
+    <div className="min-h-dvh bg-canvas">
+      <header className="mx-auto flex w-full max-w-2xl items-center justify-between px-4 pt-5 sm:px-6">
+        <Wordmark className="w-32" />
+        <button
+          type="button"
+          onClick={() => void signOut()}
+          className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-ink-faint transition-colors hover:bg-surface-hi hover:text-ink"
+        >
+          <Icon name="saida" className="size-4" />
+          Sair
+        </button>
+      </header>
+
+      <main id="conteudo" className="w-full px-4 pb-10 sm:px-6">
+        <div className="mx-auto w-full max-w-2xl">
+          <Outlet />
+        </div>
+      </main>
     </div>
   )
 }
@@ -286,13 +364,40 @@ function useUsageEvents() {
   const { pathname } = useLocation()
 
   useEffect(() => {
-    track('session_start')
+    // A oferta do link de origem (TikTok) vai junto, pra comparar os ângulos
+    // já no primeiro acesso, antes mesmo do onboarding.
+    const source = offerSource(storedOffer())
+    track('session_start', null, source ? { source } : {})
   }, [])
 
   useEffect(() => {
     const feature = featureForRoute(pathname)
     if (feature) trackFeatureView(feature)
   }, [pathname])
+}
+
+/**
+ * Marca "abriu o app hoje" no servidor: ao montar e ao voltar pra aba. É o
+ * que o lembrete do celular lê pra NÃO avisar quem já esteve aqui. Uma vez
+ * a cada meia hora basta; a data é o que importa, não o minuto.
+ */
+const PRESENCE_EVERY_MS = 30 * 60 * 1000
+
+function usePresence() {
+  useEffect(() => {
+    let last = 0
+    const touch = () => {
+      if (document.visibilityState !== 'visible') return
+      const now = Date.now()
+      if (now - last < PRESENCE_EVERY_MS) return
+      last = now
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+      container.push.touchPresence(timezone).catch(() => undefined)
+    }
+    touch()
+    document.addEventListener('visibilitychange', touch)
+    return () => document.removeEventListener('visibilitychange', touch)
+  }, [])
 }
 
 function OfflineBanner() {

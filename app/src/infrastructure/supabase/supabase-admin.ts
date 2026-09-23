@@ -24,6 +24,8 @@ import {
   overviewSchema,
   requestDetailSchema,
   requestListSchema,
+  quizFunnelSchema,
+  quizLeadListSchema,
   retentionSchema,
   settingSchema,
   subscriptionListSchema,
@@ -186,6 +188,18 @@ export class SupabaseAdminGateway implements AdminGateway {
 
   featureUsage(period: Period) {
     return rpc('admin_feature_usage', { p_from: period.from, p_to: period.to }, featureUsageSchema)
+  }
+
+  quizFunnel(period: Period) {
+    return rpc('admin_quiz_funnel', { p_from: period.from, p_to: period.to }, quizFunnelSchema)
+  }
+
+  quizLeads(period: Period, pending: boolean | null, page: number) {
+    return rpc(
+      'admin_quiz_leads',
+      { p_from: period.from, p_to: period.to, p_pending: pending, p_page: page },
+      quizLeadListSchema,
+    )
   }
 
   evolutionMetrics() {

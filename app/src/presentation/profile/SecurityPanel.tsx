@@ -5,7 +5,7 @@ import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { Button } from '@/presentation/components/ui/Button'
 import { ConfirmDialog } from '@/presentation/components/ui/ConfirmDialog'
-import { Field, TextInput } from '@/presentation/components/ui/Field'
+import { Field, PasswordInput, TextInput } from '@/presentation/components/ui/Field'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { Panel, PanelHeader, Tag } from '@/presentation/components/ui/Surface'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
@@ -140,9 +140,8 @@ function PasswordBlock() {
             computador emprestado não pode virar conta perdida. */}
         <Field label="Senha atual">
           {(id) => (
-            <TextInput
+            <PasswordInput
               id={id}
-              type="password"
               autoComplete="current-password"
               value={current}
               onChange={(event) => setCurrent(event.target.value)}
@@ -153,9 +152,8 @@ function PasswordBlock() {
 
         <Field label="Senha nova" hint={`Pelo menos ${MIN_PASSWORD_LENGTH} caracteres.`}>
           {(id, describedBy) => (
-            <TextInput
+            <PasswordInput
               id={id}
-              type="password"
               aria-describedby={describedBy}
               autoComplete="new-password"
               minLength={MIN_PASSWORD_LENGTH}

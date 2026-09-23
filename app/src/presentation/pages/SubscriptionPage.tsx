@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { trackFunnelIfLinked } from '@/infrastructure/analytics/funnel'
 import { Link, useSearchParams } from 'react-router-dom'
 import { formatBRL, isBillingCycle, monthlyEquivalentCents, PRO_PRICES, type BillingCycle } from '@/domain/billing/billing-plans'
 import type { PixCharge, PixCustomer } from '@/domain/billing/billing-service'
@@ -91,6 +92,18 @@ export function SubscriptionPage() {
   const confirming = returned === 'sucesso' && !hasPaidPro
   const confirmed = useConfirmationPolling(confirming, CARD_MAX_POLLS, refresh)
   const pixConfirmed = useConfirmationPolling(pixCharge !== null && !hasPaidPro, PIX_MAX_POLLS, refresh)
+
+  /*
+    O pagamento entrou nesta visita (voltou do checkout ou pagou o Pix aqui):
+    é o fim do funil do quiz, pra quem veio por ele. Uma vez por tela.
+  */
+  const paidHere = hasPaidPro && (returned === 'sucesso' || pixCharge !== null)
+  const subscriptionTracked = useRef(false)
+  useEffect(() => {
+    if (!paidHere || subscriptionTracked.current) return
+    subscriptionTracked.current = true
+    trackFunnelIfLinked('subscription_completed')
+  }, [paidHere])
 
   const checkout = useAsyncAction(async () => {
     const { url } = await container.billing.startCheckout(cycle, '/app/assinatura')

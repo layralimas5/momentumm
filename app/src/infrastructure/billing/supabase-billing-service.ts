@@ -12,6 +12,7 @@ import {
 } from '@/domain/billing/billing-service'
 import { SUBSCRIPTION_STATUSES, type Subscription } from '@/domain/billing/subscription'
 import { TRIAL_STATUSES, type PlanTrial } from '@/domain/billing/trial'
+import { trackFunnelIfLinked } from '@/infrastructure/analytics/funnel'
 import { track } from '@/infrastructure/analytics/track'
 import { supabase } from '@/infrastructure/supabase/client'
 import { InfrastructureError } from '@/shared/errors'
@@ -70,6 +71,7 @@ export class SupabaseBillingService implements BillingService {
     const parsed = checkoutResponseSchema.safeParse(data)
     if (!parsed.success) throw new BillingError('provider_unavailable', 'O checkout veio sem endereço. Tenta de novo.')
     track('checkout_started', 'assinatura', { kind: cycle })
+    trackFunnelIfLinked('checkout_started')
     return { url: parsed.data.url }
   }
 
@@ -78,6 +80,7 @@ export class SupabaseBillingService implements BillingService {
     const parsed = pixResponseSchema.safeParse(data)
     if (!parsed.success) throw new BillingError('provider_unavailable', 'A cobrança Pix veio sem QR code. Tenta de novo.')
     track('checkout_started', 'assinatura', { kind: cycle, mode: 'pix' })
+    trackFunnelIfLinked('checkout_started')
     return parsed.data
   }
 

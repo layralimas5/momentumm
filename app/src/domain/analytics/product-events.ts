@@ -27,6 +27,8 @@ export const PRODUCT_EVENTS = [
   'subscription_canceled',
   'trial_started',
   'trial_ended',
+  'reminder_enabled',
+  'reminder_disabled',
 ] as const
 export type ProductEventName = (typeof PRODUCT_EVENTS)[number]
 

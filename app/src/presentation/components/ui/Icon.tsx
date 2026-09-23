@@ -51,6 +51,9 @@ export const ICON_PATHS = {
   lixeira: 'M5 7h14M10 11v6M14 11v6M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12M9 7V4h6v3',
   // "Isso está aparecendo". Não confundir com `cadeado`, que diz o contrário.
   visivel: 'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Zm10 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
+  // O mesmo olho com a barra: "isso esta escondido".
+  oculto:
+    'M3 3l18 18M10.6 10.7a3 3 0 0 0 4.2 4.2M7 6.9C4.2 8.6 2 12 2 12s3.6 7 10 7c1.9 0 3.6-.6 5-1.4M10 5.2A10 10 0 0 1 12 5c6.4 0 10 7 10 7a18.6 18.6 0 0 1-2.7 3.6',
   // Areas de objetivo, usadas na faixa do hero da landing.
   formatura: 'm2 10 10-5 10 5-10 5-10-5ZM6 12.2V16c0 1.5 3 3 6 3s6-1.5 6-3v-3.8M22 10v5',
   livro:

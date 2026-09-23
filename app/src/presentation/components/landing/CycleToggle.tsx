@@ -20,7 +20,7 @@ export function CycleToggle({
     readonly hint?: string
   }[] = [
     { cycle: 'mensal', label: 'Mensal' },
-    { cycle: 'anual', label: 'Anual', hint: 'metade do preço' },
+    { cycle: 'anual', label: 'Anual', hint: 'R$ 10,83/mês' },
   ]
 
   return (

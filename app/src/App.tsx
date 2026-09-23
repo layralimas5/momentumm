@@ -3,10 +3,19 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 import { circleOpen, isAuthBypass } from '@/infrastructure/config/env'
 import { AuthProvider } from '@/presentation/auth/AuthProvider'
 import { ProtectedRoute } from '@/presentation/auth/ProtectedRoute'
-import { AppLayout } from '@/presentation/layouts/AppLayout'
-import { LandingPage } from '@/presentation/pages/LandingPage'
 
 // As telas internas só carregam depois do login: mantém o primeiro load leve.
+//
+// A landing e o AppLayout também entram aqui, e por um motivo de funil: quem
+// cai em `/criar-meu-plano` vindo de um anúncio não pode pagar pelo download
+// da home nem pelos provedores da área logada (planner, foco, evolução,
+// share) pra responder sete perguntas.
+const LandingPage = lazy(() =>
+  import('@/presentation/pages/LandingPage').then((m) => ({ default: m.LandingPage })),
+)
+const AppLayout = lazy(() =>
+  import('@/presentation/layouts/AppLayout').then((m) => ({ default: m.AppLayout })),
+)
 const AuthPage = lazy(() =>
   import('@/presentation/pages/AuthPage').then((m) => ({ default: m.AuthPage })),
 )
@@ -17,8 +26,19 @@ const NewPasswordPage = lazy(() =>
 const ToolsPage = lazy(() =>
   import('@/presentation/pages/ToolsPage').then((m) => ({ default: m.ToolsPage })),
 )
+const QuizPage = lazy(() =>
+  import('@/presentation/pages/QuizPage').then((m) => ({ default: m.QuizPage })),
+)
+const QuizActivationPage = lazy(() =>
+  import('@/presentation/pages/QuizActivationPage').then((m) => ({
+    default: m.QuizActivationPage,
+  })),
+)
 const LegalPage = lazy(() =>
   import('@/presentation/pages/LegalPage').then((m) => ({ default: m.LegalPage })),
+)
+const ActivationPage = lazy(() =>
+  import('@/presentation/pages/ActivationPage').then((m) => ({ default: m.ActivationPage })),
 )
 const DashboardPage = lazy(() =>
   import('@/presentation/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
@@ -124,6 +144,12 @@ const AdminRetentionPage = lazy(() =>
 const AdminFeaturesPage = lazy(() =>
   import('@/presentation/admin/pages/AdminFeaturesPage').then((m) => ({ default: m.AdminFeaturesPage })),
 )
+const AdminFunnelPage = lazy(() =>
+  import('@/presentation/admin/pages/AdminFunnelPage').then((m) => ({ default: m.AdminFunnelPage })),
+)
+const AdminLeadsPage = lazy(() =>
+  import('@/presentation/admin/pages/AdminLeadsPage').then((m) => ({ default: m.AdminLeadsPage })),
+)
 const AdminErrorsPage = lazy(() =>
   import('@/presentation/admin/pages/AdminErrorsPage').then((m) => ({ default: m.AdminErrorsPage })),
 )
@@ -160,6 +186,8 @@ export function App() {
             */}
             <Route path="/nova-senha" element={<NewPasswordPage />} />
             <Route path="/ferramentas" element={<ToolsPage />} />
+            {/* A entrada do funil: quiz público, sem conta. */}
+            <Route path="/criar-meu-plano" element={<QuizPage />} />
             <Route path="/termos" element={<LegalPage kind="termos" />} />
             <Route path="/privacidade" element={<LegalPage kind="privacidade" />} />
 
@@ -172,6 +200,10 @@ export function App() {
               }
             >
               <Route index element={<DashboardPage />} />
+              {/* Primeiro acesso: a casca manda toda conta vazia pra cá. */}
+              <Route path="comecar" element={<ActivationPage />} />
+              {/* Plano do quiz esperando no navegador: grava e manda pro Hoje. */}
+              <Route path="ativar" element={<QuizActivationPage />} />
               <Route path="objetivos" element={<ObjectivesPage />} />
               <Route path="objetivos/:id" element={<ObjectiveDetailPage />} />
               <Route path="habitos" element={<HabitsPage />} />
@@ -216,6 +248,8 @@ export function App() {
               <Route path="ia" element={<AdminAiPage />} />
               <Route path="retencao" element={<AdminRetentionPage />} />
               <Route path="recursos" element={<AdminFeaturesPage />} />
+              <Route path="funil" element={<AdminFunnelPage />} />
+              <Route path="contatos" element={<AdminLeadsPage />} />
               <Route path="erros" element={<AdminErrorsPage />} />
               <Route path="solicitacoes" element={<AdminRequestsPage />} />
               <Route path="solicitacoes/:id" element={<AdminRequestDetailPage />} />

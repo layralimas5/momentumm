@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Momentumm no celular</title>
+    <!--
+      Página SÓ de desenvolvimento: uma moldura de celular com o app dentro.
+      Fica em app/dev/ de propósito: o Vite serve em /dev/telefone.html no
+      `npm run dev`, e o build de produção não a inclui.
+
+      Uso: http://localhost:5173/dev/telefone.html (ou pelo Simple Browser
+      do VS Code, pra ficar ao lado do código). O app dentro recarrega
+      sozinho quando um arquivo muda, como em qualquer aba.
+    -->
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #111114;
+        --frame: #1c1c21;
+        --frame-edge: #3a3a44;
+        --ink: #ececf1;
+        --muted: #8b8b98;
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; margin: 0; }
+      body {
+        background: radial-gradient(80rem 40rem at 50% -10%, #1b1730 0%, var(--bg) 60%);
+        color: var(--ink);
+        font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+        display: grid;
+        grid-template-rows: auto 1fr;
+        min-height: 100%;
+      }
+      /* Controles escondidos: só o botão de engrenagem fica visível. */
+      header {
+        position: fixed;
+        top: 8px;
+        right: 8px;
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 6px;
+      }
+      #toggle {
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        border-radius: 999px;
+        font-size: 16px;
+        opacity: 0.6;
+      }
+      #toggle:hover, header.open #toggle { opacity: 1; }
+      .panel {
+        display: none;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+        width: min(20rem, calc(100vw - 16px));
+        border: 1px solid #2c2c35;
+        border-radius: 12px;
+        background: rgba(17, 17, 20, 0.96);
+        backdrop-filter: blur(8px);
+      }
+      header.open .panel { display: flex; }
+      .panel label { justify-content: space-between; }
+      .panel .row { display: flex; gap: 8px; }
+      .panel .row button { flex: 1; }
+      select, input, button {
+        font: inherit;
+        color: var(--ink);
+        background: #1a1a20;
+        border: 1px solid #2c2c35;
+        border-radius: 8px;
+        padding: 6px 10px;
+      }
+      input { min-width: 0; width: 100%; }
+      button { cursor: pointer; }
+      button:hover { border-color: #4a4a58; }
+      label { color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+      .hint { color: var(--muted); font-size: 12px; }
+
+      main {
+        display: grid;
+        place-items: start center;
+        padding: 16px 8px 24px;
+        overflow: auto;
+      }
+
+      /* A moldura. As medidas vêm das variáveis, trocadas pelo seletor. */
+      .phone {
+        --w: 390px;
+        --h: 844px;
+        --radius: 54px;
+        --bezel: 12px;
+        /* Faixa da barra de status: a ilha mora aqui, fora da tela do app. */
+        --status: 40px;
+        position: relative;
+        width: calc(var(--w) + var(--bezel) * 2);
+        height: calc(var(--h) + var(--bezel) * 2 + var(--status));
+        padding: calc(var(--bezel) + var(--status)) var(--bezel) var(--bezel);
+        border-radius: var(--radius);
+        background: linear-gradient(160deg, #26262d, #141418);
+        box-shadow:
+          0 0 0 1px var(--frame-edge),
+          0 0 0 3px #0c0c0f,
+          0 30px 80px rgba(0, 0, 0, 0.6),
+          inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+        transform-origin: top center;
+        transform: scale(var(--scale, 1));
+      }
+      .screen {
+        width: var(--w);
+        height: var(--h);
+        border-radius: 0 0 calc(var(--radius) - var(--bezel)) calc(var(--radius) - var(--bezel));
+        overflow: hidden;
+        background: #0a0a0b;
+        position: relative;
+      }
+      .status {
+        position: absolute;
+        top: var(--bezel);
+        left: var(--bezel);
+        width: var(--w);
+        height: var(--status);
+        border-radius: calc(var(--radius) - var(--bezel)) calc(var(--radius) - var(--bezel)) 0 0;
+        background: #0a0a0b;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 28px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #fff;
+      }
+      .screen iframe {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        background: #0a0a0b;
+      }
+      /* Dynamic island: só decoração, o app não sabe dela. */
+      .island {
+        position: absolute;
+        top: 3px;
+        left: 50%;
+        width: 120px;
+        height: 34px;
+        transform: translateX(-50%);
+        border-radius: 20px;
+        background: #000;
+        z-index: 1;
+        pointer-events: none;
+      }
+      .phone[data-notch="none"] .island { display: none; }
+      /* Botões laterais. */
+      .btn {
+        position: absolute;
+        background: #2a2a31;
+        border-radius: 3px;
+      }
+      .btn.power { right: -5px; top: 200px; width: 4px; height: 90px; }
+      .btn.vol-up { left: -5px; top: 170px; width: 4px; height: 56px; }
+      .btn.vol-down { left: -5px; top: 236px; width: 4px; height: 56px; }
+      .btn.mute { left: -5px; top: 120px; width: 4px; height: 30px; }
+    </style>
+  </head>
+  <body>
+    <header id="controls">
+      <button id="toggle" type="button" title="Configurações do mockup" aria-label="Configurações">⚙</button>
+      <div class="panel">
+      <label>
+        Aparelho
+        <select id="device">
+          <option value="390x844|island">iPhone 14 / 15 (390×844)</option>
+          <option value="430x932|island">iPhone 15 Pro Max (430×932)</option>
+          <option value="375x667|none">iPhone SE (375×667)</option>
+          <option value="412x915|none">Pixel 7 (412×915)</option>
+          <option value="360x800|none">Android compacto (360×800)</option>
+        </select>
+      </label>
+      <label>
+        Rota
+        <input id="path" value="/app" spellcheck="false" />
+      </label>
+      <div class="row">
+        <button id="go" type="button">Abrir</button>
+        <button id="reload" type="button">Recarregar</button>
+      </div>
+      <label>
+        Zoom
+        <select id="zoom">
+          <option value="auto">Ajustar à janela</option>
+          <option value="1">100%</option>
+          <option value="0.85">85%</option>
+          <option value="0.75">75%</option>
+          <option value="0.6">60%</option>
+        </select>
+      </label>
+      <span class="hint">Só em desenvolvimento. O app dentro recarrega sozinho ao salvar.</span>
+      </div>
+    </header>
+
+    <main>
+      <div class="phone" id="phone" data-notch="island">
+        <span class="btn mute"></span>
+        <span class="btn vol-up"></span>
+        <span class="btn vol-down"></span>
+        <span class="btn power"></span>
+        <div class="status">
+          <span id="clock">9:41</span>
+          <div class="island"></div>
+          <span>●●● ▲ ▮</span>
+        </div>
+        <div class="screen">
+          <iframe id="app" title="Momentumm" src="/app"></iframe>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const phone = document.getElementById('phone')
+      const frame = document.getElementById('app')
+      const device = document.getElementById('device')
+      const zoom = document.getElementById('zoom')
+      const path = document.getElementById('path')
+
+      const controls = document.getElementById('controls')
+      document.getElementById('toggle').addEventListener('click', () => controls.classList.toggle('open'))
+
+      const KEY = 'momentumm.dev.telefone'
+      const saved = JSON.parse(localStorage.getItem(KEY) || '{}')
+      if (saved.device) device.value = saved.device
+      if (saved.zoom) zoom.value = saved.zoom
+      if (saved.path) path.value = saved.path
+
+      // "Ajustar à janela": o celular inteiro cabe no painel, seja ele qual for.
+      function fitScale(w, h) {
+        const frameW = Number(w) + 24 + 8
+        const frameH = Number(h) + 24 + 40 + 8
+        return Math.min(1, (window.innerWidth - 16) / frameW, (window.innerHeight - 24) / frameH)
+      }
+
+      function apply() {
+        const [size, notch] = device.value.split('|')
+        const [w, h] = size.split('x')
+        const scale = zoom.value === 'auto' ? fitScale(w, h) : Number(zoom.value)
+        phone.style.setProperty('--w', w + 'px')
+        phone.style.setProperty('--h', h + 'px')
+        phone.style.setProperty('--scale', String(scale))
+        // O scale não encolhe a caixa: reserva só o espaço que a moldura ocupa de fato.
+        phone.style.marginBottom = `calc((var(--h) + 24px + 40px) * ${scale - 1})`
+        phone.dataset.notch = notch
+        localStorage.setItem(KEY, JSON.stringify({ device: device.value, zoom: zoom.value, path: path.value }))
+      }
+
+      function open() {
+        const target = path.value.trim() || '/app'
+        frame.src = target.startsWith('/') ? target : '/' + target
+        apply()
+      }
+
+      device.addEventListener('change', apply)
+      zoom.addEventListener('change', apply)
+      window.addEventListener('resize', apply)
+      document.getElementById('go').addEventListener('click', open)
+      path.addEventListener('keydown', (event) => { if (event.key === 'Enter') open() })
+      document.getElementById('reload').addEventListener('click', () => {
+        frame.contentWindow?.location.reload()
+      })
+
+      const clock = document.getElementById('clock')
+      const tick = () => { clock.textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) }
+      tick(); setInterval(tick, 30000)
+
+      // A rota digitada é a inicial; navegar dentro do app não mexe no campo.
+      apply()
+      if (saved.path && saved.path !== '/app') frame.src = saved.path
+    </script>
+  </body>
+</html>

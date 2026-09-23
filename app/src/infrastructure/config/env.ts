@@ -58,3 +58,10 @@ export const circleOpen = import.meta.env['VITE_CIRCLE_OPEN']?.trim() === 'true'
  * ao botão e a pessoa cai numa página de erro.
  */
 export const googleLoginEnabled = import.meta.env['VITE_GOOGLE_LOGIN']?.trim() === 'true'
+
+/**
+ * Chave pública VAPID do Web Push. É par da privada que fica na Edge
+ * Function `push-reminders`; sem ela o app não oferece o lembrete. Nasce
+ * com `npx web-push generate-vapid-keys`, uma vez.
+ */
+export const vapidPublicKey = import.meta.env['VITE_VAPID_PUBLIC_KEY']?.trim() || null

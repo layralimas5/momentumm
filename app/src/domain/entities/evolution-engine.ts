@@ -229,6 +229,8 @@ class Engine {
     if (requiredLevel !== undefined) return this.level() >= requiredLevel
 
     switch (key) {
+      case 'primeiro_passo':
+        return has('task_done') || has('priority_done')
       case 'primeira_semana':
         return has('review_done')
       case 'primeiro_marco':
