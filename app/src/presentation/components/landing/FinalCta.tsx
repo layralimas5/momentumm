@@ -1,22 +1,23 @@
 import { Link } from 'react-router-dom'
-import { quizPathFor } from '@/domain/analytics/quiz-links'
 import { Reveal } from './Reveal'
-import { CTA } from './site'
+import { trackLanding } from './landing-analytics'
+import { CTA, TRIAL_LINE, TRIAL_PROMISE_VERIFIED } from './site'
 import { useOffer } from './use-offer'
 import { useSiteCta } from './use-site-cta'
 
 /**
- * O fechamento repete a frase que encerra o onboarding do app: a pessoa não
- * precisa resolver o objetivo inteiro hoje. O destino do CTA vem de `site.ts`
- * e acompanha o estágio do produto.
+ * O fechamento não repete a lista de recursos: repete a promessa. Quem chegou
+ * até aqui já viu o produto, e o que falta é a frase que nomeia a decisão.
+ *
+ * O título acompanha a oferta que trouxe a pessoa (`offers.ts`), pra a página
+ * fechar a mesma conversa que o conteúdo abriu.
  */
 export function FinalCta() {
-  const cta = useSiteCta()
+  const cta = useSiteCta('lp-fim')
   const offer = useOffer()
-  const primaryLabel = cta.signedIn ? cta.primary.label : (offer?.cta ?? cta.primary.label)
 
   return (
-    <section id="comecar" className="scroll-mt-20 border-t border-line bg-surface">
+    <section id="comecar" className="scroll-mt-28 border-t border-line bg-surface">
       <div className="mx-auto max-w-5xl px-4 py-20 sm:py-28">
         <Reveal>
           <div className="surface-brand edge-light relative overflow-hidden rounded-card px-6 py-14 text-center sm:px-12 sm:py-20">
@@ -26,38 +27,65 @@ export function FinalCta() {
             />
             <div className="relative">
               <h2 className="text-balance text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-                {offer?.closing ?? 'Você diz quanto tempo tem livre por dia. A gente monta o plano.'}
+                {offer?.closing ?? (
+                  <>
+                    <span className="block">Você não precisa começar de novo.</span>
+                    <span className="block text-brand-hi">Precisa continuar daqui.</span>
+                  </>
+                )}
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-pretty text-lg text-ink-muted">
-                Coloca a sua meta e os minutos que sobram no seu dia. O Momentumm transforma isso em
-                etapas e ações, te mostra só o próximo passo e ajusta quando a semana não sai como o
-                planejado.
+                Transforme sua meta em um plano possível, encontre seu próximo passo e veja seu
+                progresso acontecer.
               </p>
 
               <div className="mt-9 flex flex-col items-center gap-4">
                 <Link
                   to={cta.primary.to}
-                  className="inline-flex h-14 w-full max-w-xs items-center justify-center rounded-xl bg-brand px-8 font-medium text-white transition-colors hover:bg-brand-hi sm:w-auto"
+                  onClick={() => trackLanding('hero_cta_clicked')}
+                  className="inline-flex h-14 w-full max-w-xs items-center justify-center gap-2 rounded-xl bg-brand px-8 font-medium text-white transition-colors hover:bg-brand-hi sm:w-auto"
                 >
-                  {primaryLabel}
+                  {cta.primary.label}
+                  {cta.signedIn ? null : <ArrowIcon />}
                 </Link>
-                {cta.signedIn ? null : (
+                {cta.entry ? (
                   <Link
-                    to={quizPathFor('lp-fim')}
+                    to={cta.entry.to}
                     className="text-sm text-ink-muted underline-offset-4 transition-colors hover:text-ink hover:underline"
                   >
-                    {CTA.secondary.label}
+                    Já tenho conta
                   </Link>
-                )}
+                ) : null}
               </div>
 
               <p className="mt-6 text-sm text-ink-faint">
-                {cta.signedIn ? 'Você já tem conta. O plano de hoje te espera.' : CTA.reassurance}
+                {cta.signedIn
+                  ? 'Você já tem conta. O plano de hoje te espera.'
+                  : TRIAL_PROMISE_VERIFIED
+                    ? TRIAL_LINE
+                    : CTA.reassurance}
               </p>
             </div>
           </div>
         </Reveal>
       </div>
     </section>
+  )
+}
+
+function ArrowIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="size-4 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M5 12h13M12 5l7 7-7 7" />
+    </svg>
   )
 }

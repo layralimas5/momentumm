@@ -3,6 +3,14 @@ import type { ReactNode } from 'react'
 import { cn } from '@/shared/lib/cn'
 import { RevealWords } from './Reveal'
 
+/**
+ * O respiro que a âncora precisa: o header é fixo e flutua com a própria
+ * margem (12px + 56px no celular, 16px + 64px no desktop). Com menos que
+ * isso, clicar num link do menu leva o título pra debaixo da pílula e a
+ * pessoa acha que a página rolou pro lugar errado.
+ */
+const SCROLL_MARGIN = 'scroll-mt-24 sm:scroll-mt-28'
+
 interface SectionProps {
   readonly id?: string
   readonly children: ReactNode
@@ -12,7 +20,7 @@ interface SectionProps {
 
 export function Section({ id, children, className, bleed = false }: SectionProps) {
   return (
-    <section id={id} className={cn('scroll-mt-20 py-20 sm:py-28', className)}>
+    <section id={id} className={cn(SCROLL_MARGIN, 'py-16 sm:py-24', className)}>
       <div className={cn(bleed ? '' : 'mx-auto max-w-5xl px-4')}>{children}</div>
     </section>
   )

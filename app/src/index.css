@@ -32,6 +32,9 @@
   --color-flame-dim: #3a1f14;
 
   --color-positive: #3ecf8e;
+  /* O verde do selo pequeno. No escuro é o mesmo; no claro precisa escurecer
+     pra um texto de 10px sobre fundo esverdeado chegar no AA. */
+  --color-positive-ink: #3ecf8e;
   --color-danger: #f05252;
 
   --color-axis-leitura: #f2b544;
@@ -344,6 +347,7 @@
   --color-flame-dim: #fde8dd;
 
   --color-positive: #16a068;
+  --color-positive-ink: #0b7a4f;
   --color-danger: #d93a3a;
 
   --shadow-raised: 0 1px 2px 0 rgb(22 21 31 / 0.04), 0 1px 0 0 rgb(255 255 255 / 0.6) inset;

@@ -1,34 +1,46 @@
+import { Adaptive } from '@/presentation/components/landing/Adaptive'
 import { Faq } from '@/presentation/components/landing/Faq'
 import { FinalCta } from '@/presentation/components/landing/FinalCta'
 import { Hero } from '@/presentation/components/landing/Hero'
-import { Method } from '@/presentation/components/landing/Method'
+import { HowItWorks } from '@/presentation/components/landing/HowItWorks'
 import { MomentumAi } from '@/presentation/components/landing/MomentumAi'
+import { Objectives } from '@/presentation/components/landing/Objectives'
 import { Pricing } from '@/presentation/components/landing/Pricing'
 import { Problem } from '@/presentation/components/landing/Problem'
-import { Screens } from '@/presentation/components/landing/Screens'
+import { Progress } from '@/presentation/components/landing/Progress'
 import { SiteFooter } from '@/presentation/components/landing/SiteFooter'
 import { SiteHeader } from '@/presentation/components/landing/SiteHeader'
 import { StickyCta } from '@/presentation/components/landing/StickyCta'
-import { Trust } from '@/presentation/components/landing/Trust'
+import { Today } from '@/presentation/components/landing/Today'
+import { useLandingView } from '@/presentation/components/landing/landing-analytics'
 
 /**
- * A ordem é um argumento, não um catálogo: promessa → prova social logo
- * abaixo, antes de qualquer explicação (quem chega desconfiado precisa ver
- * gente antes de ler método) → a dor que ninguém nomeia (o plano ideal não
- * sobrevive ao dia real) → o método que responde a isso → as telas → o
- * número que mede ritmo → a IA que monta e lê → só ENTÃO a comparação,
- * quando a pessoa já viu o produto e consegue comparar → o que sustenta a
- * promessa, colado no preço pra reduzir o risco na hora de decidir → preço
- * → dúvidas → o convite.
+ * A página é uma conversa, na ordem em que ela acontece.
  *
- * Os CTAs no meio existem porque do hero aos planos são milhares de pixels:
- * quem se convence nas telas ou no score não deveria precisar rolar até o
- * fim. No celular, `StickyCta` faz o mesmo papel de forma permanente.
+ * 1. A dor, na primeira frase: "pare de recomeçar toda segunda".
+ * 2. O ciclo que ela reconhece, terminando em "recomeça".
+ * 3. Como o produto quebra esse ciclo, em quatro momentos com tela.
+ * 4. A semana ruim, que é onde todo outro app falha. É o centro da página.
+ * 5. A tela de todo dia, grande e sem legenda.
+ * 6. O número que mostra constância sem punir uma falha.
+ * 7. A IA, vendida pelo que resolve.
+ * 8. Só então a amplitude: serve pra qualquer objetivo.
+ * 9. Preço, dúvidas, convite.
  *
- * Sem depoimentos até existirem relatos reais: depoimento de vitrine numa
- * página que vende assinatura custa mais confiança do que rende.
+ * O que saiu e por quê: a seção de método (o ciclo explicado em seis passos)
+ * e a de telas (seis abas com print) diziam a mesma coisa que "como funciona"
+ * e "a tela de hoje", só que em vocabulário de documentação. A comparação com
+ * Notion e habit tracker posicionava o produto contra ferramentas em vez de
+ * contra o problema. Os depoimentos já tinham saído por não existirem pessoas
+ * reais pra citar, e as garantias viraram três linhas coladas no preço, que é
+ * onde o risco realmente aparece.
+ *
+ * Um CTA só na página inteira ("Criar meu plano", ver `site.ts`), repetido no
+ * header, no hero, no meio, no preço, na barra do celular e no fim.
  */
 export function LandingPage() {
+  useLandingView()
+
   return (
     <div className="min-h-dvh bg-canvas">
       <a
@@ -43,10 +55,12 @@ export function LandingPage() {
       <main id="conteudo">
         <Hero />
         <Problem />
-        <Method />
-        <Screens />
+        <HowItWorks />
+        <Adaptive />
+        <Today />
+        <Progress />
         <MomentumAi />
-        <Trust />
+        <Objectives />
         <Pricing />
         <Faq />
         <FinalCta />

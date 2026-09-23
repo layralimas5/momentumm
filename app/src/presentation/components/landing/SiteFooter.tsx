@@ -1,10 +1,13 @@
 import { Link } from 'react-router-dom'
 import { Wordmark } from '@/presentation/components/brand/Logo'
-import { CTA, SITE } from './site'
+import { trackLanding } from './landing-analytics'
+import { useSiteCta } from './use-site-cta'
+import { SITE } from './site'
 
 const PRODUCT = [
-  { label: 'O método', href: '/#metodo' },
-  { label: 'Por dentro', href: '/#telas' },
+  { label: 'Como funciona', href: '/#como-funciona' },
+  { label: 'Quando a rotina muda', href: '/#retomada' },
+  { label: 'A tela de hoje', href: '/#hoje' },
   { label: 'Momentumm AI', href: '/#ia' },
   { label: 'Planos', href: '/#planos' },
   { label: 'Dúvidas', href: '/#faq' },
@@ -24,6 +27,8 @@ const LEGAL = [
  * O rodapé vai de ponta a ponta, escuro, logo abaixo da seção final roxa.
  */
 export function SiteFooter() {
+  const cta = useSiteCta('lp-rodape')
+
   return (
     <footer className="relative bg-surface">
       <div className="relative">
@@ -31,14 +36,14 @@ export function SiteFooter() {
           <div>
             <Wordmark />
             <p className="mt-4 max-w-xs text-pretty text-sm text-ink-muted">
-              Objetivo vira plano. Plano vira o que você faz hoje. Um sistema de progresso pessoal,
-              não mais um app de hábitos.
+              Objetivo vira plano. Plano vira ação. Ação vira progresso.
             </p>
             <Link
-              to={CTA.primary.to}
+              to={cta.primary.to}
+              onClick={() => trackLanding('hero_cta_clicked')}
               className="mt-6 inline-flex h-11 items-center justify-center rounded-full bg-brand px-5 text-sm font-medium text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-hi"
             >
-              {CTA.primary.label}
+              {cta.primary.label}
             </Link>
           </div>
 

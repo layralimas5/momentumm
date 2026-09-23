@@ -87,7 +87,7 @@ export function MockLabel({ children }: { children: ReactNode }) {
 const TAG_TONES = {
   neutral: 'border-line text-ink-muted',
   brand: 'border-brand/40 bg-brand-dim/40 text-brand-ink',
-  positive: 'border-positive/30 bg-positive/10 text-positive',
+  positive: 'border-positive/30 bg-positive/10 text-positive-ink',
   warn: 'border-flame/30 bg-flame-dim/50 text-flame',
 } as const
 

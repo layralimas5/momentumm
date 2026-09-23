@@ -1,23 +1,28 @@
-import { formatBRL, monthlyEquivalentCents, PRO_PRICES, type BillingCycle } from '@/domain/billing/billing-plans'
+import {
+  formatBRL,
+  monthlyEquivalentCents,
+  PRO_PRICES,
+  type BillingCycle,
+} from '@/domain/billing/billing-plans'
 import { TRIAL_DAYS } from '@/domain/billing/trial'
 import { PLAN_LIMITS } from '@/domain/entities/plan'
+import { TRIAL_PROMISE_VERIFIED } from './site'
 
 /**
  * Os planos da landing.
  *
- * Os LIMITES vêm do domínio (`PLAN_LIMITS`): quantos objetivos, hábitos,
- * planos, ações por dia e dias de histórico cada plano guarda. Copiar o número
- * aqui faria a landing prometer 5 hábitos no dia em que o app passasse a
- * guardar 3. O PREÇO também vem do domínio (`PRO_PRICES`): é o mesmo número
- * que a Edge Function manda pro checkout. O que mora neste arquivo é só o
- * que o domínio não sabe: texto e a frase de cada plano.
+ * Os LIMITES vêm do domínio (`PLAN_LIMITS`) e o PREÇO também (`PRO_PRICES`,
+ * o mesmo número que a Edge Function manda pro checkout). O que mora neste
+ * arquivo é só o texto.
  *
- * A separação é uma frase: o gratuito ORGANIZA E EXECUTA, o PRO REGISTRA,
- * ANALISA E EVOLUI. Não existe tabela comparativa: o que cada plano inclui
- * está inteiro dentro do próprio card, pra ler no celular sem cruzar coluna.
+ * A lista é curta de propósito. A versão anterior anunciava registro em foto
+ * e voz, relatórios semanais e mensais, exportação em PDF e CSV e temas:
+ * quatro promessas que existem como campo em `PLAN_LIMITS` e não existem em
+ * nenhuma tela do app. Recurso entra nesta lista quando alguém consegue usar,
+ * não quando ganha uma flag.
  *
- * O PRO é um plano só com dois ciclos de cobrança. Dois cards pro mesmo
- * produto dividiam a atenção e escondiam o desconto do anual.
+ * O PRO é um plano só com dois ciclos de cobrança. O anual não tem recurso a
+ * mais: é a mesma coisa cobrada de outro jeito.
  */
 
 export type { BillingCycle }
@@ -25,6 +30,7 @@ export type { BillingCycle }
 export interface Price {
   readonly amount: string
   readonly period: string
+  /** O que custaria pagando mês a mês no mesmo período. Só no anual, e é uma conta, não uma promoção. */
   readonly strike?: string
   readonly note?: string
   readonly savings?: string
@@ -48,11 +54,11 @@ function plural(count: number, singular: string, pluralForm: string): string {
   return `${count} ${count === 1 ? singular : pluralForm}`
 }
 
-const FREE_PRICE: Price = {
-  amount: 'R$ 0',
-  period: 'para sempre',
-  savings: `${TRIAL_DAYS} dias de PRO inclusos`,
-}
+const FREE_PRICE: Price = { amount: 'R$ 0', period: 'para sempre' }
+
+const FREE_DESCRIPTION = TRIAL_PROMISE_VERIFIED
+  ? `Começa com ${TRIAL_DAYS} dias de PRO, sem cartão. Depois o gratuito segue pra sempre.`
+  : 'O ciclo inteiro rodando, sem cartão e sem prazo pra decidir.'
 
 export const PRICING_PLANS: readonly PricingPlan[] = [
   {
@@ -60,20 +66,16 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
     badge: 'FREE',
     headline: 'Organize e execute',
     prices: { mensal: FREE_PRICE, anual: FREE_PRICE },
-    description: `Toda conta nova começa com ${TRIAL_DAYS} dias de PRO completo, sem cartão. Depois, o gratuito segue pra sempre: cria o objetivo, organiza os hábitos, acompanha as ações do dia e vê o teu Momentumm Score de hoje.`,
+    description: FREE_DESCRIPTION,
     features: [
-      `${TRIAL_DAYS} dias com tudo do PRO ao criar a conta, sem cartão`,
-      `Até ${plural(free.activeObjectives, 'objetivo ativo', 'objetivos ativos')}, ${plural(free.activeHabits, 'hábito ativo', 'hábitos ativos')} e ${plural(free.activePlans, 'plano por etapas', 'planos por etapas')}`,
-      `Até ${free.actionsPerDay} ações por dia no Hoje`,
+      'Objetivos com plano por etapas e ações',
+      'Hábitos com versão mínima e sequência',
+      'A tela Hoje, com Dia Adaptável e Modo Retomada',
+      'Momentumm Score de hoje',
+      `Limites do gratuito: ${plural(free.activeObjectives, 'objetivo', 'objetivos')}, ${plural(free.activeHabits, 'hábito', 'hábitos')}, ${plural(free.activePlans, 'plano', 'planos')}, ${free.actionsPerDay} ações por dia`,
       `Histórico dos últimos ${free.historyDays} dias`,
-      'Momentumm Score de hoje (só a pontuação atual)',
-      'Check-in semanal manual',
-      'Dia Adaptável e Modo Retomada',
-      `${free.objectiveTemplates} modelos de objetivo`,
-      'Compartilhamento: 3 arranjos, todas as cores, em PNG',
-      '1 lembrete por hábito',
     ],
-    cta: 'Começar grátis',
+    cta: 'Criar meu plano',
   },
   {
     id: 'pro',
@@ -83,44 +85,36 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
       mensal: {
         amount: formatBRL(pro.mensal.amountCents),
         period: '/mês',
-        strike: formatBRL(pro.mensal.strikeCents),
       },
       anual: {
         amount: formatBRL(pro.anual.amountCents),
         period: '/ano',
         strike: formatBRL(pro.anual.strikeCents),
         note: `equivale a ${formatBRL(monthlyEquivalentCents('anual'))}/mês`,
-        savings: `Economize ${formatBRL(pro.anual.strikeCents - pro.anual.amountCents)}`,
+        savings: 'Mesmo PRO, cobrado uma vez por ano',
       },
     },
-    description:
-      'Entender os próprios padrões, registrar a jornada, ver as métricas e ajustar o plano com a leitura da IA. É a proposta inteira do Momentumm.',
+    description: 'O mesmo produto sem limites, com o histórico inteiro e a leitura da IA.',
     features: [
-      'Objetivos, hábitos, planos e ações por dia ilimitados',
-      'Histórico completo',
-      'Momentumm Score com evolução e detalhamento',
-      'Review semanal completo, cruzando os teus dados reais',
+      'Tudo do gratuito, sem limite de quantidade',
+      'Histórico completo, com a evolução do Momentumm Score',
+      'Review semanal completo, cruzando os seus dados',
       `Momentumm AI: ${PLAN_LIMITS.pro.aiCallsPerMonth} leituras por mês`,
-      'Análises de IA: padrões, gargalos e recomendações',
-      'Métricas detalhadas e relatórios semanais e mensais',
-      'Registros em texto, foto e voz',
-      'Biblioteca completa de modelos de objetivo',
-      'Compartilhamento com todos os modelos e personalização',
-      'Exportação dos teus dados em PDF, imagem e CSV',
-      'Lembretes personalizados, temas e preferências',
+      'Métricas de período e comparação entre semanas',
     ],
-    cta: `Testar o PRO por ${TRIAL_DAYS} dias`,
+    cta: 'Assinar o PRO',
     highlight: true,
   },
 ]
 
-/** O que só o anual tem. Aparece no card do PRO quando o ciclo anual está selecionado. */
+/**
+ * O que muda no anual. Não é recurso: é compromisso e preço. Nenhuma linha
+ * aqui promete função que o mensal não tenha.
+ */
 export const ANNUAL_EXTRAS = [
   'Preço protegido na renovação*',
-  'Suporte prioritário',
-  'Selo de fundador no perfil',
-  'Acesso antecipado a novidades',
+  'Um pagamento por ano, sem cobrança mensal',
 ] as const
 
 export const PRICING_FOOTNOTE =
-  '* O preço protegido vale enquanto a assinatura anual não for cancelada. Os recursos do PRO entram conforme forem ficando prontos.'
+  '* O preço protegido vale enquanto a assinatura anual não for cancelada. O valor riscado é quanto custariam doze meses do plano mensal.'
