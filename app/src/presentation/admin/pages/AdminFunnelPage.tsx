@@ -1,6 +1,8 @@
 import { FUNNEL_STAGES } from '@/domain/analytics/funnel-events'
 import { QUIZ_QUESTION_COUNT, QUIZ_INTROS, isQuizTheme } from '@/domain/entities/quiz'
+import { useSearchParams } from 'react-router-dom'
 import { container } from '@/infrastructure/container'
+import { Select } from '@/presentation/components/ui/Field'
 import {
   AdminPage,
   BarList,
@@ -24,7 +26,13 @@ import { usePeriod } from '../use-period'
  */
 export function AdminFunnelPage() {
   const { period } = usePeriod()
-  const query = useAdminQuery(() => container.admin.quizFunnel(period), `${period.from}|${period.to}`)
+  const [params, setParams] = useSearchParams()
+  /* Sem quiz na URL, a tela soma todos os funis. */
+  const quiz = params.get('quiz') ?? ''
+  const query = useAdminQuery(
+    () => container.admin.quizFunnel(period, quiz || undefined),
+    `${period.from}|${period.to}|${quiz}`,
+  )
   const data = query.data
 
   const rows = data
@@ -47,7 +55,27 @@ export function AdminFunnelPage() {
     <AdminPage
       title="Funil do quiz"
       description="Do carrossel até a assinatura: visitas em /criar-meu-plano, quiz concluído, cadastro, plano ativado, primeira ação, trial e assinatura. Cada etapa conta sessões distintas."
-      action={<PeriodPicker />}
+      action={
+        <div className="flex flex-wrap items-center gap-2">
+          {data && data.by_quiz.length > 1 ? (
+            <Select
+              value={quiz}
+              onChange={(event) => {
+                const proximo = event.target.value
+                setParams(proximo ? { quiz: proximo } : {}, { replace: true })
+              }}
+              className="h-9 w-48 text-xs"
+              aria-label="Funil"
+            >
+              <option value="">Todos os funis</option>
+              {data.by_quiz.map((item) => (
+                <option key={item.slug} value={item.slug}>{item.name}</option>
+              ))}
+            </Select>
+          ) : null}
+          <PeriodPicker />
+        </div>
+      }
     >
       <QueryState loading={query.loading && !data} error={query.error} onRetry={() => void query.reload()} />
 
