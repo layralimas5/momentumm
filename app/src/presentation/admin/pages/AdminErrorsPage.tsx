@@ -53,7 +53,15 @@ const MODULE_LABELS: Readonly<Record<string, string>> = {
 export function AdminErrorsPage() {
   const admin = useAdmin()
   const { period } = usePeriod()
-  const [filters, setFilters] = useState<ErrorFilters>({ page: 1 })
+  /*
+    Abre em produção de propósito.
+
+    Rodar o app local apontando pro Supabase real grava erro de
+    desenvolvimento aqui. Começar filtrado é o que impede a central de
+    parecer cheia de problema quando o que tem é ruído da máquina de quem
+    programa.
+  */
+  const [filters, setFilters] = useState<ErrorFilters>({ page: 1, environment: 'producao' })
   const metrics = useAdminQuery(() => container.admin.errorMetrics(period), `${period.from}|${period.to}`)
   const list = useAdminQuery(() => container.admin.listErrors(filters), JSON.stringify(filters))
 
@@ -103,6 +111,16 @@ export function AdminErrorsPage() {
         title="Central de erros"
         action={
           <div className="flex flex-wrap gap-2">
+            <Select
+              value={filters.environment ?? ''}
+              onChange={(event) => setFilters({ ...filters, environment: event.target.value || undefined, page: 1 })}
+              className="h-9 w-40 text-xs"
+            >
+              <option value="">Todo ambiente</option>
+              <option value="producao">Produção</option>
+              <option value="preview">Preview</option>
+              <option value="desenvolvimento">Desenvolvimento</option>
+            </Select>
             <Select value={filters.status ?? ''} onChange={(event) => setFilters({ ...filters, status: (event.target.value || undefined) as ErrorStatus | undefined, page: 1 })} className="h-9 w-36 text-xs">
               <option value="">Todos os status</option>
               {Object.entries(STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}

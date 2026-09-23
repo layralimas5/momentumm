@@ -52,4 +52,20 @@ describe('módulo do erro', () => {
     expect(errorModuleFor(new Error('relation "x" does not exist'))).toBe('database')
     expect(errorModuleFor(new Error('qualquer coisa'))).toBe('app')
   })
+
+  it('esconde segredo curto que veio na URL de recuperação de senha', () => {
+    const real =
+      "Failed to execute 'querySelector' on 'Document': '#access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.abcdefghijklmnop&expires_at=1789501550&refresh_token=ytirnzbchiet&token_type=bearer&type=recovery' is not a valid selector"
+    const limpo = sanitizeErrorMessage(real)
+
+    expect(limpo).not.toContain('ytirnzbchiet')
+    expect(limpo).toContain('refresh_token=[oculto]')
+    expect(limpo).not.toContain('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9')
+  })
+
+  it('não estraga mensagem sem segredo', () => {
+    expect(sanitizeErrorMessage('column prev.active_user_ids does not exist')).toBe(
+      'column prev.active_user_ids does not exist',
+    )
+  })
 })

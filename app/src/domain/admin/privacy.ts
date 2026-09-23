@@ -23,6 +23,15 @@ const JWT = /eyJ[A-Za-z0-9._-]{20,}/g
 const API_KEY = /(sk-ant-|sb_secret_|sbp_)[A-Za-z0-9_-]+/g
 /** Qualquer sequência longa sem espaço: chave, hash, token de sessão. */
 const LONG_OPAQUE = /\b[A-Za-z0-9_-]{40,}\b/g
+/*
+  Segredo curto, que o tamanho não denuncia.
+
+  O `refresh_token` do Supabase tem uma dúzia de caracteres e vale uma
+  sessão inteira. Ele chegou no log de erros pela URL de recuperação de
+  senha, por baixo de toda regra que olha só o formato. Aqui quem manda é o
+  NOME do parâmetro: se ele diz que é segredo, o valor não passa.
+*/
+const SECRET_PARAM = /\b(access_token|refresh_token|id_token|token|code|secret|password|senha|api_?key)=[^&\s'"]+/gi
 
 export const MAX_ERROR_MESSAGE = 200
 
@@ -37,6 +46,7 @@ export function sanitizeErrorMessage(message: string | null | undefined): string
     .replace(JWT, '[jwt]')
     .replace(API_KEY, '[chave]')
     .replace(LONG_OPAQUE, '[opaco]')
+    .replace(SECRET_PARAM, (_match, nome: string) => `${nome}=[oculto]`)
     .slice(0, MAX_ERROR_MESSAGE)
 }
 
