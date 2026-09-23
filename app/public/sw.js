@@ -1,7 +1,10 @@
 /*
-  Service worker do Momentumm. Faz UMA coisa: receber o Web Push e mostrar a
-  notificação. Não guarda cache, não intercepta rota, não faz o app funcionar
-  offline. Assim o registro dele nunca segura uma versão velha da interface.
+  Service worker do Momentumm. Faz DUAS coisas: receber o Web Push e existir
+  como service worker com handler de fetch. Sem isso o Chrome não considera o
+  site instalável e só oferece atalho, que guarda a URL da aba (a landing).
+
+  O que ele NÃO faz: cache. O fetch é passagem direta pra rede. Assim o
+  registro nunca segura uma versão velha da interface.
 */
 
 self.addEventListener('install', () => {
@@ -11,6 +14,12 @@ self.addEventListener('install', () => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim())
 })
+
+/*
+  Passagem direta: nenhuma resposta é guardada nem trocada. O handler existe
+  pelo critério de instalabilidade, não pra servir conteúdo offline.
+*/
+self.addEventListener('fetch', () => {})
 
 self.addEventListener('push', (event) => {
   const fallback = {

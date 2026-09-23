@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { circleOpen, isAuthBypass } from '@/infrastructure/config/env'
+import { isStandalone } from '@/infrastructure/pwa/install'
 import { AuthProvider } from '@/presentation/auth/AuthProvider'
 import { ProtectedRoute } from '@/presentation/auth/ProtectedRoute'
 
@@ -173,7 +174,7 @@ export function App() {
         <ScrollToHash />
         <Suspense fallback={<RouteFallback />}>
           <Routes>
-            <Route path="/" element={<LandingPage />} />
+            <Route path="/" element={<HomeRoute />} />
             <Route
               path="/entrar"
               element={isAuthBypass ? <Navigate to="/app" replace /> : <AuthPage />}
@@ -265,6 +266,23 @@ export function App() {
       </AuthProvider>
     </BrowserRouter>
   )
+}
+
+/**
+ * A raiz tem dois públicos. No navegador ela é a landing, que é onde o funil
+ * começa. Aberta pelo ícone da tela de início, ela é o app: quem instalou já
+ * decidiu, e fazer essa pessoa procurar o botão "entrar" toda vez é cobrar de
+ * novo uma decisão já tomada.
+ *
+ * Quem ainda não tem sessão cai no /entrar pela porta do /app, com o destino
+ * guardado. Vale também pro iPhone, onde "Adicionar à Tela de Início" sempre
+ * salva a URL aberta na hora e ignora o start_url do manifest.
+ */
+function HomeRoute() {
+  if (isStandalone()) {
+    return <Navigate to="/app" replace />
+  }
+  return <LandingPage />
 }
 
 /**

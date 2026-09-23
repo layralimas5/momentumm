@@ -1,4 +1,5 @@
 import type { PushDevice, PushPermission } from '@/domain/notifications/push-device'
+import { isStandalone } from '@/infrastructure/pwa/install'
 
 /**
  * A ponte com as APIs de notificação do navegador.
@@ -32,10 +33,7 @@ export function pushPermission(): PushPermission {
 export function needsHomeScreenInstall(): boolean {
   const ua = navigator.userAgent
   const isIos = /iPhone|iPad|iPod/.test(ua) || (ua.includes('Mac') && 'ontouchend' in document)
-  const standalone =
-    window.matchMedia('(display-mode: standalone)').matches ||
-    (navigator as Navigator & { standalone?: boolean }).standalone === true
-  return isIos && !standalone && !pushSupported()
+  return isIos && !isStandalone() && !pushSupported()
 }
 
 export async function currentDevice(): Promise<PushDevice | null> {
