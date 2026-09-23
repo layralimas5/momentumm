@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { MAX_AVAILABLE_MIN, MIN_AVAILABLE_MIN } from '@/domain/entities/adaptive-day'
 import type { CapacityProfile } from '@/domain/entities/checkin'
 import { Button } from '@/presentation/components/ui/Button'
@@ -32,6 +33,12 @@ interface AdaptiveDayCardProps {
   readonly onAdapt: (availableMin: number) => void
   /** A porta da IA ("Reorganizar meu dia"). Fica ao lado da aritmética, não no lugar dela. */
   readonly aiEntry?: ReactNode
+  /**
+   * No Hoje do celular a pergunta fica atrás de "Adaptar meu dia": ela é a
+   * saída pra quem tem pouco tempo, não uma pergunta a responder antes de
+   * começar. Aberta, é exatamente o mesmo card.
+   */
+  readonly collapsible?: boolean
 }
 
 export function AdaptiveDayCard({
@@ -40,8 +47,11 @@ export function AdaptiveDayCard({
   capacity,
   onAdapt,
   aiEntry,
+  collapsible = false,
 }: AdaptiveDayCardProps) {
   const [custom, setCustom] = useState('')
+  const [open, setOpen] = useState(!collapsible)
+  const reduceMotion = useReducedMotion()
 
   // Sem nada em aberto não há o que adaptar, e um card perguntando o tempo de
   // um dia vazio só ocupa a dobra mais lida da tela.
@@ -49,6 +59,25 @@ export function AdaptiveDayCard({
 
   const parsed = Number.parseInt(custom, 10)
   const valid = Number.isFinite(parsed) && parsed >= MIN_AVAILABLE_MIN && parsed <= MAX_AVAILABLE_MIN
+
+  if (collapsible && !open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex min-h-13 w-full items-center gap-2.5 rounded-card border border-line bg-surface px-4 py-3 text-left transition-colors active:bg-surface-hi"
+      >
+        <Icon name="relogio" className="size-4 shrink-0 text-ink-faint" />
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-medium text-ink">Adaptar meu dia</span>
+          <span className="block text-xs text-ink-faint">
+            {plannedMin > 0 ? `Hoje está montado com ${plannedMin} min` : 'Diz quanto tempo cabe hoje'}
+          </span>
+        </span>
+        <Icon name="seta" aria-hidden="true" className="size-4 shrink-0 rotate-90 text-ink-faint" />
+      </button>
+    )
+  }
 
   return (
     <Panel aria-labelledby="dia-adaptavel-titulo">
@@ -115,6 +144,25 @@ export function AdaptiveDayCard({
       <p className="mt-3 text-xs text-ink-faint">{capacity.guidance}</p>
 
       {aiEntry ? <div className="mt-4 border-t border-line pt-4">{aiEntry}</div> : null}
+
+      <AnimatePresence>
+        {collapsible ? (
+          <motion.div
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.18 }}
+            className="mt-3"
+          >
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="text-xs text-ink-faint transition-colors hover:text-ink-muted"
+            >
+              Fechar
+            </button>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </Panel>
   )
 }

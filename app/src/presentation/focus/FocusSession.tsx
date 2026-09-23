@@ -4,6 +4,7 @@ import { formatElapsed } from '@/domain/entities/timer'
 import { Button } from '@/presentation/components/ui/Button'
 import { Dialog } from '@/presentation/components/ui/Dialog'
 import { Icon } from '@/presentation/components/ui/Icon'
+import { usePlanner } from '@/presentation/planner/use-planner'
 import { useFocus } from './use-focus'
 
 /**
@@ -13,9 +14,21 @@ import { useFocus } from './use-focus'
  */
 export function FocusSession() {
   const focus = useFocus()
+  const planner = usePlanner()
   const [pages, setPages] = useState('')
 
   const session = focus.session
+
+  /*
+    O destino por trás da sessão. Trabalhar 45 minutos sem lembrar pra onde
+    aquilo vai é o que faz a sessão parecer tarefa; com o objetivo na tela, é
+    o objetivo que está andando. Só leitura: nada aqui altera a sessão.
+  */
+  const task = session?.taskId ? planner.tasks.find((item) => item.id === session.taskId) : null
+  const objective = task?.objectiveId
+    ? planner.objectives.find((item) => item.id === task.objectiveId)
+    : null
+
   if (!session) return null
 
   const type = activityType(session.type)
@@ -51,9 +64,15 @@ export function FocusSession() {
         </div>
 
         <div className="flex flex-1 flex-col items-center justify-center px-5 pb-16 text-center sm:px-6">
-          <p className="max-w-xl text-balance text-xl font-medium text-ink-muted sm:text-2xl">
+          <p className="max-w-xl text-balance text-2xl font-semibold text-ink sm:text-3xl">
             {session.label ?? type.label}
           </p>
+
+          {objective ? (
+            <p className="mt-2 max-w-xl text-balance text-sm text-ink-faint">
+              Objetivo: <span className="text-ink-muted">{objective.title}</span>
+            </p>
+          ) : null}
 
           <div className="relative mt-10 grid place-items-center">
             {focus.running ? (
@@ -103,14 +122,19 @@ export function FocusSession() {
                 loading={focus.saving}
               >
                 <Icon name="check" className="size-4" />
-                Concluir
+                Concluir ação
               </Button>
             )}
 
-            <Button variant="ghost" size="lg" onClick={focus.discard}>
-              Encerrar sem registrar
-            </Button>
           </div>
+
+          <button
+            type="button"
+            onClick={focus.discard}
+            className="mt-5 min-h-11 px-3 text-sm text-ink-faint transition-colors hover:text-ink-muted"
+          >
+            Encerrar sem registrar
+          </button>
 
           {focus.needsValue ? (
             <form
@@ -171,7 +195,7 @@ function Ring({ ratio }: { ratio: number }) {
         r={RADIUS}
         fill="none"
         stroke="var(--color-line)"
-        strokeWidth="3"
+        strokeWidth="10"
       />
       <circle
         cx="150"
@@ -179,7 +203,7 @@ function Ring({ ratio }: { ratio: number }) {
         r={RADIUS}
         fill="none"
         stroke="var(--color-brand)"
-        strokeWidth="3"
+        strokeWidth="10"
         strokeLinecap="round"
         strokeDasharray={CIRCUMFERENCE}
         strokeDashoffset={CIRCUMFERENCE * (1 - Math.min(1, ratio))}

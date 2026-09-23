@@ -37,7 +37,20 @@ interface StoredChoice {
  * A do dia vem sozinha; quem quiser escolhe outra na lista da categoria e
  * compartilha a que quiser, direto da lista ou do card.
  */
-export function QuoteCard({ today, className }: { readonly today: DayKey; readonly className?: string }) {
+export function QuoteCard({
+  today,
+  className,
+  compact = false,
+}: {
+  readonly today: DayKey
+  readonly className?: string
+  /**
+   * No Hoje do celular a frase é impulso, não destaque: em tamanho cheio ela
+   * empurrava a ação do dia pra fora da primeira dobra. Compacta, mantém a
+   * frase, o compartilhar e a troca de frase, em uma faixa de duas linhas.
+   */
+  readonly compact?: boolean
+}) {
   const [choice, setChoice] = useState<StoredChoice>(loadChoice)
   const [picking, setPicking] = useState(false)
   const [sharing, setSharing] = useState<Quote | null>(null)
@@ -53,12 +66,42 @@ export function QuoteCard({ today, className }: { readonly today: DayKey; readon
     persistChoice(next)
   }
 
-  return (
-    <Panel tone="brand" className={cn('overflow-hidden', className)} aria-labelledby="frase-do-dia">
-      <h2 id="frase-do-dia" className="sr-only">
-        Frase do dia
-      </h2>
+  const body = compact ? (
+    <>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.blockquote
+          key={quote.id}
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          className="min-w-0 flex-1 text-base leading-snug font-medium text-balance text-ink"
+        >
+          {quote.text}
+        </motion.blockquote>
+      </AnimatePresence>
 
+      <div className="flex shrink-0 items-center gap-0.5">
+        <button
+          type="button"
+          onClick={() => setSharing(quote)}
+          className="grid size-10 place-items-center rounded-full text-ink-faint transition-colors active:bg-surface-hi"
+        >
+          <Icon name="globo" className="size-4" />
+          <span className="sr-only">Compartilhar a frase</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setPicking(true)}
+          className="grid size-10 place-items-center rounded-full text-ink-faint transition-colors active:bg-surface-hi"
+        >
+          <Icon name="busca" className="size-4" />
+          <span className="sr-only">Escolher outra frase</span>
+        </button>
+      </div>
+    </>
+  ) : (
+    <>
       <AnimatePresence mode="wait" initial={false}>
         <motion.blockquote
           key={quote.id}
@@ -86,6 +129,20 @@ export function QuoteCard({ today, className }: { readonly today: DayKey; readon
           Escolher frase
         </Button>
       </div>
+    </>
+  )
+
+  return (
+    <Panel
+      tone="brand"
+      className={cn('overflow-hidden', compact && 'flex items-center gap-3 px-4 py-3', className)}
+      aria-labelledby="frase-do-dia"
+    >
+      <h2 id="frase-do-dia" className="sr-only">
+        Frase do dia
+      </h2>
+
+      {body}
 
       <QuotePickerSheet
         open={picking}

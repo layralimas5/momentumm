@@ -112,10 +112,10 @@ export function MobilePriority({
           id="prioridade-titulo"
           className="mt-2 text-xs font-semibold tracking-wide text-ink-muted uppercase"
         >
-          O movimento que muda seu dia
+          O que importa hoje
         </h2>
 
-        <p className="mt-2 text-xl font-semibold tracking-tight text-balance text-ink">
+        <p className="mt-2 text-2xl leading-snug font-semibold tracking-tight text-balance text-ink">
           {task.title}
         </p>
 
@@ -127,24 +127,32 @@ export function MobilePriority({
           objective={objective}
         />
 
-        {/* Duas informações secundárias por linha: mais que isso vira ruído. */}
-        <p className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-faint">
-          {axis ? <span style={{ color: axis.colorToken }}>{axis.label}</span> : null}
-          {goal ? (
-            <>
-              <span aria-hidden="true">·</span>
-              <span>
-                {goal.type === task.axis
-                  ? 'ligada a uma meta'
-                  : `meta de ${activityType(goal.type).label}`}
-              </span>
-            </>
+        {/*
+          O tempo sai da lista de detalhes e vira pastilha: é o dado que decide
+          se dá pra começar agora, e antes ele disputava atenção com eixo e
+          esforço na mesma linha cinza. O resto continua secundário, abaixo.
+        */}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="tabular inline-flex items-center gap-1.5 rounded-full border border-line-hi bg-canvas/50 px-2.5 py-1 text-sm font-medium text-ink">
+            <Icon name="relogio" className="size-3.5 text-ink-faint" />~{task.estimatedMin} min
+          </span>
+          {axis ? (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-sm"
+              style={{ color: axis.colorToken, borderColor: `color-mix(in oklab, ${axis.colorToken} 35%, transparent)` }}
+            >
+              {axis.label}
+            </span>
           ) : null}
-          <span aria-hidden="true" className="w-full sm:hidden" />
-          <span>{task.estimatedMin} min</span>
-          <span aria-hidden="true">·</span>
-          <span>{TASK_EFFORT_LABELS[task.effort].replace('Esforço ', 'esforço ')}</span>
-        </p>
+          <span className="text-sm text-ink-faint">
+            {TASK_EFFORT_LABELS[task.effort].replace('Esforço ', 'esforço ')}
+            {goal
+              ? goal.type === task.axis
+                ? ' · ligada a uma meta'
+                : ` · meta de ${activityType(goal.type).label}`
+              : ''}
+          </span>
+        </div>
 
         {preferMinimal ? (
           <p className="mt-4 rounded-xl border border-brand/30 bg-canvas/40 px-3.5 py-3 text-sm text-ink-muted">
@@ -269,7 +277,7 @@ function Eyebrow({ done = false }: { done?: boolean }) {
         aria-hidden="true"
         className={done ? 'size-1.5 rounded-full bg-positive' : 'glow-pulse size-1.5 rounded-full bg-brand-hi'}
       />
-      {done ? 'Dia fechado' : 'Prioridade principal'}
+      {done ? 'Dia fechado' : 'Ação principal'}
     </span>
   )
 }

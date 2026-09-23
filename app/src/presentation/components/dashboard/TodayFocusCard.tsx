@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { addDays } from '@/domain/entities/day'
 import type { Task } from '@/domain/entities/task'
 import type { FocusItem, TodayFocus } from '@/presentation/planner/use-dashboard'
@@ -29,13 +30,25 @@ export function TodayFocusCard({
   onStartFocus,
   onSeeAll,
   onPlanDay,
+  secondary = false,
 }: {
   readonly focus: TodayFocus
   readonly onStartFocus: (task: Task) => void
   readonly onSeeAll: () => void
   readonly onPlanDay: () => void
+  /**
+   * Quando a ação principal já tem card próprio acima, o resto do dia não
+   * disputa com ela: vira uma linha recolhida, que abre a mesma lista.
+   */
+  readonly secondary?: boolean
 }) {
   const remaining = focus.total - focus.items.length
+
+  if (secondary) {
+    return (
+      <OtherActions focus={focus} onStartFocus={onStartFocus} onSeeAll={onSeeAll} />
+    )
+  }
 
   return (
     <Panel tone="raised" aria-labelledby="foco-titulo" className="edge-light">
@@ -108,6 +121,78 @@ export function TodayFocusCard({
         </>
       )}
     </Panel>
+  )
+}
+
+/**
+ * O resto do dia, recolhido.
+ *
+ * Fechado ele diz só quantas ações sobraram, pra pessoa saber que existem sem
+ * precisar decidir sobre elas agora. Aberto é exatamente a mesma lista do card
+ * cheio: nenhuma ação fica escondida atrás da hierarquia.
+ */
+function OtherActions({
+  focus,
+  onStartFocus,
+  onSeeAll,
+}: {
+  readonly focus: TodayFocus
+  readonly onStartFocus: (task: Task) => void
+  readonly onSeeAll: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  const reduceMotion = useReducedMotion()
+
+  const open_count = focus.total - focus.done
+  if (focus.total === 0 || open_count <= 0) return null
+
+  return (
+    <section aria-labelledby="outras-acoes-titulo" className="surface-card overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        aria-controls="outras-acoes-lista"
+        className="flex min-h-13 w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors active:bg-surface-hi"
+      >
+        <span id="outras-acoes-titulo" className="text-sm font-medium text-ink-muted">
+          {open_count} {open_count === 1 ? 'outra ação hoje' : 'outras ações hoje'}
+        </span>
+        <Icon
+          name="seta"
+          aria-hidden="true"
+          className={cn(
+            'size-4 shrink-0 text-ink-faint transition-transform duration-200',
+            open ? '-rotate-90' : 'rotate-90',
+          )}
+        />
+      </button>
+
+      <AnimatePresence initial={false}>
+        {open ? (
+          <motion.div
+            id="outras-acoes-lista"
+            initial={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+            animate={reduceMotion ? { opacity: 1 } : { height: 'auto', opacity: 1 }}
+            exit={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <ul className="flex flex-col divide-y divide-line border-t border-line px-4">
+              {focus.items.map((item) => (
+                <FocusRow key={`${item.kind}-${item.id}`} item={item} onStartFocus={onStartFocus} />
+              ))}
+            </ul>
+            <div className="border-t border-line px-4 py-2.5">
+              <Button variant="ghost" size="sm" onClick={onSeeAll}>
+                Ver tudo do dia
+                <Icon name="seta" className="size-3.5" />
+              </Button>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </section>
   )
 }
 

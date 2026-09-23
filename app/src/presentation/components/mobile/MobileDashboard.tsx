@@ -15,6 +15,7 @@ import { MobileGoals } from './MobileGoals'
 import { MobileHabits } from './MobileHabits'
 import { AdaptiveDayCard } from '@/presentation/components/dashboard/AdaptiveDayCard'
 import { MomentumStrip } from '@/presentation/components/dashboard/MomentumStrip'
+import { WeekPulse } from '@/presentation/components/dashboard/WeekPulse'
 import { NextUpCard } from '@/presentation/components/dashboard/NextUpCard'
 import { TodayFocusCard } from '@/presentation/components/dashboard/TodayFocusCard'
 import { MobileInsight } from './MobileInsight'
@@ -94,21 +95,39 @@ export function MobileDashboard({
   )
 
   /*
-    A ordem do celular é uma narrativa vertical, não o desktop espremido, e é a
-    MESMA narrativa do monitor:
+    A ordem do celular é uma narrativa vertical, não o desktop espremido, e a
+    tela responde três perguntas, nessa ordem:
 
-      estado -> frase -> energia -> o dia -> ler.
+      como estou -> o que importa hoje -> estou avançando.
 
-    O que ficou pra trás primeiro (a linha do dia, as atrasadas, a retomada),
-    a frase como impulso pra encarar aquilo, o check-in pra dizer com que
-    energia se chegou, e então o dia montado em cima dessa resposta. Momentum,
-    objetivos, hábitos e insight vêm depois: ninguém interpreta gráfico de pé
-    no ponto de ônibus.
+    O Momentumm abre porque é o estado atual em um número, e ele mudou de
+    lugar: antes vinha depois de tudo, quando a pessoa já tinha rolado meia
+    tela pra descobrir como estava. A frase e o check-in continuam ANTES da
+    ação, porque é a energia respondida que monta o dia; o que mudou é que
+    agora os dois são a antessala curta de um único bloco grande, a ação
+    principal, e não mais quatro cards de peso parecido.
+
+    Depois da ação vem o resto do dia recolhido, os hábitos como suporte, e o
+    pulso da semana. Análise longa (objetivos, insight, metas, sessões) fica no
+    fim: ninguém interpreta gráfico de pé no ponto de ônibus.
   */
   return (
-    <div className="flex flex-col gap-7">
-      {/* O gás pra encarar o que veio acima. */}
-      <QuoteCard today={planner.today} />
+    <div className="flex flex-col gap-5">
+      {/* 1. Como estou? O estado atual em um número, na primeira dobra. */}
+      <MomentumStrip
+        momentum={view.momentum}
+        history={view.momentumSeries}
+        today={planner.today}
+        streak={planner.streak}
+        recommendation={view.recommendation}
+        detail={planner.limits.momentumDetail}
+        nextAction={view.nextAction}
+        compact
+      />
+
+      {/* O gás pra encarar o que vem, em uma faixa: a frase não pode empurrar
+          a ação do dia pra fora da primeira dobra. */}
+      <QuoteCard today={planner.today} compact />
 
       {/* A pergunta que monta o dia: vem antes dele, nunca depois. */}
       <div ref={checkInRef} className="scroll-mt-20">
@@ -124,16 +143,6 @@ export function MobileDashboard({
         />
       </div>
 
-      <div ref={planRef} className="scroll-mt-20">
-        <AdaptiveDayCard
-          plannedMin={dayLoad.minutes}
-          openItems={dayLoad.items}
-          capacity={view.capacity}
-          onAdapt={onAdaptDay}
-          aiEntry={aiDayEntry}
-        />
-      </div>
-
       {view.dayComplete ? (
         <p
           role="status"
@@ -146,10 +155,11 @@ export function MobileDashboard({
         </p>
       ) : null}
 
-      {/* O dia, montado em cima do check-in. Só ganha bloco próprio enquanto
-          está aberta: concluída, ela aparece riscada na lista do foco. */}
+      {/* 2. O que importa hoje. O maior peso visual da tela, montado em cima
+          do check-in. Só ganha bloco próprio enquanto está aberta: concluída,
+          ela aparece riscada na lista do foco. */}
       {view.mainPriority && view.mainPriority.status !== 'feita' ? (
-        <div ref={priorityRef}>
+        <div ref={priorityRef} className="scroll-mt-20">
           <MobilePriority
             task={view.mainPriority}
             stageTitle={stageTitles.get(view.mainPriority?.stageId ?? '') ?? null}
@@ -169,12 +179,28 @@ export function MobileDashboard({
         </div>
       ) : null}
 
+      {/* O resto do dia, com hierarquia menor: recolhido quando a ação
+          principal já está decidida, card inteiro quando não há uma. */}
       <TodayFocusCard
         focus={view.focus}
+        secondary={Boolean(view.mainPriority && view.mainPriority.status !== 'feita')}
         onStartFocus={onStartFocus}
         onSeeAll={() => navigate('/app/plano')}
         onPlanDay={() => composer.open('acao')}
       />
+
+      {/* Adaptar o dia é a saída elegante pra quem tem pouco tempo: fica logo
+          abaixo da ação, em tom secundário, sem disputar com o "começar". */}
+      <div ref={planRef} className="scroll-mt-20">
+        <AdaptiveDayCard
+          plannedMin={dayLoad.minutes}
+          openItems={dayLoad.items}
+          capacity={view.capacity}
+          onAdapt={onAdaptDay}
+          aiEntry={aiDayEntry}
+          collapsible
+        />
+      </div>
 
       {/* Entre a lista e o que vem depois: o convite chega logo abaixo do item
           que a pessoa acabou de marcar. */}
@@ -204,16 +230,8 @@ export function MobileDashboard({
         onCreate={() => composer.open('habito')}
       />
 
-      {/* O momentum vem depois do que precisa sair: é leitura, não ação. */}
-      <MomentumStrip
-        momentum={view.momentum}
-        history={view.momentumSeries}
-        today={planner.today}
-        streak={planner.streak}
-        recommendation={view.recommendation}
-        detail={planner.limits.momentumDetail}
-        nextAction={view.nextAction}
-      />
+      {/* 3. Estou avançando? Sete pontos, sem cobrança de sequência. */}
+      <WeekPulse week={view.week} />
 
       <MobileInsight
         insight={view.insight}

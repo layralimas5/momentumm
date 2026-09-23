@@ -64,18 +64,37 @@ export function DayHeader({
         app. O aviso diz o tamanho do problema e oferece o caminho, e só.
       */}
       {overdue > 0 ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3.5 py-2.5">
-          <p className="flex items-center gap-2 text-sm text-ink-muted">
+        compact && onReviewOverdue ? (
+          /*
+            No celular o botão ao lado do texto quebrava pra uma segunda linha
+            e o aviso virava um bloco de duas alturas antes do que importa. A
+            linha inteira vira o alvo: mesmo destino, metade do espaço.
+          */
+          <button
+            type="button"
+            onClick={onReviewOverdue}
+            className="flex min-h-12 w-full items-center gap-2 rounded-xl border border-line bg-surface px-3.5 py-2.5 text-left transition-colors active:bg-surface-hi"
+          >
             <Icon name="adiar" className="size-4 shrink-0 text-ink-faint" />
-            Você tem {overdue} {overdue === 1 ? 'ação atrasada' : 'ações atrasadas'}. Vamos
-            reorganizar?
-          </p>
-          {onReviewOverdue ? (
-            <Button size="sm" variant="secondary" onClick={onReviewOverdue}>
-              Revisar
-            </Button>
-          ) : null}
-        </div>
+            <span className="min-w-0 flex-1 text-sm text-ink-muted">
+              {overdue} {overdue === 1 ? 'ação atrasada' : 'ações atrasadas'}. Dá pra reorganizar.
+            </span>
+            <Icon name="seta" className="size-4 shrink-0 text-ink-faint" />
+          </button>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3.5 py-2.5">
+            <p className="flex items-center gap-2 text-sm text-ink-muted">
+              <Icon name="adiar" className="size-4 shrink-0 text-ink-faint" />
+              Você tem {overdue} {overdue === 1 ? 'ação atrasada' : 'ações atrasadas'}. Vamos
+              reorganizar?
+            </p>
+            {onReviewOverdue ? (
+              <Button size="sm" variant="secondary" onClick={onReviewOverdue}>
+                Revisar
+              </Button>
+            ) : null}
+          </div>
+        )
       ) : null}
 
       {resumeNote ? (

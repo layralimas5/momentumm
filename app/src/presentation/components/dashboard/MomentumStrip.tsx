@@ -32,6 +32,7 @@ export function MomentumStrip({
   recommendation,
   detail,
   nextAction = null,
+  compact = false,
 }: {
   readonly momentum: MomentumScore
   readonly history: readonly MomentumPoint[]
@@ -41,6 +42,12 @@ export function MomentumStrip({
   /** Variação e curva. No gratuito só a pontuação de hoje aparece. */
   readonly detail: boolean
   readonly nextAction?: MomentumNextAction | null
+  /**
+   * No Hoje do celular a curva da semana sai daqui: quem conta a semana é o
+   * pulso, logo abaixo dos hábitos. Repetir sete barras e sete pontos na mesma
+   * tela faz a pessoa procurar a diferença entre dois desenhos iguais.
+   */
+  readonly compact?: boolean
 }) {
   const [open, setOpen] = useState(false)
 
@@ -71,7 +78,13 @@ export function MomentumStrip({
         </MomentumRing>
 
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
+          {/* O nome do número. Sem ele o anel é só um número solto, e a pessoa
+              confunde o estado de hoje (0 a 100) com o XP acumulado. */}
+          <p aria-hidden="true" className="text-xs font-semibold tracking-wide text-ink-faint uppercase">
+            Momentum
+          </p>
+
+          <div className="mt-1 flex flex-wrap items-center gap-2">
             <Tag tone={tone}>{MOMENTUM_LEVEL_LABELS[momentum.level]}</Tag>
 
             {!detail ? null : momentum.hasEnoughData ? (
@@ -97,10 +110,10 @@ export function MomentumStrip({
           </div>
 
           {/* Os últimos sete dias como barras: a semana inteira num olhar. */}
-          {history.length > 1 ? (
+          {history.length > 1 && !compact ? (
             <WeekBars history={history} today={today} />
           ) : (
-            <p className="mt-2 text-sm text-pretty text-ink-muted">{momentum.headline}</p>
+            <p className="mt-1.5 text-sm text-pretty text-ink-muted">{momentum.headline}</p>
           )}
 
           <button
