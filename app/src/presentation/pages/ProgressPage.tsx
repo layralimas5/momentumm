@@ -491,6 +491,14 @@ function PeriodBlock({ totals }: { readonly totals: PeriodTotals }) {
   )
 }
 
+/**
+ * O número do período como peça, não como linha de texto.
+ *
+ * Rótulo pequeno em cima, número grande embaixo, cada um na sua caixa: é o que
+ * faz "5/7 dias ativos" ser lido de relance, sem o olho ter que separar onde
+ * termina um dado e começa o outro. A comparação com o período anterior fica
+ * embaixo, menor, porque é contexto e não o número em si.
+ */
 function Stat({
   label,
   value,
@@ -501,10 +509,12 @@ function Stat({
   readonly hint?: string | undefined
 }) {
   return (
-    <div>
+    <div className="rounded-xl border border-line bg-surface-hi/40 px-3.5 py-3">
       <p className="text-xs text-ink-faint">{label}</p>
-      <p className="tabular mt-0.5 text-lg font-semibold text-ink">{value}</p>
-      {hint ? <p className="mt-0.5 text-xs text-ink-faint">{hint}</p> : null}
+      <p className="tabular mt-1 text-2xl leading-none font-semibold tracking-tight text-ink">
+        {value}
+      </p>
+      {hint ? <p className="mt-1.5 text-xs text-ink-faint">{hint}</p> : null}
     </div>
   )
 }
