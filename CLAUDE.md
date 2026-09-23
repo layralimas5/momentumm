@@ -1174,6 +1174,14 @@ primeira vitória. Links dos carrosséis levam pra lá com `utm_*` e `tema=`
   `first_action_completed`, `checkout_started` e `subscription_completed`
   caírem na mesma linha (`trackFunnelIfLinked`); abrir o quiz de novo
   descarta a sessão de outra conta (`startFreshQuizSession`).
+- **Limite do gratuito na ativação não é erro, é um estado** (23/09). Conta
+  antiga com dois objetivos em andamento e teste do PRO encerrado esbarra no
+  limite ao ativar o plano, e "tentar de novo" falharia igual. O
+  `PlanLimitError` vira o status `limite` em `useQuizActivation`, e
+  `QuizActivationLimit.tsx` oferece o que destrava: pausar um dos objetivos
+  em andamento (um toque libera a vaga e a ativação roda de novo) ou o PRO.
+  O gate deixa `SUBSCRIPTION_PATH` passar com plano pendente — sem isso o
+  botão de assinar voltava pra `/app/ativar` em loop.
 
 ### Celular
 
