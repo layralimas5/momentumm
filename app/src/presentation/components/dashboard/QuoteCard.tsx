@@ -12,7 +12,6 @@ import {
 } from '@/domain/entities/quote'
 import { SHARE_TEMPLATE_SPECS, SHARE_TEMPLATES, type ShareTemplateId } from '@/domain/share/share-card'
 import { track } from '@/infrastructure/analytics/track'
-import { useAuth } from '@/presentation/auth/use-auth'
 import { Wordmark } from '@/presentation/components/brand/Logo'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
@@ -272,14 +271,11 @@ function QuoteShareSheet({
   readonly quote: Quote
   readonly day: DayKey
 }) {
-  const { profile } = useAuth()
   const [template, setTemplate] = useState<ShareTemplateId>('dark')
   const [status, setStatus] = useState<'idle' | 'generating' | 'saved' | 'shared'>('idle')
   const [error, setError] = useState<string | null>(null)
   const [logo, setLogo] = useState<HTMLImageElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const username = profile ? `@${profile.handle}` : null
-
   useEffect(() => {
     if (!open || logo) return
     void loadBrandLogo().then(setLogo)
@@ -293,8 +289,8 @@ function QuoteShareSheet({
     if (!canvas || !ctx) return
     canvas.width = 1080
     canvas.height = 1920
-    renderQuoteCard(ctx, quote, template, username, logo)
-  }, [open, quote, template, username, logo])
+    renderQuoteCard(ctx, quote, template, logo)
+  }, [open, quote, template, logo])
 
   const generate = useCallback(async () => {
     const canvas = document.createElement('canvas')
@@ -302,11 +298,11 @@ function QuoteShareSheet({
     canvas.height = 1920
     const ctx = canvas.getContext('2d', { alpha: true })
     if (!ctx) throw new Error('Este navegador não conseguiu preparar a imagem.')
-    renderQuoteCard(ctx, quote, template, username, logo)
+    renderQuoteCard(ctx, quote, template, logo)
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'))
     if (!blob) throw new Error('Não consegui gerar a imagem agora. Tenta de novo.')
     return blob
-  }, [quote, template, username, logo])
+  }, [quote, template, logo])
 
   const fileName = `momentumm-frase-${quote.id}-${day}.png`
 

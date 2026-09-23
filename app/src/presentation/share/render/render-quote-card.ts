@@ -6,15 +6,18 @@ import { SHARE_THEMES } from './share-templates'
 /**
  * O card da frase do dia, no mesmo formato e nas mesmas cores do Share Studio.
  *
- * Uma composição só: a frase grande no meio, a categoria em cima, a marca
- * embaixo. É uma peça de texto, então o texto é o desenho: nada de número,
- * barra ou lista competindo com ele.
+ * Uma composição só: a frase grande no meio e a marca logo abaixo. É uma peça
+ * de texto, então o texto é o desenho: nada de número, barra ou lista
+ * competindo com ele.
+ *
+ * Sem o arroba no rodapé. A frase não é conquista de ninguém, é uma frase: o
+ * card existe pra ser repassado, e assinar quem postou só ocupa o pé da
+ * imagem. Os cards de progresso, esses sim, continuam assinados.
  */
 export function renderQuoteCard(
   ctx: CanvasRenderingContext2D,
   quote: Quote,
   template: ShareTemplateId,
-  username: string | null,
   logo: HTMLImageElement | null = null,
 ): void {
   const width = ctx.canvas.width
@@ -68,11 +71,6 @@ export function renderQuoteCard(
     ctx.arc(startX + dot / 2, baseline - brand.size * 0.34, dot / 2, 0, Math.PI * 2)
     ctx.fill()
     drawLine(ctx, label, startX + dot + spacing, baseline, brand, 'left')
-  }
-
-  if (username) {
-    const name: TextStyle = { size: 26, weight: 500, color: theme.inkFaint }
-    drawLine(ctx, username, width / 2, height - pad, name, 'center')
   }
 
   theme.paintForeground?.(ctx, width, height, accent)

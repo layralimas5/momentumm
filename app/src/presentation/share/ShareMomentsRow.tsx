@@ -18,7 +18,12 @@ export function ShareMomentsRow({ view }: { readonly view: DashboardView }) {
   if (moments.length === 0) return null
 
   return (
-    <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+    /*
+      Quebra de linha, não rolagem lateral: a barra horizontal aparecia por
+      cima da tela e escondia metade das opções atrás de um arrasto que
+      ninguém descobre.
+    */
+    <div className="flex flex-wrap gap-2">
       {moments.map((moment, index) => (
         <ShareButton
           key={moment.id}
