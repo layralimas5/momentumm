@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { QUIZ_AREA_LABELS, isQuizArea } from '@/domain/entities/quiz'
 import type { AdminQuizLead } from '@/domain/admin/admin-schemas'
 import { formatPhone } from '@/domain/entities/quiz-lead'
@@ -18,6 +19,8 @@ import {
   Td,
   formatDate,
 } from '../components/AdminUi'
+import { ActionDialog } from '../components/ActionDialog'
+import { useAdmin } from '../admin-context'
 import { useAdminQuery } from '../use-admin-query'
 import { usePeriod } from '../use-period'
 
@@ -31,8 +34,11 @@ import { usePeriod } from '../use-period'
  */
 export function AdminLeadsPage() {
   const { period } = usePeriod()
+  const admin = useAdmin()
   const [pending, setPending] = useState<boolean | null>(true)
   const [page, setPage] = useState(1)
+  /** O contato que a dona mandou esquecer. Null com o diálogo fechado. */
+  const [removing, setRemoving] = useState<AdminQuizLead | null>(null)
   const query = useAdminQuery(
     () => container.admin.quizLeads(period, pending, page),
     `${period.from}|${period.to}|${String(pending)}|${page}`,
@@ -76,7 +82,7 @@ export function AdminLeadsPage() {
 
           <Section
             title="Lista"
-            hint="Do mais recente pro mais antigo. Tocar no e-mail abre o cliente de e-mail; no WhatsApp, a conversa."
+            hint="Do mais recente pro mais antigo. O nome abre a ficha com as respostas; o e-mail abre o cliente de e-mail e o WhatsApp, a conversa."
           >
             <div className="mb-3 flex flex-wrap gap-2">
               {filter(true, 'Sem conta')}
@@ -91,9 +97,13 @@ export function AdminLeadsPage() {
               />
             ) : (
               <>
-                <Table head={['Pessoa', 'Contato', 'Objetivo', 'Origem', 'Quando', '']}>
+                <Table head={['Pessoa', 'Contato', 'Objetivo', 'Origem', 'Quando', '', '']}>
                   {data.items.map((lead) => (
-                    <LeadRow key={lead.id} lead={lead} />
+                    <LeadRow
+                      key={lead.id}
+                      lead={lead}
+                      onRemove={admin.can('users.act') ? () => setRemoving(lead) : undefined}
+                    />
                   ))}
                 </Table>
                 <Pager page={data.page} total={data.total} pageSize={data.page_size} onPage={setPage} />
@@ -102,17 +112,39 @@ export function AdminLeadsPage() {
           </Section>
         </>
       ) : null}
+
+      <ActionDialog
+        open={removing !== null}
+        title="Esquecer este contato"
+        description="Nome, e-mail, telefone e idade saem da lista e do banco. A resposta do quiz continua contando no funil, sem dono: número de mês fechado não muda porque alguém pediu pra sair."
+        confirmLabel="Esquecer contato"
+        destructive
+        onConfirm={async (reason) => {
+          if (!removing) return
+          await container.admin.deleteQuizLead(removing.id, reason)
+          await query.reload()
+        }}
+        onClose={() => setRemoving(null)}
+      />
     </AdminPage>
   )
 }
 
-function LeadRow({ lead }: { readonly lead: AdminQuizLead }) {
+function LeadRow({
+  lead,
+  onRemove,
+}: {
+  readonly lead: AdminQuizLead
+  readonly onRemove?: (() => void) | undefined
+}) {
   const area = isQuizArea(lead.area) ? QUIZ_AREA_LABELS[lead.area] : lead.area
 
   return (
     <tr>
       <Td>
-        <span className="font-medium text-ink">{lead.name}</span>
+        <Link to={`/admin/contatos/${lead.id}`} className="font-medium text-ink hover:text-brand-hi hover:underline">
+          {lead.name}
+        </Link>
         {lead.age === null ? null : <span className="ml-2 text-xs text-ink-faint">{lead.age} anos</span>}
       </Td>
       <Td>
@@ -135,7 +167,9 @@ function LeadRow({ lead }: { readonly lead: AdminQuizLead }) {
         </div>
       </Td>
       <Td>
-        <span className="text-ink">{lead.goal || 'Sem objetivo escrito'}</span>
+        <Link to={`/admin/contatos/${lead.id}`} className="text-ink hover:text-brand-hi hover:underline">
+          {lead.goal || 'Sem objetivo escrito'}
+        </Link>
         {area ? <span className="ml-2 text-xs text-ink-faint">{area}</span> : null}
       </Td>
       <Td>{lead.source}</Td>
@@ -146,6 +180,13 @@ function LeadRow({ lead }: { readonly lead: AdminQuizLead }) {
         ) : (
           <StatusTag tone="warn">Sem conta</StatusTag>
         )}
+      </Td>
+      <Td>
+        {onRemove ? (
+          <Button size="sm" variant="ghost" onClick={onRemove}>
+            Apagar
+          </Button>
+        ) : null}
       </Td>
     </tr>
   )

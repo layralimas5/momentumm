@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import type { UserAction } from '@/domain/admin/admin-gateway'
 import { ADMIN_ROLE_LABELS } from '@/domain/admin/admin-role'
 import { PLAN_LABELS } from '@/domain/entities/plan'
@@ -77,6 +77,7 @@ const ACTIONS: Readonly<Record<UserAction, Omit<PendingAction, 'action'>>> = {
 
 export function AdminUserDetailPage() {
   const { id = '' } = useParams()
+  const navigate = useNavigate()
   const admin = useAdmin()
   const query = useAdminQuery(() => container.admin.userDetail(id), id)
   const [pending, setPending] = useState<PendingAction | null>(null)
@@ -84,6 +85,8 @@ export function AdminUserDetailPage() {
   const [blockOpen, setBlockOpen] = useState(false)
   const [blockMinutes, setBlockMinutes] = useState('60')
   const [exportOpen, setExportOpen] = useState(false)
+  /** A exclusão sem espera. Só o owner vê o botão, e só o banco decide. */
+  const [forceOpen, setForceOpen] = useState(false)
   const user = query.data
 
   const open = (action: UserAction) => setPending({ action, ...ACTIONS[action] })
@@ -189,6 +192,11 @@ export function AdminUserDetailPage() {
                 ) : null}
                 {user.status === 'exclusao_solicitada' && user.status_scheduled_for && user.status_scheduled_for <= new Date() ? (
                   <Button variant="danger" size="sm" onClick={() => open('complete_deletion')}>Concluir exclusão</Button>
+                ) : null}
+                {admin.role === 'owner' && user.status !== 'exclusao_solicitada' ? (
+                  <Button variant="danger" size="sm" onClick={() => setForceOpen(true)}>
+                    Excluir agora
+                  </Button>
                 ) : null}
                 {admin.can('users.logs') ? (
                   <Link to={`/admin/auditoria?alvo=${user.id}`} className="inline-flex h-9 items-center rounded-lg px-3 text-sm text-ink-muted hover:bg-surface hover:text-ink">
@@ -309,6 +317,19 @@ export function AdminUserDetailPage() {
               ) : null}
             </ActionDialog>
           ) : null}
+
+          <ActionDialog
+            open={forceOpen}
+            title="Excluir a conta agora"
+            description="Apaga a conta, os arquivos e todo o histórico na hora, sem a janela de 7 dias. É o caminho pra conta de teste e pra pedido feito por fora; quando a própria pessoa pede pelo app, use a exclusão com prazo. Não tem volta."
+            confirmLabel="Apagar definitivamente"
+            destructive
+            onConfirm={async (reason) => {
+              await container.admin.forceDeleteUser(id, reason)
+              navigate('/admin/usuarios', { replace: true })
+            }}
+            onClose={() => setForceOpen(false)}
+          />
 
           <ActionDialog
             open={exportOpen}
