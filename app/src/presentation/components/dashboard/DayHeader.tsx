@@ -1,4 +1,3 @@
-import { dayKeyToDate, type DayKey } from '@/domain/entities/day'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 
@@ -13,10 +12,14 @@ import { Icon } from '@/presentation/components/ui/Icon'
  * O progresso do dia saiu daqui: ele vive dentro do foco de hoje, ao lado das
  * atividades que o compõem. Um número de progresso longe do que ele mede
  * obriga a pessoa a procurar a origem.
+ *
+ * A data também saiu: o cabeçalho do app já a mostra no monitor, e a barra de
+ * cima no celular. A mesma terça-feira escrita duas vezes a 150px de distância
+ * não é redundância inofensiva — é uma linha a mais entre a saudação e a ação
+ * do dia.
  */
 export function DayHeader({
   name,
-  today,
   headline,
   resumeNote,
   overdue = 0,
@@ -24,7 +27,6 @@ export function DayHeader({
   compact = false,
 }: {
   readonly name: string | null
-  readonly today: DayKey
   readonly headline: string
   readonly resumeNote: string | null
   /** Ações em aberto com dia vencido. Vira um aviso curto, nunca um alarme. */
@@ -36,13 +38,6 @@ export function DayHeader({
    */
   readonly compact?: boolean
 }) {
-  const date = dayKeyToDate(today)
-  const formatted = date.toLocaleDateString('pt-BR', {
-    weekday: 'long',
-    day: '2-digit',
-    month: 'long',
-  })
-
   return (
     <header className="flex flex-col gap-3">
       {/*
@@ -59,7 +54,6 @@ export function DayHeader({
             {name ? `, ${name}` : ''}.
           </h2>
           <p className="mt-1.5 text-[0.95rem] text-ink-muted">{headline}</p>
-          <p className="mt-0.5 text-sm text-ink-faint first-letter:uppercase">{formatted}</p>
         </div>
       )}
 

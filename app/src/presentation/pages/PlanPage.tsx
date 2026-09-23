@@ -62,7 +62,9 @@ export function PlanPage() {
         }
       />
 
-      {planner.error ? <ErrorNote message={planner.error} /> : null}
+      {planner.error ? (
+        <ErrorNote message={planner.error} onRetry={() => void planner.reload()} />
+      ) : null}
 
       <div className="flex flex-wrap items-center gap-3">
         <div role="tablist" aria-label="Como ver o plano" className="flex gap-1 rounded-xl border border-line bg-surface p-1">

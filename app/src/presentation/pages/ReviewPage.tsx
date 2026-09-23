@@ -164,7 +164,9 @@ export function ReviewPage() {
         }
       />
 
-      {planner.error ? <ErrorNote message={planner.error} /> : null}
+      {planner.error ? (
+        <ErrorNote message={planner.error} onRetry={() => void planner.reload()} />
+      ) : null}
       {full ? null : (
         <UpgradeHint message="No PRO o review cruza a execução, as pendências e os hábitos da semana e escreve a leitura pra você." />
       )}

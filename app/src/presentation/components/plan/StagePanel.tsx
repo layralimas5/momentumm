@@ -291,7 +291,10 @@ function StageBlock({
                   {progress.totalTasks === 1 ? 'ação' : 'ações'}
                 </span>
               ) : done ? (
-                <span>Concluída sem ações no app</span>
+                /* Etapa fechada na mão, sem nenhuma ação registrada. A frase
+                   diz o que aconteceu; "concluída sem ações no app", lida
+                   colada ao "100%" e à data, parecia defeito. */
+                <span>Marcada como concluída</span>
               ) : (
                 <span>Sem ações ainda</span>
               )}

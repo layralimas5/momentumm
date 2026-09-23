@@ -59,7 +59,9 @@ export function HabitsPage() {
         }
       />
 
-      {planner.error ? <ErrorNote message={planner.error} /> : null}
+      {planner.error ? (
+        <ErrorNote message={planner.error} onRetry={() => void planner.reload()} />
+      ) : null}
       {limit.message ? <UpgradeHint message={limit.message} /> : null}
 
       {active.length === 0 ? (

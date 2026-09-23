@@ -67,7 +67,9 @@ export function ProgressPage() {
         description="Se o teu ritmo está de pé e o que ajustar."
       />
 
-      {planner.error ? <ErrorNote message={planner.error} /> : null}
+      {planner.error ? (
+        <ErrorNote message={planner.error} onRetry={() => void planner.reload()} />
+      ) : null}
 
       {planner.loading && !hasData ? (
         <LoadingBlock label="Calculando o progresso" />

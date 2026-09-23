@@ -9,7 +9,12 @@ interface StreakCardProps {
   readonly activeDays: ReadonlySet<DayKey>
 }
 
-const WEEKDAY_INITIALS = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'] as const
+/*
+  Duas letras, não uma. Em português a inicial sozinha produz S T Q Q S S D:
+  três pares repetidos numa fileira de sete quadrados que a pessoa lê pra saber
+  em que dia ela falhou. Com duas letras cada coluna diz o que é.
+*/
+const WEEKDAY_LABELS = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'] as const
 
 export function StreakCard({ streak, today, activeDays }: StreakCardProps) {
   const lastSevenDays = Array.from({ length: 7 }, (_, index) => addDays(today, index - 6))
@@ -66,7 +71,7 @@ export function StreakCard({ streak, today, activeDays }: StreakCardProps) {
                 )}
               />
               <span className="text-xs text-ink-faint">
-                {WEEKDAY_INITIALS[(index + weekdayOffset(today)) % 7]}
+                {WEEKDAY_LABELS[(index + weekdayOffset(today)) % 7]}
               </span>
               <span className="sr-only">
                 {day} {done ? 'com registro' : 'sem registro'}

@@ -35,6 +35,8 @@ import { useRecovery } from '@/presentation/planner/use-recovery'
 import { useJourneyRecorder } from '@/presentation/planner/use-journey-recorder'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { DayCompleteBanner } from '@/presentation/components/dashboard/DayCompleteBanner'
+import { CompletionNotice } from '@/presentation/components/dashboard/CompletionNotice'
+import { useCompletionNotice } from '@/presentation/planner/use-completion-notice'
 import { MobileDashboard } from '@/presentation/components/mobile/MobileDashboard'
 import { ShareMomentsRow } from '@/presentation/share/ShareMomentsRow'
 import { QuoteCard } from '@/presentation/components/dashboard/QuoteCard'
@@ -49,8 +51,16 @@ import { useAi } from '@/presentation/ai/use-ai'
  *
  * A tela tem TRÊS níveis de atenção, e a diferença entre eles é deliberada:
  *
- *   1. Saudação, Momentumm e **Seu foco de hoje** — a primeira dobra. Responde
- *      "como estou" e "o que faço agora", que é o motivo de a pessoa abrir o app.
+ *   1. Saudação e **a ação de hoje** — a primeira dobra. Responde "o que eu
+ *      faço agora", que é o motivo de a pessoa abrir o app.
+ *
+ *      A ação vem ANTES da frase do dia, do check-in e do Dia Adaptável. Os
+ *      três estavam na frente dela, e o efeito medido era esse: num monitor de
+ *      900px a prioridade principal começava em 1579px, quase duas telas
+ *      abaixo. Cada um tinha a sua justificativa, e somados eles transformavam
+ *      a tela que responde "o que eu faço hoje" numa que pede três respostas
+ *      antes de responder. Calibrar o dia continua possível logo abaixo; o que
+ *      mudou é que nada disso é mais pedágio pra ver a ação.
  *   2. Objetivos, hábitos e insight — responde "estou avançando".
  *   3. Semana, check-in, foco cronometrado, metas e vitórias — consulta.
  *
@@ -116,6 +126,12 @@ export function DashboardPage() {
     chamada.
   */
   useJourneyRecorder(view)
+
+  /*
+    A resposta a uma conclusão. Fica na página porque as duas árvores (celular
+    e monitor) concluem pelos mesmos caminhos e precisam do mesmo retorno.
+  */
+  const completion = useCompletionNotice(view)
 
   const completeTask = useCallback(
     async (task: Task) => {
@@ -222,6 +238,7 @@ export function DashboardPage() {
 
   const reviewLayer = (
     <>
+      <CompletionNotice notice={completion.notice} onDismiss={completion.dismiss} />
       <AdaptiveDayReview
         plan={adaptive.plan}
         intro={adaptive.request?.intro}
@@ -297,11 +314,12 @@ export function DashboardPage() {
   if (!isDesktop) {
     return (
       <div className="flex flex-col gap-6">
-        {planner.error ? <ErrorNote message={planner.error} /> : null}
+        {planner.error ? (
+          <ErrorNote message={planner.error} onRetry={() => void planner.reload()} />
+        ) : null}
         <DayHeader
           compact
           name={profile?.name.split(' ')[0] ?? null}
-          today={planner.today}
           headline={view.headline}
           resumeNote={view.resumeNote}
           overdue={view.overdueCount}
@@ -351,7 +369,9 @@ export function DashboardPage() {
       no monitor grande.
     */
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
-      {planner.error ? <ErrorNote message={planner.error} /> : null}
+      {planner.error ? (
+          <ErrorNote message={planner.error} onRetry={() => void planner.reload()} />
+        ) : null}
 
       {/* ------------------------------------------------------------------
           Primeiro nível: como estou e o que faço agora.
@@ -359,7 +379,6 @@ export function DashboardPage() {
       <div className="flex flex-col gap-4">
         <DayHeader
           name={firstName}
-          today={planner.today}
           headline={view.headline}
           resumeNote={view.resumeNote}
           overdue={view.overdueCount}
@@ -376,36 +395,11 @@ export function DashboardPage() {
           aiEntry={aiRecoveryEntry}
         />
 
-        <QuoteCard today={planner.today} />
-
-        <CheckInCard
-          checkIn={view.checkIn}
-          capacity={view.capacity}
-          textLogs={planner.limits.textLogs}
-          onSave={(input) => planner.saveCheckIn({ ...input, day: planner.today })}
-        />
-
         {view.dayComplete ? <DayCompleteBanner win={view.todayWin} /> : null}
 
-        <AdaptiveDayCard
-          plannedMin={adaptive.load.minutes}
-          openItems={adaptive.load.items}
-          capacity={view.capacity}
-          onAdapt={adaptDay}
-          aiEntry={aiDayEntry}
-        />
-
-        <ShareMomentsRow view={view} />
-
-        <TodayFocusCard
-          focus={view.focus}
-          onStartFocus={startFocus}
-          onSeeAll={() => navigate('/app/plano')}
-          onPlanDay={() => composer.open('acao')}
-        />
-
-        {/* A prioridade principal só ganha bloco próprio quando ela existe e
-            ainda está aberta: concluída, ela já aparece riscada no foco. */}
+        {/* A ação de hoje abre a tela. A prioridade principal só ganha bloco
+            próprio enquanto está aberta: concluída, ela aparece riscada na
+            lista do foco logo abaixo. */}
         {view.mainPriority && view.mainPriority.status !== 'feita' ? (
           <PriorityCard
             task={view.mainPriority}
@@ -428,12 +422,40 @@ export function DashboardPage() {
           />
         ) : null}
 
+        <TodayFocusCard
+          focus={view.focus}
+          onStartFocus={startFocus}
+          onSeeAll={() => navigate('/app/plano')}
+          onPlanDay={() => composer.open('acao')}
+        />
+
         <NextUpCard
           nextUp={view.nextUp}
           mainPriority={view.mainPriority}
           today={planner.today}
           onStartFocus={startFocus}
           onBringToToday={(task) => void bringToToday(task)}
+        />
+
+        {/*
+          Calibrar o dia vem DEPOIS de ele estar visível: "como estou chegando"
+          e "quanto tempo eu tenho" mudam o tamanho do que aparece acima, e as
+          duas perguntas fazem mais sentido com o dia já na frente do que como
+          formulário de entrada.
+        */}
+        <CheckInCard
+          checkIn={view.checkIn}
+          capacity={view.capacity}
+          textLogs={planner.limits.textLogs}
+          onSave={(input) => planner.saveCheckIn({ ...input, day: planner.today })}
+        />
+
+        <AdaptiveDayCard
+          plannedMin={adaptive.load.minutes}
+          openItems={adaptive.load.items}
+          capacity={view.capacity}
+          onAdapt={adaptDay}
+          aiEntry={aiDayEntry}
         />
 
         {/* O momentum vem depois do que precisa sair: é leitura, não ação. */}
@@ -551,6 +573,21 @@ export function DashboardPage() {
             today={planner.today}
             onSave={(text) => planner.saveWin({ day: planner.today, text })}
           />
+        </Section>
+
+        {/*
+          Frase e cards de compartilhar fecham a tela.
+
+          Eram os dois primeiros blocos do dia, e nenhum dos dois é decisão: a
+          frase é o que a pessoa lê quando já sabe o que vai fazer, e o card de
+          progresso é o que ela guarda depois de fazer. Aqui embaixo eles
+          continuam inteiros, e param de ocupar o lugar da ação.
+        */}
+        <Section title="Pra levar com você" level={3}>
+          <div className="flex flex-col gap-4">
+            <QuoteCard today={planner.today} />
+            <ShareMomentsRow view={view} />
+          </div>
         </Section>
       </div>
 

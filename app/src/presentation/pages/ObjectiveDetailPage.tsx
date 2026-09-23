@@ -135,7 +135,9 @@ export function ObjectiveDetailPage() {
         }
       />
 
-      {planner.error ? <ErrorNote message={planner.error} /> : null}
+      {planner.error ? (
+        <ErrorNote message={planner.error} onRetry={() => void planner.reload()} />
+      ) : null}
 
       <div className="flex flex-wrap items-center gap-2">
         <ObjectiveStateTag state={view.progress.state} />

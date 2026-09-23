@@ -59,7 +59,9 @@ export function ObjectivesPage() {
         }
       />
 
-      {planner.error ? <ErrorNote message={planner.error} /> : null}
+      {planner.error ? (
+        <ErrorNote message={planner.error} onRetry={() => void planner.reload()} />
+      ) : null}
       {limit.message ? <UpgradeHint message={limit.message} /> : null}
       {!planner.limits.ai && !limit.reached ? (
         <UpgradeHint message="Criar plano com IA: o objetivo vira etapas, hábitos e ações que cabem no teu tempo. Faz parte do PRO." />
