@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import type { PairInvite } from '@/domain/entities/pair'
 import { track } from '@/infrastructure/analytics/track'
 import { container } from '@/infrastructure/container'
+import { SITE } from '@/presentation/components/landing/site'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { Panel } from '@/presentation/components/ui/Surface'
@@ -10,8 +11,27 @@ import { toUserMessage } from '@/shared/errors'
 /** O caminho do convite. Mora aqui porque a rota e o link precisam concordar. */
 export const INVITE_PATH = '/juntos'
 
+/**
+ * O endereço do convite: sempre `momentumm.com.br/juntos/<código>`.
+ *
+ * O domínio vem de `SITE.url` e NÃO de `window.location.origin`. Com a origem
+ * da janela, um convite criado em `localhost:5176` saía
+ * `http://localhost:5176/juntos/...`, que é um link que só abre na máquina de
+ * quem gerou — e é justamente em desenvolvimento que a gente testa mandar o
+ * convite pra outra pessoa. O mesmo valeria pra qualquer deploy de branch: o
+ * link tem que apontar pra casa do produto, não pra onde a aba estava aberta.
+ *
+ * ## O que é o código
+ *
+ * Não é o id nem o @ do perfil, e isso é deliberado. Um código derivado do
+ * perfil seria permanente e adivinhável: quem descobrisse o teu @ entraria na
+ * tua dupla pra sempre, e não haveria como revogar sem trocar o perfil. O que
+ * vai na URL são 24 bytes aleatórios gerados pelo servidor
+ * (`pair_create_invite`), e o banco guarda só o sha256 deles: vale 7 dias, é de
+ * uso único, e dá pra parar de valer sem mexer em nada do perfil.
+ */
 export function inviteUrl(token: string): string {
-  return `${window.location.origin}${INVITE_PATH}/${token}`
+  return `${SITE.url}${INVITE_PATH}/${token}`
 }
 
 /**
@@ -22,8 +42,11 @@ export function inviteUrl(token: string): string {
  * bloqueio, denúncia e "quem pode me convidar" — o MVP não tem nada disso
  * porque não precisa ter.
  *
- * O token aparece uma vez. Gerar outro cancela o anterior no servidor, e o
- * texto diz isso antes de a pessoa clicar.
+ * O token aparece uma vez, e o texto diz isso. Gerar outro NÃO cancela o
+ * anterior desde a 0053: com mais de uma dupla possível, dois links vivos são
+ * dois amigos diferentes sendo chamados, e matar o primeiro quebraria um
+ * convite que já foi enviado. O que segura abuso é o teto de seis convites por
+ * dia, e o teto de duplas do plano na hora do aceite.
  */
 export function InvitePanel({ onInvited }: { readonly onInvited?: () => void }) {
   const [invite, setInvite] = useState<PairInvite | null>(null)
@@ -59,7 +82,7 @@ export function InvitePanel({ onInvited }: { readonly onInvited?: () => void }) 
       if (navigator.share) {
         await navigator.share({
           title: 'Vamos avançar juntos no Momentumm?',
-          text: 'Criei uma dupla no Momentumm. A gente só vê se o outro avançou no dia — nada além disso.',
+          text: 'Criei uma dupla no Momentumm. A gente só vê se o outro avançou no dia, nada além disso.',
           url,
         })
         return
@@ -84,8 +107,9 @@ export function InvitePanel({ onInvited }: { readonly onInvited?: () => void }) 
       </h2>
 
       <p className="mt-2 text-sm text-pretty text-ink-muted">
-        Vocês não precisam ter o mesmo objetivo. A outra pessoa vê apenas se você avançou no dia —
-        nunca o que você está fazendo, nem os seus objetivos, notas ou registros.
+        Vocês não precisam ter o mesmo objetivo. A outra pessoa vê apenas se você avançou no dia:
+        nunca o que você está fazendo, nem os seus objetivos, notas ou registros. Cada dupla é
+        separada: quem está numa não vê a outra.
       </p>
 
       {invite ? (
@@ -107,7 +131,8 @@ export function InvitePanel({ onInvited }: { readonly onInvited?: () => void }) 
             </Button>
           </div>
           <p className="mt-2 text-xs text-ink-faint">
-            Vale por 7 dias e só pode ser usado uma vez. Gerar outro link cancela este.
+            Vale por 7 dias e só pode ser usado uma vez. Os links que você já enviou continuam
+            valendo.
           </p>
           <button
             type="button"

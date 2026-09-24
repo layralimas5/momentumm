@@ -2,6 +2,36 @@ import { describe, expect, it } from 'vitest'
 import { SENSITIVE_SETTINGS, SETTING_SCHEMAS, validateSetting } from './settings-schema'
 
 describe('configurações do produto', () => {
+  /*
+    O painel espelha `public.validate_setting`, e é aqui que os dois se
+    desencontram primeiro: uma chave que o banco já guarda e o painel não
+    conhece cai no `.strict()` e faz a gravação ser recusada com "chave
+    desconhecida" — mesmo quando o que foi editado é outro limite.
+  */
+  it('aceita as chaves do Juntos que a 0052 e a 0053 acrescentaram', () => {
+    const free = {
+      activeObjectives: 2,
+      activeHabits: 5,
+      activePlans: 1,
+      actionsPerDay: 5,
+      historyDays: 15,
+      pairEncouragementsPerDay: 1,
+      pairs: 1,
+    }
+    expect(validateSetting('plans.free', free).ok).toBe(true)
+    expect(
+      validateSetting('plans.pro', {
+        activeObjectives: null,
+        activeHabits: null,
+        activePlans: null,
+        actionsPerDay: null,
+        historyDays: null,
+        pairEncouragementsPerDay: null,
+        pairs: null,
+      }).ok,
+    ).toBe(true)
+  })
+
   it('aceita a forma esperada de cada chave', () => {
     expect(validateSetting('plans.free', { activeObjectives: 2, activeHabits: 5, activePlans: 1, actionsPerDay: 5, historyDays: 15 }).ok).toBe(true)
     expect(validateSetting('plans.pro', { activeObjectives: null, activeHabits: null, activePlans: null, actionsPerDay: null, historyDays: null }).ok).toBe(true)

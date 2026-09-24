@@ -7,6 +7,7 @@ import { ThemeToggle } from '@/presentation/theme/ThemeToggle'
 import { isDone, isPending } from '@/domain/entities/task'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
+import { useFeature } from '@/presentation/plan/use-feature'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { markShareNudgeSeen, shareNudgeSeen } from '@/presentation/share/share-nudge'
@@ -102,8 +103,18 @@ export function AppHeader() {
   )
 }
 
+/**
+ * O menu do "Adicionar".
+ *
+ * Os quatro primeiros abrem formulário; a dupla é o único que NAVEGA, porque
+ * convidar alguém não é preencher campo, é gerar um link e mandar. Ela fica
+ * aqui pelo mesmo motivo da folha do celular: é o botão que a pessoa procura
+ * quando quer colocar mais uma coisa em movimento, e uma pessoa é uma delas.
+ */
 function AddMenu() {
   const composer = useComposer()
+  const navigate = useNavigate()
+  const juntos = useFeature('juntos')
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -145,6 +156,17 @@ function AddMenu() {
           <MenuItem icon="objetivo" onClick={() => pick('objetivo')}>
             Novo objetivo
           </MenuItem>
+          {juntos.enabled ? (
+            <MenuItem
+              icon="metas"
+              onClick={() => {
+                setOpen(false)
+                navigate('/app/juntos')
+              }}
+            >
+              Uma pessoa na dupla
+            </MenuItem>
+          ) : null}
         </div>
       ) : null}
     </div>

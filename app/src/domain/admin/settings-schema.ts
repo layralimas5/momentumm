@@ -11,6 +11,15 @@ const planLimits = z
     activePlans: z.number().int().positive().nullable(),
     actionsPerDay: z.number().int().positive().nullable(),
     historyDays: z.number().int().positive().nullable(),
+    /*
+      As duas do Juntos são opcionais porque as linhas gravadas antes da 0052 e
+      da 0053 não têm essas chaves. E precisam existir aqui: o objeto é
+      `.strict()`, então uma chave que o banco já guarda e o painel não conhece
+      faz a gravação ser recusada com "chave desconhecida" — bloqueando a edição
+      de um limite que não tem nada a ver com dupla.
+    */
+    pairEncouragementsPerDay: z.number().int().positive().nullable().optional(),
+    pairs: z.number().int().positive().nullable().optional(),
   })
   .strict()
 

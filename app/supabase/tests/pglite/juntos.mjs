@@ -80,15 +80,16 @@ const pairId = (await one(`select public.pair_accept_invite('${convite.token}') 
 check('a dupla foi criada', typeof pairId === 'string')
 
 const visao = (await one(`select public.pair_overview() as j`)).j
-check('a dupla tem duas pessoas', visao.pair.members.length === 2)
-check('quem pergunta aparece primeiro', visao.pair.members[0].is_me === true)
+check('a visão traz uma dupla', visao.pairs.length === 1)
+check('a dupla tem duas pessoas', visao.pairs[0].members.length === 2)
+check('quem pergunta aparece primeiro', visao.pairs[0].members[0].is_me === true)
 check('os nomes vêm só com o primeiro',
-  visao.pair.members.map((m) => m.name).sort().join(',') === 'Carol,Layra')
-check('cada pessoa traz sete dias', visao.pair.members[0].days.length === 7)
+  visao.pairs[0].members.map((m) => m.name).sort().join(',') === 'Carol,Layra')
+check('cada pessoa traz sete dias', visao.pairs[0].members[0].days.length === 7)
 
 await asUser(LAY)
 check('quem convidou também vê a dupla',
-  (await one(`select public.pair_overview() as j`)).j.pair.id === pairId)
+  (await one(`select public.pair_overview() as j`)).j.pairs[0].id === pairId)
 
 console.log('\n## Cenário 5 — privacidade')
 
@@ -120,7 +121,7 @@ const semGrant = await erro(`select public.advanced_on('${LAY}', current_date)`)
 check('não dá pra perguntar direto se alguém avançou', semGrant !== null, `veio ${semGrant}`)
 
 const depoisDaAcao = (await one(`select public.pair_overview() as j`)).j
-const layNaVisao = depoisDaAcao.pair.members.find((m) => !m.is_me)
+const layNaVisao = depoisDaAcao.pairs[0].members.find((m) => !m.is_me)
 check('o que a dupla vê é só "avançou hoje"', layNaVisao.advanced_today === true)
 check('o que a dupla vê não tem título de ação',
   !JSON.stringify(depoisDaAcao).includes('Treino de forca'))
@@ -129,12 +130,12 @@ check('o que a dupla vê não tem nome de objetivo',
 check('o que a dupla vê não tem a nota do check-in',
   !JSON.stringify(depoisDaAcao).includes('nota bem privada'))
 check('a Carol ainda não avançou hoje',
-  depoisDaAcao.pair.members.find((m) => m.is_me).advanced_today === false)
+  depoisDaAcao.pairs[0].members.find((m) => m.is_me).advanced_today === false)
 
 console.log('\n## Cenário 6 — incentivo')
 
 await asUser(CAROL)
-const reacao = (await one(`select public.pair_send_encouragement('bora') as id`)).id
+const reacao = (await one(`select public.pair_send_encouragement('${pairId}', 'bora') as id`)).id
 check('o incentivo foi registrado', typeof reacao === 'string')
 
 await asPostgres()
@@ -143,14 +144,48 @@ check('o destinatário é a outra pessoa da dupla, sem o app escolher',
   linha.sender_id === CAROL && linha.recipient_id === LAY && linha.kind === 'bora')
 
 await asUser(CAROL)
-const repetido = (await one(`select public.pair_send_encouragement('bora') as id`)).id
+const repetido = (await one(`select public.pair_send_encouragement('${pairId}', 'bora') as id`)).id
 check('mandar de novo no mesmo dia não duplica', repetido === reacao)
 check('só existe uma linha do mesmo gesto no dia',
   (await q(`select id from public.pair_encouragements where kind = 'bora'`)).length === 1)
 
 await asUser(LAY)
-const recebidos = (await one(`select public.pair_overview() as j`)).j.pair.encouragements_today
+const recebidos = (await one(`select public.pair_overview() as j`)).j.pairs[0].encouragements_today
 check('quem recebeu vê o incentivo', recebidos.length === 1 && recebidos[0].kind === 'bora')
+
+console.log('\n## O teto de incentivos por plano (0052)')
+
+/*
+  A conta nova nasce com sete dias de teste (0034), e teste é PRO — é por isso
+  que o cenário 6 passou mandando gesto sem encostar em limite nenhum. Aqui o
+  teste da Carol é encerrado, e ela cai pro gratuito de verdade.
+
+  O encerramento é pelo `status`, não empurrando o `ends_at` pro passado: a
+  tabela tem `check (ends_at > started_at)`, e é ele que impede o teste de
+  fabricar um estado que a produção nunca teria.
+*/
+await asPostgres()
+await db.exec(`update public.plan_trials set status = 'encerrado', ended_at = now() where user_id = '${CAROL}'`)
+const planoCarol = (await one(`select public.plan_for_user('${CAROL}') as p`)).p
+check('com o teste vencido a Carol está no gratuito', planoCarol === 'free', `veio ${planoCarol}`)
+
+await asUser(CAROL)
+const segundoNoFree = await erro(`select public.pair_send_encouragement('${pairId}', 'mandou_bem')`)
+check('no gratuito o segundo gesto do dia é recusado', segundoNoFree !== null)
+check('a recusa convida pro PRO em vez de mostrar código interno',
+  segundoNoFree !== null && segundoNoFree.includes('PRO') && !segundoNoFree.includes('plan_required'),
+  `veio ${segundoNoFree}`)
+
+const reenvio = (await one(`select public.pair_send_encouragement('${pairId}', 'bora') as id`)).id
+check('reenviar o MESMO gesto não custa vaga nova nem no gratuito', reenvio === reacao)
+
+await asPostgres()
+await db.exec(`update public.plan_trials set status = 'ativo', ended_at = null, ends_at = now() + interval '7 days' where user_id = '${CAROL}'`)
+await asUser(CAROL)
+const segundoNoPro = (await one(`select public.pair_send_encouragement('${pairId}', 'mandou_bem') as id`)).id
+check('no PRO o segundo gesto do dia passa', typeof segundoNoPro === 'string')
+await asPostgres()
+await db.exec(`delete from public.pair_encouragements where kind = 'mandou_bem'`)
 
 await asUser(ESTRANHA)
 check('quem está fora da dupla não vê incentivo nenhum',
@@ -158,8 +193,8 @@ check('quem está fora da dupla não vê incentivo nenhum',
 check('quem está fora da dupla não vê os membros',
   (await q(`select user_id from public.pair_members`)).length === 0)
 const semDupla = (await one(`select public.pair_overview() as j`)).j
-check('quem não tem dupla recebe pair nulo', semDupla.pair === null)
-const semPar = await erro(`select public.pair_send_encouragement('bora')`)
+check('quem não tem dupla recebe lista vazia', semDupla.pairs.length === 0)
+const semPar = await erro(`select public.pair_send_encouragement('${pairId}', 'bora')`)
 check('quem não tem dupla não consegue mandar incentivo', semPar !== null)
 
 console.log('\n## Cenário 7 — convite inválido, reutilizado e expirado')
@@ -186,25 +221,66 @@ await asUser(CAROL)
 const vencido = (await one(`select public.pair_invite_preview('${meu.token}') as j`)).j
 check('convite vencido aparece como expirado na prévia', vencido.status === 'expirado')
 
-console.log('\n## Uma dupla por pessoa')
+console.log('\n## O teto de duplas por plano (0053)')
 
+/*
+  Até a 0053 isto era um índice único: uma dupla ativa por pessoa, pra todo
+  mundo. Agora é o plano que decide, então o mesmo cenário roda duas vezes com
+  a mesma conta em planos diferentes.
+*/
 await asPostgres()
 await db.exec(`update public.pair_invites set expires_at = now() + interval '7 days', status = 'pendente' where token_hash = encode(extensions.digest('${meu.token}', 'sha256'), 'hex')`)
-await asUser(CAROL)
-const jaTem = await erro(`select public.pair_accept_invite('${meu.token}')`)
-check('quem já está numa dupla não entra em outra', jaTem !== null, `veio ${jaTem}`)
-
-await asUser(LAY)
-const novoConvite = await erro(`select public.pair_create_invite()`)
-check('quem já está numa dupla não gera convite novo', novoConvite !== null)
-
-console.log('\n## Sair da dupla')
+await db.exec(`update public.plan_trials set status = 'encerrado', ended_at = now() where user_id = '${CAROL}'`)
 
 await asUser(CAROL)
-await db.exec(`select public.pair_leave()`)
-check('quem saiu não tem mais dupla', (await one(`select public.pair_overview() as j`)).j.pair === null)
+const segundaNoFree = await erro(`select public.pair_accept_invite('${meu.token}')`)
+check('no gratuito não cabe uma segunda dupla', segundaNoFree !== null, `veio ${segundaNoFree}`)
+check('a recusa da segunda dupla convida pro PRO',
+  segundaNoFree !== null && segundaNoFree.includes('PRO'), `veio ${segundaNoFree}`)
+
+const conviteNoFree = await erro(`select public.pair_create_invite()`)
+check('no gratuito, com a dupla ocupada, não sai convite novo', conviteNoFree !== null)
+
+/*
+  O convite NÃO morre porque quem recebeu está no gratuito.
+
+  Só o teto de quem CONVIDOU cancela o link, porque esse não vai passar a valer
+  sozinho. O teto de quem recebe é temporário: ela assina e usa o mesmo link.
+*/
+await asPostgres()
+const aindaVale = await one(`select status from public.pair_invites where token_hash = encode(extensions.digest('${meu.token}', 'sha256'), 'hex')`)
+check('o convite recusado por limite de quem recebe continua pendente',
+  aindaVale.status === 'pendente', `veio ${aindaVale.status}`)
+
+// A mesma conta, agora no PRO.
+await db.exec(`update public.plan_trials set status = 'ativo', ended_at = null, ends_at = now() + interval '7 days' where user_id = '${CAROL}'`)
+await asUser(CAROL)
+const segunda = (await one(`select public.pair_accept_invite('${meu.token}') as id`)).id
+check('no PRO a segunda dupla entra', typeof segunda === 'string')
+
+const comDuas = (await one(`select public.pair_overview() as j`)).j
+check('as duas duplas aparecem na visão', comDuas.pairs.length === 2)
+check('o PRO não tem teto de duplas', comDuas.max === null && comDuas.room === true)
+check('cada dupla traz a própria gente',
+  comDuas.pairs.every((d) => d.members.length === 2 && d.members[0].is_me === true))
+check('as duplas são relações separadas', comDuas.pairs[0].id !== comDuas.pairs[1].id)
+
+// Duas duplas com a MESMA pessoa continuam sem existir.
 await asUser(LAY)
-check('a dupla acaba para os dois', (await one(`select public.pair_overview() as j`)).j.pair === null)
+const denovo = (await one(`select public.pair_create_invite() as j`)).j
+await asUser(CAROL)
+const mesmaPessoa = await erro(`select public.pair_accept_invite('${denovo.token}')`)
+check('a mesma pessoa não vira duas duplas', mesmaPessoa !== null, `veio ${mesmaPessoa}`)
+
+console.log('\n## Sair de uma dupla')
+
+await asUser(CAROL)
+await db.exec(`select public.pair_leave('${pairId}')`)
+const sobrou = (await one(`select public.pair_overview() as j`)).j
+check('sair leva só a dupla escolhida', sobrou.pairs.length === 1)
+check('a que sobrou é a outra', sobrou.pairs[0].id === segunda)
+await asUser(LAY)
+check('a dupla acaba para os dois', (await one(`select public.pair_overview() as j`)).j.pairs.length === 0)
 await asPostgres()
 check('o histórico da dupla continua no banco',
   (await q(`select id from public.accountability_pairs where ended_at is not null`)).length === 1)
@@ -215,7 +291,11 @@ check('depois de sair dá pra convidar de novo',
 console.log('\n## A flag')
 await asPostgres()
 const flag = await one(`select value -> 'juntos' as j from public.product_settings where key = 'features'`)
-check('o Juntos nasce desligado', flag.j === false)
+check('o Juntos está ligado depois da 0052', flag.j === true)
+const tetoFree = await one(`select value -> 'pairEncouragementsPerDay' as t from public.product_settings where key = 'plans.free'`)
+const tetoPro = await one(`select value -> 'pairEncouragementsPerDay' as t from public.product_settings where key = 'plans.pro'`)
+check('o gratuito tem teto de um incentivo por dia', tetoFree.t === 1, `veio ${tetoFree.t}`)
+check('o PRO não tem teto', tetoPro.t === null, `veio ${tetoPro.t}`)
 
 console.log(`\n${passed} ok, ${failed} falharam`)
 process.exit(failed > 0 ? 1 : 0)

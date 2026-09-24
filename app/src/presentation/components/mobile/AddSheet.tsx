@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { MAX_WIN_LENGTH, WIN_SUGGESTIONS } from '@/domain/entities/win'
 import { Button } from '@/presentation/components/ui/Button'
 import { BottomSheet, SheetAction } from '@/presentation/components/ui/BottomSheet'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
+import { useFeature } from '@/presentation/plan/use-feature'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
 import { usePlanner } from '@/presentation/planner/use-planner'
 
@@ -14,9 +16,16 @@ import { usePlanner } from '@/presentation/planner/use-planner'
  * abre a mesma entrevista curta do onboarding. A vitória do dia é uma linha só —
  * abrir um formulário inteiro pra ela seria fricção sem motivo, então ela é
  * resolvida aqui mesmo.
+ *
+ * A dupla também entra aqui, e não é desvio de tema: o que se adiciona é uma
+ * PESSOA. Foi por não existir nessa folha que o Juntos ficava alcançável só
+ * pela barra lateral e pelos atalhos do perfil — dois lugares onde ninguém vai
+ * procurar por alguém pra combinar.
  */
 export function AddSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const composer = useComposer()
+  const navigate = useNavigate()
+  const juntos = useFeature('juntos')
   const [winOpen, setWinOpen] = useState(false)
 
   const pick = (kind: 'acao' | 'habito' | 'meta' | 'objetivo') => {
@@ -64,6 +73,17 @@ export function AddSheet({ open, onClose }: { open: boolean; onClose: () => void
             hint="O que avançou, mesmo que pequeno"
             onClick={() => setWinOpen(true)}
           />
+          {juntos.enabled ? (
+            <SheetAction
+              icon={<Icon name="metas" className="size-5" />}
+              label="Uma pessoa na dupla"
+              hint="Alguém que vê se você avançou no dia"
+              onClick={() => {
+                onClose()
+                navigate('/app/juntos')
+              }}
+            />
+          ) : null}
         </div>
       </BottomSheet>
 

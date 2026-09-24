@@ -4,6 +4,7 @@ import {
   alreadySent,
   daysAway,
   readPair,
+  sentTodayCount,
   unreadFor,
   type Pair,
   type PairMember,
@@ -144,6 +145,36 @@ describe('incentivos', () => {
 
   it('o que a outra mandou não conta como meu', () => {
     expect(alreadySent(comReacao, EU, 'to_contigo', TODAY)).toBe(false)
+  })
+
+  it('conta os gestos do dia pra o teto do plano', () => {
+    expect(sentTodayCount(comReacao, EU, TODAY)).toBe(1)
+    expect(sentTodayCount(comReacao, ELA, TODAY)).toBe(1)
+  })
+
+  /*
+    A data é montada com os componentes LOCAIS de propósito: 23h30 de qualquer
+    fuso é o mesmo dia no calendário de quem está ali. Lendo em UTC, todo fuso
+    a oeste de Greenwich veria o dia seguinte: e o teste passaria a depender
+    da máquina que roda, que é exatamente o defeito que ele cobre.
+  */
+  it('o gesto da noite ainda é de hoje', () => {
+    const tarde: Pair = {
+      ...comReacao,
+      encouragementsToday: [
+        {
+          id: 'e3',
+          kind: 'mandou_bem',
+          senderId: EU,
+          recipientId: ELA,
+          createdAt: new Date(2026, 8, 23, 23, 30),
+          readAt: null,
+        },
+      ],
+    }
+
+    expect(alreadySent(tarde, EU, 'mandou_bem', TODAY)).toBe(true)
+    expect(sentTodayCount(tarde, EU, TODAY)).toBe(1)
   })
 
   it('lista o que chegou pra mim e ainda não foi visto', () => {

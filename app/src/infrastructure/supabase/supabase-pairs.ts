@@ -9,6 +9,7 @@ import {
   type Pair,
   type PairInvite,
   type PairMember,
+  type PairOverview,
 } from '@/domain/entities/pair'
 import type { PairRepository } from '@/domain/repositories/pair-repository'
 import { supabase } from './client'
@@ -43,16 +44,24 @@ const encouragementRow = z.object({
   read_at: z.string().nullable(),
 })
 
+const pairRow = z.object({
+  id: z.string(),
+  created_at: z.string(),
+  days_together: z.number().int(),
+  members: z.array(memberRow),
+  encouragements_today: z.array(encouragementRow),
+})
+
+/*
+  A resposta da 0053: uma lista, o teto do plano e se ainda cabe outra.
+
+  `max` é nulo no PRO (sem teto), e `room` já vem decidido pelo servidor — a
+  tela não recalcula teto de plano nenhum.
+*/
 const overviewSchema = z.object({
-  pair: z
-    .object({
-      id: z.string(),
-      created_at: z.string(),
-      days_together: z.number().int(),
-      members: z.array(memberRow),
-      encouragements_today: z.array(encouragementRow),
-    })
-    .nullable(),
+  pairs: z.array(pairRow),
+  max: z.number().int().nullable(),
+  room: z.boolean(),
 })
 
 const inviteSchema = z.object({
@@ -96,18 +105,20 @@ function toEncouragement(row: z.infer<typeof encouragementRow>): Encouragement {
   }
 }
 
-export class SupabasePairRepository implements PairRepository {
-  async load(): Promise<Pair | null> {
-    const data = await rpc('pair_overview', {}, overviewSchema)
-    if (!data.pair) return null
+function toPair(row: z.infer<typeof pairRow>): Pair {
+  return {
+    id: row.id,
+    createdAt: new Date(row.created_at),
+    daysTogether: row.days_together,
+    members: row.members.map(toMember),
+    encouragementsToday: row.encouragements_today.map(toEncouragement),
+  }
+}
 
-    return {
-      id: data.pair.id,
-      createdAt: new Date(data.pair.created_at),
-      daysTogether: data.pair.days_together,
-      members: data.pair.members.map(toMember),
-      encouragementsToday: data.pair.encouragements_today.map(toEncouragement),
-    }
+export class SupabasePairRepository implements PairRepository {
+  async load(): Promise<PairOverview> {
+    const data = await rpc('pair_overview', {}, overviewSchema)
+    return { pairs: data.pairs.map(toPair), max: data.max, room: data.room }
   }
 
   async createInvite(): Promise<PairInvite> {
@@ -134,8 +145,8 @@ export class SupabasePairRepository implements PairRepository {
     await rpcVoid('pair_decline_invite', { p_token: token })
   }
 
-  async sendEncouragement(kind: EncouragementKind): Promise<void> {
-    await rpcVoid('pair_send_encouragement', { p_kind: kind })
+  async sendEncouragement(pairId: string, kind: EncouragementKind): Promise<void> {
+    await rpcVoid('pair_send_encouragement', { p_pair: pairId, p_kind: kind })
   }
 
   /**
@@ -154,7 +165,7 @@ export class SupabasePairRepository implements PairRepository {
     if (error) throw translateRpcError(error)
   }
 
-  async leave(): Promise<void> {
-    await rpcVoid('pair_leave', {})
+  async leave(pairId: string): Promise<void> {
+    await rpcVoid('pair_leave', { p_pair: pairId })
   }
 }

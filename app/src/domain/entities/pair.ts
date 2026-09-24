@@ -1,4 +1,4 @@
-import type { DayKey } from './day'
+import { dayKeyOf, type DayKey } from './day'
 
 /**
  * Juntos — a dupla de accountability.
@@ -16,6 +16,16 @@ import type { DayKey } from './day'
  * migration 0049). Esse tipo é o contrato: se um dia alguém precisar mostrar
  * mais, vai precisar mudar o banco, e aí a decisão aparece numa revisão.
  */
+
+/**
+ * Os dias que a dupla enxerga: uma semana.
+ *
+ * O número mora aqui porque três lugares precisam concordar com ele: a função
+ * do banco que monta a faixa (`pair_overview`, migration 0049), o desenho da
+ * faixa e o limite do plano. O gratuito vê menos que isso (ver `pairDays` em
+ * `plan.ts`), nunca mais.
+ */
+export const PAIR_DAYS = 7
 
 export const ENCOURAGEMENT_KINDS = ['bora', 'mandou_bem', 'to_contigo'] as const
 export type EncouragementKind = (typeof ENCOURAGEMENT_KINDS)[number]
@@ -78,6 +88,21 @@ export interface Pair {
   readonly daysTogether: number
   readonly members: readonly PairMember[]
   readonly encouragementsToday: readonly Encouragement[]
+}
+
+/**
+ * Todas as duplas de quem está olhando, numa resposta.
+ *
+ * `pairs` é sempre uma lista, e é ela que faz a tela do gratuito e a do PRO
+ * serem a mesma tela: uma com um item, a outra com vários. `room` vem do
+ * servidor pronto, porque quem sabe o teto de cada plano é ele — a tela só
+ * precisa saber se ainda pode oferecer o convite.
+ */
+export interface PairOverview {
+  readonly pairs: readonly Pair[]
+  /** Quantas duplas o plano permite. `null` é sem teto. */
+  readonly max: number | null
+  readonly room: boolean
 }
 
 export interface PairInvite {
@@ -236,7 +261,16 @@ export function daysAway(member: PairMember): number {
   return gap
 }
 
-/** Já mandei esse gesto hoje? A tela usa pra marcar o botão como enviado. */
+/**
+ * Já mandei esse gesto hoje? A tela usa pra marcar o botão como enviado.
+ *
+ * O dia sai de `dayKeyOf`, que lê o calendário LOCAL, e não de
+ * `toISOString()`, que lê UTC. A diferença aparece toda noite: às 21h de
+ * Brasília o UTC já virou, e um incentivo mandado às 21h30 era contado como de
+ * amanhã — o botão voltava a dizer "Bora" como se nada tivesse sido enviado,
+ * e o teto do plano dava vaga nova. `local_day_of` no servidor usa o fuso da
+ * pessoa, então é esse o dia com que essa conta precisa concordar.
+ */
 export function alreadySent(
   pair: Pair,
   myId: string,
@@ -244,11 +278,21 @@ export function alreadySent(
   today: DayKey,
 ): boolean {
   return pair.encouragementsToday.some(
-    (item) =>
-      item.senderId === myId &&
-      item.kind === kind &&
-      item.createdAt.toISOString().slice(0, 10) === today,
+    (item) => item.senderId === myId && item.kind === kind && dayKeyOf(item.createdAt) === today,
   )
+}
+
+/**
+ * Quantos incentivos eu já mandei hoje, somando os três gestos.
+ *
+ * É o que o teto do plano conta. Diferente de `alreadySent`, que responde por
+ * um gesto só, esta olha o dia inteiro: no gratuito o dia tem uma vaga, e ela
+ * pode ser gasta com qualquer um dos três.
+ */
+export function sentTodayCount(pair: Pair, myId: string, today: DayKey): number {
+  return pair.encouragementsToday.filter(
+    (item) => item.senderId === myId && dayKeyOf(item.createdAt) === today,
+  ).length
 }
 
 /** Os incentivos que a outra pessoa mandou e eu ainda não vi. */

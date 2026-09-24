@@ -1,3 +1,5 @@
+import { ENCOURAGEMENT_KINDS, PAIR_DAYS } from './pair'
+
 /**
  * Planos.
  *
@@ -53,6 +55,34 @@ export interface PlanLimits {
   readonly themes: boolean
   /** Chamadas à Momentumm AI por mês (a franquia). O teto é aplicado no servidor. */
   readonly aiCallsPerMonth: number
+  /**
+   * Quantos dias da dupla a faixa do Juntos mostra.
+   *
+   * O servidor devolve sempre a semana inteira: o recorte aqui é de LEITURA,
+   * e vale só pro desenho. A conta de quem está retomando continua olhando os
+   * sete dias, senão o gratuito passaria a cobrar quem já está voltando.
+   */
+  readonly pairDays: number
+  /**
+   * Incentivos que cabem num dia, somando os três gestos.
+   *
+   * No gratuito é um: a pessoa escolhe qual, e o dia fecha. O teto também é
+   * aplicado no servidor (migration 0052) — o botão desabilitado é cortesia,
+   * não fechadura.
+   */
+  readonly pairEncouragementsPerDay: number
+  /**
+   * Duplas ativas ao mesmo tempo.
+   *
+   * O gratuito tem uma: ele convida alguém OU aceita um convite, e essa é a
+   * relação dele. No PRO não tem teto. "Ilimitado" é quantas duplas, nunca
+   * quanta gente dentro de uma: a dupla continua sendo de duas pessoas, e
+   * grupo não existe no produto.
+   *
+   * O teto é aplicado no servidor (migration 0053), nas duas portas de
+   * entrada: criar convite e aceitar convite.
+   */
+  readonly pairs: number
 }
 
 const UNLIMITED = Number.POSITIVE_INFINITY
@@ -81,6 +111,9 @@ export const PLAN_LIMITS: Readonly<Record<PlanTier, PlanLimits>> = {
     remindersPerHabit: 1,
     themes: false,
     aiCallsPerMonth: 0,
+    pairDays: 3,
+    pairEncouragementsPerDay: 1,
+    pairs: 1,
   },
   pro: {
     tier: 'pro',
@@ -105,6 +138,9 @@ export const PLAN_LIMITS: Readonly<Record<PlanTier, PlanLimits>> = {
     remindersPerHabit: UNLIMITED,
     themes: true,
     aiCallsPerMonth: 150,
+    pairDays: PAIR_DAYS,
+    pairEncouragementsPerDay: ENCOURAGEMENT_KINDS.length,
+    pairs: UNLIMITED,
   },
 }
 
@@ -177,6 +213,21 @@ export function planMatrix(): readonly PlanMatrixRow[] {
     { feature: 'Análises de IA', free: 'Não disponível', pro: 'Padrões, gargalos e recomendações' },
     { feature: 'Templates de objetivos', free: `Até ${free.objectiveTemplates} templates básicos`, pro: 'Biblioteca completa' },
     { feature: 'Compartilhamento', free: `${free.shareTemplates} arranjos, todas as cores e PNG`, pro: 'Todos os modelos e personalização' },
+    {
+      feature: 'Duplas no Juntos',
+      free: count(free.pairs, 'dupla', 'duplas'),
+      pro: 'Duplas ilimitadas',
+    },
+    {
+      feature: 'Juntos (a dupla)',
+      free: `Hoje e os últimos ${free.pairDays} dias`,
+      pro: `Hoje e a semana inteira (${PAIR_DAYS} dias)`,
+    },
+    {
+      feature: 'Incentivos no Juntos',
+      free: `${free.pairEncouragementsPerDay} por dia`,
+      pro: `Os ${ENCOURAGEMENT_KINDS.length} gestos, todo dia`,
+    },
     { feature: 'Exportação de dados', free: 'Não disponível', pro: 'PDF, imagem e CSV' },
     { feature: 'Lembretes', free: `${free.remindersPerHabit} lembrete por hábito`, pro: 'Lembretes personalizados' },
     { feature: 'Personalização', free: 'Tema padrão', pro: 'Temas, cores e preferências' },

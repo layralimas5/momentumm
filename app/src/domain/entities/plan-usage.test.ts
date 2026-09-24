@@ -184,11 +184,16 @@ describe('planMatrix', () => {
     expect(byFeature.get('Ações no Hoje')?.free).toBe(`Até ${FREE.actionsPerDay} por dia`)
     expect(byFeature.get('Histórico')?.free).toBe(`Últimos ${FREE.historyDays} dias`)
     expect(byFeature.get('Momentumm AI')?.free).toBe('Não disponível')
+    expect(byFeature.get('Duplas no Juntos')?.free).toBe('Até 1 dupla')
+    expect(byFeature.get('Juntos (a dupla)')?.free).toBe(`Hoje e os últimos ${FREE.pairDays} dias`)
+    expect(byFeature.get('Incentivos no Juntos')?.free).toBe(
+      `${FREE.pairEncouragementsPerDay} por dia`,
+    )
   })
 
   it('cobre a matriz inteira, sem linha vazia', () => {
     const rows = planMatrix()
-    expect(rows).toHaveLength(19)
+    expect(rows).toHaveLength(22)
     for (const row of rows) {
       expect(row.free.length).toBeGreaterThan(0)
       expect(row.pro.length).toBeGreaterThan(0)

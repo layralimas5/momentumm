@@ -1,8 +1,8 @@
 import type {
   EncouragementKind,
   InvitePreview,
-  Pair,
   PairInvite,
+  PairOverview,
 } from '@/domain/entities/pair'
 
 /**
@@ -13,14 +13,18 @@ import type {
  * Juntos são seis chamadas, e cada uma delas tem o que devolve escrito na
  * migration 0049.
  *
- * Repare no que NÃO existe: nenhum método aceita o id da outra pessoa. Mandar
- * incentivo não pergunta pra quem — numa dupla só existe uma resposta, e
- * deixar o app escolher seria abrir a porta pra mandar reação pra quem não é
- * do par.
+ * Repare no que NÃO existe: nenhum método aceita o id da outra PESSOA. Mandar
+ * incentivo diz em qual dupla, nunca pra quem — dentro de uma dupla só existe
+ * uma resposta, e deixar o app escolher o destinatário seria abrir a porta pra
+ * mandar reação pra quem não é do par.
+ *
+ * O id da DUPLA passou a ser obrigatório em `sendEncouragement` e `leave`
+ * (0053): com várias duplas ativas, um método sem esse argumento agiria sobre
+ * uma qualquer.
  */
 export interface PairRepository {
-  /** A dupla e o estado de hoje. Null quando a pessoa não tem dupla. */
-  load(): Promise<Pair | null>
+  /** As duplas, o estado de hoje de cada uma e se ainda cabe outra. */
+  load(): Promise<PairOverview>
   /** Cria o convite e devolve o token em claro — a única vez que ele existe. */
   createInvite(): Promise<PairInvite>
   /** O que mostrar na tela de convite, antes de aceitar. Funciona sem sessão. */
@@ -28,9 +32,9 @@ export interface PairRepository {
   /** Aceita e devolve o id da dupla criada. */
   acceptInvite(token: string): Promise<string>
   declineInvite(token: string): Promise<void>
-  sendEncouragement(kind: EncouragementKind): Promise<void>
+  sendEncouragement(pairId: string, kind: EncouragementKind): Promise<void>
   /** Marca como lidos os incentivos recebidos. */
   markRead(ids: readonly string[]): Promise<void>
-  /** Desfaz a dupla — para os dois lados. */
-  leave(): Promise<void>
+  /** Desfaz UMA dupla — para os dois lados dela. */
+  leave(pairId: string): Promise<void>
 }
