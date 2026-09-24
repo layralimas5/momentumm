@@ -29,17 +29,14 @@ const TREINO = 'var(--color-axis-treino)'
 export function Today() {
   return (
     <Section id="hoje" className="border-t border-line bg-surface/30">
-      <div className="grid items-center gap-12 md:grid-cols-2 md:gap-14">
-        <div className="min-w-0">
-          <SectionHeading
-            align="left"
-            eyebrow="A tela de todo dia"
-            title="Abra o Momentumm e saiba o que importa hoje."
-            description="Nada de encarar a meta inteira todo dia. Você abre e encontra o próximo passo que cabe na sua rotina de hoje."
-          />
-        </div>
+      <div className="mx-auto max-w-2xl">
+        <SectionHeading
+          eyebrow="A tela de todo dia"
+          title="Abra o Momentumm e saiba o que importa hoje."
+          description="Nada de encarar a meta inteira todo dia. Você abre e encontra o próximo passo que cabe na sua rotina de hoje."
+        />
 
-        <Reveal>
+        <Reveal className="mt-12">
           <div className="relative">
             <div
               aria-hidden="true"
