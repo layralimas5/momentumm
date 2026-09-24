@@ -37,8 +37,13 @@ for (const [id, nome] of [[LAY, 'Layra Lima'], [CAROL, 'Carol Souza']]) {
   await db.exec(`insert into auth.users (id, email, raw_user_meta_data)
                  values ('${id}', '${id.slice(0, 5)}@teste.momentumm', '${JSON.stringify({ name: nome })}'::jsonb)`)
   await db.exec(`update public.profiles set name = '${nome}' where id = '${id}'`)
+  /*
+    Seis horas paradas: a partir da 0055 o aviso só existe pra quem não passa
+    pelo app há um tempo. Presença de agora cala TODOS os tipos, e o teste
+    inteiro viraria uma fileira de `null` que não prova nada.
+  */
   await db.exec(`insert into public.user_presence (user_id, last_active_at, timezone)
-                 values ('${id}', now(), 'America/Sao_Paulo')`)
+                 values ('${id}', now() - interval '6 hours', 'America/Sao_Paulo')`)
 }
 
 const decidir = async (user = LAY) =>
@@ -68,7 +73,8 @@ await db.exec(`insert into public.tasks (user_id, title, day, status)
                values ('${LAY}', 'Publicar conteudo', current_date, 'pendente')`)
 
 const agora = (await one(`select extract(hour from (now() at time zone 'America/Sao_Paulo'))::int as h`)).h
-const esperado = agora >= 22 || agora < 7 ? null : agora >= 18 ? 'dia_dificil' : 'proximo_passo'
+const foraDaJanela = agora < 8 || agora >= 22
+const esperado = foraDaJanela ? null : agora >= 18 ? 'dia_dificil' : 'proximo_passo'
 check(`com ação pendente a decisão é ${esperado}`, (await decidir()) === esperado, `veio ${await decidir()}`)
 
 console.log('\n## Quem avançou hoje não é interrompido')
@@ -94,9 +100,17 @@ await db.exec(`insert into public.tasks (user_id, title, day, status, completed_
                values ('${LAY}', 'Ha cinco dias', current_date - 5, 'feita', now() - interval '5 days')`)
 await db.exec(`insert into public.tasks (user_id, title, day, status)
                values ('${LAY}', 'Pendente hoje', current_date, 'pendente')`)
+/*
+  Retomada tem hora marcada (a preferida da pessoa) desde a 0055: quem sumiu
+  há dias não recebe "sua ação de hoje ainda cabe" às 9h da manhã.
+*/
+await db.exec(`insert into public.notification_preferences (user_id, preferred_hour)
+               values ('${LAY}', ${agora})
+               on conflict (user_id) do update set preferred_hour = ${agora}`)
 const emPausa = await decidir()
 check('cinco dias parada pede retomada, não próximo passo',
-  emPausa === 'retomada' || (agora >= 22 || agora < 7), `veio ${emPausa}`)
+  emPausa === 'retomada' || foraDaJanela, `veio ${emPausa}`)
+await db.exec(`delete from public.notification_preferences`)
 
 console.log('\n## Preferências')
 
@@ -155,9 +169,12 @@ await db.exec(`insert into public.tasks (user_id, title, day, status, completed_
 await db.exec(`insert into public.tasks (user_id, title, day, status, completed_at)
                values ('${LAY}', 'Ontem', current_date - 1, 'feita', now() - interval '1 day')`)
 
+await db.exec(`insert into public.notification_preferences (user_id, preferred_hour)
+               values ('${LAY}', ${agora})
+               on conflict (user_id) do update set preferred_hour = ${agora}`)
 const social = await decidir(LAY)
 check('a dupla avançando vence o próximo passo',
-  social === 'social' || (agora >= 22 || agora < 7), `veio ${social}`)
+  social === 'social' || foraDaJanela, `veio ${social}`)
 
 console.log('\n## Fila de envio')
 await db.exec(`delete from public.notification_log`)
@@ -169,7 +186,7 @@ await db.exec(`insert into public.notification_preferences (user_id, preferred_h
 
 const fila = await q(`select * from public.notifications_due()`)
 const naFila = fila.find((row) => row.user_id === LAY)
-if (agora >= 22 || agora < 7) {
+if (foraDaJanela) {
   check('na janela de silêncio a fila sai vazia', naFila === undefined)
 } else {
   check('a fila traz o aparelho, o tipo e o nome da dupla',

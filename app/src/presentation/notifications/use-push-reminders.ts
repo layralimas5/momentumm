@@ -80,17 +80,32 @@ export function usePushReminders(): PushRemindersController {
     }
   }, [available, userId])
 
+  /*
+    O pedido de permissão acontece AQUI e em nenhum outro lugar: dentro de um
+    toque da pessoa, depois de ela ler o que vai receber. O navegador só deixa
+    perguntar uma vez por site, e um pedido sem contexto é um pedido negado
+    pra sempre — no iPhone, inclusive, sem caminho de volta dentro do app.
+  */
   const enable = useCallback(async () => {
     if (!vapidPublicKey) return
     setBusy(true)
     setError(null)
+    track('notification_permission_prompted', 'notificacoes')
     try {
       const device = await subscribeDevice(vapidPublicKey)
-      setPermission(pushPermission())
-      if (!device) return
+      const depois = pushPermission()
+      setPermission(depois)
 
+      if (!device) {
+        // Negar não é erro: é resposta. A tela para de oferecer e segue.
+        track('notification_permission_denied', 'notificacoes')
+        return
+      }
+
+      track('notification_permission_granted', 'notificacoes')
       await container.push.save(device)
       setEnabled(true)
+      track('push_subscription_created', 'notificacoes')
       track('reminder_enabled')
     } catch (cause) {
       setError(toUserMessage(cause))

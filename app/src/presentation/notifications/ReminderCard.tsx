@@ -1,7 +1,8 @@
-import { REMINDER_HOUR } from '@/domain/notifications/push-device'
+import { INACTIVITY_HOURS } from '@/domain/notifications/push-device'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { Panel } from '@/presentation/components/ui/Surface'
+import { useInstallApp } from '@/presentation/pwa/use-install-app'
 import { usePushReminders } from './use-push-reminders'
 
 /**
@@ -12,11 +13,19 @@ import { usePushReminders } from './use-push-reminders'
  * é definitivo neste aparelho; Configurações continua oferecendo.
  *
  * Não pede permissão sozinho: o navegador só deixa perguntar uma vez, e uma
- * pergunta sem contexto é uma pergunta negada.
+ * pergunta sem contexto é uma pergunta negada. O texto diz o que vai chegar
+ * ANTES de o sistema perguntar, porque é a única chance de a pessoa decidir
+ * com informação.
+ *
+ * Nunca divide a tela com o convite de instalar: dois cards pedindo coisas
+ * diferentes no mesmo lugar viram um bloco que a pessoa aprende a pular. A
+ * instalação vem primeiro — no iPhone ela é pré-requisito do aviso.
  */
 export function ReminderCard() {
   const reminders = usePushReminders()
+  const install = useInstallApp()
 
+  if (install.shouldOffer) return null
   if (!reminders.available || reminders.loading) return null
   if (reminders.enabled || reminders.dismissed || reminders.permission === 'denied') return null
 
@@ -25,13 +34,14 @@ export function ReminderCard() {
       <div className="min-w-0">
         <p className="flex items-center gap-2 text-xs font-medium tracking-wide text-brand-ink uppercase">
           <Icon name="sino" className="size-4" />
-          Lembrete diário
+          Lembretes
         </p>
         <p className="mt-2 text-base font-semibold text-balance text-ink">
-          Um toque às {REMINDER_HOUR}h nos dias em que você não abrir o app.
+          Quer que o Momentumm te lembre do próximo passo quando o dia ficar corrido?
         </p>
         <p className="mt-1 text-sm text-ink-muted">
-          Só nesses dias. Abriu, não chega nada. Dá pra desligar em Configurações.
+          Um aviso só, e só quando existe ação sua em aberto e já faz umas {INACTIVITY_HOURS} horas
+          que você não passa por aqui. Dá pra desligar em Configurações.
         </p>
         {reminders.error ? (
           <p role="alert" className="mt-2 text-sm text-danger">
@@ -45,7 +55,7 @@ export function ReminderCard() {
           Agora não
         </Button>
         <Button className="min-h-12" loading={reminders.busy} onClick={() => void reminders.enable()}>
-          Ligar lembrete
+          Ativar lembretes
         </Button>
       </div>
     </Panel>
