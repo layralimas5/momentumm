@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom'
 import { activityType, formatUnit } from '@/domain/entities/activity-type'
 import { deadlineLabelOf, OBJECTIVE_STATUS_LABELS } from '@/domain/entities/objective'
-import { ObjectiveStateTag, PriorityTag } from '@/presentation/components/shared/Meta'
+import { overviewOf } from '@/domain/entities/objectives-overview'
+import { ObjectivesEmpty } from '@/presentation/components/objective/ObjectivesEmpty'
+import { ObjectivesOverviewTiles } from '@/presentation/components/objective/ObjectivesOverviewTiles'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
-import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
+import { ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { Panel, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
 import { AiEntryLink } from '@/presentation/ai/AiBits'
 import { UpgradeHint } from '@/presentation/components/dashboard/UpgradeHint'
@@ -36,6 +38,9 @@ export function ObjectivesPage() {
   const done = views.filter((view) => view.progress.state === 'concluido')
 
   const limit = planner.usage.objectives
+  const overview = overviewOf(
+    views.map((view) => ({ ratio: view.ratio, progress: view.progress })),
+  )
 
   return (
     <div className="flex flex-col gap-5">
@@ -62,24 +67,28 @@ export function ObjectivesPage() {
       {planner.error ? (
         <ErrorNote message={planner.error} onRetry={() => void planner.reload()} />
       ) : null}
-      {limit.message ? <UpgradeHint message={limit.message} /> : null}
-      {!planner.limits.ai && !limit.reached ? (
-        <UpgradeHint message="Criar plano com IA: o objetivo vira etapas, hábitos e ações que cabem no teu tempo. Faz parte do PRO." />
-      ) : null}
+
+      {/*
+        Como estou, antes de como está cada um.
+
+        Some quando não há objetivo ativo: três zeros em cima de uma tela vazia
+        é o oposto de um convite.
+      */}
+      <ObjectivesOverviewTiles overview={overview} />
+
+      {/*
+        O aviso de limite só quando ele ENCOSTA.
+
+        Ele era permanente, e abria a tela contando o que a conta não pode
+        fazer — antes mesmo de a pessoa ver o que ela já fez. Um teto que só
+        vale no terceiro objetivo não precisa aparecer no primeiro.
+      */}
+      {limit.reached && limit.message ? <UpgradeHint message={limit.message} /> : null}
 
       {planner.loading && views.length === 0 ? (
         <LoadingBlock label="Carregando os objetivos" />
       ) : views.length === 0 ? (
-        <EmptyState
-          title="Nenhum objetivo ainda"
-          description="Começa por um só. Objetivo com prazo vira plano."
-          action={
-            <Button onClick={() => composer.open('objetivo')}>
-              <Icon name="mais" className="size-4" />
-              Criar meu primeiro objetivo
-            </Button>
-          }
-        />
+        <ObjectivesEmpty onCreate={() => composer.open('objetivo')} />
       ) : (
         <div className="flex flex-col gap-6">
           <Group title="Em andamento" views={running} />
@@ -122,33 +131,64 @@ function Group({
   )
 }
 
+/**
+ * Um objetivo na lista.
+ *
+ * Tinha NOVE blocos: título, área, prazo, selo de estado, selo de prioridade,
+ * barra, porcentagem, legenda da barra, parágrafo de diagnóstico, rodapé com
+ * hábitos e ações, e a próxima ação. Três objetivos assim são vinte e sete
+ * blocos numa tela — e boa parte deles dizia a mesma coisa duas vezes:
+ * "Atrasado" aparecia no parágrafo E no rodapé, "Em andamento" repetia o
+ * título da própria seção, e o progresso vinha em quatro formatos.
+ *
+ * Agora são quatro, e cada um responde uma pergunta diferente:
+ *
+ *   o que é          título, área e prazo
+ *   como vai         barra, porcentagem e o que ela mede
+ *   precisa de mim?  só quando precisa — atrasado ou parado
+ *   e agora?         a próxima ação, com o botão que a traz pro dia
+ *
+ * O diagnóstico em frase não sumiu: ele abre a tela do objetivo, que é onde a
+ * pessoa chega pra decidir e onde a frase tem espaço pra ser lida.
+ */
 function ObjectiveCard({ view }: { readonly view: ObjectiveView }) {
   const { objective } = view.progress
   const axis = activityType(objective.axis)
   const dimmed = view.progress.state === 'pausado' || view.progress.state === 'concluido'
 
+  /*
+    O estado só aparece quando muda alguma coisa.
+
+    "Em andamento" repete o título da seção que já contém o card, e um selo
+    que está em todos os cards não distingue card nenhum. Sobra o que pede
+    ação: atrasado, vencido, parado há uma semana.
+  */
+  const alerta =
+    view.progress.state === 'pausado' || view.progress.state === 'concluido'
+      ? null
+      : view.stalled
+        ? 'Parado há mais de uma semana'
+        : view.progress.status === 'atrasado' || view.progress.status === 'vencido'
+          ? OBJECTIVE_STATUS_LABELS[view.progress.status]
+          : null
+
   return (
     <Panel className={`flex h-full flex-col ${dimmed ? 'opacity-75' : ''}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <Link
-            to={`/app/objetivos/${objective.id}`}
-            className="block truncate text-base font-semibold text-ink transition-colors hover:text-brand-ink"
-          >
+      <Link
+        to={`/app/objetivos/${objective.id}`}
+        className="group flex items-start justify-between gap-3"
+      >
+        <span className="min-w-0">
+          <span className="block truncate text-base font-semibold text-ink transition-colors group-hover:text-brand-ink">
             {objective.title}
-          </Link>
-          <p className="mt-1 text-xs text-ink-faint">
+          </span>
+          <span className="mt-1 block text-xs text-ink-faint">
             {axis.label} · {deadlineLabelOf(view.progress)}
-          </p>
-        </div>
+            {objective.priority === 'alta' ? ' · prioridade alta' : ''}
+          </span>
+        </span>
         <Icon name="seta" className="size-4 shrink-0 text-ink-faint" />
-      </div>
-
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <ObjectiveStateTag state={view.progress.state} />
-        <PriorityTag priority={objective.priority} />
-        {view.stalled ? <Tag tone="warn">Parado há mais de uma semana</Tag> : null}
-      </div>
+      </Link>
 
       <div className="mt-4 flex items-center gap-3">
         <ProgressBar
@@ -163,36 +203,18 @@ function ObjectiveCard({ view }: { readonly view: ObjectiveView }) {
       </div>
 
       {/* O que a barra mede vem escrito: com plano ela mede execução, sem
-          plano ela cai no volume. Uma barra sem legenda é uma barra que anda
-          sozinha. */}
+          plano ela cai no volume. Uma barra sem legenda anda sozinha. */}
       <p className="mt-2 text-xs text-ink-faint">
         {view.ratioSource === 'plano'
-          ? `${view.plan.stages.filter((item) => item.stage.status === 'concluida').length} de ${view.plan.stages.length} etapas · ${formatUnit(axis, view.progress.done)} registradas`
+          ? `${view.plan.stages.filter((item) => item.stage.status === 'concluida').length} de ${view.plan.stages.length} etapas · ${view.doneTasks}/${view.tasks.length} ações`
           : `${formatUnit(axis, view.progress.done)} de ${objective.target} · sem etapas ainda`}
       </p>
 
-      {view.progress.state === 'concluido' ? null : (
-        <p className="mt-3 text-pretty text-sm text-ink-muted">{view.progress.summary}</p>
-      )}
-
-      <div className="mt-auto flex flex-wrap items-center gap-3 border-t border-line pt-4 text-xs text-ink-faint">
-        <span>
-          {view.habits.length} {view.habits.length === 1 ? 'hábito' : 'hábitos'}
-        </span>
-        <span aria-hidden="true">·</span>
-        <span>
-          {view.doneTasks}/{view.tasks.length} ações
-        </span>
-        {/* Pausado não mostra leitura de ritmo: pausar existe pra parar de cobrar. */}
-        {view.progress.state === 'concluido' || view.progress.state === 'pausado' ? null : (
-          <>
-            <span aria-hidden="true">·</span>
-            <span className="text-ink-muted">
-              {OBJECTIVE_STATUS_LABELS[view.progress.status]}
-            </span>
-          </>
-        )}
-      </div>
+      {alerta ? (
+        <p className="mt-3">
+          <Tag tone="warn">{alerta}</Tag>
+        </p>
+      ) : null}
 
       {view.nextTask ? <NextStep view={view} /> : null}
     </Panel>
