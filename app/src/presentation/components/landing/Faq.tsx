@@ -40,7 +40,7 @@ const BASE: readonly Question[] = [
   },
   {
     question: 'Qual a diferença entre o gratuito e o PRO?',
-    answer: `O gratuito roda o ciclo inteiro com limites: ${free.activeObjectives} objetivos, ${free.activeHabits} hábitos, ${free.activePlans} plano por etapas, ${free.actionsPerDay} ações por dia e ${free.historyDays} dias de histórico. O PRO tira os limites e abre o histórico completo, o review semanal e a Momentumm AI.`,
+    answer: `O gratuito roda o ciclo inteiro com limites: ${free.activeObjectives} objetivos, ${free.activeHabits} hábitos, ${free.activePlans} plano por etapas, ${free.actionsPerDay} ações por dia, ${free.historyDays} dias de histórico e ${free.pairs} dupla no Juntos. O PRO tira os limites e abre o histórico completo, o review semanal e a Momentumm AI.`,
   },
 ]
 
