@@ -8,8 +8,20 @@ import { isQuizTheme, type QuizThemeKey } from '@/domain/entities/quiz'
  * listas batem. Metade dos eventos acontece ANTES de existir conta, então
  * eles não passam por `product_events` (que exige sessão): a sessão anônima
  * do quiz é a chave.
+ *
+ * Os seis primeiros são da LANDING, e por isso vêm antes de `quiz_viewed`:
+ * a mesma sessão que registra a visita registra o quiz depois, e é isso que
+ * responde "qual conteúdo trouxe alguém que começou o quiz". Sem eles a
+ * página inicial era um buraco no funil: dava pra ver quem começou o quiz e
+ * quem assinou, nunca quem chegou e foi embora antes de clicar.
  */
 export const FUNNEL_EVENTS = [
+  'landing_viewed',
+  'hero_cta_clicked',
+  'secondary_cta_clicked',
+  'pricing_viewed',
+  'pricing_cta_clicked',
+  'faq_opened',
   'quiz_viewed',
   'quiz_started',
   'quiz_question_answered',
@@ -30,7 +42,8 @@ export type FunnelEventName = (typeof FUNNEL_EVENTS)[number]
 
 /** A ordem do funil como o painel vai mostrar. */
 export const FUNNEL_STAGES: readonly { readonly event: FunnelEventName; readonly label: string }[] = [
-  { event: 'quiz_viewed', label: 'Visitas' },
+  { event: 'landing_viewed', label: 'Visitas na página' },
+  { event: 'quiz_viewed', label: 'Abriram o quiz' },
   { event: 'quiz_started', label: 'Inícios do quiz' },
   { event: 'quiz_completed', label: 'Quiz concluído' },
   { event: 'lead_captured', label: 'Contato deixado' },

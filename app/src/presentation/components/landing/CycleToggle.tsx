@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import { formatBRL, monthlyEquivalentCents } from '@/domain/billing/billing-plans'
 import { cn } from '@/shared/lib/cn'
 import type { BillingCycle } from './plans'
 
@@ -20,7 +21,7 @@ export function CycleToggle({
     readonly hint?: string
   }[] = [
     { cycle: 'mensal', label: 'Mensal' },
-    { cycle: 'anual', label: 'Anual', hint: 'R$ 10,83/mês' },
+    { cycle: 'anual', label: 'Anual', hint: `${formatBRL(monthlyEquivalentCents('anual'))}/mês` },
   ]
 
   return (
@@ -50,7 +51,9 @@ export function CycleToggle({
               <span
                 className={cn(
                   'rounded-full px-1.5 py-0.5 text-[11px] font-medium',
-                  active ? 'bg-white/15 text-white' : 'bg-positive/15 text-positive',
+                  // Branco sobre o roxo do botão ativo não chega no AA num
+                  // texto de 11px: o selo inverte em vez de clarear o fundo.
+                  active ? 'bg-white text-brand-deep' : 'bg-positive/15 text-positive',
                 )}
               >
                 {option.hint}

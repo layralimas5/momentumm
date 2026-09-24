@@ -12,6 +12,12 @@
  * `onboarding_completed` (`metadata.source`): é assim que se descobre qual
  * ângulo trouxe gente que de fato começou, não só gente que clicou.
  *
+ * A oferta troca só a PROMESSA: título, subtítulo e a frase que fecha a
+ * página. O botão não entra nessa lista de propósito — a página inteira usa
+ * um CTA só ("Criar meu plano"), e três textos diferentes de botão na mesma
+ * campanha tornam impossível saber se foi o ângulo ou a palavra do botão que
+ * mudou o resultado.
+ *
  * Quando a vencedora estiver escolhida, ela vira o `DEFAULT_OFFER` e os
  * links por oferta continuam valendo pra testes seguintes.
  */
@@ -26,9 +32,6 @@ export interface Offer {
   /** As linhas do título. A última ganha a cor da marca. */
   readonly lines: readonly [string, string]
   readonly subtitle: string
-  readonly cta: string
-  /** A linha abaixo do botão. */
-  readonly reassurance: string
   /** O título do CTA final da página, que fecha a mesma conversa. */
   readonly closing: string
 }
@@ -40,8 +43,6 @@ export const OFFERS: Readonly<Record<OfferKey, Offer>> = {
     lines: ['Um sistema pra você parar', 'de recomeçar toda segunda-feira.'],
     subtitle:
       'Não é falta de força de vontade. É plano grande demais pro dia que você tem, e um app que te pune quando falha. O Momentumm monta o plano que cabe e ajusta quando a semana não sai como o planejado.',
-    cta: 'Testar grátis por 7 dias',
-    reassurance: 'Sem cartão. Em dois minutos você tem um plano e o passo de hoje.',
     closing: 'A última vez que você recomeça do zero pode ser esta.',
   },
   b: {
@@ -50,8 +51,6 @@ export const OFFERS: Readonly<Record<OfferKey, Offer>> = {
     lines: ['Transforme uma meta confusa', 'num plano possível pra começar hoje.'],
     subtitle:
       'Você diz o que quer alcançar, até quando e quanto tempo tem de verdade. O Momentumm quebra isso em etapas, monta as ações e te entrega o primeiro passo, hoje.',
-    cta: 'Criar minha meta e receber o primeiro passo',
-    reassurance: 'Grátis, sem cartão. O primeiro passo aparece antes de você fechar a aba.',
     closing: 'Sua meta já sabe o que quer. Falta o primeiro passo.',
   },
   c: {
@@ -60,8 +59,6 @@ export const OFFERS: Readonly<Record<OfferKey, Offer>> = {
     lines: ['Você não precisa começar do zero', 'só porque perdeu alguns dias.'],
     subtitle:
       'Perdeu o ritmo, sumiu uma semana, o plano ficou pra trás. O Modo Retomada pega de onde você parou e monta um retorno que cabe na semana que você tem agora, sem cobrar os dias que passaram.',
-    cta: 'Retomar de onde parei',
-    reassurance: 'Grátis, sem cartão. Seu plano continua do ponto em que ficou.',
     closing: 'Parar faz parte. Voltar é o que conta.',
   },
 }

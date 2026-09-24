@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { trackLanding } from './landing-analytics'
+import { CTA } from './site'
 import { useSiteCta } from './use-site-cta'
 
 /**
@@ -12,7 +14,7 @@ import { useSiteCta } from './use-site-cta'
 export function StickyCta() {
   const [visible, setVisible] = useState(false)
   const reduced = useReducedMotion()
-  const { primary, signedIn } = useSiteCta()
+  const { primary, signedIn } = useSiteCta('lp-barra')
 
   useEffect(() => {
     const hero = document.getElementById('home')
@@ -58,14 +60,15 @@ export function StickyCta() {
                 </>
               ) : (
                 <>
-                  <span className="block font-medium text-ink">Grátis, sem cartão.</span>O plano
-                  leva dois minutos.
+                  <span className="block font-medium text-ink">{CTA.reassurance}</span>
+                  Seu próximo passo em uma tela.
                 </>
               )}
             </p>
             <Link
               to={primary.to}
-              className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-brand px-5 text-sm font-medium text-white transition-colors hover:bg-brand-hi"
+              onClick={() => trackLanding('hero_cta_clicked')}
+              className="pulse-button inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-brand px-5 text-sm font-medium text-white transition-colors hover:bg-brand-hi"
             >
               {primary.label}
             </Link>

@@ -32,6 +32,9 @@
   --color-flame-dim: #3a1f14;
 
   --color-positive: #3ecf8e;
+  /* O verde do selo pequeno. No escuro é o mesmo; no claro precisa escurecer
+     pra um texto de 10px sobre fundo esverdeado chegar no AA. */
+  --color-positive-ink: #3ecf8e;
   --color-danger: #f05252;
 
   /* Medalha conquistada. Ouro e reservado a conquista: nao e cor de interface,
@@ -187,6 +190,18 @@
 }
 
 /* Card que pulsa enquanto o mouse (ou o foco) estiver nele. */
+@keyframes pulse-button {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgb(109 92 255 / 0);
+  }
+  50% {
+    transform: scale(1.035);
+    box-shadow: 0 0 24px -4px rgb(109 92 255 / 0.65);
+  }
+}
+
 @keyframes pulse-card {
   0%,
   100% {
@@ -244,10 +259,28 @@
     border-color: var(--color-brand);
   }
 
+  /*
+    O mesmo pulso, na dose de botão.
+    Um botão é menor que um card e já tem cor cheia, então o card pulsa 2% e
+    ele 3,5%: em área pequena, 2% não se percebe. A borda não entra aqui
+    (botão não tem) e o brilho é da própria cor, pra o pulso parecer o botão
+    respirando e não uma sombra descolada atrás dele.
+  */
+  .pulse-button {
+    transition: transform 0.2s var(--ease-out-soft);
+  }
+
+  .pulse-button:hover,
+  .pulse-button:focus-visible {
+    animation: pulse-button 1.6s ease-in-out infinite;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .glow-pulse,
     .pulse-on-hover:hover,
-    .pulse-on-hover:focus-within {
+    .pulse-on-hover:focus-within,
+    .pulse-button:hover,
+    .pulse-button:focus-visible {
       animation: none !important;
     }
   }
@@ -379,6 +412,7 @@
   --color-flame-dim: #fde8dd;
 
   --color-positive: #16a068;
+  --color-positive-ink: #07603e;
   --color-danger: #d93a3a;
 
   /* No claro o ouro escurece: o mesmo tom do escuro sumiria no branco. */
