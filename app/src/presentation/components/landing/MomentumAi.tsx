@@ -38,17 +38,20 @@ export function MomentumAi() {
         description="Ela olha o seu objetivo, o seu plano e o seu tempo antes de abrir a boca. A sugestão vem com o botão que a executa."
       />
 
-      <ul className="mt-10 grid gap-3 md:grid-cols-3">
+      {/*
+        Três linhas, não três cards. Cada caso cabe numa pergunta e numa
+        resposta; emoldurar isso em caixa com borda e sombra era dar peso de
+        recurso a uma frase.
+      */}
+      <ul className="mx-auto mt-10 max-w-2xl divide-y divide-line border-y border-line">
         {CASES.map((item, index) => (
-          <li key={item.when} className="h-full">
-            <Reveal delay={index * 0.06} className="h-full">
-              <div className="pulse-on-hover flex h-full gap-4 rounded-card border border-line bg-surface p-5 md:flex-col md:gap-0 md:p-6">
-                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-dim text-brand-hi">
-                  <Icon name={item.icon} className="size-5" />
-                </span>
+          <li key={item.when}>
+            <Reveal delay={index * 0.06}>
+              <div className="flex items-start gap-4 py-5">
+                <Icon name={item.icon} className="mt-0.5 size-5 shrink-0 text-brand-hi" />
                 <div className="min-w-0">
-                  <h3 className="font-medium text-ink md:mt-4">{item.when}</h3>
-                  <p className="mt-1.5 text-pretty text-sm text-ink-muted">{item.what}</p>
+                  <h3 className="font-medium text-ink">{item.when}</h3>
+                  <p className="mt-1 text-pretty text-sm text-ink-muted">{item.what}</p>
                 </div>
               </div>
             </Reveal>
@@ -58,7 +61,7 @@ export function MomentumAi() {
 
       {/* A prova da frase: a sugestão chega como proposta, com os dois botões. */}
       <Reveal delay={0.2}>
-        <div className="mx-auto mt-8 max-w-xl rounded-card border border-brand/30 bg-brand-dim/20 p-5 sm:p-6">
+        <div className="pulse-on-hover mx-auto mt-8 max-w-xl rounded-card border border-brand/30 bg-brand-dim/20 p-5 sm:p-6">
           <p className="flex items-center gap-2 text-xs font-medium tracking-wide text-brand-hi uppercase">
             <Icon name="ia" className="size-4" />
             Sugestão

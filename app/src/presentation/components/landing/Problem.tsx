@@ -51,8 +51,8 @@ export function Problem() {
  * por trás e termina na volta escrita embaixo. No celular vira coluna, que
  * cinco caixas lado a lado numa tela de 360px viram texto de 9 pixels.
  *
- * O passo do abandono é o único em tom de alerta: é onde a pessoa está
- * quando chega aqui, e é o ponto que o produto ataca na seção seguinte.
+ * "Abandona" é a única palavra em tom de alerta: é onde a pessoa está quando
+ * chega aqui, e é o ponto que o produto ataca na seção seguinte.
  */
 function Cycle() {
   const reduced = useReducedMotion()
@@ -76,10 +76,11 @@ function Cycle() {
               viewport={{ once: true, margin: '-60px' }}
               transition={{ duration: 0.4, delay: index * 0.08 }}
               className={cn(
-                'pulse-on-hover rounded-card border bg-surface px-3 py-3 text-center',
+                // Sem borda: cinco caixas pra cinco palavras davam peso de
+                // recurso a uma fila que é só a história que a pessoa viveu.
+                'pulse-on-hover rounded-xl bg-surface/60 px-3 py-3 text-center hover:bg-surface',
                 // "Recomeça" fecha a volta: ocupa a linha inteira no celular.
                 index === CYCLE.length - 1 && 'col-span-2 sm:col-span-1',
-                abandono ? 'border-flame/40' : 'border-line',
               )}
             >
               <p className={cn('text-sm font-medium', abandono ? 'text-flame' : 'text-ink')}>

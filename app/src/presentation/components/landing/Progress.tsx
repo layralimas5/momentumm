@@ -23,41 +23,58 @@ const MINIMAL_DAYS = new Set([3, 9, 14, 22])
 export function Progress() {
   return (
     <Section id="progresso" className="border-t border-line">
-      <SectionHeading
-        eyebrow="Progresso"
-        title="Um número para entender seu momento."
-        description="O Momentumm Score mostra a sua constância agora. Ele não zera porque um dia não saiu como planejado."
-      />
+      <div className="grid items-center gap-10 md:grid-cols-[0.85fr_1.15fr] md:gap-14">
+        <div className="min-w-0">
+          <SectionHeading
+            align="left"
+            eyebrow="Progresso"
+            title="Um número para entender seu momento."
+            description="O Momentumm Score mostra a sua constância agora. Ele não zera porque um dia não saiu como planejado."
+          />
 
-      <div className="mx-auto mt-10 grid max-w-4xl gap-3 sm:grid-cols-[0.8fr_1.2fr]">
-        <Reveal>
-          <div className="pulse-on-hover surface-brand edge-light flex h-full flex-col justify-center rounded-card p-6 text-center sm:p-8">
-            <p className="text-sm text-ink-faint">Momentumm</p>
-            <CountUp
-              value={72}
-              className="text-gradient-brand tabular mt-1 block text-6xl font-semibold leading-none tracking-tight sm:text-7xl"
-            />
-            <p className="mt-4">
-              <span className="inline-flex rounded-full border border-brand/40 bg-brand-dim/40 px-3 py-1 text-sm font-medium text-brand-ink">
-                Constante
-              </span>
+          <Reveal delay={0.2}>
+            <p className="mt-8 text-balance text-xl font-medium text-ink">
+              Uma terça ruim não apaga um mês de progresso.
             </p>
-            <p className="tabular mt-3 text-sm text-positive">+4 esta semana</p>
-          </div>
-        </Reveal>
+          </Reveal>
+        </div>
 
         <Reveal delay={0.08}>
-          <DayGrid />
+          <ScorePanel />
         </Reveal>
       </div>
-
-      <Reveal delay={0.2}>
-        <p className="mx-auto mt-8 max-w-2xl text-balance text-center text-xl font-medium text-ink sm:text-2xl">
-          Uma terça ruim não apaga um mês de progresso.
-        </p>
-      </Reveal>
-
     </Section>
+  )
+}
+
+/**
+ * O número e a janela num painel só.
+ *
+ * Eram dois cards lado a lado, e a divisória entre eles sugeria que o score e
+ * os 28 dias eram duas informações. São a mesma: o número é o que a janela
+ * mostra. Juntos, a leitura é "72 porque foi isso que aconteceu".
+ */
+function ScorePanel() {
+  return (
+    <div className="pulse-on-hover surface-brand edge-light rounded-card p-6 sm:p-8">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <p className="text-sm text-ink-faint">Momentumm</p>
+          <CountUp
+            value={72}
+            className="text-gradient-brand tabular mt-1 block text-6xl font-semibold leading-none tracking-tight sm:text-7xl"
+          />
+        </div>
+        <div className="text-right">
+          <span className="inline-flex rounded-full border border-brand/40 bg-brand-dim/40 px-3 py-1 text-sm font-medium text-brand-ink">
+            Constante
+          </span>
+          <p className="tabular mt-2 text-sm text-positive">+4 esta semana</p>
+        </div>
+      </div>
+
+      <DayGrid />
+    </div>
   )
 }
 
@@ -67,7 +84,7 @@ function DayGrid() {
   const days = Array.from({ length: WINDOW_DAYS }, (_, index) => index)
 
   return (
-    <div className="pulse-on-hover h-full rounded-card border border-line bg-surface p-5 sm:p-7">
+    <div className="mt-8 border-t border-line pt-6">
       <div className="flex items-baseline justify-between gap-3">
         <p className="text-sm font-medium text-ink">Seus últimos 28 dias</p>
         <p className="tabular text-xs text-ink-faint">{WINDOW_DAYS - EMPTY_DAYS.size} com movimento</p>
