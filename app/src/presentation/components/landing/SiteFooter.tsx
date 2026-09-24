@@ -36,12 +36,14 @@ export function SiteFooter() {
           <div>
             <Wordmark />
             <p className="mt-4 max-w-xs text-pretty text-sm text-ink-muted">
-              Objetivo vira plano. Plano vira ação. Ação vira progresso.
+              Objetivo vira plano. Plano vira ação. Ação vira progresso. O Momentumm é um app
+              web de metas: ele transforma um objetivo com prazo em um plano por etapas, entrega
+              uma ação por dia e reajusta quando a sua rotina muda.
             </p>
             <Link
               to={cta.primary.to}
               onClick={() => trackLanding('hero_cta_clicked')}
-              className="mt-6 inline-flex h-11 items-center justify-center rounded-full bg-brand px-5 text-sm font-medium text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-hi"
+              className="pulse-button mt-6 inline-flex h-11 items-center justify-center rounded-full bg-brand px-5 text-sm font-medium text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-hi"
             >
               {cta.primary.label}
             </Link>

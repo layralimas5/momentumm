@@ -4,7 +4,6 @@ import { FinalCta } from '@/presentation/components/landing/FinalCta'
 import { Hero } from '@/presentation/components/landing/Hero'
 import { HowItWorks } from '@/presentation/components/landing/HowItWorks'
 import { MomentumAi } from '@/presentation/components/landing/MomentumAi'
-import { Objectives } from '@/presentation/components/landing/Objectives'
 import { Pricing } from '@/presentation/components/landing/Pricing'
 import { Problem } from '@/presentation/components/landing/Problem'
 import { Progress } from '@/presentation/components/landing/Progress'
@@ -19,13 +18,13 @@ import { useLandingView } from '@/presentation/components/landing/landing-analyt
  *
  * 1. A dor, na primeira frase: "pare de recomeçar toda segunda".
  * 2. O ciclo que ela reconhece, terminando em "recomeça".
- * 3. Como o produto quebra esse ciclo, em quatro momentos com tela.
+ * 3. Como o produto quebra esse ciclo, em três telas, fechando com a
+ *    amplitude: um método, diferentes objetivos.
  * 4. A semana ruim, que é onde todo outro app falha. É o centro da página.
  * 5. A tela de todo dia, grande e sem legenda.
  * 6. O número que mostra constância sem punir uma falha.
  * 7. A IA, vendida pelo que resolve.
- * 8. Só então a amplitude: serve pra qualquer objetivo.
- * 9. Preço, dúvidas, convite.
+ * 8. Preço, dúvidas, convite.
  *
  * O que saiu e por quê: a seção de método (o ciclo explicado em seis passos)
  * e a de telas (seis abas com print) diziam a mesma coisa que "como funciona"
@@ -33,7 +32,9 @@ import { useLandingView } from '@/presentation/components/landing/landing-analyt
  * Notion e habit tracker posicionava o produto contra ferramentas em vez de
  * contra o problema. Os depoimentos já tinham saído por não existirem pessoas
  * reais pra citar, e as garantias viraram três linhas coladas no preço, que é
- * onde o risco realmente aparece.
+ * onde o risco realmente aparece. A seção "um método, diferentes objetivos"
+ * virou uma fila de etiquetas no fim do "como funciona": ela era uma seção
+ * inteira pra dizer uma frase.
  *
  * Um CTA só na página inteira ("Criar meu plano", ver `site.ts`), repetido no
  * header, no hero, no meio, no preço, na barra do celular e no fim.
@@ -60,7 +61,6 @@ export function LandingPage() {
         <Today />
         <Progress />
         <MomentumAi />
-        <Objectives />
         <Pricing />
         <Faq />
         <FinalCta />

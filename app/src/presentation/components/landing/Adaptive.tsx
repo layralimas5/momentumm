@@ -48,11 +48,11 @@ export function Adaptive() {
         eyebrow="Quando a rotina sai do eixo"
         title={
           <>
-            <span className="block">O plano não deu certo hoje?</span>
+            <span className="block">O plano não deu certo hoje?{' '}</span>
             <span className="block text-brand-hi">O objetivo não precisa ir junto.</span>
           </>
         }
-        description="Sua reunião atrasou. Você dormiu mal. Só tem 20 minutos. Ficou alguns dias sem conseguir avançar. O Momentumm não transforma isso em uma pilha de tarefas atrasadas: ele ajuda você a ajustar o próximo passo e continuar."
+        description="A reunião atrasou. Você dormiu mal. Sobraram 20 minutos. O Momentumm não transforma isso numa pilha de tarefas atrasadas: ele encolhe o passo de hoje e segue com você."
       />
 
       <div className="mt-12 grid gap-4 lg:grid-cols-2 lg:gap-6">
@@ -75,7 +75,7 @@ export function Adaptive() {
           <Link
             to={cta.primary.to}
             onClick={() => trackLanding('secondary_cta_clicked')}
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-brand px-7 font-medium text-white transition-colors hover:bg-brand-hi"
+            className="pulse-button inline-flex h-12 items-center justify-center gap-2 rounded-full bg-brand px-7 font-medium text-white transition-colors hover:bg-brand-hi"
           >
             {cta.primary.label}
             {cta.signedIn ? null : <ArrowIcon />}
@@ -89,7 +89,7 @@ export function Adaptive() {
 /** O dia que encolheu: 20 minutos e o plano cabendo neles. */
 function ShrinkCard() {
   return (
-    <div className="flex h-full flex-col rounded-card border border-line bg-surface p-5 sm:p-7">
+    <div className="pulse-on-hover flex h-full flex-col rounded-card border border-line bg-surface p-5 sm:p-7">
       <p className="text-sm font-medium text-brand-hi">O dia apertou</p>
       <h3 className="mt-1.5 text-balance text-xl font-semibold text-ink">
         Você tem 20 minutos hoje. O plano cabe neles.
@@ -127,7 +127,7 @@ function ShrinkCard() {
 /** A retomada: o contador que não zera. */
 function ResumeCard() {
   return (
-    <div className="flex h-full flex-col rounded-card border border-line bg-surface p-5 sm:p-7">
+    <div className="pulse-on-hover flex h-full flex-col rounded-card border border-line bg-surface p-5 sm:p-7">
       <p className="text-sm font-medium text-brand-hi">A semana sumiu</p>
       <h3 className="mt-1.5 text-balance text-xl font-semibold text-ink">
         Você volta de onde parou, não do zero.

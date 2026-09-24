@@ -26,6 +26,14 @@
       content="O Momentumm transforma sua meta em um plano possível, mostra o que realmente importa hoje e ajuda você a continuar quando a rotina sai do eixo."
     />
     <link rel="canonical" href="https://www.momentumm.com.br/" />
+    <meta name="author" content="Layra Lima" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <!--
+      GEO: o llms.txt é a versão em texto puro do que esta página afirma.
+      Quem responde pergunta com IA lê melhor um arquivo curto e factual do
+      que HTML com animação, e é ele que evita o modelo inventar preço.
+    -->
+    <link rel="alternate" type="text/plain" href="https://www.momentumm.com.br/llms.txt" title="Resumo do Momentumm para modelos de linguagem" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Momentumm" />
@@ -36,29 +44,106 @@
       property="og:description"
       content="Objetivo vira plano. Plano vira o que você faz hoje. Momentumm, dia adaptável, modo retomada e IA que conhece o seu plano."
     />
-    <meta property="og:image" content="/og.png" />
+    <meta property="og:image" content="https://www.momentumm.com.br/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Momentumm: objetivo vira plano, plano vira ação, ação vira progresso." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Momentumm: pare de recomeçar toda segunda-feira" />
     <meta
       name="twitter:description"
       content="Objetivo vira plano. Plano vira ação. Ação vira progresso. Continue o que você começou."
     />
-    <meta name="twitter:image" content="/og.png" />
+    <meta name="twitter:image" content="https://www.momentumm.com.br/og.png" />
+    <meta name="twitter:image:alt" content="Momentumm: objetivo vira plano, plano vira ação, ação vira progresso." />
 
+    <!--
+      Um @graph em vez de três blocos soltos: os nós se referenciam (a
+      aplicação é publicada pelo site, que pertence à organização), e é essa
+      ligação que faz a busca e os modelos tratarem isso como uma coisa só.
+      Preço aqui é o mesmo de `billing-plans.ts`: quando ele mudar, muda aqui.
+    -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "Momentumm",
-        "applicationCategory": "LifestyleApplication",
-        "operatingSystem": "Web",
-        "url": "https://www.momentumm.com.br/",
-        "description": "Transforma sua meta em um plano possível, mostra o próximo passo de hoje e ajuda a continuar quando a rotina sai do eixo.",
-        "inLanguage": "pt-BR",
-        "offers": [
-          { "@type": "Offer", "name": "Grátis", "price": "0", "priceCurrency": "BRL" },
-          { "@type": "Offer", "name": "PRO mensal", "price": "39.90", "priceCurrency": "BRL" },
-          { "@type": "Offer", "name": "PRO anual", "price": "129.90", "priceCurrency": "BRL" }
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://www.momentumm.com.br/#organizacao",
+            "name": "Momentumm",
+            "url": "https://www.momentumm.com.br/",
+            "logo": "https://www.momentumm.com.br/logo.png",
+            "founder": { "@type": "Person", "name": "Layra Lima" },
+            "areaServed": "BR",
+            "knowsLanguage": "pt-BR"
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://www.momentumm.com.br/#site",
+            "url": "https://www.momentumm.com.br/",
+            "name": "Momentumm",
+            "inLanguage": "pt-BR",
+            "publisher": { "@id": "https://www.momentumm.com.br/#organizacao" }
+          },
+          {
+            "@type": "WebPage",
+            "@id": "https://www.momentumm.com.br/#pagina",
+            "url": "https://www.momentumm.com.br/",
+            "name": "Momentumm: pare de recomeçar toda segunda-feira",
+            "isPartOf": { "@id": "https://www.momentumm.com.br/#site" },
+            "inLanguage": "pt-BR",
+            "primaryImageOfPage": "https://www.momentumm.com.br/og.png",
+            "description": "O Momentumm transforma sua meta em um plano possível, mostra o que importa hoje e ajuda você a continuar quando a rotina sai do eixo."
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://www.momentumm.com.br/#app",
+            "name": "Momentumm",
+            "applicationCategory": "ProductivityApplication",
+            "applicationSubCategory": "Aplicativo de metas e hábitos",
+            "operatingSystem": "Web, Android, iOS",
+            "url": "https://www.momentumm.com.br/",
+            "screenshot": "https://www.momentumm.com.br/telas/hoje.webp",
+            "inLanguage": "pt-BR",
+            "isAccessibleForFree": true,
+            "author": { "@id": "https://www.momentumm.com.br/#organizacao" },
+            "description": "Aplicativo web que transforma um objetivo com prazo em um plano por etapas, entrega uma ação por dia e reajusta o plano quando a rotina da pessoa muda, sem zerar o progresso.",
+            "featureList": [
+              "Plano por etapas gerado a partir do objetivo, do prazo e do tempo disponível por dia",
+              "Tela Hoje com uma ação prioritária e uma versão mínima para dias curtos",
+              "Dia Adaptável: encolhe o plano do dia para o tempo que a pessoa realmente tem",
+              "Modo Retomada: volta de onde parou depois de dias sem avançar, sem zerar sequência",
+              "Momentumm Score: número de 0 a 100 que mede constância em uma janela de 28 dias",
+              "Review semanal com o que evoluiu e o que ajustar",
+              "Momentumm AI: sugestões de plano e de ajuste que precisam de confirmação"
+            ],
+            "offers": [
+              {
+                "@type": "Offer",
+                "name": "Gratuito",
+                "price": "0",
+                "priceCurrency": "BRL",
+                "category": "free",
+                "availability": "https://schema.org/InStock"
+              },
+              {
+                "@type": "Offer",
+                "name": "PRO mensal",
+                "price": "39.90",
+                "priceCurrency": "BRL",
+                "category": "subscription",
+                "availability": "https://schema.org/InStock"
+              },
+              {
+                "@type": "Offer",
+                "name": "PRO anual",
+                "price": "129.90",
+                "priceCurrency": "BRL",
+                "category": "subscription",
+                "availability": "https://schema.org/InStock"
+              }
+            ]
+          }
         ]
       }
     </script>

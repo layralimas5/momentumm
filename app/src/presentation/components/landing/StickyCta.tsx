@@ -68,7 +68,7 @@ export function StickyCta() {
             <Link
               to={primary.to}
               onClick={() => trackLanding('hero_cta_clicked')}
-              className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-brand px-5 text-sm font-medium text-white transition-colors hover:bg-brand-hi"
+              className="pulse-button inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-brand px-5 text-sm font-medium text-white transition-colors hover:bg-brand-hi"
             >
               {primary.label}
             </Link>

@@ -26,12 +26,12 @@ export function Progress() {
       <SectionHeading
         eyebrow="Progresso"
         title="Um número para entender seu momento."
-        description="O Momentumm Score mostra como está sua constância agora, sem apagar tudo porque um dia não saiu como planejado."
+        description="O Momentumm Score mostra a sua constância agora. Ele não zera porque um dia não saiu como planejado."
       />
 
       <div className="mx-auto mt-10 grid max-w-4xl gap-3 sm:grid-cols-[0.8fr_1.2fr]">
         <Reveal>
-          <div className="surface-brand edge-light flex h-full flex-col justify-center rounded-card p-6 text-center sm:p-8">
+          <div className="pulse-on-hover surface-brand edge-light flex h-full flex-col justify-center rounded-card p-6 text-center sm:p-8">
             <p className="text-sm text-ink-faint">Momentumm</p>
             <CountUp
               value={72}
@@ -57,17 +57,6 @@ export function Progress() {
         </p>
       </Reveal>
 
-      {/*
-        A única linha sobre XP na página. Os dois números aparecem no produto
-        e medem coisas diferentes; sem esta frase, quem viu "+10 XP" na seção
-        anterior acha que é o mesmo número com dois nomes.
-      */}
-      <Reveal delay={0.26}>
-        <p className="mx-auto mt-4 max-w-2xl text-balance text-center text-sm text-ink-faint">
-          O Momentumm diz como você está agora. O XP mostra o quanto você já andou desde que
-          começou.
-        </p>
-      </Reveal>
     </Section>
   )
 }
@@ -78,7 +67,7 @@ function DayGrid() {
   const days = Array.from({ length: WINDOW_DAYS }, (_, index) => index)
 
   return (
-    <div className="h-full rounded-card border border-line bg-surface p-5 sm:p-7">
+    <div className="pulse-on-hover h-full rounded-card border border-line bg-surface p-5 sm:p-7">
       <div className="flex items-baseline justify-between gap-3">
         <p className="text-sm font-medium text-ink">Seus últimos 28 dias</p>
         <p className="tabular text-xs text-ink-faint">{WINDOW_DAYS - EMPTY_DAYS.size} com movimento</p>

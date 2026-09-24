@@ -14,9 +14,13 @@ interface Question {
 
 /**
  * As dúvidas na ordem em que aparecem na cabeça de quem acabou de ler a
- * página: como isso funciona no meu dia, quem monta o plano, o que acontece
- * quando eu sumo, quanto custa, e as três de risco (teste, privacidade,
- * cancelamento).
+ * página: como é o meu dia, o que acontece quando eu sumo, quanto custa, e
+ * as de risco (teste, privacidade, cancelamento).
+ *
+ * As respostas são curtas de propósito. FAQ é a última coisa que alguém lê
+ * antes de decidir: um parágrafo de seis linhas aqui não tira dúvida, cria
+ * uma. A pergunta "preciso organizar tudo sozinho?" saiu porque a seção
+ * "como funciona" já responde ela com a tela.
  *
  * Trial, cobrança, privacidade e cancelamento só afirmam o que está
  * implementado. A pergunta do teste some junto com a promessa quando
@@ -27,39 +31,34 @@ const BASE: readonly Question[] = [
   {
     question: 'Como o Momentumm funciona no dia a dia?',
     answer:
-      'Você cria um objetivo com prazo e o app monta um plano por etapas, com ações que têm data. Todo dia você abre a tela Hoje, diz como está chegando, faz a ação principal e marca os hábitos. Quando o dia aperta, o Dia Adaptável encolhe o plano pro tempo que você tem. No fim da semana, o review mostra onde evoluiu, onde o ritmo caiu e o que ajustar.',
-  },
-  {
-    question: 'Preciso organizar tudo sozinho?',
-    answer:
-      'Não. Você diz onde quer chegar, até quando e quantos minutos tem por dia, e o plano vem pronto em etapas, com as primeiras ações e um hábito de apoio. Toda linha é editável antes de salvar, e você pode montar tudo na mão se preferir.',
+      'Você diz onde quer chegar e o app monta um plano por etapas, com ações que têm data. Todo dia você abre e encontra um passo só, do tamanho do tempo que tem.',
   },
   {
     question: 'O que acontece se eu perder alguns dias?',
     answer:
-      'Nada é cobrado de volta. A sequência conta dias cumpridos, e a versão mínima de um hábito conta como dia cumprido. O Momentumm Score olha 28 dias, então um dia vazio tira poucos pontos e nunca zera. Depois de uma pausa, o Modo Retomada monta até três passos pequenos pra você voltar de onde parou, sem encerrar nenhuma sequência.',
+      'Você volta de onde parou. Os dias parados não são cobrados, a sequência não é encerrada e o Momentumm Score não zera: ele olha 28 dias, então um dia vazio tira poucos pontos.',
   },
   {
     question: 'Qual a diferença entre o gratuito e o PRO?',
-    answer: `O gratuito roda o ciclo inteiro, com limites: ${free.activeObjectives} objetivos ativos, ${free.activeHabits} hábitos, ${free.activePlans} plano por etapas, ${free.actionsPerDay} ações por dia e os últimos ${free.historyDays} dias de histórico. O PRO tira os limites, abre o histórico completo, a evolução e o detalhamento do Momentumm Score, o review semanal completo, a Momentumm AI e as métricas de período.`,
+    answer: `O gratuito roda o ciclo inteiro com limites: ${free.activeObjectives} objetivos, ${free.activeHabits} hábitos, ${free.activePlans} plano por etapas, ${free.actionsPerDay} ações por dia e ${free.historyDays} dias de histórico. O PRO tira os limites e abre o histórico completo, o review semanal e a Momentumm AI.`,
   },
 ]
 
 const TRIAL_QUESTION: Question = {
   question: 'Como funciona o período de teste?',
-  answer: `Toda conta nova começa com ${TRIAL_DAYS} dias de PRO completo, sem cartão e sem cobrança automática. No fim dos ${TRIAL_DAYS} dias a conta volta pro gratuito sozinha: nada é apagado, e o que passar dos limites do gratuito fica guardado pra quando você assinar. Se assinar durante o teste, o PRO segue pela assinatura sem interrupção.`,
+  answer: `Toda conta nova começa com ${TRIAL_DAYS} dias de PRO, sem cartão e sem cobrança automática. No fim do prazo a conta volta pro gratuito sozinha e nada do que você criou é apagado.`,
 }
 
 const CLOSING: readonly Question[] = [
   {
     question: 'Meus dados ficam privados?',
     answer:
-      'Tudo nasce privado. A regra de quem vê o quê é aplicada no banco de dados (Row Level Security), não só na tela, então nem um erro de interface expõe o seu registro. Compartilhar um momento é uma escolha por item, e gerar uma imagem pro Stories não muda a visibilidade do dado. Você exporta tudo o que é seu, ou apaga a conta, quando quiser.',
+      'Tudo nasce privado, e a regra de quem vê o quê é aplicada no banco, não só na tela. Compartilhar é uma escolha item por item, e você exporta tudo o que é seu, ou apaga a conta, quando quiser.',
   },
   {
     question: 'Posso cancelar quando quiser?',
     answer:
-      'Sim. O PRO é uma assinatura sem fidelidade: cancela em Configurações e continua com o PRO até o fim do período já pago. Depois disso a conta volta pro gratuito com tudo que você criou; o que passa do limite fica guardado, só não dá pra criar novos até liberar espaço.',
+      'Sim, sem fidelidade: cancela em Configurações e o PRO vale até o fim do período já pago. Depois a conta volta pro gratuito com tudo que você criou.',
   },
 ]
 

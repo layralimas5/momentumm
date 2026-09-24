@@ -27,7 +27,7 @@ export function Problem() {
         eyebrow="O problema"
         title={
           <>
-            <span className="block">Você sabe começar.</span>
+            <span className="block">Você sabe começar.{' '}</span>
             <span className="block text-brand-hi">O difícil é continuar.</span>
           </>
         }
@@ -65,7 +65,7 @@ function Cycle() {
         className="pointer-events-none absolute left-[10%] right-[10%] top-1/2 hidden h-px -translate-y-1/2 bg-gradient-to-r from-transparent via-line-hi to-transparent sm:block"
       />
 
-      <ol className="relative grid gap-2 sm:grid-cols-5 sm:gap-3">
+      <ol className="relative grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3">
         {CYCLE.map((step, index) => {
           const abandono = step.label === 'Abandona'
           return (
@@ -76,7 +76,9 @@ function Cycle() {
               viewport={{ once: true, margin: '-60px' }}
               transition={{ duration: 0.4, delay: index * 0.08 }}
               className={cn(
-                'rounded-card border bg-surface px-4 py-3 text-center',
+                'pulse-on-hover rounded-card border bg-surface px-3 py-3 text-center',
+                // "Recomeça" fecha a volta: ocupa a linha inteira no celular.
+                index === CYCLE.length - 1 && 'col-span-2 sm:col-span-1',
                 abandono ? 'border-flame/40' : 'border-line',
               )}
             >

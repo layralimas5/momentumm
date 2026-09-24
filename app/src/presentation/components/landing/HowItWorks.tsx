@@ -1,21 +1,23 @@
 import type { ReactNode } from 'react'
 import { XP_RULES } from '@/domain/entities/evolution'
-import { MockCard, MockLabel, MockProgress, MockTag } from './PhoneMockup'
+import { Icon, type IconName } from '@/presentation/components/ui/Icon'
+import { MockLabel, MockProgress, MockTag } from './PhoneMockup'
 import { Reveal } from './Reveal'
 import { Section, SectionHeading } from './Section'
 
 /**
- * Como o produto funciona, demonstrado em quatro momentos.
+ * Como o produto funciona, em três telas.
  *
- * Cada passo mostra a tela, não o conceito: o que a pessoa escreve, o que o
- * app devolve, o que ela vê no dia seguinte e o que acontece quando conclui.
- * O exemplo é um só ("terminar o TCC até novembro") e atravessa os quatro,
- * porque trocar de exemplo a cada passo quebra justamente a ideia de que é
- * um ciclo só.
+ * Eram quatro. O passo "abra e saiba o que fazer hoje" saiu porque a seção
+ * seguinte é exatamente essa tela, em tamanho grande: dizer duas vezes só
+ * fazia a pessoa rolar mais pra ver a mesma coisa.
+ *
+ * O exemplo é um só ("terminar o TCC até novembro") e atravessa os três: é
+ * ele que mostra que isso é um ciclo, não três recursos soltos.
  *
  * Os números vêm do domínio sempre que existem lá (o XP da prioridade é o
- * mesmo de `XP_RULES`): landing que inventa número é landing que mente na
- * primeira vez que o produto muda.
+ * mesmo de `XP_RULES`): landing que inventa número mente na primeira vez que
+ * o produto muda.
  */
 const ESTUDO = 'var(--color-axis-estudo)'
 
@@ -27,27 +29,30 @@ interface Step {
 
 const STEPS: readonly Step[] = [
   {
-    title: 'Conte onde quer chegar',
-    description: 'Com as suas palavras, do jeito que você contaria pra alguém.',
+    title: 'Diga onde quer chegar',
+    description: 'Com as suas palavras. Sem categoria, sem planilha, sem método pra aprender.',
     visual: <GoalVisual />,
   },
   {
-    title: 'Receba um plano possível',
-    description:
-      'Do tamanho do tempo que você tem de verdade, quebrado em etapas com prazo. Se não couber, o app diz antes de salvar.',
+    title: 'Receba um plano que cabe na sua semana',
+    description: 'Etapas com prazo, do tamanho do tempo que você tem. Se não couber, ele avisa antes de salvar.',
     visual: <PlanVisual />,
   },
   {
-    title: 'Abra o Momentumm e saiba o que fazer hoje',
-    description:
-      'Uma ação principal, com uma versão mínima pra quando o dia apertar. Não a meta inteira: o próximo passo dela.',
-    visual: <TodayVisual />,
-  },
-  {
-    title: 'Faça e veja sua meta avançar',
-    description: 'A ação fecha, o objetivo anda e o próximo passo já está escolhido.',
+    title: 'Faça o passo de hoje e veja a meta andar',
+    description: 'Um passo por dia, com versão mínima pro dia ruim. O próximo já vem escolhido.',
     visual: <ProgressVisual />,
   },
+]
+
+/** A amplitude vem aqui, depois da dor e do método. Nunca antes. */
+const AREAS: readonly { readonly label: string; readonly icon: IconName }[] = [
+  { label: 'Estudo', icon: 'formatura' },
+  { label: 'Leitura', icon: 'livro' },
+  { label: 'Treino', icon: 'halter' },
+  { label: 'Concurso', icon: 'trofeu' },
+  { label: 'Projeto pessoal', icon: 'objetivo' },
+  { label: 'Idioma', icon: 'globo' },
 ]
 
 export function HowItWorks() {
@@ -57,7 +62,7 @@ export function HowItWorks() {
         eyebrow="Como funciona"
         title={
           <>
-            <span className="block">Você não precisa organizar sua vida inteira.</span>
+            <span className="block">Você não precisa organizar sua vida inteira.{' '}</span>
             <span className="block text-brand-hi">Precisa saber qual é o próximo passo.</span>
           </>
         }
@@ -86,7 +91,56 @@ export function HowItWorks() {
           </li>
         ))}
       </ol>
+
+      <Reveal delay={0.1}>
+        <p className="mt-12 text-center text-sm font-medium text-ink">
+          Um método. Diferentes objetivos.
+        </p>
+        <ul className="mt-4 flex flex-wrap items-center justify-center gap-2">
+          {AREAS.map((area) => (
+            <li
+              key={area.label}
+              className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm text-ink-muted"
+            >
+              <Icon name={area.icon} className="size-4 text-brand-hi" />
+              {area.label}
+            </li>
+          ))}
+        </ul>
+      </Reveal>
+
+      <HowToJsonLd />
     </Section>
+  )
+}
+
+/**
+ * Os mesmos três passos, em dados estruturados.
+ *
+ * É a parte da página que responde "como funciona o Momentumm?" quando a
+ * pergunta é feita pra um modelo em vez de pra uma busca. Gerado da lista
+ * `STEPS`: um passo que mudar na tela muda aqui junto, e a página nunca
+ * afirma pro robô o que não afirma pra pessoa.
+ */
+function HowToJsonLd() {
+  const data = {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: 'Como funciona o Momentumm',
+    description:
+      'Como transformar uma meta em um plano possível e em um passo por dia no Momentumm.',
+    inLanguage: 'pt-BR',
+    totalTime: 'PT5M',
+    step: STEPS.map((step, index) => ({
+      '@type': 'HowToStep',
+      position: index + 1,
+      name: step.title,
+      text: step.description,
+    })),
+  }
+
+  return (
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />
   )
 }
 
@@ -97,7 +151,7 @@ export function HowItWorks() {
  */
 function Frame({ children }: { readonly children: ReactNode }) {
   return (
-    <div className="rounded-card border border-line bg-canvas p-3.5 shadow-xl shadow-black/20 sm:p-5">
+    <div className="pulse-on-hover rounded-card border border-line bg-canvas p-3.5 shadow-xl shadow-black/20 sm:p-5">
       {children}
     </div>
   )
@@ -151,28 +205,6 @@ function PlanVisual() {
       <p className="mt-3 text-[11px] text-ink-faint">
         45 min por dia · 5 dias por semana · cabe no prazo
       </p>
-    </Frame>
-  )
-}
-
-function TodayVisual() {
-  return (
-    <Frame>
-      <MockLabel>Hoje</MockLabel>
-      <MockCard tone="brand">
-        <p className="text-[10px] text-ink-faint">Etapa: Rascunho · Objetivo: Terminar o TCC</p>
-        <p className="mt-1 text-sm font-medium text-ink">Escrever a seção de métodos</p>
-        <p className="mt-1.5 text-[11px] text-ink-muted">
-          Versão mínima: abrir o arquivo e escrever 200 palavras
-        </p>
-        <div className="mt-3 flex items-center gap-2">
-          <span className="rounded-lg bg-brand px-3 py-1.5 text-[11px] font-medium text-white">
-            Começar
-          </span>
-          <span className="text-[10px] text-ink-faint">45 min previstos</span>
-        </div>
-      </MockCard>
-
     </Frame>
   )
 }
