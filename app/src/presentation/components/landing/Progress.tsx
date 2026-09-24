@@ -23,23 +23,20 @@ const MINIMAL_DAYS = new Set([3, 9, 14, 22])
 export function Progress() {
   return (
     <Section id="progresso" className="border-t border-line">
-      <div className="grid items-center gap-10 md:grid-cols-[0.85fr_1.15fr] md:gap-14">
-        <div className="min-w-0">
-          <SectionHeading
-            align="left"
-            eyebrow="Progresso"
-            title="Um número para entender seu momento."
-            description="O Momentumm Score mostra a sua constância agora. Ele não zera porque um dia não saiu como planejado."
-          />
+      <div className="mx-auto max-w-2xl text-center">
+        <SectionHeading
+          eyebrow="Progresso"
+          title="Um número para entender seu momento."
+          description="O Momentumm Score mostra a sua constância agora. Ele não zera porque um dia não saiu como planejado."
+        />
 
-          <Reveal delay={0.2}>
-            <p className="mt-8 text-balance text-xl font-medium text-ink">
-              Uma terça ruim não apaga um mês de progresso.
-            </p>
-          </Reveal>
-        </div>
+        <Reveal delay={0.2}>
+          <p className="mt-8 text-balance text-xl font-medium text-ink">
+            Uma terça ruim não apaga um mês de progresso.
+          </p>
+        </Reveal>
 
-        <Reveal delay={0.08}>
+        <Reveal delay={0.08} className="mt-12 text-left">
           <ScorePanel />
         </Reveal>
       </div>
