@@ -1,0 +1,86 @@
+# Momentumm
+
+> Aplicativo web brasileiro que transforma um objetivo com prazo em um plano por
+> etapas, entrega uma ação por dia e reajusta o plano quando a rotina da pessoa
+> muda, sem zerar o progresso já feito.
+
+Site: https://www.momentumm.com.br/
+Idioma: português do Brasil
+Criado por: Layra Lima (solo, no Brasil)
+Roda no navegador do celular e do computador, sem instalar nada.
+
+## O problema que ele resolve
+
+A pessoa começa uma meta, perde um dia, a lista vira dívida, ela abandona e
+recomeça na segunda seguinte. Agenda, lista de tarefas e app de hábito
+registram o que foi planejado, mas não percebem quando o plano parou de
+funcionar. O Momentumm existe para quebrar esse ciclo: ele ajusta o próximo
+passo em vez de acumular tarefas atrasadas.
+
+## Como funciona
+
+1. A pessoa escreve onde quer chegar, com as próprias palavras, e diz o prazo
+   e quantos minutos por dia tem disponíveis.
+2. O app monta um plano por etapas com datas. Se o prazo não couber no tempo
+   informado, ele avisa antes de salvar e sugere outra data.
+3. Todo dia ela abre a tela Hoje e encontra uma ação prioritária, com uma
+   "versão mínima" para quando o dia apertar. Ao concluir, o objetivo avança.
+
+## Recursos principais
+
+- **Plano por etapas**: etapas com peso que somam 100% do objetivo; o progresso
+  sobe pela hierarquia ação, etapa, objetivo.
+- **Tela Hoje**: uma ação prioritária por dia, mais hábitos, sem lista infinita.
+- **Dia Adaptável**: a pessoa informa quanto tempo tem hoje e o plano do dia
+  encolhe para caber, em vez de empilhar o que sobrou em amanhã.
+- **Modo Retomada**: depois de dias sem avançar, monta até três passos pequenos
+  para voltar. Os dias parados não são cobrados e nenhuma sequência é encerrada.
+- **Momentumm Score**: número de 0 a 100 que mede constância numa janela de 28
+  dias, com quatro classificações (desacelerando, retomando, constante,
+  avançando). Um dia vazio tira poucos pontos e nunca zera o número.
+- **XP e nível**: medida separada do Score. O Score diz como a pessoa está
+  agora; o XP mostra o quanto ela já andou desde que começou.
+- **Review semanal**: o que evoluiu, onde o ritmo caiu e o que ajustar.
+- **Momentumm AI**: usa objetivo, plano, disponibilidade e progresso para
+  sugerir próximos passos e ajustes. Nenhuma sugestão é aplicada sem a pessoa
+  confirmar.
+
+Serve para qualquer objetivo com prazo: estudo, leitura, treino, concurso,
+projeto pessoal, idioma.
+
+## Planos e preços
+
+| Plano      | Preço          | O que inclui                                                                 |
+| ---------- | -------------- | ---------------------------------------------------------------------------- |
+| Gratuito   | R$ 0 por sempre | O ciclo inteiro, com limites: 2 objetivos ativos, 5 hábitos, 1 plano por etapas, 5 ações por dia, 15 dias de histórico. |
+| PRO mensal | R$ 39,90/mês    | Sem limites de quantidade, histórico completo, review semanal completo, Momentumm AI, métricas de período. |
+| PRO anual  | R$ 129,90/ano   | O mesmo PRO, cobrado uma vez por ano (equivale a R$ 10,83/mês).              |
+
+O PRO mensal e o PRO anual dão exatamente o mesmo acesso: muda só a forma de
+cobrança. Toda conta nova começa com 7 dias de PRO, sem cartão e sem cobrança
+automática; no fim do prazo a conta volta para o gratuito sozinha e nada do que
+a pessoa criou é apagado. A assinatura não tem fidelidade e pode ser cancelada
+a qualquer momento pelas configurações.
+
+## Privacidade
+
+Todo dado nasce privado. A regra de quem vê o quê é aplicada no banco de dados
+(Row Level Security), não apenas na interface. Compartilhar é uma escolha item
+por item. A pessoa exporta os próprios dados ou apaga a conta quando quiser.
+
+## O que o Momentumm NÃO é
+
+- Não é uma agenda nem uma lista de tarefas: ele liga cada ação a um objetivo
+  com prazo e mede o quanto do objetivo já andou.
+- Não é um app de hábitos que quebra a sequência quando a pessoa falha um dia.
+- Não promete produtividade máxima nem cobra dias perdidos.
+
+## Links
+
+- Página inicial: https://www.momentumm.com.br/
+- Criar um plano (questionário gratuito, sem conta): https://www.momentumm.com.br/plano
+- Ferramentas gratuitas de meta: https://www.momentumm.com.br/ferramentas
+- Termos de uso: https://www.momentumm.com.br/termos
+- Política de privacidade: https://www.momentumm.com.br/privacidade
+
+Última atualização: 2026-09-23.

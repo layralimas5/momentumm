@@ -37,9 +37,17 @@ interface RevealWordsProps {
 }
 
 /**
- * Texto que aparece palavra por palavra quando entra na tela. Cada palavra
- * é um span inline, então a quebra de linha continua natural e o leitor de
- * tela lê a frase inteira por um span oculto, sem ouvir palavra por palavra.
+ * Texto que aparece palavra por palavra quando entra na tela.
+ *
+ * Cada palavra é um span inline que carrega o próprio espaço, então a frase
+ * continua sendo UM texto só: quebra de linha natural, leitor de tela lendo
+ * seguido, seleção e cópia trazendo a frase uma vez.
+ *
+ * Havia aqui uma cópia `sr-only` da frase inteira com as palavras em
+ * `aria-hidden`. Ela resolvia um problema que spans inline não têm e criava
+ * dois: quem copiava o título levava ele duplicado, e quem raspa a página
+ * (busca, modelo de linguagem) lia "O que perguntam antes de começarO que
+ * perguntam antes de começar".
  */
 export function RevealWords({ text, delay = 0, className }: RevealWordsProps) {
   const reduced = useReducedMotion()
@@ -53,11 +61,9 @@ export function RevealWords({ text, delay = 0, className }: RevealWordsProps) {
       transition={{ staggerChildren: 0.045, delayChildren: delay }}
       className={className}
     >
-      <span className="sr-only">{text}</span>
       {words.map((word, index) => (
         <motion.span
           key={`${word}-${index}`}
-          aria-hidden="true"
           variants={{
             hidden: { opacity: 0, y: '0.4em', filter: 'blur(4px)' },
             visible: { opacity: 1, y: 0, filter: 'blur(0px)' },

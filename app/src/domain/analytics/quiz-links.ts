@@ -133,7 +133,9 @@ export const QUIZ_LINK_CODES: Readonly<Record<string, QuizLinkCode>> = {
   /*
     Os botões da própria landing entram pelo mesmo caminho: sem código, quem
     vem do site cai como "direto" no funil e some junto com quem digitou o
-    endereço. São os dois pontos da página que oferecem o quiz.
+    endereço. Cada lugar da página tem o próprio código, porque a pergunta
+    que decide a copy é ONDE a pessoa se convenceu: no hero, depois de ver o
+    preço, ou só na barra do celular depois de rolar tudo.
   */
   'lp-hero': {
     source: 'site',
@@ -148,6 +150,41 @@ export const QUIZ_LINK_CODES: Readonly<Record<string, QuizLinkCode>> = {
     campaign: 'cta-final',
     theme: null,
     note: 'Botão do CTA final da landing',
+  },
+  'lp-retomada': {
+    source: 'site',
+    medium: 'landing',
+    campaign: 'retomada',
+    theme: null,
+    note: 'Botão da seção de dia adaptável e retomada',
+  },
+  'lp-header': {
+    source: 'site',
+    medium: 'landing',
+    campaign: 'header',
+    theme: null,
+    note: 'Botão fixo do topo da landing',
+  },
+  'lp-precos': {
+    source: 'site',
+    medium: 'landing',
+    campaign: 'precos',
+    theme: null,
+    note: 'Botão do plano gratuito, na seção de planos',
+  },
+  'lp-barra': {
+    source: 'site',
+    medium: 'landing',
+    campaign: 'barra-celular',
+    theme: null,
+    note: 'Barra fixa do rodapé no celular',
+  },
+  'lp-rodape': {
+    source: 'site',
+    medium: 'landing',
+    campaign: 'rodape',
+    theme: null,
+    note: 'Botão do rodapé da landing',
   },
 }
 

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { LogoMark, Wordmark } from '@/presentation/components/brand/Logo'
 import { cn } from '@/shared/lib/cn'
+import { trackLanding } from './landing-analytics'
 import { NAV_DIRECT, NAV_GROUPS } from './nav-items'
 import { useSiteCta } from './use-site-cta'
 
@@ -10,7 +11,7 @@ export function SiteHeader() {
   const [openGroup, setOpenGroup] = useState<string | null>(null)
   const [scrolled, setScrolled] = useState(false)
   const navRef = useRef<HTMLDivElement>(null)
-  const cta = useSiteCta()
+  const cta = useSiteCta('lp-header')
 
   // A pílula flutua desde o topo; ao rolar ela só ganha fundo mais sólido
   // e sombra, pra continuar legível em cima de qualquer seção.
@@ -149,7 +150,8 @@ export function SiteHeader() {
             ) : null}
             <Link
               to={cta.primary.to}
-              className="inline-flex h-10 items-center rounded-full bg-brand px-3.5 text-sm font-medium text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-hi sm:h-11 sm:px-5"
+              onClick={() => trackLanding('hero_cta_clicked')}
+              className="pulse-button inline-flex h-10 items-center whitespace-nowrap rounded-full bg-brand px-3.5 text-sm font-medium text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-hi sm:h-11 sm:px-5"
             >
               {cta.primary.label}
             </Link>

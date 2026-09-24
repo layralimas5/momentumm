@@ -1,7 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Só as rotas públicas e que respondem sozinhas. O quiz (/plano) entra porque
+  é uma página de verdade, com conteúdo próprio, e é a porta de entrada do
+  funil; os links curtos por campanha (/plano/<codigo>) ficam de fora de
+  propósito, senão o mesmo conteúdo apareceria doze vezes no índice.
+-->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://www.momentumm.com.br/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
-  <url><loc>https://www.momentumm.com.br/ferramentas</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://www.momentumm.com.br/termos</loc><changefreq>yearly</changefreq><priority>0.2</priority></url>
-  <url><loc>https://www.momentumm.com.br/privacidade</loc><changefreq>yearly</changefreq><priority>0.2</priority></url>
+  <url>
+    <loc>https://www.momentumm.com.br/</loc>
+    <lastmod>2026-09-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://www.momentumm.com.br/plano</loc>
+    <lastmod>2026-09-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.momentumm.com.br/ferramentas</loc>
+    <lastmod>2026-09-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.momentumm.com.br/termos</loc>
+    <lastmod>2026-09-23</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  <url>
+    <loc>https://www.momentumm.com.br/privacidade</loc>
+    <lastmod>2026-09-23</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
+  </url>
 </urlset>

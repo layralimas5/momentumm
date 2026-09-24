@@ -1,5 +1,36 @@
+# Momentumm
+#
+# O site inteiro é público, menos o app e o painel: as duas rotas exigem
+# sessão e indexá-las só geraria resultado que cai numa tela de login.
+#
+# Os robôs de IA entram de propósito. Quem procura "app pra parar de
+# recomeçar a meta" cada vez mais pergunta pro ChatGPT, pro Gemini ou pro
+# Perplexity em vez de digitar na busca, e ficar de fora dessas respostas é
+# ficar de fora do canal. O risco é o modelo errar o preço; o llms.txt existe
+# pra isso: ele é curto, factual e diz R$ 39,90 e R$ 129,90 em texto puro.
+
 User-agent: *
 Allow: /
 Disallow: /app
 Disallow: /admin
+
+# Respostas de IA e treino. Google-Extended não afeta o ranqueamento da busca:
+# ele decide só se a Gemini e a Visão Geral podem usar o conteúdo.
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-User
+User-agent: Claude-SearchBot
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: meta-externalagent
+User-agent: Bytespider
+User-agent: cohere-ai
+Allow: /
+Disallow: /app
+Disallow: /admin
+
 Sitemap: https://www.momentumm.com.br/sitemap.xml
