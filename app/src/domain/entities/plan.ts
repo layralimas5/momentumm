@@ -53,6 +53,17 @@ export interface PlanLimits {
   readonly themes: boolean
   /** Chamadas à Momentumm AI por mês (a franquia). O teto é aplicado no servidor. */
   readonly aiCallsPerMonth: number
+  /**
+   * Quantas pessoas cabem no Círculo ao mesmo tempo.
+   *
+   * No gratuito é UMA: a dupla. Acompanhar o progresso de uma pessoa é o que
+   * faz alguém voltar no dia em que a motivação não veio, e uma dupla entrega
+   * isso inteiro. Rede grande é outra coisa, e é do PRO.
+   *
+   * Conta convite enviado junto com amizade aceita: senão dava pra disparar
+   * dez convites e acordar com dez pessoas no Círculo gratuito.
+   */
+  readonly circleFriends: number
 }
 
 const UNLIMITED = Number.POSITIVE_INFINITY
@@ -75,6 +86,7 @@ export const PLAN_LIMITS: Readonly<Record<PlanTier, PlanLimits>> = {
     voiceLogs: false,
     aiAnalysis: false,
     objectiveTemplates: 3,
+    circleFriends: 1,
     shareTemplates: 3,
     shareCustomization: false,
     dataExport: false,
@@ -99,6 +111,7 @@ export const PLAN_LIMITS: Readonly<Record<PlanTier, PlanLimits>> = {
     voiceLogs: true,
     aiAnalysis: true,
     objectiveTemplates: UNLIMITED,
+    circleFriends: UNLIMITED,
     shareTemplates: UNLIMITED,
     shareCustomization: true,
     dataExport: true,
@@ -175,6 +188,7 @@ export function planMatrix(): readonly PlanMatrixRow[] {
     { feature: 'Fotos nos registros', free: 'Não disponível', pro: 'Disponível com limite' },
     { feature: 'Registros por voz', free: 'Não disponível', pro: 'Disponível com limite mensal' },
     { feature: 'Análises de IA', free: 'Não disponível', pro: 'Padrões, gargalos e recomendações' },
+    { feature: 'Círculo', free: count(free.circleFriends, 'pessoa', 'pessoas'), pro: 'Ilimitado' },
     { feature: 'Templates de objetivos', free: `Até ${free.objectiveTemplates} templates básicos`, pro: 'Biblioteca completa' },
     { feature: 'Compartilhamento', free: `${free.shareTemplates} arranjos, todas as cores e PNG`, pro: 'Todos os modelos e personalização' },
     { feature: 'Exportação de dados', free: 'Não disponível', pro: 'PDF, imagem e CSV' },

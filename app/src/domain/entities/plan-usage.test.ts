@@ -8,6 +8,7 @@ import { createPlanStage, type PlanStage } from './plan-stage'
 import {
   actionsLimit,
   assertWithinLimit,
+  circleLimit,
   habitLimit,
   objectiveLimit,
   PlanLimitError,
@@ -86,6 +87,26 @@ describe('planLimit', () => {
   it('o plano de um objetivo concluído não ocupa a vaga', () => {
     const objectives = [objective('a', { completedAt: new Date() }), objective('b')]
     expect(planLimit(FREE, objectives, [stage('s1', 'a')]).reached).toBe(false)
+  })
+})
+
+describe('circleLimit', () => {
+  it('o gratuito cabe uma dupla: com uma pessoa dentro, o Círculo está cheio', () => {
+    expect(circleLimit(FREE, 0, 0).reached).toBe(false)
+    expect(circleLimit(FREE, 1, 0).reached).toBe(true)
+  })
+
+  it('convite enviado ocupa vaga antes de ser aceito', () => {
+    // Sem isso, dez convites de uma vez furariam o limite ao serem aceitos.
+    expect(circleLimit(FREE, 0, 1).reached).toBe(true)
+  })
+
+  it('o PRO não tem teto', () => {
+    expect(circleLimit(PRO, 120, 30).reached).toBe(false)
+  })
+
+  it('a mensagem diz o número, não "limite atingido"', () => {
+    expect(circleLimit(FREE, 1, 0).message).toContain('1')
   })
 })
 
@@ -188,7 +209,7 @@ describe('planMatrix', () => {
 
   it('cobre a matriz inteira, sem linha vazia', () => {
     const rows = planMatrix()
-    expect(rows).toHaveLength(19)
+    expect(rows).toHaveLength(20)
     for (const row of rows) {
       expect(row.free.length).toBeGreaterThan(0)
       expect(row.pro.length).toBeGreaterThan(0)

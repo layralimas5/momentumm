@@ -9,6 +9,8 @@ import {
   type Friendship,
   type Relation,
 } from '@/domain/entities/friendship'
+import { limitsOf, type LimitCheck } from '@/domain/entities/plan'
+import { circleLimit, PlanLimitError } from '@/domain/entities/plan-usage'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { toUserMessage } from '@/shared/errors'
@@ -39,6 +41,12 @@ export interface CircleState {
   readonly outgoing: readonly CirclePerson[]
   readonly feed: readonly CircleFeedItem[]
   readonly acting: boolean
+  /**
+   * Quantas vagas do Círculo o plano ainda permite. A tela pergunta ANTES,
+   * pra desabilitar o botão de convidar e explicar, em vez de deixar a pessoa
+   * procurar alguém e tomar erro no fim.
+   */
+  readonly limit: LimitCheck
 
   relationOf(personId: string): Relation
   search(term: string): Promise<readonly CircleAuthor[]>
@@ -50,7 +58,8 @@ export interface CircleState {
 }
 
 export function useCircle(): CircleState {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
+  const limits = useMemo(() => limitsOf(profile?.plan ?? 'free'), [profile])
   const [friendships, setFriendships] = useState<readonly Friendship[]>([])
   const [people, setPeople] = useState<ReadonlyMap<string, CircleAuthor>>(new Map())
   const [feed, setFeed] = useState<readonly CircleFeedItem[]>([])
@@ -161,14 +170,30 @@ export function useCircle(): CircleState {
     [user],
   )
 
+  /**
+   * O gratuito tem uma dupla; o PRO não tem teto. Convite enviado conta como
+   * vaga ocupada: sem isso, dez convites disparados de uma vez furariam o
+   * limite assim que fossem aceitos.
+   */
+  const limit = useMemo(
+    () => circleLimit(limits, friends.length, outgoing.length),
+    [limits, friends.length, outgoing.length],
+  )
+
   const request = useCallback(
     async (personId: string) => {
       if (!user) return
+      if (limit.reached) {
+        throw new PlanLimitError(
+          'circulo',
+          limit.message ?? 'O plano gratuito guarda uma pessoa no Círculo.',
+        )
+      }
       await act(async () => {
         await container.friendships.request({ requesterId: user.id, addresseeId: personId })
       })
     },
-    [user, act],
+    [user, act, limit],
   )
 
   const respond = useCallback(
@@ -234,6 +259,7 @@ export function useCircle(): CircleState {
     outgoing,
     feed,
     acting,
+    limit,
     relationOf,
     search,
     request,

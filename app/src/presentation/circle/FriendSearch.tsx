@@ -6,6 +6,7 @@ import { Avatar } from '@/presentation/components/ui/Avatar'
 import { Button } from '@/presentation/components/ui/Button'
 import { TextInput } from '@/presentation/components/ui/Field'
 import { Icon } from '@/presentation/components/ui/Icon'
+import { UpgradeHint } from '@/presentation/components/dashboard/UpgradeHint'
 import { toUserMessage } from '@/shared/errors'
 import { cn } from '@/shared/lib/cn'
 import type { CircleState } from './use-circle'
@@ -99,12 +100,23 @@ export function FriendSearch({ circle }: { readonly circle: CircleState }) {
               <SearchAction
                 relation={circle.relationOf(person.id)}
                 personId={person.id}
-                busy={circle.acting}
+                busy={circle.acting || circle.limit.reached}
                 onAdd={() => void circle.request(person.id)}
               />
             </li>
           ))}
         </ul>
+      ) : null}
+
+      {/*
+        O teto do Círculo, dito antes da busca virar convite. Deixar a pessoa
+        procurar, achar e só então tomar "não" é a pior ordem possível.
+      */}
+      {circle.limit.reached ? (
+        <UpgradeHint
+          className="mt-3"
+          message={`${circle.limit.message ?? 'O plano gratuito guarda uma pessoa no Círculo.'} No PRO não tem teto.`}
+        />
       ) : null}
     </div>
   )

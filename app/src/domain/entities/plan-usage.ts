@@ -58,6 +58,18 @@ export function habitLimit(limits: PlanLimits, habits: readonly Habit[]): LimitC
 }
 
 /**
+ * Quantas pessoas cabem no Círculo.
+ *
+ * `used` soma amizade aceita com convite que você mandou e ainda não foi
+ * respondido: um convite pendente é uma vaga já comprometida, e contar só o
+ * que foi aceito deixaria alguém disparar dez convites no gratuito e acordar
+ * com dez pessoas no Círculo.
+ */
+export function circleLimit(limits: PlanLimits, accepted: number, pendingSent: number): LimitCheck {
+  return checkLimit(accepted + pendingSent, limits.circleFriends, 'pessoa no Círculo')
+}
+
+/**
  * Ações de um dia. Cancelada não conta: a pessoa desistiu dela, e uma vaga
  * que continua ocupada por uma decisão de largar seria o limite punindo a
  * decisão certa. Concluída conta — o dia foi planejado com ela dentro.

@@ -268,6 +268,7 @@ export function ProfilePage() {
             <ul className="mt-3 flex flex-col gap-1.5 text-xs text-ink-faint">
               <li>Objetivos ativos: {formatLimit(limits.activeObjectives)}</li>
               <li>Hábitos ativos: {formatLimit(limits.activeHabits)}</li>
+              <li>Pessoas no Círculo: {formatLimit(limits.circleFriends)}</li>
               <li>Planos ativos: {formatLimit(limits.activePlans)}</li>
               <li>Ações por dia: {formatLimit(limits.actionsPerDay)}</li>
               <li>
