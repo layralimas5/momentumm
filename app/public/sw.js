@@ -1,23 +1,78 @@
 /*
-  Service worker do Momentumm. Faz UMA coisa: receber o Web Push e mostrar a
-  notificação. Não guarda cache, não intercepta rota, não faz o app funcionar
-  offline. Assim o registro dele nunca segura uma versão velha da interface.
+  Service worker do Momentumm.
+
+  Faz DUAS coisas, e as duas de propósito:
+
+    1. recebe o Web Push e mostra a notificação;
+    2. responde a navegação quando o aparelho está sem rede, com uma página
+       estática própria.
+
+  O que ele NÃO faz: guardar a interface em cache. Todo HTML, script e imagem
+  vai direto pra rede — assim o registro dele nunca segura uma versão velha do
+  app depois de um deploy. O único arquivo guardado é o `offline.html`, que não
+  muda e não é parte da interface.
+
+  O (2) não é enfeite: o Chrome só oferece "Instalar app" pra quem tem um
+  service worker que responde com o aparelho offline. Sem isso a pessoa recebe
+  um atalho de navegador no lugar de um app instalado, e no Android o atalho
+  não recebe push.
 */
 
-self.addEventListener('install', () => {
-  self.skipWaiting()
+const OFFLINE_CACHE = 'momentumm-offline-v1'
+const OFFLINE_URL = '/offline.html'
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches
+      .open(OFFLINE_CACHE)
+      .then((cache) => cache.add(new Request(OFFLINE_URL, { cache: 'reload' })))
+      .catch(() => undefined)
+      .then(() => self.skipWaiting()),
+  )
 })
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim())
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(keys.filter((key) => key !== OFFLINE_CACHE).map((key) => caches.delete(key))),
+      )
+      .then(() => self.clients.claim()),
+  )
+})
+
+/*
+  Só navegação, e sempre pela rede primeiro.
+
+  `request.mode === 'navigate'` é a pessoa abrindo uma página; o resto (js, css,
+  imagem, chamada ao Supabase) o worker nem toca — sem `respondWith` o navegador
+  segue o caminho normal, que é o que queremos.
+*/
+self.addEventListener('fetch', (event) => {
+  if (event.request.mode !== 'navigate') return
+
+  event.respondWith(
+    fetch(event.request).catch(async () => {
+      const cache = await caches.open(OFFLINE_CACHE)
+      const offline = await cache.match(OFFLINE_URL)
+      return (
+        offline ??
+        new Response('Sem conexão.', {
+          status: 503,
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        })
+      )
+    }),
+  )
 })
 
 self.addEventListener('push', (event) => {
   const fallback = {
     title: 'Seu Momentumm de hoje',
-    body: 'Sua ação de hoje ainda cabe. Dez minutos já contam.',
+    body: 'Seu próximo passo continua aqui. Que tal fazer só o que cabe hoje?',
     url: '/app',
-    tag: 'momentumm-daily',
+    tag: 'momentumm-retorno',
   }
 
   let payload = fallback
@@ -33,8 +88,9 @@ self.addEventListener('push', (event) => {
       tag: payload.tag,
       icon: '/apple-touch-icon.png',
       badge: '/simbolo.png',
+      lang: 'pt-BR',
       data: { url: payload.url },
-      // Um aviso por dia substitui o anterior em vez de empilhar.
+      // Um aviso por vez substitui o anterior em vez de empilhar.
       renotify: false,
     }),
   )

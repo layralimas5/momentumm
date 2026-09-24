@@ -66,6 +66,22 @@ export const PRODUCT_EVENTS = [
   'notification_sent',
   'notification_opened',
   'notification_converted',
+  'notification_failed',
+
+  /*
+    A permissão e o aparelho. Sem eles a única leitura possível é "poucas
+    pessoas recebem aviso", sem saber onde a fila quebra: se o convite não
+    aparece, se aparece e ninguém aceita, ou se o navegador recusa depois.
+  */
+  'notification_permission_prompted',
+  'notification_permission_granted',
+  'notification_permission_denied',
+  'push_subscription_created',
+
+  /* Instalação do app. `pwa_installed` só existe no Android: o iOS não avisa. */
+  'pwa_install_prompted',
+  'pwa_installed',
+  'ios_install_shown',
 ] as const
 export type ProductEventName = (typeof PRODUCT_EVENTS)[number]
 

@@ -1111,20 +1111,56 @@ onboarding sem abrir o devtools.
   "Recomeçar do zero".
 - **Lembrete no celular (Web Push).** `domain/notifications`,
   `infrastructure/push/browser-push` (as APIs do navegador),
-  `public/sw.js` (só mostra o aviso: sem cache, sem rota) e
-  `presentation/notifications` (hook, convite no Hoje, bloco em
-  Configurações). O app marca presença ao abrir (`touch_my_presence`, com
-  fuso); o `pg_cron` chama a Edge Function `push-reminders` a cada hora, e
-  ela avisa às 19h locais só quem não abriu o app naquele dia (migration
-  0036, `push_reminders_due`). Precisa do par VAPID: pública em
+  `public/sw.js` e `presentation/notifications` (hook, convite no Hoje,
+  bloco em Configurações). O app marca presença ao abrir e ao concluir
+  algo (`touch_my_presence`, com fuso); o `pg_cron` chama a Edge Function
+  `push-reminders` a cada hora. Precisa do par VAPID: pública em
   `VITE_VAPID_PUBLIC_KEY`, privada nos segredos da função. Sem a pública o
-  app não oferece nada. iPhone só recebe com o site na tela de início:
-  por isso existe `public/manifest.webmanifest` (`start_url=/app`).
-  Setup completo em `supabase/functions/README.md`.
+  app não oferece nada. Setup completo em `supabase/functions/README.md`.
 - **A landing sabe da sessão** (`useSiteCta`): com conta aberta, hero,
   header, barra fixa e CTA final viram "Abrir o app"; sem conta, "Entrar"
   fica ao lado do CTA em qualquer largura (era só no rodapé no celular) e
   também dentro do menu.
+
+### Instalar no celular e o lembrete contextual (24/09/2026)
+
+O app já era instalável; o que faltava era o produto em volta disso.
+
+- **Service worker registrado no boot** (`infrastructure/pwa/register-sw`),
+  não mais só quando a pessoa liga o lembrete. O `sw.js` ganhou um `fetch`
+  de navegação (rede primeiro, `public/offline.html` como queda) porque o
+  Chrome só oferece "Instalar app" pra quem responde offline — sem isso a
+  instalação no Android virava atalho de navegador, e atalho não recebe
+  push. Ele continua sem cachear a interface: nenhum deploy fica preso.
+- **Instalar tem convite próprio** (`presentation/pwa`): no Android o
+  `beforeinstallprompt` é capturado no boot (`infrastructure/pwa/install-prompt`)
+  e disparado pelo nosso botão; no iPhone, onde não existe prompt, um
+  bottom sheet mostra os três toques do Safari. `isStandalone()` é o que
+  encerra o assunto: instalado, nada mais é oferecido. Fechar o convite
+  vale por conta e por aparelho.
+- **A permissão nunca é pedida sozinha.** O convite do Hoje explica o que
+  vai chegar e só então o toque abre o pedido do sistema. Instalação e
+  lembrete nunca dividem a tela: o convite de instalar vem primeiro, porque
+  no iPhone ele é pré-requisito do aviso.
+- **O aviso passou a olhar o dia** (migration 0056). Antes só existia na
+  hora preferida; agora `proximo_passo` e `dia_dificil` saem a qualquer
+  hora entre 08:00 e 21:30 locais quando existe ação em aberto e já fazem
+  ~4 horas sem atividade. Os outros quatro tipos seguem com hora marcada.
+  Um por dia, cooldown de 20 horas por tipo, e os limiares moram em
+  `public.notification_rules` — dá pra mudar por SQL, sem deploy.
+- **A Edge Function foi ligada na decisão da 0050**, que estava escrita e
+  sem uso: ela lia `push_reminders_due` (a regra antiga, "não abriu hoje").
+  Agora lê `notifications_due()`, carimba `mark_notification_sent`, manda o
+  link com `?n=<tipo>` (é o que fazia `useNotificationOpen` nunca contar
+  abertura nenhuma) e registra `notification_sent`/`notification_failed`
+  por `log_notification_event`. Se a 0050 não estiver aplicada, ela cai
+  sozinha na função antiga.
+- **Bug achado no caminho:** a constraint de fuso da 0036 recusava
+  `Etc/GMT+3`. Quem tivesse esse fuso nunca gravava presença — e portanto
+  nunca recebia nada, silenciosamente. Corrigido na 0056.
+- Testes: `supabase/tests/pglite/lembrete-contextual.mjs` (29 casos, com o
+  tempo controlado por fuso em vez do relógio de quem roda) e
+  `deploy-0056.mjs` (a migration sobre o banco que já roda).
 
 ### Teste de ofertas no TikTok e o primeiro resultado (21/09/2026)
 

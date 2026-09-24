@@ -90,6 +90,16 @@ export function useCompletionNotice(view: DashboardView): {
       () => undefined,
     )
 
+    /*
+      Concluir é a atividade mais significativa que existe aqui, e é ela que
+      reinicia o relógio do lembrete. Sem este carimbo, "quatro horas sem
+      atividade" seria medido só por abertura de tela, e quem fechasse o dia
+      às 9h receberia um aviso às 13h sobre um dia que já estava resolvido.
+    */
+    void container.push
+      .touchPresence(Intl.DateTimeFormat().resolvedOptions().timeZone)
+      .catch(() => undefined)
+
     sequence.current += 1
     setNotice({
       ...completionNote({ done, total, openMinutes: minutes, dayComplete }),

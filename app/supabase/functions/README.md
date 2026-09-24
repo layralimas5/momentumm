@@ -130,19 +130,50 @@ e a tela diz que a assinatura não está disponível nesse ambiente.
 
 ## push-reminders
 
-O lembrete no celular pra quem não abriu o app no dia. Web Push, sem
-Firebase e sem app nativo: o navegador (ou o app instalado na tela de
-início) recebe o aviso na tela de bloqueio.
+O aviso que traz alguém de volta pro próximo passo. Web Push, sem Firebase e
+sem app nativo: o app instalado na tela de início (ou o navegador) recebe o
+aviso na tela de bloqueio.
 
-Como funciona: o app marca presença ao abrir (`touch_my_presence`, com o
-fuso do aparelho) e grava o aparelho quando a pessoa liga o lembrete
-(`push_subscriptions`). O `pg_cron` chama esta função a cada hora; ela lê
-`push_reminders_due(19)`, que devolve só quem está às 19h do próprio fuso,
-não abriu o app hoje e ainda não foi lembrado, e manda um aviso pra cada
-aparelho. Endpoint morto (404/410) é apagado; outro erro marca `failed_at`.
+Como funciona: o app marca presença ao abrir E ao concluir algo
+(`touch_my_presence`, com o fuso do aparelho) e grava o aparelho quando a
+pessoa liga o lembrete (`push_subscriptions`). O `pg_cron` chama esta função a
+cada hora; ela lê `notifications_due()`, que devolve quem deveria receber e
+QUAL dos seis tipos, e manda um aviso pra cada aparelho. Endpoint morto
+(404/410) é apagado; outro erro marca `failed_at`.
+
+A regra inteira mora no banco (migrations 0050 e 0056), não aqui:
+
+- **quando** — janela de 08:00 às 21:30 no fuso da pessoa, mais a janela de
+  silêncio que ela escolheu (a mais apertada ganha);
+- **por que agora** — `proximo_passo` e `dia_dificil` saem a qualquer hora
+  dentro da janela, desde que exista ação em aberto e já façam ~4 horas sem
+  atividade no app; `retomada`, `continuidade`, `progresso` e `social` saem na
+  hora preferida da pessoa;
+- **quanto** — no máximo um aviso por dia local, e o mesmo tipo não repete
+  dentro do cooldown (20 horas);
+- **o que** — a copy de cada tipo está nesta função, sem citar o conteúdo da
+  ação: o aviso aparece na tela bloqueada, que qualquer pessoa lê.
+
+Os limiares ficam em `public.notification_rules` (uma linha): dá pra afrouxar
+ou apertar por SQL, sem deploy.
+
+```sql
+-- ex.: seis horas de inatividade em vez de quatro
+update public.notification_rules set inactivity_threshold_hours = 6, updated_at = now();
+```
+
+O link do aviso leva pra `/app?n=<tipo>`: o app carimba a abertura
+(`mark_notification_opened`), limpa o parâmetro e cai no Hoje. Concluir algo
+depois disso carimba a conversão (`mark_notification_converted`). Os eventos
+`notification_sent` e `notification_failed` são gravados pelo servidor com
+`log_notification_event`, que é a porta de `service_role` pro `product_events`.
+
+Compatibilidade: sem a 0050 aplicada, a função cai sozinha em
+`push_reminders_due(hour)` (0036) e manda o aviso antigo, avisando no log. Um
+deploy do app não pode ficar sem lembrete porque a migration ainda não subiu.
 
 ```bash
-# 1. migration 0036 (supabase db push)
+# 1. migrations 0036, 0050 e 0056 (supabase db push)
 
 # 2. chaves VAPID, uma vez. A pública vai também pro app (VITE_VAPID_PUBLIC_KEY
 #    no Netlify); a privada só aqui. Trocar uma sem a outra invalida toda
@@ -162,20 +193,27 @@ supabase functions deploy push-reminders --no-verify-jwt
 # 6. publicar o app com VITE_VAPID_PUBLIC_KEY preenchida
 ```
 
-Testar à mão, sem esperar as 19h (a hora é a do fuso da pessoa; pra
-disparar agora, passar a hora local atual):
+Testar à mão, sem esperar a hora certa:
 
 ```bash
-curl -X POST "https://hsgjlxetdopomeibdbho.supabase.co/functions/v1/push-reminders?hour=$(date +%H)" \
-  -H "x-reminder-token: <PUSH_REMINDER_TOKEN>"
-# → {"hour":14,"due":1,"sent":1,"dropped":0,"failed":0}
+curl -X POST "https://hsgjlxetdopomeibdbho.supabase.co/functions/v1/push-reminders"   -H "x-reminder-token: <PUSH_REMINDER_TOKEN>"
+# → {"hour":19,"legacy":false,"due":1,"sent":1,"dropped":0,"failed":0}
 ```
 
-Só recebe quem não abriu o app hoje: pra testar, abrir o app ontem (ou
-`update public.user_presence set last_active_at = now() - interval '1 day'`).
+Pra a fila não sair vazia, a conta precisa estar no estado que a regra pede —
+parada há horas e com ação em aberto:
+
+```sql
+update public.user_presence set last_active_at = now() - interval '5 hours'
+ where user_id = '<uuid>';
+delete from public.notification_log where user_id = '<uuid>' and day = current_date;
+select * from public.notifications_due();   -- como service_role
+```
 
 iPhone: o Safari só entrega push com o site adicionado à tela de início
-(iOS 16.4+). O manifest (`public/manifest.webmanifest`, `start_url=/app`)
-é o que torna isso possível; a tela de Configurações explica o passo.
+(iOS 16.4+). O manifest (`public/manifest.webmanifest`, `start_url=/app`) e o
+service worker registrado no boot são o que tornam isso possível; o app
+explica os três toques em Configurações e no convite do Hoje.
 
-Testes do banco: `supabase/tests/pglite/push.mjs` (`npm run db:test`).
+Testes do banco: `supabase/tests/pglite/push.mjs`, `notifications.mjs`,
+`lembrete-contextual.mjs` e `deploy-0056.mjs` (`npm run db:test`).
