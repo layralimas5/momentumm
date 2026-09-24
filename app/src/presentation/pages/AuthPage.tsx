@@ -18,9 +18,18 @@ export function AuthPage() {
   const { user, loading, signIn, signUp, signInWithGoogle, requestPasswordReset } = useAuth()
   const location = useLocation()
   const [params] = useSearchParams()
+  const from = (location.state as { from?: string } | null)?.from ?? '/app'
+  /*
+    Veio do painel administrativo: a tela vira SÓ entrada.
+
+    Quem chega aqui pelo `/admin` já tem conta com papel — papel se concede
+    no painel, nunca se cria sozinho. Oferecer "criar conta" nesse caminho
+    só convida quem tropeçou na URL a deixar uma conta pra trás.
+  */
+  const adminEntry = params.get('destino') === 'admin' || from.startsWith('/admin')
   // Veio do quiz com um plano pronto: a tela diz isso, e nada mais muda.
   const fromQuiz = params.get('intent') === 'plano'
-  const [mode, setMode] = useState<Mode>('criar')
+  const [mode, setMode] = useState<Mode>(adminEntry ? 'entrar' : 'criar')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -52,7 +61,6 @@ export function AuthPage() {
   })
 
   if (!loading && user) {
-    const from = (location.state as { from?: string } | null)?.from ?? '/app'
     return <Navigate to={from} replace />
   }
 
@@ -142,7 +150,9 @@ export function AuthPage() {
             : 'Criar conta'
           : mode === 'recuperar'
             ? 'Recuperar acesso'
-            : 'Entrar'}
+            : adminEntry
+              ? 'Painel administrativo'
+              : 'Entrar'}
       </h1>
       <p className="mt-1 text-sm text-ink-muted">
         {mode === 'criar'
@@ -151,9 +161,11 @@ export function AuthPage() {
             : 'Leva menos de um minuto. Depois é só registrar o primeiro dia.'
           : mode === 'recuperar'
             ? 'Diz teu e-mail e a gente manda um link pra criar uma senha nova.'
-            : fromQuiz
-              ? 'Entra e o plano do quiz é ativado na sua conta.'
-              : 'Bom te ver de novo.'}
+            : adminEntry
+              ? 'Entra com a conta que tem papel no painel.'
+              : fromQuiz
+                ? 'Entra e o plano do quiz é ativado na sua conta.'
+                : 'Bom te ver de novo.'}
       </p>
 
       {container.demo ? (
@@ -285,6 +297,7 @@ export function AuthPage() {
         ) : null}
       </form>
 
+      {adminEntry ? null : (
       <p className="mt-6 text-center text-sm text-ink-muted">
         {mode === 'criar' ? 'Já tem conta?' : 'Ainda não tem conta?'}{' '}
         <button
@@ -298,6 +311,7 @@ export function AuthPage() {
           {mode === 'criar' ? 'Entrar' : 'Criar agora'}
         </button>
       </p>
+      )}
     </main>
   )
 }

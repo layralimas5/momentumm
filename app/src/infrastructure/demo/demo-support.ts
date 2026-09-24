@@ -84,6 +84,30 @@ export class DemoAdminGateway implements AdminGateway {
   overview(): never {
     throw new DomainError(UNAVAILABLE)
   }
+  revenue(): never {
+    throw new DomainError(UNAVAILABLE)
+  }
+  deleteQuizLead(): never {
+    throw new DomainError(UNAVAILABLE)
+  }
+  quizLeadDetail(): never {
+    throw new DomainError(UNAVAILABLE)
+  }
+  listQuizzes(): never {
+    throw new DomainError(UNAVAILABLE)
+  }
+  saveQuiz(): never {
+    throw new DomainError(UNAVAILABLE)
+  }
+  setQuizState(): never {
+    throw new DomainError(UNAVAILABLE)
+  }
+  purgeAudit(): never {
+    throw new DomainError(UNAVAILABLE)
+  }
+  forceDeleteUser(): never {
+    throw new DomainError(UNAVAILABLE)
+  }
   listUsers(): never {
     throw new DomainError(UNAVAILABLE)
   }

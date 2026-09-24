@@ -27,8 +27,13 @@ export function QuizShell({ children, footer, progress, progressLabel, tallFoote
         className="pointer-events-none absolute -top-48 left-1/2 size-[40rem] -translate-x-1/2 rounded-full bg-brand/12 blur-[120px]"
       />
 
-      {/* Logo no centro; o contador de perguntas fica na ponta sem tirar a logo do eixo. */}
-      <header className="relative mx-auto grid w-full max-w-lg grid-cols-[1fr_auto_1fr] items-center px-4 pt-safe sm:px-6">
+      {/*
+        Logo no centro; o contador de perguntas fica na ponta sem tirar a logo
+        do eixo. `pt-safe` só garante o notch — a folga do topo vem da margem,
+        senão a marca encosta na borda da janela no navegador, onde a área
+        segura é zero.
+      */}
+      <header className="relative mx-auto mt-4 grid w-full max-w-lg grid-cols-[1fr_auto_1fr] items-center px-4 pt-safe sm:mt-8 sm:px-6">
         <span aria-hidden="true" />
         <Link to="/" aria-label="Momentumm" className="rounded-lg py-2">
           <Wordmark className="w-36" />

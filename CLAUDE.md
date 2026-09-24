@@ -1150,6 +1150,25 @@ por tela, respostas no `localStorage`) → processamento curto → diagnóstico
 primeira vitória. Links dos carrosséis levam pra lá com `utm_*` e `tema=`
 (só título e introdução mudam; `QUIZ_INTROS`).
 
+- **O link que circula é `/plano`, não a rota** (23/09). Responder o
+  comentário de um post é o caminho principal de entrada, e ali a URL é
+  lida em voz alta e digitada: `momentumm.com.br/plano/ig-proc` cabe, uma
+  linha de `utm_*` não. O código resolve rede, assunto e tema de uma vez
+  (`domain/analytics/quiz-links`), e o canal vai em `?c=dm` quando o envio
+  é pelo direct — sem isso, comentário e direct caem no mesmo balde do
+  funil. Código desconhecido abre o quiz sem origem em vez de dar 404:
+  link errado numa campanha não pode virar página de erro. A tabela de
+  links prontos pra copiar está em `docs/links-do-quiz.md`.
+- **A landing oferece o quiz, não mais o modo demo** (23/09). O CTA
+  secundário do hero e do fim da página virou "Criar meu plano em 2
+  minutos": quem chega frio não quer passear por dados de outra pessoa,
+  quer saber se isso resolve o problema dele, e o quiz responde com um
+  plano feito com as respostas dele antes de pedir conta. Os dois botões
+  entram pelos códigos `lp-hero` e `lp-fim`, que trazem o próprio
+  `utm_medium` (`landing`) — sem código, quem vem do site cairia como
+  "direto" no funil, junto de quem digitou o endereço. O modo demo
+  continua em `/app`.
+
 - **Não existe gerador novo.** `domain/entities/quiz.ts` converte as
   respostas em `ActivationAnswers` e o plano sai do mesmo `buildActivation`
   do onboarding. O que o quiz acrescenta: diagnóstico por obstáculo

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import {
   hasAttribution,
   readAttribution,
   type QuizAttribution,
 } from '@/domain/analytics/funnel-events'
+import { attributionForCode, readQuizChannel } from '@/domain/analytics/quiz-links'
 import { dayKeyOf } from '@/domain/entities/day'
 import {
   buildDiagnosis,
@@ -114,7 +115,13 @@ export interface QuizController {
 
 export function useQuiz(): QuizController {
   const [params] = useSearchParams()
-  const urlAttribution = useMemo(() => readAttribution(params), [params])
+  // `/plano/ig-proc` traz a origem inteira num código; `utm_*` continua
+  // valendo pro que já foi enviado e pro que vier de anúncio.
+  const { codigo } = useParams<{ codigo?: string }>()
+  const urlAttribution = useMemo(() => {
+    const fromCode = attributionForCode(codigo, readQuizChannel(params))
+    return fromCode ?? readAttribution(params)
+  }, [codigo, params])
 
   const stored = useMemo(() => loadQuizDraft(), [])
   const [phase, setPhase] = useState<QuizPhase>('intro')

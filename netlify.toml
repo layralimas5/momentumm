@@ -33,6 +33,28 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
+# A Content-Security-Policy limita o estrago quando um script estranho entra
+# na página: sem ela, qualquer script injetado fala com qualquer servidor.
+#
+# O app ajuda: o HTML não tem script inline (só o JSON-LD, que não executa),
+# não carrega fonte nem script de terceiro, e o checkout do Asaas é navegação,
+# não iframe. Por isso `script-src 'self'` basta.
+#
+# As folgas, e o motivo de cada uma:
+#   style-src 'unsafe-inline'  o React escreve `style=` no elemento (barra de
+#                              progresso, largura calculada). Atributo de
+#                              estilo não executa código.
+#   img-src data: blob:        avatar cortado no navegador, imagem do Stories
+#                              gerada em canvas, pré-visualização de upload.
+#   *.supabase.co             API, Realtime (wss), Storage e Edge Functions.
+#
+# ATENÇÃO, o passo que falta: hoje ela está em Report-Only, quer dizer, o
+# navegador AVISA e não bloqueia. As violações caem na central de erros do
+# painel com o código `csp.violation`. Depois de alguns dias de uso normal sem
+# violação nenhuma, trocar o nome do header para `Content-Security-Policy` e a
+# regra passa a valer de verdade. Promover antes de olhar é como publicar sem
+# testar: se faltar uma origem, a tela quebra pra quem usa.
+
 [[headers]]
   for = "/*"
   [headers.values]
@@ -40,3 +62,4 @@
     X-Frame-Options        = "DENY"
     Referrer-Policy        = "strict-origin-when-cross-origin"
     Permissions-Policy     = "camera=(self), microphone=(self), geolocation=()"
+    Content-Security-Policy-Report-Only = "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; frame-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; font-src 'self'; media-src 'self' blob: data:; worker-src 'self'; manifest-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; upgrade-insecure-requests"

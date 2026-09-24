@@ -62,6 +62,79 @@ export function startFreshQuizSession(): void {
   }
 }
 
+/**
+ * Abre a sessão de um funil criado no painel.
+ *
+ * Cada funil tem a própria sessão: responder o quiz de carreira não pode
+ * continuar de onde o de saúde parou, senão as respostas de um caem na
+ * ficha do outro. O id fica guardado por slug.
+ */
+export function startCustomQuiz(slug: string, attribution: QuizAttribution | null): string {
+  const chave = `momentumm.quiz.session.${slug}.v1`
+  let sessao: string
+  try {
+    const guardada = window.localStorage.getItem(chave)
+    sessao = guardada && isUuid(guardada) ? guardada : crypto.randomUUID()
+    window.localStorage.setItem(chave, sessao)
+  } catch {
+    sessao = crypto.randomUUID()
+  }
+
+  if (!isDemoMode) {
+    void supabase()
+      .rpc('quiz_start', {
+        p_session: sessao,
+        p_slug: slug,
+        p_attribution: attribution
+          ? {
+              utm_source: attribution.source,
+              utm_medium: attribution.medium,
+              utm_campaign: attribution.campaign,
+              utm_content: attribution.content,
+              theme: attribution.theme,
+            }
+          : {},
+      })
+      .then(() => undefined, () => undefined)
+  }
+
+  return sessao
+}
+
+/** Registra um passo de um funil do painel. */
+export function trackCustomQuiz(session: string, name: FunnelEventName, step: number | null): void {
+  if (isDemoMode) return
+  void supabase()
+    .rpc('quiz_track', { p_session: session, p_name: name, p_step: step, p_attribution: {} })
+    .then(() => undefined, () => undefined)
+}
+
+/** Grava as respostas de um funil do painel. */
+export function saveCustomQuizAnswers(session: string, answers: Record<string, unknown>, step: number): void {
+  if (isDemoMode) return
+  void supabase()
+    .rpc('quiz_save', { p_session: session, p_answers: answers, p_diagnosis: null, p_step: step })
+    .then(() => undefined, () => undefined)
+}
+
+/** O contato de um funil do painel. Aguardado, como o do funil principal. */
+export async function saveCustomQuizLead(session: string, lead: NormalizedLead): Promise<boolean> {
+  if (isDemoMode) return true
+  try {
+    const { error } = await supabase().rpc('quiz_save_lead', {
+      p_session: session,
+      p_name: lead.name,
+      p_email: lead.email,
+      p_phone: lead.phone,
+      p_age: null,
+    })
+    if (error) throw error
+    return true
+  } catch {
+    return false
+  }
+}
+
 export function trackFunnel(
   name: FunnelEventName,
   step: number | null = null,

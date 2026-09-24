@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { QUIZ_SHORT_PATH } from '@/domain/analytics/quiz-links'
 import { circleOpen, isAuthBypass } from '@/infrastructure/config/env'
 import { AuthProvider } from '@/presentation/auth/AuthProvider'
 import { ProtectedRoute } from '@/presentation/auth/ProtectedRoute'
@@ -156,8 +157,17 @@ const AdminFeaturesPage = lazy(() =>
 const AdminFunnelPage = lazy(() =>
   import('@/presentation/admin/pages/AdminFunnelPage').then((m) => ({ default: m.AdminFunnelPage })),
 )
+const CustomQuizPage = lazy(() =>
+  import('@/presentation/pages/CustomQuizPage').then((m) => ({ default: m.CustomQuizPage })),
+)
+const AdminQuizzesPage = lazy(() =>
+  import('@/presentation/admin/pages/AdminQuizzesPage').then((m) => ({ default: m.AdminQuizzesPage })),
+)
 const AdminLeadsPage = lazy(() =>
   import('@/presentation/admin/pages/AdminLeadsPage').then((m) => ({ default: m.AdminLeadsPage })),
+)
+const AdminLeadDetailPage = lazy(() =>
+  import('@/presentation/admin/pages/AdminLeadDetailPage').then((m) => ({ default: m.AdminLeadDetailPage })),
 )
 const AdminErrorsPage = lazy(() =>
   import('@/presentation/admin/pages/AdminErrorsPage').then((m) => ({ default: m.AdminErrorsPage })),
@@ -195,8 +205,23 @@ export function App() {
             */}
             <Route path="/nova-senha" element={<NewPasswordPage />} />
             <Route path="/ferramentas" element={<ToolsPage />} />
-            {/* A entrada do funil: quiz público, sem conta. */}
+            {/*
+              A entrada do funil: quiz público, sem conta.
+
+              `/plano/<codigo>` é o link curto que vai na resposta de um
+              comentário, no direct e na bio — o código carrega a origem
+              inteira (`domain/analytics/quiz-links`). O `/criar-meu-plano`
+              continua valendo: link já enviado não pode morrer.
+            */}
             <Route path="/criar-meu-plano" element={<QuizPage />} />
+            <Route path={QUIZ_SHORT_PATH} element={<QuizPage />} />
+            <Route path={`${QUIZ_SHORT_PATH}/:codigo`} element={<QuizPage />} />
+            {/*
+              Os funis criados no painel: um componente, perguntas do banco.
+              Endereco proprio (`/quiz/<slug>`) pra nao disputar com o link
+              curto do funil principal, que e `/plano`.
+            */}
+            <Route path="/quiz/:slug" element={<CustomQuizPage />} />
             {/*
               O link de convite do Juntos. Público porque quem recebe pode não
               ter conta ainda, e mandar essa pessoa pro login sem dizer do que
@@ -268,7 +293,9 @@ export function App() {
               <Route path="retencao" element={<AdminRetentionPage />} />
               <Route path="recursos" element={<AdminFeaturesPage />} />
               <Route path="funil" element={<AdminFunnelPage />} />
+              <Route path="funis" element={<AdminQuizzesPage />} />
               <Route path="contatos" element={<AdminLeadsPage />} />
+              <Route path="contatos/:id" element={<AdminLeadDetailPage />} />
               <Route path="erros" element={<AdminErrorsPage />} />
               <Route path="solicitacoes" element={<AdminRequestsPage />} />
               <Route path="solicitacoes/:id" element={<AdminRequestDetailPage />} />
@@ -296,6 +323,17 @@ export function App() {
  * (ex: /ferramentas → /#pro), porque a seção só existe depois que a página
  * nova monta. Os passos (#passo-...) são tratados pelo próprio bloco.
  */
+/*
+  Âncora de verdade: `#alguma-secao`.
+
+  Nem todo hash é âncora. O link de recuperação de senha do Supabase chega
+  como `#access_token=...&type=recovery`, e jogar isso no `querySelector`
+  levanta SyntaxError com o token inteiro dentro da mensagem, que então vai
+  parar no log de erros. Um id é o que esta expressão aceita; o resto passa
+  batido.
+*/
+const ANCORA = /^#[A-Za-z][\w-]*$/
+
 function ScrollToHash() {
   const { pathname, hash } = useLocation()
 
@@ -305,6 +343,7 @@ function ScrollToHash() {
       return
     }
     if (hash.startsWith('#passo-')) return
+    if (!ANCORA.test(hash)) return
 
     const target = document.querySelector(hash)
     if (target) {

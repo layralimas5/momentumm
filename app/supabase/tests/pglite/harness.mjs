@@ -21,6 +21,8 @@ export async function boot() {
     `create table auth.users (id uuid primary key default gen_random_uuid(), email text, raw_user_meta_data jsonb default '{}'::jsonb, created_at timestamptz default now(), email_confirmed_at timestamptz, last_sign_in_at timestamptz, phone text, deleted_at timestamptz, banned_until timestamptz, confirmation_sent_at timestamptz)`,
     `create table auth.identities (id uuid primary key default gen_random_uuid(), user_id uuid, provider text)`,
     `create table auth.sessions (id uuid primary key default gen_random_uuid(), user_id uuid, created_at timestamptz default now(), aal text)`,
+    // O GoTrue guarda o user_id como texto aqui; quem derruba sessão apaga das duas.
+    `create table auth.refresh_tokens (id bigserial primary key, user_id text, token text, revoked boolean default false, created_at timestamptz default now())`,
     `create table auth.mfa_factors (id uuid primary key default gen_random_uuid(), user_id uuid, status text, factor_type text)`,
     `create function auth.uid() returns uuid language sql stable as $$ select (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid $$`,
     `create function auth.jwt() returns jsonb language sql stable as $$ select coalesce(nullif(current_setting('request.jwt.claims', true), '')::jsonb, '{}'::jsonb) $$`,

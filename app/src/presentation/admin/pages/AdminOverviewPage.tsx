@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { PRO_PRICES, formatBRL } from '@/domain/billing/billing-plans'
 import { achievementSpec, ACHIEVEMENT_KEYS, levelSpecOf } from '@/domain/entities/evolution'
 import { container } from '@/infrastructure/container'
 import {
@@ -20,6 +21,7 @@ export function AdminOverviewPage() {
   const query = useAdminQuery(() => container.admin.overview(period), `${period.from}|${period.to}`)
   const data = query.data
   const evolution = useAdminQuery(() => container.admin.evolutionMetrics(), 'evolution')
+  const revenue = useAdminQuery(() => container.admin.revenue(period), `revenue:${period.from}|${period.to}`)
 
   return (
     <AdminPage
@@ -64,12 +66,61 @@ export function AdminOverviewPage() {
             </div>
           </Section>
 
+          <Section
+            title="Dinheiro"
+            hint={`Cobranças que o Asaas confirmou entre ${period.from} e ${period.to}. Caixa do período, não projeção — MRR e ARR são a projeção, e ficam à parte.`}
+          >
+            <QueryState loading={revenue.loading && !revenue.data} error={revenue.error} onRetry={() => void revenue.reload()} />
+            {revenue.data ? (
+              <>
+                <MetricGrid cols={4}>
+                  <Metric label="Recebido no período" value={revenue.data.net_cents} format="brl" hint="Já sem reembolso" />
+                  <Metric label="Bruto" value={revenue.data.gross_cents} format="brl" hint={`${formatValue(revenue.data.payments)} cobrança(s)`} />
+                  <Metric label="Reembolsado" value={revenue.data.refunds_cents} format="brl" lowerIsBetter />
+                  <Metric label="Ticket médio" value={revenue.data.ticket_cents ?? 0} format="brl" />
+                  <Metric label="MRR" value={revenue.data.mrr_cents} format="brl" hint="Só assinatura ativa" />
+                  <Metric label="ARR" value={revenue.data.arr_cents} format="brl" hint="MRR x 12" />
+                  <Metric label="Quem pagou" value={revenue.data.paying_users} hint="Pessoas distintas no período" />
+                  <Metric label="Em teste agora" value={revenue.data.trials_active} hint="Não entra no MRR" />
+                </MetricGrid>
+
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  <SeriesCard label="Recebido por dia" points={revenue.data.series.map((day) => day.cents)} />
+                  <div className="rounded-card border border-line bg-surface p-4">
+                    <p className="text-xs text-ink-faint">Preço vigente do PRO</p>
+                    <ul className="mt-2 flex flex-col gap-1.5 text-sm text-ink">
+                      {Object.values(PRO_PRICES).map((price) => (
+                        <li key={price.cycle} className="flex items-center justify-between gap-3">
+                          <span className="capitalize text-ink-muted">{price.cycle}</span>
+                          <span className="tabular font-medium">
+                            {formatBRL(price.amountCents)}
+                            <span className="ml-2 text-xs text-ink-faint">
+                              {formatBRL(revenue.data?.by_cycle[price.cycle] ?? 0)} no período
+                            </span>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-3 text-xs text-ink-faint">
+                      O mesmo preço que a landing e o checkout usam. Mudar exige deploy, de propósito.
+                    </p>
+                  </div>
+                </div>
+
+                <p className="mt-3 text-xs text-ink-faint">
+                  Taxa do Asaas não está descontada: o provedor não manda o valor líquido no evento que a
+                  gente guarda. Pra lucro de verdade falta isso e o custo de infraestrutura.
+                </p>
+              </>
+            ) : null}
+          </Section>
+
           <div className="grid gap-5 lg:grid-cols-2">
-            <Section title="Receita" hint="Assinaturas ativas e em trial. Sem provedor conectado, fica em zero.">
+            <Section title="Assinaturas" hint="Quem está PRO agora.">
               <MetricGrid cols={3}>
                 <Metric label="Assinaturas ativas" value={data.totals.active_subscriptions} />
                 <Metric label="Conversão pra PRO" value={data.totals.conversion_rate} format="percent" />
-                <Metric label="MRR" value={data.totals.mrr_cents} format="brl" />
+                <Metric label="PRO" value={data.totals.pro_users} />
               </MetricGrid>
             </Section>
 

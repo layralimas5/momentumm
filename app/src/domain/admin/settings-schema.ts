@@ -49,7 +49,13 @@ const legalVersions = z
   .object({ termos: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), privacidade: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) })
   .strict()
 
-const adminSecurity = z.object({ requireMfa: z.boolean() }).strict()
+const adminSecurity = z
+  .object({
+    requireMfa: z.boolean(),
+    /* Quanto tempo a sessão do painel vale depois da verificação. */
+    sessionMinutes: z.number().int().min(5).max(1440).optional(),
+  })
+  .strict()
 
 export const SETTING_SCHEMAS: Readonly<Record<string, z.ZodTypeAny>> = {
   'admin.security': adminSecurity,

@@ -7,6 +7,7 @@ import type {
   RequestFilters,
   RequestUpdate,
   UserActionInput,
+  SaveQuizInput,
   UserFilters,
 } from '@/domain/admin/admin-gateway'
 import type { AdminRole } from '@/domain/admin/admin-role'
@@ -24,11 +25,14 @@ import {
   overviewSchema,
   requestDetailSchema,
   requestListSchema,
+  adminQuizListSchema,
   quizFunnelSchema,
+  quizLeadDetailSchema,
   quizLeadListSchema,
   engagementSchema,
   pairComparisonSchema,
   retentionSchema,
+  revenueSchema,
   settingSchema,
   subscriptionListSchema,
   subscriptionMetricsSchema,
@@ -171,6 +175,7 @@ export class SupabaseAdminGateway implements AdminGateway {
         p_severity: filters.severity ?? null,
         p_module: filters.module ?? null,
         p_page: filters.page ?? 1,
+        p_environment: filters.environment ?? null,
       },
       errorListSchema,
     )
@@ -192,6 +197,10 @@ export class SupabaseAdminGateway implements AdminGateway {
     return rpc('admin_pair_comparison', { p_from: period.from, p_to: period.to }, pairComparisonSchema)
   }
 
+  revenue(period: Period) {
+    return rpc('admin_revenue', { p_from: period.from, p_to: period.to }, revenueSchema)
+  }
+
   retention(period: Period) {
     return rpc('admin_retention', { p_from: period.from, p_to: period.to }, retentionSchema)
   }
@@ -200,8 +209,34 @@ export class SupabaseAdminGateway implements AdminGateway {
     return rpc('admin_feature_usage', { p_from: period.from, p_to: period.to }, featureUsageSchema)
   }
 
-  quizFunnel(period: Period) {
-    return rpc('admin_quiz_funnel', { p_from: period.from, p_to: period.to }, quizFunnelSchema)
+  quizFunnel(period: Period, quiz?: string | undefined) {
+    return rpc(
+      'admin_quiz_funnel',
+      { p_from: period.from, p_to: period.to, p_quiz: quiz ?? null },
+      quizFunnelSchema,
+    )
+  }
+
+  listQuizzes() {
+    return rpc('admin_list_quizzes', {}, adminQuizListSchema)
+  }
+
+  async saveQuiz(input: SaveQuizInput): Promise<void> {
+    await rpcVoid('admin_save_quiz', {
+      p_slug: input.slug,
+      p_name: input.name,
+      p_purpose: input.purpose,
+      p_questions: input.questions,
+      p_reason: input.reason,
+      p_headline: input.headline ?? null,
+      p_subheadline: input.subheadline ?? null,
+      p_cta_label: input.ctaLabel ?? null,
+      p_outro: input.outro ?? null,
+    })
+  }
+
+  setQuizState(slug: string, state: 'rascunho' | 'publicado' | 'arquivado', reason: string) {
+    return rpcVoid('admin_set_quiz_state', { p_slug: slug, p_state: state, p_reason: reason })
   }
 
   quizLeads(period: Period, pending: boolean | null, page: number) {
@@ -210,6 +245,36 @@ export class SupabaseAdminGateway implements AdminGateway {
       { p_from: period.from, p_to: period.to, p_pending: pending, p_page: page },
       quizLeadListSchema,
     )
+  }
+
+  async purgeAudit(before: string, reason: string): Promise<number> {
+    const result = await rpc(
+      'admin_purge_audit',
+      { p_before: before, p_reason: reason },
+      z.object({ deleted: z.number() }),
+    )
+    return result.deleted
+  }
+
+  quizLeadDetail(sessionId: string) {
+    return rpc('admin_quiz_lead_detail', { p_session: sessionId }, quizLeadDetailSchema)
+  }
+
+  deleteQuizLead(sessionId: string, reason: string) {
+    return rpcVoid('admin_delete_quiz_lead', { p_session: sessionId, p_reason: reason })
+  }
+
+  /**
+   * Dois passos, de propósito.
+   *
+   * O banco libera a exclusão (papel, step-up, motivo, auditoria) e a Edge
+   * Function conclui, porque só ela fala com o GoTrue e com o Storage. Se o
+   * segundo passo falhar, a conta já está sem acesso e a auditoria já
+   * registrou quem mandou apagar.
+   */
+  async forceDeleteUser(userId: string, reason: string): Promise<void> {
+    await rpcVoid('admin_force_deletion', { p_user: userId, p_reason: reason })
+    await this.runUserAction({ action: 'complete_deletion', userId, reason })
   }
 
   evolutionMetrics() {

@@ -403,6 +403,28 @@ export const pairComparisonSchema = z.object({
 })
 export type AdminPairComparison = z.infer<typeof pairComparisonSchema>
 
+/**
+ * O dinheiro do período.
+ *
+ * `gross` é o que o webhook do Asaas registrou como pago; `net` desconta
+ * reembolso. Não é projeção: MRR e ARR vêm junto, mas em campo separado,
+ * porque misturar caixa com projeção é como um mês de anual virar lucro.
+ */
+export const revenueSchema = z.object({
+  gross_cents: count,
+  refunds_cents: count,
+  net_cents: z.number(),
+  payments: count,
+  paying_users: count,
+  ticket_cents: nullableNumber,
+  by_cycle: z.record(count),
+  series: z.array(z.object({ day: z.string(), cents: count })),
+  mrr_cents: count,
+  arr_cents: count,
+  trials_active: count,
+})
+export type AdminRevenue = z.infer<typeof revenueSchema>
+
 export const featureUsageSchema = z.object({
   features: z.array(
     z.object({
@@ -420,6 +442,54 @@ export const featureUsageSchema = z.object({
 })
 export type AdminFeatureUsage = z.infer<typeof featureUsageSchema>
 
+/** Uma pergunta de funil, como o painel edita e como a tela pública lê. */
+export const quizQuestionSchema = z.object({
+  key: z.string(),
+  kind: z.enum(['unica', 'multipla', 'texto', 'escala']),
+  title: z.string(),
+  hint: z.string().nullable(),
+  required: z.boolean(),
+  options: z.array(z.object({ value: z.string(), label: z.string() })),
+})
+export type AdminQuizQuestion = z.infer<typeof quizQuestionSchema>
+
+export const adminQuizSchema = z.object({
+  id: z.string().uuid(),
+  slug: z.string(),
+  name: z.string(),
+  purpose: z.enum(['plano', 'contato']),
+  state: z.enum(['rascunho', 'publicado', 'arquivado']),
+  /** Perguntas no código, não no banco: só o funil original. */
+  built_in: z.boolean(),
+  headline: z.string().nullable(),
+  subheadline: z.string().nullable(),
+  cta_label: z.string().nullable(),
+  outro: z.string().nullable(),
+  questions: z.array(quizQuestionSchema),
+  sessions: count,
+  leads: count,
+  created_at: isoDate,
+  updated_at: isoDate,
+})
+export type AdminQuiz = z.infer<typeof adminQuizSchema>
+
+export const adminQuizListSchema = z.array(adminQuizSchema)
+
+/** O quiz como quem responde recebe: sem estado interno, sem contagem. */
+export const publicQuizSchema = z.object({
+  id: z.string().uuid(),
+  slug: z.string(),
+  name: z.string(),
+  purpose: z.enum(['plano', 'contato']),
+  built_in: z.boolean(),
+  headline: z.string().nullable(),
+  subheadline: z.string().nullable(),
+  cta_label: z.string().nullable(),
+  outro: z.string().nullable(),
+  questions: z.array(quizQuestionSchema),
+})
+export type PublicQuiz = z.infer<typeof publicQuizSchema>
+
 /** O funil do quiz: sessões distintas por evento, abandono por passo, origem e tema. */
 export const quizFunnelSchema = z.object({
   period: z.object({ from: z.string(), to: z.string() }),
@@ -427,6 +497,10 @@ export const quizFunnelSchema = z.object({
   abandoned_by_step: z.record(count),
   by_source: z.record(count),
   by_theme: z.record(count),
+  /** Qual funil está em foco. Nulo quando a tela mostra todos juntos. */
+  quiz: z.string().nullable(),
+  /** Um por funil, pra comparar sem trocar de tela. */
+  by_quiz: z.array(z.object({ slug: z.string(), name: z.string(), sessions: count, leads: count })),
 })
 export type AdminQuizFunnel = z.infer<typeof quizFunnelSchema>
 
@@ -460,6 +534,37 @@ export const quizLeadListSchema = z.object({
   items: z.array(quizLeadSchema),
 })
 export type AdminQuizLeadList = z.infer<typeof quizLeadListSchema>
+
+/** A sessão do quiz inteira: o que a lista não cabe. */
+export const quizLeadDetailSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().nullable(),
+  email: z.string().nullable(),
+  phone: z.string().nullable(),
+  age: z.number().nullable(),
+  consent_at: nullableDate,
+  status: z.string(),
+  step: count,
+  answers: z.record(z.unknown()),
+  diagnosis: z.record(z.unknown()),
+  theme: z.string().nullable(),
+  source: z.object({
+    utm_source: z.string().nullable(),
+    utm_medium: z.string().nullable(),
+    utm_campaign: z.string().nullable(),
+    utm_content: z.string().nullable(),
+  }),
+  entered_at: isoDate,
+  /* Quem saiu no meio não tem fim, nem vínculo, nem ativação. */
+  completed_at: nullableDate,
+  abandoned_at: nullableDate,
+  linked_at: nullableDate,
+  activated_at: nullableDate,
+  has_account: z.boolean(),
+  user_id: z.string().uuid().nullable(),
+  timeline: z.array(z.object({ name: z.string(), step: z.number().nullable(), at: isoDate })),
+})
+export type AdminQuizLeadDetail = z.infer<typeof quizLeadDetailSchema>
 
 /** Só agregados: quantas pessoas em cada nível, nunca o histórico de alguém. */
 export const evolutionMetricsSchema = z.object({

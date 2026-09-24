@@ -26,7 +26,13 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-const SESSION_MAX_MINUTES = 60
+/*
+  A janela da sessão mora no banco (`admin.security.sessionMinutes`), e
+  este número é só o padrão de quando a configuração não responde. Deixar
+  o valor fixo aqui foi o que fez a Edge Function continuar cobrando uma
+  hora depois que o painel passou a valer oito.
+*/
+const SESSION_MAX_MINUTES_PADRAO = 480
 const STEP_UP_MAX_MINUTES = 5
 
 type Action =
@@ -144,12 +150,17 @@ Deno.serve(async (request) => {
   //    A exigência é um interruptor do owner (`admin.security.requireMfa`);
   //    desligado, papel basta — e o painel avisa em vermelho.
   const { data: security } = await admin.rpc('setting_value', { p_key: 'admin.security' })
-  const mfaRequired = (security as { requireMfa?: unknown } | null)?.requireMfa !== false
+  const seguranca = security as { requireMfa?: unknown; sessionMinutes?: unknown } | null
+  const mfaRequired = seguranca?.requireMfa !== false
+  const sessionMaxMinutes =
+    typeof seguranca?.sessionMinutes === 'number' && seguranca.sessionMinutes >= 5 && seguranca.sessionMinutes <= 1440
+      ? seguranca.sessionMinutes
+      : SESSION_MAX_MINUTES_PADRAO
   const verifiedAt = totpVerifiedAt(claims)
   if (mfaRequired && claims['aal'] !== 'aal2') {
     return fail(403, 'mfa_required', 'Esta operação exige verificação em duas etapas.')
   }
-  if (mfaRequired && minutesSince(verifiedAt) > SESSION_MAX_MINUTES) {
+  if (mfaRequired && minutesSince(verifiedAt) > sessionMaxMinutes) {
     return fail(403, 'session_expired', 'Sessão administrativa expirada: confirme o segundo fator de novo.')
   }
   if (mfaRequired && minutesSince(verifiedAt) > STEP_UP_MAX_MINUTES) {

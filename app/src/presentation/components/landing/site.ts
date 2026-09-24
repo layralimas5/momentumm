@@ -1,3 +1,4 @@
+import { QUIZ_SHORT_PATH } from '@/domain/analytics/quiz-links'
 import { TRIAL_DAYS } from '@/domain/billing/trial'
 
 /**
@@ -21,12 +22,18 @@ export const SITE = {
 
 /**
  * O estágio decide o CTA da página inteira. Hoje o produto aceita conta
- * gratuita direto, então o CTA principal cria conta e o secundário abre o
- * modo demo sem cadastro.
+ * gratuita direto, então o CTA principal cria conta.
+ *
+ * O secundário é o QUIZ, não mais o modo demo. Quem chega na página sem ter
+ * ouvido falar do produto não quer passear por dados de outra pessoa: quer
+ * saber se isso resolve o problema DELA. O quiz responde isso com um plano
+ * feito com as respostas dela, e só pede conta depois — que é a ordem que o
+ * funil dos carrosséis já usa. O modo demo continua em `/app`, pra quem
+ * quiser olhar por dentro.
  */
 export const CTA = {
   primary: { label: 'Começar grátis', to: '/entrar' },
-  secondary: { label: 'Ver por dentro, sem criar conta', to: '/app' },
+  secondary: { label: 'Criar meu plano em 2 minutos', to: QUIZ_SHORT_PATH },
   badge: 'Acesso antecipado',
   reassurance: `Grátis, sem cartão, com ${TRIAL_DAYS} dias de PRO. O primeiro plano fica pronto em dois minutos.`,
 } as const

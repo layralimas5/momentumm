@@ -10,13 +10,17 @@ import type {
   AdminFeatureUsage,
   AdminMember,
   AdminOverview,
+  AdminQuiz,
   AdminQuizFunnel,
+  AdminQuizQuestion,
+  AdminQuizLeadDetail,
   AdminQuizLeadList,
   AdminRequestDetail,
   AdminRequestList,
   AdminEngagement,
   AdminPairComparison,
   AdminRetention,
+  AdminRevenue,
   AdminSetting,
   AdminSubscriptionList,
   AdminSubscriptionMetrics,
@@ -67,6 +71,20 @@ export interface ErrorFilters {
   readonly severity?: ErrorSeverity | undefined
   readonly module?: string | undefined
   readonly page?: number | undefined
+  /** `producao`, `preview` ou `desenvolvimento`. Separa erro de quem usa de erro de quem programa. */
+  readonly environment?: string | undefined
+}
+
+export interface SaveQuizInput {
+  readonly slug: string
+  readonly name: string
+  readonly purpose: 'plano' | 'contato'
+  readonly questions: readonly AdminQuizQuestion[]
+  readonly reason: string
+  readonly headline?: string | undefined
+  readonly subheadline?: string | undefined
+  readonly ctaLabel?: string | undefined
+  readonly outro?: string | undefined
 }
 
 export interface AuditFilters {
@@ -132,16 +150,43 @@ export interface AdminGateway {
   errorMetrics(period: Period): Promise<AdminErrorMetrics>
   setErrorStatus(id: string, status: ErrorStatus, severity?: ErrorSeverity): Promise<void>
 
+  /** Quanto entrou no período, pelos eventos de cobrança do provedor. */
+  revenue(period: Period): Promise<AdminRevenue>
+
   retention(period: Period): Promise<AdminRetention>
   /** O laço: ativação, retenção por avanço, tempo até a primeira ação. */
   engagement(period: Period): Promise<AdminEngagement>
   /** Com dupla x sem dupla. Descritivo: correlação, não efeito. */
   pairComparison(period: Period): Promise<AdminPairComparison>
   featureUsage(period: Period): Promise<AdminFeatureUsage>
-  /** Funil de aquisição pelo quiz (`/criar-meu-plano`), agregado por sessão. */
-  quizFunnel(period: Period): Promise<AdminQuizFunnel>
+  /**
+   * Funil de aquisição pelo quiz, agregado por sessão. Sem `quiz`, junta
+   * todos os funis e traz a comparação entre eles.
+   */
+  quizFunnel(period: Period, quiz?: string | undefined): Promise<AdminQuizFunnel>
+
+  /** Os funis de quiz, com quanto cada um rendeu. */
+  listQuizzes(): Promise<readonly AdminQuiz[]>
+  /** Grava o funil inteiro: dados e perguntas, na mesma transação. */
+  saveQuiz(input: SaveQuizInput): Promise<void>
+  /** Publica, volta pra rascunho ou arquiva. */
+  setQuizState(slug: string, state: 'rascunho' | 'publicado' | 'arquivado', reason: string): Promise<void>
   /** Contatos deixados no quiz. `pending` filtra quem ainda não virou conta. */
   quizLeads(period: Period, pending: boolean | null, page: number): Promise<AdminQuizLeadList>
+  /**
+   * Esquece o contato de um lead: nome, e-mail, telefone e idade saem, a
+   * sessão fica. O funil de um mês fechado não muda porque alguém pediu
+   * pra sair da lista.
+   */
+  /** A sessão inteira de um contato: respostas, diagnóstico e linha do tempo. */
+  quizLeadDetail(sessionId: string): Promise<AdminQuizLeadDetail>
+  deleteQuizLead(sessionId: string, reason: string): Promise<void>
+  /**
+   * Exclusão imediata, só pro owner: libera no banco e conclui na Edge
+   * Function. O caminho com solicitação e prazo de 7 dias continua sendo o
+   * `start_deletion`, e é ele que vale quando quem pede é a pessoa.
+   */
+  forceDeleteUser(userId: string, reason: string): Promise<void>
   /** Distribuição por nível e XP da semana. Agregado, sem dado individual. */
   evolutionMetrics(): Promise<AdminEvolutionMetrics>
 
@@ -164,4 +209,10 @@ export interface AdminGateway {
   revokeRole(userId: string, reason: string): Promise<void>
 
   audit(filters: AuditFilters): Promise<{ total: number; items: readonly AdminAuditLog[] }>
+  /**
+   * Apaga auditoria anterior a uma data e devolve quantas linhas saíram.
+   * Não existe apagar uma linha escolhida: o expurgo é por corte, o banco
+   * recusa cortes recentes e o próprio expurgo vira registro.
+   */
+  purgeAudit(before: string, reason: string): Promise<number>
 }
