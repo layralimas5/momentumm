@@ -29,7 +29,7 @@ export function FinalCta() {
               <h2 className="text-balance text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
                 {offer?.closing ?? (
                   <>
-                    <span className="block">Você não precisa começar de novo.</span>
+                    <span className="block">Você não precisa começar de novo.{' '}</span>
                     <span className="block text-brand-hi">Precisa continuar daqui.</span>
                   </>
                 )}
@@ -43,7 +43,7 @@ export function FinalCta() {
                 <Link
                   to={cta.primary.to}
                   onClick={() => trackLanding('hero_cta_clicked')}
-                  className="inline-flex h-14 w-full max-w-xs items-center justify-center gap-2 rounded-xl bg-brand px-8 font-medium text-white transition-colors hover:bg-brand-hi sm:w-auto"
+                  className="pulse-button inline-flex h-14 w-full max-w-xs items-center justify-center gap-2 rounded-xl bg-brand px-8 font-medium text-white transition-colors hover:bg-brand-hi sm:w-auto"
                 >
                   {cta.primary.label}
                   {cta.signedIn ? null : <ArrowIcon />}

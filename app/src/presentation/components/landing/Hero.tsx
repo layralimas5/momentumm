@@ -75,7 +75,7 @@ export function Hero() {
             <Link
               to={cta.primary.to}
               onClick={() => trackLanding('hero_cta_clicked')}
-              className="inline-flex h-12 w-full max-w-xs items-center justify-center gap-2 rounded-full bg-brand px-7 font-medium text-white transition-colors hover:bg-brand-hi sm:w-auto"
+              className="pulse-button inline-flex h-12 w-full max-w-xs items-center justify-center gap-2 rounded-full bg-brand px-7 font-medium text-white transition-colors hover:bg-brand-hi sm:w-auto"
             >
               {cta.primary.label}
               {cta.signedIn ? null : <ArrowIcon />}
@@ -84,7 +84,7 @@ export function Hero() {
             <Link
               to={CTA.secondary.to}
               onClick={() => trackLanding('secondary_cta_clicked')}
-              className="inline-flex h-12 w-full max-w-xs items-center justify-center gap-2 rounded-full border border-line-hi px-7 font-medium text-ink transition-colors hover:bg-surface-hi sm:w-auto"
+              className="pulse-on-hover inline-flex h-12 w-full max-w-xs items-center justify-center gap-2 rounded-full border border-line-hi px-7 font-medium text-ink transition-colors hover:bg-surface-hi sm:w-auto"
             >
               {CTA.secondary.label}
             </Link>

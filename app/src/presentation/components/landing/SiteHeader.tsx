@@ -151,7 +151,7 @@ export function SiteHeader() {
             <Link
               to={cta.primary.to}
               onClick={() => trackLanding('hero_cta_clicked')}
-              className="inline-flex h-10 items-center whitespace-nowrap rounded-full bg-brand px-3.5 text-sm font-medium text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-hi sm:h-11 sm:px-5"
+              className="pulse-button inline-flex h-10 items-center whitespace-nowrap rounded-full bg-brand px-3.5 text-sm font-medium text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-hi sm:h-11 sm:px-5"
             >
               {cta.primary.label}
             </Link>

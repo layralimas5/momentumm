@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { TRIAL_DAYS } from '@/domain/billing/trial'
-import { Icon, type IconName } from '@/presentation/components/ui/Icon'
+import { Icon } from '@/presentation/components/ui/Icon'
 import { cn } from '@/shared/lib/cn'
 import { trackLanding, useSectionView } from './landing-analytics'
 import {
@@ -18,14 +18,15 @@ import { TRIAL_PROMISE_VERIFIED } from './site'
 import { useSiteCta } from './use-site-cta'
 
 /**
- * As garantias ficam coladas no preço, que é onde o risco aparece. Cada uma
- * é uma decisão do produto que dá pra verificar, não uma frase de confiança.
+ * As garantias ficam coladas no preço, que é onde o risco aparece. Eram três
+ * cards; viraram uma linha, porque cada uma cabe em cinco palavras e três
+ * caixas pra isso é só mais rolagem.
  */
-const GUARANTEES: readonly { readonly icon: IconName; readonly text: string }[] = [
-  { icon: 'cadeado', text: 'Seus dados são seus: privados por padrão e exportáveis a qualquer hora.' },
-  { icon: 'saida', text: 'Cancela num clique, sem ligação. O PRO vale até o fim do período pago.' },
-  { icon: 'check', text: 'Nada é apagado se você voltar pro gratuito. Só fica guardado.' },
-]
+const GUARANTEES = [
+  'Privado por padrão',
+  'Cancela num clique',
+  'Nada é apagado se você voltar pro gratuito',
+] as const
 
 export function Pricing() {
   const [cycle, setCycle] = useState<BillingCycle>('anual')
@@ -55,20 +56,17 @@ export function Pricing() {
         </ul>
 
         <Reveal delay={0.16}>
-          <ul className="mx-auto mt-8 grid max-w-4xl gap-2.5 sm:grid-cols-3">
+          <ul className="mx-auto mt-8 flex max-w-3xl flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-ink-muted">
             {GUARANTEES.map((item) => (
-              <li
-                key={item.text}
-                className="flex gap-3 rounded-card border border-line bg-surface p-3.5 text-sm text-ink-muted"
-              >
-                <Icon name={item.icon} className="mt-0.5 size-4 shrink-0 text-brand-hi" />
-                <span className="text-pretty">{item.text}</span>
+              <li key={item} className="inline-flex items-center gap-2">
+                <Icon name="check" className="size-4 shrink-0 text-positive" />
+                {item}
               </li>
             ))}
           </ul>
         </Reveal>
 
-        <p className="mx-auto mt-6 max-w-2xl text-center text-sm text-ink-faint">
+        <p className="mx-auto mt-6 max-w-2xl text-center text-xs text-ink-faint">
           {PRICING_FOOTNOTE}
         </p>
       </div>
@@ -151,7 +149,7 @@ function PlanCard({ plan, cycle }: { plan: PricingPlan; cycle: BillingCycle }) {
         to={to}
         onClick={() => trackLanding('pricing_cta_clicked')}
         className={cn(
-          'mt-6 inline-flex h-11 items-center justify-center rounded-xl px-4 text-sm font-medium transition-colors',
+          'pulse-button mt-6 inline-flex h-11 items-center justify-center rounded-xl px-4 text-sm font-medium transition-colors',
           isPro
             ? 'bg-brand text-white hover:bg-brand-hi'
             : 'border border-line text-ink hover:border-line-hi',

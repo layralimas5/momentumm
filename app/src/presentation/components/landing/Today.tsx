@@ -35,7 +35,7 @@ export function Today() {
             align="left"
             eyebrow="A tela de todo dia"
             title="Abra o Momentumm e saiba o que importa hoje."
-            description="Em vez de encarar uma meta inteira todos os dias, você encontra o próximo passo que faz sentido para sua rotina agora."
+            description="Nada de encarar a meta inteira todo dia. Você abre e encontra o próximo passo que cabe na sua rotina de hoje."
           />
         </div>
 

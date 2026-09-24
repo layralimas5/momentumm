@@ -35,7 +35,7 @@ export function MomentumAi() {
       <SectionHeading
         eyebrow="Momentumm AI"
         title="Uma IA que conhece sua meta antes de sugerir o próximo passo."
-        description="O Momentumm usa seu objetivo, plano, disponibilidade e progresso para sugerir próximos passos e ajustes mais compatíveis com sua realidade."
+        description="Ela olha o seu objetivo, o seu plano e o seu tempo antes de abrir a boca. A sugestão vem com o botão que a executa."
       />
 
       <ul className="mt-10 grid gap-3 md:grid-cols-3">
