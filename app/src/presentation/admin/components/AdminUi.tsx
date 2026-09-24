@@ -134,7 +134,7 @@ export function Metric({ label, value, previous, format = 'int', hint, lowerIsBe
 }
 
 export function formatValue(value: number | null | undefined, format: MetricProps['format'] = 'int'): string {
-  if (value === null || value === undefined) return '—'
+  if (value === null || value === undefined) return '-'
   switch (format) {
     case 'percent':
       return `${value.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`
@@ -358,7 +358,7 @@ export function BarList({
 }
 
 export function formatDate(value: Date | null | undefined, withTime = false): string {
-  if (!value) return '—'
+  if (!value) return '-'
   return value.toLocaleString('pt-BR', {
     day: '2-digit',
     month: '2-digit',

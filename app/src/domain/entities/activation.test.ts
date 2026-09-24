@@ -152,7 +152,7 @@ describe('readGoalQuantity', () => {
   })
 })
 
-describe('buildActivation — o plano que cabe', () => {
+describe('buildActivation: o plano que cabe', () => {
   const plan = buildActivation(input())
 
   it('devolve a cadeia inteira: objetivo, marcos, ações e primeiro passo', () => {
@@ -175,7 +175,7 @@ describe('buildActivation — o plano que cabe', () => {
 
 })
 
-describe('buildActivation — ambição maior que a disponibilidade', () => {
+describe('buildActivation: ambição maior que a disponibilidade', () => {
   const apertado = buildActivation(
     input({
       answers: answers({
@@ -230,7 +230,7 @@ describe('buildActivation — ambição maior que a disponibilidade', () => {
   })
 })
 
-describe('buildActivation — o alvo', () => {
+describe('buildActivation: o alvo', () => {
   it('usa o número que a pessoa escreveu quando ele existe', () => {
     const plan = buildActivation(
       input({ answers: answers({ goal: 'Estudar 40 horas do curso' }) }),
@@ -260,7 +260,7 @@ describe('buildActivation — o alvo', () => {
   })
 })
 
-describe('buildActivation — área nova', () => {
+describe('buildActivation: área nova', () => {
   it('marca que o eixo precisa ser criado ao salvar', () => {
     const plan = buildActivation(
       input({
@@ -275,7 +275,7 @@ describe('buildActivation — área nova', () => {
   })
 })
 
-describe('buildActivation — prazo assumido', () => {
+describe('buildActivation: prazo assumido', () => {
   it('diz em voz alta quando a data foi o app que escolheu', () => {
     const plan = buildActivation(
       input({ answers: answers({ horizon: { kind: 'flexivel' } }) }),

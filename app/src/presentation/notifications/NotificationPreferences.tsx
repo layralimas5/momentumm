@@ -121,7 +121,7 @@ export function NotificationPreferences() {
 
       {prefs.types.length === 0 ? (
         <p className="mt-3 text-sm text-ink-faint">
-          Com tudo desmarcado você não recebe aviso nenhum. O app continua igual — só não te chama.
+          Com tudo desmarcado você não recebe aviso nenhum. O app continua igual: só não te chama.
         </p>
       ) : null}
 

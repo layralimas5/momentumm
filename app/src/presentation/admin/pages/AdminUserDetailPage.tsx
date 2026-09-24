@@ -132,7 +132,7 @@ export function AdminUserDetailPage() {
             <StatusTag tone={user.status === 'ativa' ? 'positive' : user.status === 'suspensa' ? 'danger' : 'warn'}>
               {ACCOUNT_STATE_LABELS[user.status]}
             </StatusTag>
-            <StatusTag tone={user.plan === 'pro' ? 'brand' : 'neutral'}>{user.plan ? PLAN_LABELS[user.plan] : '—'}</StatusTag>
+            <StatusTag tone={user.plan === 'pro' ? 'brand' : 'neutral'}>{user.plan ? PLAN_LABELS[user.plan] : '-'}</StatusTag>
             <StatusTag>{user.email_confirmed ? 'E-mail confirmado' : 'E-mail pendente'}</StatusTag>
             <StatusTag tone={user.mfa_enabled ? 'positive' : 'neutral'}>{user.mfa_enabled ? 'MFA ativo' : 'Sem MFA'}</StatusTag>
             <StatusTag>{user.onboarding_done ? 'Onboarding concluído' : 'Onboarding pendente'}</StatusTag>
@@ -270,9 +270,9 @@ export function AdminUserDetailPage() {
                   <tr key={entry.id}>
                     <Td className="tabular whitespace-nowrap">{formatDate(entry.created_at, true)}</Td>
                     <Td>{entry.action}</Td>
-                    <Td>{entry.actor_role ?? '—'}</Td>
+                    <Td>{entry.actor_role ?? '-'}</Td>
                     <Td><StatusTag tone={entry.result === 'ok' ? 'positive' : 'danger'}>{entry.result}</StatusTag></Td>
-                    <Td>{entry.reason ?? '—'}</Td>
+                    <Td>{entry.reason ?? '-'}</Td>
                   </tr>
                 ))}
               </Table>

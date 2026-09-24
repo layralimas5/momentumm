@@ -223,6 +223,6 @@ export function AdminRetentionPage() {
 
 /** A taxa de um degrau do funil sobre a coorte. Traço quando não há coorte. */
 function taxa(valor: number, total: number): string {
-  if (total <= 0) return '—'
+  if (total <= 0) return '-'
   return `${Math.round((valor / total) * 100)}% da coorte`
 }

@@ -209,7 +209,7 @@ const ALL_NAV: readonly AppNavItem[] = [
     label: 'Juntos',
     end: false,
     icon: 'metas',
-    description: 'A dupla que acompanha se você avançou no dia — e você, a dela',
+    description: 'A dupla que acompanha se você avançou no dia, e você a dela',
     requiresFeature: 'juntos',
   },
   {

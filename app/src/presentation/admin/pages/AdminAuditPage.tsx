@@ -47,7 +47,7 @@ export function AdminAuditPage() {
                 <tr key={entry.id}>
                   <Td className="tabular whitespace-nowrap">{formatDate(entry.created_at, true)}</Td>
                   <Td>{entry.actor_name ?? entry.actor_id?.slice(0, 8) ?? 'sistema'}</Td>
-                  <Td>{entry.actor_role ?? '—'}</Td>
+                  <Td>{entry.actor_role ?? '-'}</Td>
                   <Td><code className="text-xs">{entry.action}</code></Td>
                   <Td className="text-xs text-ink-muted">{entry.resource_type}{entry.resource_id ? ` · ${entry.resource_id.slice(0, 12)}` : ''}</Td>
                   <Td>
@@ -55,17 +55,17 @@ export function AdminAuditPage() {
                       <Link to={`/admin/usuarios/${entry.target_user_id}`} className="text-brand-hi underline-offset-2 hover:underline">
                         {entry.target_name ?? entry.target_user_id.slice(0, 8)}
                       </Link>
-                    ) : '—'}
+                    ) : '-'}
                   </Td>
                   <Td><StatusTag tone={entry.result === 'ok' ? 'positive' : 'danger'}>{entry.result}</StatusTag></Td>
-                  <Td className="max-w-xs text-xs text-ink-muted">{entry.reason ?? '—'}</Td>
+                  <Td className="max-w-xs text-xs text-ink-muted">{entry.reason ?? '-'}</Td>
                   <Td className="max-w-xs text-xs text-ink-faint">
                     {entry.before || entry.after ? (
                       <code className="break-all">{JSON.stringify(entry.before ?? null)} → {JSON.stringify(entry.after ?? null)}</code>
-                    ) : '—'}
+                    ) : '-'}
                   </Td>
                   <Td className="text-xs text-ink-faint">
-                    {entry.context && Object.keys(entry.context).length > 0 ? Object.entries(entry.context).map(([key, value]) => `${key}: ${String(value)}`).join(' · ') : '—'}
+                    {entry.context && Object.keys(entry.context).length > 0 ? Object.entries(entry.context).map(([key, value]) => `${key}: ${String(value)}`).join(' · ') : '-'}
                   </Td>
                 </tr>
               ))}

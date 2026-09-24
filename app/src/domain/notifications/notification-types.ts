@@ -49,7 +49,7 @@ export const NOTIFICATION_SPECS: readonly NotificationSpec[] = [
   {
     type: 'dia_dificil',
     label: 'Dia difícil',
-    description: 'No fim do dia, quando a ação continua em aberto — com a saída de adaptar.',
+    description: 'No fim do dia, quando a ação continua em aberto, com a saída de adaptar.',
     defaultOn: true,
   },
   {

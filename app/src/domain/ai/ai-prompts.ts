@@ -227,7 +227,7 @@ export function renderContext(context: AiUserContext): string {
 
   push(`Hoje: ${context.today}`)
   push(
-    `Momentumm: ${context.momentum.value}/100 (${context.momentum.level}, ${signed(context.momentum.delta)} vs semana anterior)${context.momentum.hasEnoughData ? '' : ' — ainda se formando, menos de 7 dias de história'}`,
+    `Momentumm: ${context.momentum.value}/100 (${context.momentum.level}, ${signed(context.momentum.delta)} vs semana anterior)${context.momentum.hasEnoughData ? '' : ' · ainda se formando, menos de 7 dias de história'}`,
   )
   push(
     `Fatores: ${context.momentum.factors
@@ -239,7 +239,7 @@ export function renderContext(context: AiUserContext): string {
   )
   if (context.momentum.rawValue !== context.momentum.value) {
     push(
-      `Momentumm bruto (sem o limite diário): ${context.momentum.rawValue}/100 — o exibido ainda vai ${context.momentum.rawValue > context.momentum.value ? 'subir' : 'cair'} até lá`,
+      `Momentumm bruto (sem o limite diário): ${context.momentum.rawValue}/100 · o exibido ainda vai ${context.momentum.rawValue > context.momentum.value ? 'subir' : 'cair'} até lá`,
     )
   }
   if (context.momentum.drivers.length > 0) {
@@ -251,7 +251,7 @@ export function renderContext(context: AiUserContext): string {
   }
   if (context.momentum.nextAction) {
     push(
-      `Próxima ação com mais potencial: "${context.momentum.nextAction.title}" (${signed(context.momentum.nextAction.gain)} no score hoje) — ${context.momentum.nextAction.reason}`,
+      `Próxima ação com mais potencial: "${context.momentum.nextAction.title}" (${signed(context.momentum.nextAction.gain)} no score hoje) · ${context.momentum.nextAction.reason}`,
     )
   }
   push(
@@ -266,12 +266,12 @@ export function renderContext(context: AiUserContext): string {
     push('OBJETIVOS')
     for (const objective of context.objectives) {
       push(
-        `- [${objective.ref}] "${objective.title}" (${objective.axis}, ${objective.state}, prioridade ${objective.priority}) — ${objective.volume.done}/${objective.volume.target} ${objective.volume.unit}, prazo ${objective.deadline} (${objective.daysLeft} dias)${objective.planPercent === null ? ', sem etapas' : `, plano ${objective.planPercent}%`}`,
+        `- [${objective.ref}] "${objective.title}" (${objective.axis}, ${objective.state}, prioridade ${objective.priority}) · ${objective.volume.done}/${objective.volume.target} ${objective.volume.unit}, prazo ${objective.deadline} (${objective.daysLeft} dias)${objective.planPercent === null ? ', sem etapas' : `, plano ${objective.planPercent}%`}`,
       )
       if (objective.motive) push(`  Motivo: ${objective.motive}`)
       for (const stage of objective.stages) {
         push(
-          `  Etapa "${stage.title}" ${stage.weightPercent}% — ${stage.status}, ${stage.tasksDone}/${stage.tasksTotal} ações${stage.dueOn ? `, até ${stage.dueOn}` : ''}`,
+          `  Etapa "${stage.title}" ${stage.weightPercent}% · ${stage.status}, ${stage.tasksDone}/${stage.tasksTotal} ações${stage.dueOn ? `, até ${stage.dueOn}` : ''}`,
         )
       }
       if (objective.currentStage) push(`  Etapa atual: ${objective.currentStage}`)
@@ -288,7 +288,7 @@ export function renderContext(context: AiUserContext): string {
     push('HÁBITOS')
     for (const habit of context.habits) {
       push(
-        `- [${habit.ref}] "${habit.name}" (${habit.axis}, ${habit.frequency}, ${habit.target} ${habit.unit}, mínimo ${habit.minimalTarget}) — ${habit.consistencyPercent}% em 14 dias, ${habit.doneLast7}x nos últimos 7${habit.objective ? `, sustenta "${habit.objective}"` : ''}${habit.scheduledToday ? (habit.doneToday ? ', feito hoje' : ', pendente hoje') : ''}`,
+        `- [${habit.ref}] "${habit.name}" (${habit.axis}, ${habit.frequency}, ${habit.target} ${habit.unit}, mínimo ${habit.minimalTarget}) · ${habit.consistencyPercent}% em 14 dias, ${habit.doneLast7}x nos últimos 7${habit.objective ? `, sustenta "${habit.objective}"` : ''}${habit.scheduledToday ? (habit.doneToday ? ', feito hoje' : ', pendente hoje') : ''}`,
       )
     }
   }

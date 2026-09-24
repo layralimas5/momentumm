@@ -158,7 +158,7 @@ export function AdminRequestDetailPage() {
                 <dl className="flex flex-col gap-2 text-sm">
                   <div className="flex justify-between gap-3"><dt className="text-ink-faint">Status</dt><dd><StatusTag>{SUPPORT_STATUS_LABELS[request.status]}</StatusTag></dd></div>
                   <div className="flex justify-between gap-3"><dt className="text-ink-faint">Prioridade</dt><dd><StatusTag tone={priorityTone(request.priority)}>{SUPPORT_PRIORITY_LABELS[request.priority]}</StatusTag></dd></div>
-                  <div className="flex justify-between gap-3"><dt className="text-ink-faint">Responsável</dt><dd className="text-ink">{request.assignee_name ?? '—'}</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-ink-faint">Responsável</dt><dd className="text-ink">{request.assignee_name ?? '-'}</dd></div>
                   <div className="flex justify-between gap-3"><dt className="text-ink-faint">Prazo</dt><dd className="tabular text-ink">{formatDate(request.due_at, true)}</dd></div>
                   <div className="flex justify-between gap-3"><dt className="text-ink-faint">Resolvida</dt><dd className="tabular text-ink">{formatDate(request.resolved_at, true)}</dd></div>
                   <div className="flex justify-between gap-3"><dt className="text-ink-faint">Conta</dt><dd><Link to={`/admin/usuarios/${request.user_id}`} className="text-brand-hi underline-offset-2 hover:underline">abrir</Link></dd></div>

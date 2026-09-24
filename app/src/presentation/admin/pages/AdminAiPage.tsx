@@ -61,7 +61,7 @@ export function AdminAiPage() {
               IA {limits?.enabled === false ? 'desligada' : 'ligada'}
             </StatusTag>
             {limits?.monthlyPerPlan ? (
-              <StatusTag>Franquia PRO: {limits.monthlyPerPlan.pro ?? '—'}/mês</StatusTag>
+              <StatusTag>Franquia PRO: {limits.monthlyPerPlan.pro ?? '-'}/mês</StatusTag>
             ) : null}
             {limits?.dailySafetyLimit ? <StatusTag>Teto diário: {limits.dailySafetyLimit}</StatusTag> : null}
             {data.blocks_active > 0 ? <StatusTag tone="danger">{data.blocks_active} conta(s) bloqueada(s)</StatusTag> : null}
@@ -106,7 +106,7 @@ export function AdminAiPage() {
                       <Td className="tabular">{stats.ok}</Td>
                       <Td className="tabular">{stats.errors}</Td>
                       <Td className="tabular">{stats.limits}</Td>
-                      <Td className="tabular">{stats.avg_ms === null ? '—' : `${Math.round(stats.avg_ms)} ms`}</Td>
+                      <Td className="tabular">{stats.avg_ms === null ? '-' : `${Math.round(stats.avg_ms)} ms`}</Td>
                     </tr>
                   ))}
               </Table>

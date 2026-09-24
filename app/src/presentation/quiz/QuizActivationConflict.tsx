@@ -59,7 +59,7 @@ export function QuizActivationConflictView({
         Seu plano está pronto. A área de {area.label} já tem dono.
       </h1>
       <p className="mt-2 text-sm text-pretty text-ink-muted">
-        Cada área tem um objetivo ativo por vez — é o que mantém o progresso sem ambiguidade. Seu
+        Cada área tem um objetivo ativo por vez: é o que mantém o progresso sem ambiguidade. Seu
         plano continua guardado neste aparelho.
       </p>
 
@@ -113,7 +113,7 @@ export function QuizActivationConflictView({
           Ou deixa esse plano de lado
         </h2>
         <p className="mt-1.5 text-sm text-ink-muted">
-          Você entra no app agora, com o que já tem. O plano do quiz é descartado — dá pra montar
+          Você entra no app agora, com o que já tem. O plano do quiz é descartado, mas dá pra montar
           outro objetivo a qualquer momento.
         </p>
         <Button variant="ghost" className="mt-3 w-full" onClick={onSkip}>

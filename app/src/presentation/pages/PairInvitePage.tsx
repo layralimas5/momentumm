@@ -116,7 +116,7 @@ export function PairInvitePage() {
           Vamos avançar juntas?
         </h1>
         <p className="mt-2 text-sm text-pretty text-ink-muted">
-          Vocês não precisam ter o mesmo objetivo. O combinado é continuar avançando — e cada uma vê
+          Vocês não precisam ter o mesmo objetivo. O combinado é continuar avançando, e cada uma vê
           apenas se a outra avançou no dia.
         </p>
 
@@ -144,7 +144,7 @@ export function PairInvitePage() {
               Entrar pra aceitar
             </Button>
             <p className="mt-2 text-xs text-ink-faint">
-              Ainda não tem conta? Dá pra criar em um minuto — o convite continua valendo.
+              Ainda não tem conta? Dá pra criar em um minuto: o convite continua valendo.
             </p>
           </div>
         )}

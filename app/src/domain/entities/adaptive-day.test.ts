@@ -99,7 +99,7 @@ describe('clampAvailable', () => {
   })
 })
 
-describe('buildAdaptiveDay — o dia que já cabe', () => {
+describe('buildAdaptiveDay: o dia que já cabe', () => {
   it('não mexe em nada quando o planejado cabe no tempo', () => {
     const plan = buildAdaptiveDay(
       input({ tasks: [task({ estimatedMin: 30 }, 'a'), task({ estimatedMin: 25 }, 'b')] }),
@@ -113,7 +113,7 @@ describe('buildAdaptiveDay — o dia que já cabe', () => {
   })
 })
 
-describe('buildAdaptiveDay — 1h30 com plano de 4h', () => {
+describe('buildAdaptiveDay: 1h30 com plano de 4h', () => {
   const objective = objectiveWithPlan({ id: 'obj-1', deadlineInDays: 5 })
 
   const tasks = [
@@ -158,7 +158,7 @@ describe('buildAdaptiveDay — 1h30 com plano de 4h', () => {
   })
 })
 
-describe('buildAdaptiveDay — o que ele se recusa a fazer', () => {
+describe('buildAdaptiveDay: o que ele se recusa a fazer', () => {
   it('não puxa ação atrasada pra dentro do dia curto', () => {
     const plan = buildAdaptiveDay(
       input({
@@ -224,7 +224,7 @@ describe('buildAdaptiveDay — o que ele se recusa a fazer', () => {
   })
 })
 
-describe('buildAdaptiveDay — a ordem é impacto, não quantidade', () => {
+describe('buildAdaptiveDay: a ordem é impacto, não quantidade', () => {
   it('a ação do objetivo atrasado ganha da tarefa solta de mesmo tamanho', () => {
     const objective = objectiveWithPlan({ id: 'obj-3', deadlineInDays: 3, title: 'Entregar o site' })
 
@@ -271,7 +271,7 @@ describe('buildAdaptiveDay — a ordem é impacto, não quantidade', () => {
   })
 })
 
-describe('buildAdaptiveDay — protectIds', () => {
+describe('buildAdaptiveDay: protectIds', () => {
   it('o passo protegido não sai do dia nem quando o tempo acaba', () => {
     const plan = buildAdaptiveDay(
       input({
@@ -288,7 +288,7 @@ describe('buildAdaptiveDay — protectIds', () => {
   })
 })
 
-describe('buildAdaptiveDay — hábitos e sequência', () => {
+describe('buildAdaptiveDay: hábitos e sequência', () => {
   it('hábito com sequência viva é essencial e fica protegido', () => {
     const logs: HabitLog[] = [1, 2, 3].map((offset) => ({
       id: `l${offset}`,
@@ -327,7 +327,7 @@ describe('buildAdaptiveDay — hábitos e sequência', () => {
   })
 })
 
-describe('buildAdaptiveDay — etapa que trava o objetivo', () => {
+describe('buildAdaptiveDay: etapa que trava o objetivo', () => {
   it('a ação do gargalo é mantida antes das outras', () => {
     const stages: PlanStage[] = [
       createPlanStage({ userId: 'u1', objectiveId: 'obj-4', title: 'MVP', weight: 100 }, 's1'),
@@ -358,7 +358,7 @@ describe('buildAdaptiveDay — etapa que trava o objetivo', () => {
 })
 
 /** Casos de tamanho, contagem e integridade da conta apresentada na tela. */
-describe('buildAdaptiveDay — a conta que a tela mostra', () => {
+describe('buildAdaptiveDay: a conta que a tela mostra', () => {
   it('o total adaptado é a soma do que ficou', () => {
     const plan = buildAdaptiveDay(
       input({

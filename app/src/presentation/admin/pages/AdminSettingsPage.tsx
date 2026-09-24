@@ -166,13 +166,13 @@ function AdminsSection({
           {members.map((member) => (
             <tr key={member.user_id}>
               <Td>
-                <span className="font-medium">{member.name ?? '—'}</span>
+                <span className="font-medium">{member.name ?? '-'}</span>
                 <span className="block text-xs text-ink-faint">{member.email_masked}</span>
               </Td>
               <Td><StatusTag tone={member.role === 'owner' ? 'brand' : 'neutral'}>{ADMIN_ROLE_LABELS[member.role]}</StatusTag></Td>
               <Td>{member.mfa_enabled ? 'Ativo' : <span className="text-danger">Não</span>}</Td>
               <Td className="tabular">{formatDate(member.granted_at)}</Td>
-              <Td className="text-xs text-ink-muted">{member.reason ?? '—'}</Td>
+              <Td className="text-xs text-ink-muted">{member.reason ?? '-'}</Td>
               <Td>
                 {admin.can('admins.write') ? (
                   <Button size="sm" variant="ghost" onClick={() => setRevoking(member.user_id)}>Revogar</Button>

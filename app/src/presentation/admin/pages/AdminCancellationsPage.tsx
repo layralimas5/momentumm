@@ -85,7 +85,7 @@ export function AdminCancellationsPage() {
                         <Td>{item.plan.toUpperCase()}{item.interval ? ` · ${item.interval}` : ''}</Td>
                         <Td className="tabular">{item.tenure_days} d</Td>
                         <Td>{CANCEL_REASON_LABELS[item.reason]}</Td>
-                        <Td className="max-w-xs text-ink-muted">{item.comment ?? '—'}</Td>
+                        <Td className="max-w-xs text-ink-muted">{item.comment ?? '-'}</Td>
                         <Td className="tabular">{formatDate(item.access_until)}</Td>
                         <Td>
                           <StatusTag tone={item.status === 'retido' ? 'positive' : 'neutral'}>{STATUS_LABELS[item.status]}</StatusTag>

@@ -108,7 +108,7 @@ function fullSlump(): RecoveryInput {
   })
 }
 
-describe('detectRecovery — quando o modo liga', () => {
+describe('detectRecovery: quando o modo liga', () => {
   it('exige sinais combinados: um sozinho não liga nada', () => {
     // Só a queda de momentum, sem semana parada nem atraso.
     const state = detectRecovery(
@@ -157,7 +157,7 @@ describe('detectRecovery — quando o modo liga', () => {
   })
 })
 
-describe('detectRecovery — os passos de volta', () => {
+describe('detectRecovery: os passos de volta', () => {
   it('oferece no máximo três', () => {
     const many = Array.from({ length: 8 }, (_, index) =>
       task({ estimatedMin: 15, title: `Passo ${index}` }, `p${index}`),

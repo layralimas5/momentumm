@@ -219,11 +219,11 @@ export function AdminUsersPage() {
                       {user.name ?? 'Sem perfil'}
                     </Link>
                     <span className="block text-xs text-ink-faint">{user.handle ? `@${user.handle}` : user.id.slice(0, 8)}</span>
-                    <span className="block text-xs text-ink-faint">{user.email_masked ?? '—'}</span>
+                    <span className="block text-xs text-ink-faint">{user.email_masked ?? '-'}</span>
                   </Td>
                   <Td>
                     <StatusTag tone={user.plan === 'pro' ? 'brand' : 'neutral'}>
-                      {user.plan ? PLAN_LABELS[user.plan] : '—'}
+                      {user.plan ? PLAN_LABELS[user.plan] : '-'}
                     </StatusTag>
                   </Td>
                   <Td>

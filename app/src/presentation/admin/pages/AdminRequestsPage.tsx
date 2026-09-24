@@ -72,7 +72,7 @@ export function AdminRequestsPage() {
                   <Td className="max-w-xs truncate">{request.subject}</Td>
                   <Td><StatusTag tone={priorityTone(request.priority)}>{SUPPORT_PRIORITY_LABELS[request.priority]}</StatusTag></Td>
                   <Td><StatusTag tone={request.status === 'resolvida' || request.status === 'fechada' ? 'positive' : 'neutral'}>{SUPPORT_STATUS_LABELS[request.status]}</StatusTag></Td>
-                  <Td>{request.assignee_name ?? '—'}</Td>
+                  <Td>{request.assignee_name ?? '-'}</Td>
                   <Td className="tabular whitespace-nowrap">{formatDate(request.opened_at)}</Td>
                   <Td className={`tabular whitespace-nowrap ${request.overdue ? 'text-danger' : ''}`}>{formatDate(request.due_at)}</Td>
                 </tr>

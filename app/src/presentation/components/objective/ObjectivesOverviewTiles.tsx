@@ -42,7 +42,7 @@ export function ObjectivesOverviewTiles({ overview }: { readonly overview: Objec
         icon="calendario"
         tone={prazo !== null && prazo <= 7 ? 'warn' : 'brand'}
         label="Prazo"
-        value={prazo === null ? '—' : String(prazo)}
+        value={prazo === null ? '-' : String(prazo)}
         suffix={prazo === null ? undefined : 'd'}
         hint={prazo === 0 ? 'fecha hoje' : 'o mais próximo'}
       />

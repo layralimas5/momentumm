@@ -69,7 +69,7 @@ export function AdminFunnelPage() {
                   <tr key={row.event}>
                     <Td>{row.label}</Td>
                     <Td className="tabular">{row.value}</Td>
-                    <Td className="tabular">{row.rate === null ? '—' : formatValue(row.rate, 'percent')}</Td>
+                    <Td className="tabular">{row.rate === null ? '-' : formatValue(row.rate, 'percent')}</Td>
                   </tr>
                 ))}
               </Table>
