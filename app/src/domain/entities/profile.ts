@@ -47,6 +47,15 @@ export interface Profile {
   readonly visibility: ProfileVisibility
   /** Plano da conta. Decide limites, nunca acesso às telas. */
   readonly plan: PlanTier
+  /**
+   * Até quando a conta tem PRO de cortesia. `null` é sem cortesia.
+   *
+   * Quem opera o produto (owner e admin) recebe cortesia infinita por trigger
+   * (migration 0051), e é isso que a tela precisa saber pra não anunciar o fim
+   * de um teste que não decide nada pra essa conta. A coluna é só de LEITURA
+   * aqui: quem escreve é o servidor, e um trigger recusa a escrita pelo dono.
+   */
+  readonly planCourtesyUntil: Date | null
   /** Um emoji e uma frase curta sobre o momento: "🔥 Semana de foco". */
   readonly status: ProfileStatus | null
   /** Capa atrás do avatar: chave de preset ou foto em data URL. `null` usa o preset padrão. */

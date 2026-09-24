@@ -189,6 +189,23 @@ await db.exec(`insert into public.subscriptions (user_id, provider, provider_sub
 fila = await q(`select * from public.trial_notices_due()`)
 check('quem já assinou sai da fila', !fila.some((r) => r.user_id === assinante))
 
+// Cortesia que passa do fim do teste: pra essa conta nada acaba, e o aviso
+// seria o produto mentindo pra quem opera ele (owner e admin, pela 0051).
+const cortesia = (await one(`insert into auth.users (email) values ('cortesia@x.com') returning id`)).id
+await db.exec(`update public.plan_trials set ends_at = now() + interval '1 day' where user_id = '${cortesia}'`)
+await db.exec(`select set_config('momentumm.plan_sync', '1', false)`)
+await db.exec(`update public.profiles set plan_courtesy_until = 'infinity' where id = '${cortesia}'`)
+fila = await q(`select * from public.trial_notices_due()`)
+check('quem tem cortesia infinita sai da fila', !fila.some((r) => r.user_id === cortesia))
+
+// Cortesia que termina ANTES do teste não sustenta nada: o aviso continua valendo.
+const cortesiaCurta = (await one(`insert into auth.users (email) values ('curta@x.com') returning id`)).id
+await db.exec(`update public.plan_trials set ends_at = now() + interval '1 day' where user_id = '${cortesiaCurta}'`)
+await db.exec(`update public.profiles set plan_courtesy_until = now() + interval '2 hours' where id = '${cortesiaCurta}'`)
+await db.exec(`select set_config('momentumm.plan_sync', '', false)`)
+fila = await q(`select * from public.trial_notices_due()`)
+check('cortesia mais curta que o teste não tira da fila', fila.some((r) => r.user_id === cortesiaCurta))
+
 // O carimbo impede o segundo envio.
 const marcados = (await one(`select public.mark_trial_notice_sent(array['${seisDias}']::uuid[]) as n`)).n
 fila = await q(`select * from public.trial_notices_due()`)

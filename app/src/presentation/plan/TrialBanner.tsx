@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { isTrialActive, trialDaysLeft } from '@/domain/billing/trial'
+import { planAccessOf, trialDaysLeft } from '@/domain/billing/trial'
 import { isPro } from '@/domain/entities/plan'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { Icon } from '@/presentation/components/ui/Icon'
@@ -18,13 +18,30 @@ export function formatTrialEnd(date: Date): string {
  * linha, sem modal, sem contagem regressiva em vermelho: informa e sai do
  * caminho, como o resto das chamadas de PRO. Na tela de assinatura ela
  * some, porque lá a mesma informação vira o painel principal.
+ *
+ * Quem NÃO vê: quem paga, e quem tem cortesia que passa do teste — owner e
+ * admin caem aí, por causa do trigger da 0051. A conta deles nasceu com os
+ * sete dias como qualquer outra, então a linha aparecia anunciando o fim de um
+ * teste que não decide nada pra elas, com um "Assinar o PRO" que não resolvia
+ * problema nenhum. Quem decide é `planAccessOf`, e não o papel: cortesia dada
+ * à mão pra alguém de fora da equipe é tratada igual.
  */
 export function TrialBanner() {
   const { profile, trial } = useAuth()
   const { pathname } = useLocation()
 
-  if (!profile || !isPro(profile.plan) || !isTrialActive(trial)) return null
+  if (!profile || !isPro(profile.plan) || !trial) return null
   if (pathname.startsWith(SUBSCRIPTION_PATH)) return null
+
+  /*
+    A assinatura não entra na conta aqui porque ela não muda a resposta: com
+    assinatura valendo, `planAccessOf` devolve 'paid' e a linha some do mesmo
+    jeito. Passar `null` evita carregar a assinatura em toda tela do app só pra
+    decidir se uma linha aparece.
+  */
+  if (planAccessOf(profile.plan, null, trial, profile.planCourtesyUntil) !== 'trial') {
+    return null
+  }
 
   const days = trialDaysLeft(trial)
 

@@ -148,6 +148,7 @@ function seed(): DemoState {
     // o contrário do que o produto faz.
     visibility: 'privado',
     plan: 'free',
+    planCourtesyUntil: null,
     status: { emoji: '🔥', text: 'Semana de foco no treino' },
     banner: 'aurora',
     restWeekdays: [],

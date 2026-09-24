@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ACTIVITY_VISIBILITIES, VISIBILITY_LABELS, type ActivityVisibility } from '@/domain/entities/activity'
-import { isTrialActive } from '@/domain/billing/trial'
+import { planAccessOf } from '@/domain/billing/trial'
 import { formatLimit, isPro, limitsOf, PLAN_LABELS, type PlanTier } from '@/domain/entities/plan'
 import { formatTrialEnd } from '@/presentation/plan/TrialBanner'
 import { MAX_REST_WEEKDAYS } from '@/domain/entities/momentum'
@@ -261,7 +261,15 @@ export function ProfilePage() {
                 )}
               >
                 {PLAN_LABELS[profile.plan]}
-                {isPro(profile.plan) && isTrialActive(trial) ? ` · teste até ${formatTrialEnd(trial.endsAt)}` : ''}
+                {/*
+                  "teste até" só pra quem o teste realmente sustenta. Quem tem
+                  cortesia que passa dele (owner e admin, pela 0051) vê só o
+                  selo PRO: a data não decide nada pra essa conta.
+                */}
+                {trial &&
+                planAccessOf(profile.plan, null, trial, profile.planCourtesyUntil) === 'trial'
+                  ? ` · teste até ${formatTrialEnd(trial.endsAt)}`
+                  : ''}
               </span>
             </div>
 

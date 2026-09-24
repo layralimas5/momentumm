@@ -82,7 +82,12 @@ export function SubscriptionPage() {
     Asaas confirmar antes de dizer que o pagamento entrou.
   */
   const access = profile
-    ? planAccessOf(profile.plan, subscription === 'loading' ? null : subscription, trial)
+    ? planAccessOf(
+        profile.plan,
+        subscription === 'loading' ? null : subscription,
+        trial,
+        profile.planCourtesyUntil,
+      )
     : 'free'
   const hasPaidPro = access === 'paid'
   const refresh = useCallback(async () => {

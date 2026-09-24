@@ -104,6 +104,14 @@ const profileRowSchema = z.object({
   profile_visibility: z.enum(PROFILE_VISIBILITIES).nullish(),
   // Conta criada antes da migration de planos não tem a coluna preenchida.
   plan: z.enum(PLAN_TIERS).nullish(),
+  /*
+    Cortesia (0034/0051). `'infinity'` é um valor legítimo de `timestamptz` no
+    Postgres e o `new Date('infinity')` do JavaScript é `Invalid Date`, então o
+    mapeamento trata esse caso na mão — sem isso, a conta com cortesia infinita
+    cairia em data inválida e a comparação daria falso justamente pra quem tem
+    a cortesia mais forte.
+  */
+  plan_courtesy_until: z.string().nullish(),
   // Base anterior à 0018 responde sem a coluna: sem descanso marcado.
   rest_weekdays: z.array(z.number().int()).nullish(),
   // 0035: status e capa. Base anterior responde sem as colunas.
@@ -200,6 +208,15 @@ export function toCustomAxis(row: unknown): ActivityType {
   }
 }
 
+/** `'infinity'` vira a data mais distante que o JavaScript representa. */
+function toCourtesyDate(value: string | null | undefined): Date | null {
+  if (!value) return null
+  if (value === 'infinity') return new Date(8_640_000_000_000_000)
+  if (value === '-infinity') return new Date(-8_640_000_000_000_000)
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
 export function toProfile(row: unknown): Profile {
   const parsed = parseOrThrow(profileRowSchema, row, 'perfil')
   return {
@@ -216,6 +233,7 @@ export function toProfile(row: unknown): Profile {
     */
     visibility: parsed.profile_visibility ?? 'privado',
     plan: parsed.plan ?? 'free',
+    planCourtesyUntil: toCourtesyDate(parsed.plan_courtesy_until),
     restWeekdays: normalizeRestWeekdays(parsed.rest_weekdays ?? []),
     status: normalizeStatus({ emoji: parsed.status_emoji ?? null, text: parsed.status_text ?? null }),
     banner: parsed.banner ?? null,
