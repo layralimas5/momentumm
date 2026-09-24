@@ -194,23 +194,22 @@ export interface AdaptiveDayPlan {
  * hábito grava um tempo que a pessoa não pediu. Protegido vem na frente,
  * porque ele é o que segura a trajetória do objetivo.
  */
-export function startableAction(plan: AdaptiveDayPlan): AdaptiveItem | null {
-  const candidates = plan.items.filter(
-    (item) =>
-      item.kind === 'acao' &&
-      (item.verdict === 'manter' || item.verdict === 'reduzir') &&
-      item.adaptedMin > 0,
+/**
+ * Dá pra começar ESTE item agora?
+ *
+ * Hábito não entra: o app não marca hábito por ninguém, e um cronômetro que
+ * começa sozinho num hábito grava um tempo que a pessoa não pediu. Reagendada
+ * também não: ela saiu do dia, e oferecer um play nela desfaria em um toque o
+ * ajuste que a revisão acabou de propor.
+ */
+export function canStartNow(item: AdaptiveItem): boolean {
+  return (
+    item.kind === 'acao' &&
+    (item.verdict === 'manter' || item.verdict === 'reduzir') &&
+    item.adaptedMin > 0
   )
-
-  if (candidates.length === 0) return null
-
-  const ordered = [...candidates].sort((a, b) => {
-    if (a.locked !== b.locked) return a.locked ? -1 : 1
-    return b.score - a.score
-  })
-
-  return ordered[0] ?? null
 }
+
 
 /** Candidato antes da decisão: o item com custo e score já apurados. */
 interface Candidate {

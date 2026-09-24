@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildAdaptiveDay,
+  canStartNow,
   clampAvailable,
   MAX_AVAILABLE_MIN,
   MIN_AVAILABLE_MIN,
-  startableAction,
   type AdaptiveDayInput,
-  type AdaptiveDayPlan,
   type AdaptiveItem,
   type AdaptiveObjective,
 } from './adaptive-day'
@@ -393,7 +392,7 @@ describe('buildAdaptiveDay: a conta que a tela mostra', () => {
   })
 })
 
-describe('startableAction', () => {
+describe('canStartNow', () => {
   function item(over: Partial<AdaptiveItem> = {}): AdaptiveItem {
     return {
       kind: 'acao',
@@ -414,48 +413,20 @@ describe('startableAction', () => {
     }
   }
 
-  function plan(items: AdaptiveItem[]): AdaptiveDayPlan {
-    return {
-      today: parseDayKey('2026-09-22'),
-      availableMin: 60,
-      plannedMin: 90,
-      adaptedMin: 60,
-      items,
-      kept: [],
-      reduced: [],
-      rescheduled: [],
-      fits: false,
-      writes: 1,
-      promoteTaskId: null,
-      protectedObjectives: [],
-      title: '',
-      summary: '',
-    }
-  }
-
-  it('pega a de maior peso entre as que ficam', () => {
-    const escolhida = startableAction(
-      plan([item({ id: 'a', score: 1 }), item({ id: 'b', score: 9 })]),
-    )
-
-    expect(escolhida?.id).toBe('b')
-  })
-
-  it('a protegida passa na frente do peso', () => {
-    const escolhida = startableAction(
-      plan([item({ id: 'a', score: 9 }), item({ id: 'b', score: 1, locked: true })]),
-    )
-
-    expect(escolhida?.id).toBe('b')
+  it('ação que fica no dia pode começar agora', () => {
+    expect(canStartNow(item())).toBe(true)
+    expect(canStartNow(item({ verdict: 'reduzir', adaptedMin: 10 }))).toBe(true)
   })
 
   it('hábito não vira cronômetro', () => {
-    expect(startableAction(plan([item({ kind: 'habito' })]))).toBeNull()
+    expect(canStartNow(item({ kind: 'habito' }))).toBe(false)
   })
 
   it('o que saiu do dia não serve pra começar', () => {
-    expect(
-      startableAction(plan([item({ verdict: 'reagendar', adaptedMin: 0 })])),
-    ).toBeNull()
+    expect(canStartNow(item({ verdict: 'reagendar', adaptedMin: 0 }))).toBe(false)
+  })
+
+  it('sem minuto nenhum não há o que cronometrar', () => {
+    expect(canStartNow(item({ adaptedMin: 0 }))).toBe(false)
   })
 })

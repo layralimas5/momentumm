@@ -1,6 +1,6 @@
 import {
   ADAPTIVE_VERDICT_LABELS,
-  startableAction,
+  canStartNow,
   type AdaptiveDayPlan,
   type AdaptiveItem,
   type AdaptiveVerdict,
@@ -57,7 +57,9 @@ export function AdaptiveDayReview({
 }: AdaptiveDayReviewProps) {
   const isDesktop = useIsDesktop()
 
-  const body = plan ? <ReviewBody plan={plan} intro={intro} /> : null
+  const body = plan ? (
+    <ReviewBody plan={plan} intro={intro} applying={applying} {...(onStart ? { onStart } : {})} />
+  ) : null
 
   const actions = plan ? (
     <ReviewActions
@@ -66,7 +68,6 @@ export function AdaptiveDayReview({
       error={error}
       onConfirm={onConfirm}
       onClose={onClose}
-      {...(onStart ? { onStart } : {})}
     />
   ) : null
 
@@ -101,7 +102,11 @@ export function AdaptiveDayReview({
 function ReviewBody({
   plan,
   intro,
-}: Pick<AdaptiveDayReviewProps, 'intro'> & { readonly plan: AdaptiveDayPlan }) {
+  applying,
+  onStart,
+}: Pick<AdaptiveDayReviewProps, 'intro' | 'applying' | 'onStart'> & {
+  readonly plan: AdaptiveDayPlan
+}) {
   const groups = GROUPS.map((group) => ({
     ...group,
     items: plan.items.filter((item) => item.verdict === group.verdict),
@@ -147,7 +152,12 @@ function ReviewBody({
           <ul className="mt-2 flex flex-col gap-2">
             {group.items.map((item) => (
               <li key={item.id}>
-                <ItemRow item={item} today={plan.today} />
+                <ItemRow
+                  item={item}
+                  today={plan.today}
+                  applying={applying}
+                  {...(onStart ? { onStart } : {})}
+                />
               </li>
             ))}
           </ul>
@@ -167,15 +177,14 @@ function ReviewBody({
 /**
  * As ações da revisão, presas no rodapé.
  *
- * Elas moravam no fim do conteúdo, depois da lista item a item. Num dia com
- * cinco ajustes isso são duas telas de rolagem entre ler o plano e poder
- * fazer alguma coisa a respeito — e quem não rolasse até o fim não descobria
- * que dava pra começar dali.
+ * Aqui ficou só o que vale pro plano INTEIRO: confirmar e cancelar. Começar
+ * uma ação é decisão de cada linha, então os dois tamanhos foram pra dentro do
+ * item (ver `ItemRow`).
  *
- * Os dois tamanhos ficam lado a lado com o nome e os minutos de cada um,
- * porque "completa ou mínima" não diz nada solto: o que decide é ver "Treinar
- * 45 minutos" ao lado de "Fazer 10 minutos de movimento" e saber qual dos
- * dois cabe hoje.
+ * Antes existia um par de botões aqui embaixo, pra UMA ação escolhida pelo
+ * app — a de maior peso. Num dia com quatro ações isso escolhia por ela, e a
+ * pessoa que quisesse começar por outra não tinha caminho: precisava confirmar,
+ * fechar a revisão e procurar a linha na tela de trás.
  */
 function ReviewActions({
   plan,
@@ -183,51 +192,22 @@ function ReviewActions({
   error,
   onConfirm,
   onClose,
-  onStart,
-}: AdaptiveDayReviewProps & { readonly plan: AdaptiveDayPlan }) {
-  const startable = onStart ? startableAction(plan) : null
-
+}: Omit<AdaptiveDayReviewProps, 'onStart'> & { readonly plan: AdaptiveDayPlan }) {
   return (
     <div className="flex flex-col gap-3">
       <div aria-live="polite">
         {error ? <p className="text-sm text-danger">{error}</p> : null}
       </div>
 
-      {startable && onStart ? (
-        <div className="grid gap-2 sm:grid-cols-2">
-          <StartButton
-            title={startable.title}
-            minutes={startable.minutes}
-            label="Fazer a versão completa"
-            disabled={applying}
-            onClick={() => onStart(startable, 'completa')}
-          />
-
-          {startable.minimalTitle ? (
-            <StartButton
-              title={startable.minimalTitle}
-              minutes={startable.adaptedMin}
-              label="Fazer a versão mínima"
-              tone="soft"
-              disabled={applying}
-              onClick={() => onStart(startable, 'minima')}
-            />
-          ) : null}
-        </div>
-      ) : null}
-
       <div className="flex flex-wrap gap-2">
         <Button
-          variant={startable && onStart ? 'secondary' : 'primary'}
           onClick={onConfirm}
           loading={applying}
           disabled={plan.writes === 0 && plan.fits}
         >
           {plan.writes === 0
             ? 'Entendi'
-            : startable && onStart
-              ? 'Só confirmar'
-              : `Confirmar ${plan.writes === 1 ? 'a mudança' : `as ${plan.writes} mudanças`}`}
+            : `Confirmar ${plan.writes === 1 ? 'a mudança' : `as ${plan.writes} mudanças`}`}
         </Button>
         <Button variant="ghost" onClick={onClose} disabled={applying}>
           Cancelar
@@ -313,7 +293,34 @@ function Figure({
   )
 }
 
-function ItemRow({ item, today }: { readonly item: AdaptiveItem; readonly today: DayKey }) {
+/**
+ * Um item da revisão, com os dois tamanhos embaixo dele.
+ *
+ * Os botões ficam AQUI, e não no rodapé: a escolha é por ação. "Completa ou
+ * mínima" não diz nada solto, então cada botão carrega o nome e os minutos do
+ * seu tamanho — o que decide é ver "Treinar 45 min" ao lado de "Fazer 10
+ * minutos de movimento" e saber qual dos dois cabe hoje.
+ *
+ * Tocar num deles confirma o plano, grava a redução quando for o caso e abre o
+ * cronômetro já no tamanho escolhido. Sem isso a revisão terminava com a pessoa
+ * na frente de um dia ajustado e nenhum lugar pra tocar.
+ *
+ * Só ação entra, e só a que continua no dia (`canStartNow`): hábito o app não
+ * marca por ninguém, e ação reagendada saiu de hoje.
+ */
+function ItemRow({
+  item,
+  today,
+  applying = false,
+  onStart,
+}: {
+  readonly item: AdaptiveItem
+  readonly today: DayKey
+  readonly applying?: boolean
+  readonly onStart?: (item: AdaptiveItem, size: 'completa' | 'minima') => void
+}) {
+  const startable = onStart ? canStartNow(item) : false
+
   return (
     <div className="rounded-xl border border-line bg-surface-hi/40 px-3.5 py-3">
       <div className="flex items-start justify-between gap-3">
@@ -351,6 +358,34 @@ function ItemRow({ item, today }: { readonly item: AdaptiveItem; readonly today:
         {item.locked ? <Tag tone="positive">Protegido</Tag> : null}
         {item.overBudget ? <Tag tone="warn">Passa do tempo de hoje</Tag> : null}
       </div>
+
+      {startable && onStart ? (
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <StartButton
+            title={item.title}
+            minutes={item.minutes}
+            label="Fazer a versão completa"
+            disabled={applying}
+            onClick={() => onStart(item, 'completa')}
+          />
+
+          {/*
+            Sem versão mínima cadastrada não existe segundo botão: um "Fazer a
+            versão mínima" que abre o cronômetro no tempo cheio seria o app
+            dizendo uma coisa e fazendo outra.
+          */}
+          {item.minimalTitle ? (
+            <StartButton
+              title={item.minimalTitle}
+              minutes={item.adaptedMin}
+              label="Fazer a versão mínima"
+              tone="soft"
+              disabled={applying}
+              onClick={() => onStart(item, 'minima')}
+            />
+          ) : null}
+        </div>
+      ) : null}
     </div>
   )
 }
