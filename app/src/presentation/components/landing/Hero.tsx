@@ -74,7 +74,7 @@ export function Hero() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row"
+            className="mt-9 flex flex-col items-center justify-center gap-3"
           >
             <Link
               to={cta.primary.to}
@@ -85,13 +85,6 @@ export function Hero() {
               {cta.signedIn ? null : <ArrowIcon />}
             </Link>
 
-            <Link
-              to={CTA.secondary.to}
-              onClick={() => trackLanding('secondary_cta_clicked')}
-              className="pulse-on-hover inline-flex h-12 w-full max-w-xs items-center justify-center gap-2 rounded-full border border-line-hi px-7 font-medium text-ink transition-colors hover:bg-surface-hi sm:w-auto"
-            >
-              {CTA.secondary.label}
-            </Link>
           </motion.div>
 
           <p className="mt-6 text-sm text-ink-muted">{reassurance}</p>

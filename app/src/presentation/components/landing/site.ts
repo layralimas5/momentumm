@@ -34,7 +34,6 @@ export const SITE = {
  */
 export const CTA = {
   primary: { label: 'Criar meu plano', to: quizPathFor('lp-hero') },
-  secondary: { label: 'Ver como funciona', to: '/#como-funciona' },
   reassurance: 'Grátis e sem cartão.',
 } as const
 

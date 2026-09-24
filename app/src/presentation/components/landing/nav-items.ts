@@ -19,36 +19,6 @@ export interface NavGroup {
 
 export const NAV_GROUPS: readonly NavGroup[] = [
   {
-    label: 'Produto',
-    links: [
-      {
-        label: 'Como funciona',
-        description: 'Do objetivo ao próximo passo, em quatro momentos',
-        href: '/#como-funciona',
-      },
-      {
-        label: 'Quando a rotina muda',
-        description: 'Dia adaptável e retomada, sem voltar ao zero',
-        href: '/#retomada',
-      },
-      {
-        label: 'A tela de hoje',
-        description: 'O que importa agora, em uma tela',
-        href: '/#hoje',
-      },
-      {
-        label: 'Progresso',
-        description: 'O número que mostra a sua constância',
-        href: '/#progresso',
-      },
-      {
-        label: 'Momentumm AI',
-        description: 'Sugestões que conhecem a sua meta',
-        href: '/#ia',
-      },
-    ],
-  },
-  {
     label: 'Ferramentas',
     links: [
       {
@@ -71,6 +41,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
 ]
 
 export const NAV_DIRECT: readonly NavLink[] = [
+  { label: 'O app', description: 'O que muda no seu dia', href: '/#funcionalidades' },
   { label: 'Planos', description: 'Grátis e PRO, o que muda', href: '/#planos' },
   { label: 'Dúvidas', description: 'O que perguntam antes de começar', href: '/#faq' },
 ]
