@@ -5,10 +5,7 @@ import { useSiteCta } from './use-site-cta'
 import { SITE } from './site'
 
 const PRODUCT = [
-  { label: 'Como funciona', href: '/#como-funciona' },
-  { label: 'Quando a rotina muda', href: '/#retomada' },
-  { label: 'A tela de hoje', href: '/#hoje' },
-  { label: 'Momentumm AI', href: '/#ia' },
+  { label: 'O app', href: '/#funcionalidades' },
   { label: 'Planos', href: '/#planos' },
   { label: 'Dúvidas', href: '/#faq' },
 ] as const

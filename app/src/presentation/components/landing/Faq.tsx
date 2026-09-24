@@ -13,30 +13,25 @@ interface Question {
 }
 
 /**
- * As dúvidas na ordem em que aparecem na cabeça de quem acabou de ler a
- * página: como é o meu dia, o que acontece quando eu sumo, quanto custa, e
- * as de risco (teste, privacidade, cancelamento).
- *
- * As respostas são curtas de propósito. FAQ é a última coisa que alguém lê
- * antes de decidir: um parágrafo de seis linhas aqui não tira dúvida, cria
- * uma. A pergunta "preciso organizar tudo sozinho?" saiu porque a seção
- * "como funciona" já responde ela com a tela.
+ * As objeções de quem já quer, mas ainda não confia: "já tentei e larguei",
+ * "não tenho tempo", quanto custa, e as de risco (teste, privacidade,
+ * cancelamento). É a última coisa que a pessoa lê antes de decidir, por isso
+ * as respostas cabem em duas frases.
  *
  * Trial, cobrança, privacidade e cancelamento só afirmam o que está
  * implementado. A pergunta do teste some junto com a promessa quando
- * `TRIAL_PROMISE_VERIFIED` está desligada: FAQ prometendo o que o hero não
- * promete é pior que não ter a pergunta.
+ * `TRIAL_PROMISE_VERIFIED` está desligada.
  */
 const BASE: readonly Question[] = [
   {
-    question: 'Como o Momentumm funciona no dia a dia?',
+    question: 'Já tentei app de metas e larguei. Por que esse seria diferente?',
     answer:
-      'Você diz onde quer chegar e o app monta um plano por etapas, com ações que têm data. Todo dia você abre e encontra um passo só, do tamanho do tempo que tem.',
+      'Porque ele foi feito pro dia em que você falha. Com pouco tempo, o passo de hoje encolhe pra versão mínima; depois de dias parados, você volta de onde parou e o Momentumm Score não zera.',
   },
   {
-    question: 'O que acontece se eu perder alguns dias?',
+    question: 'Não tenho tempo pra planejar nada.',
     answer:
-      'Você volta de onde parou. Os dias parados não são cobrados, a sequência não é encerrada e o Momentumm Score não zera: ele olha 28 dias, então um dia vazio tira poucos pontos.',
+      'Você não planeja: responde o quiz e o plano sai pronto, por etapas e do tamanho do tempo que você tem. Depois é abrir o app e fazer um passo por dia.',
   },
   {
     question: 'Qual a diferença entre o gratuito e o PRO?',
@@ -69,7 +64,7 @@ const QUESTIONS: readonly Question[] = TRIAL_PROMISE_VERIFIED
 export function Faq() {
   return (
     <Section id="faq" className="border-t border-line bg-surface/30">
-      <SectionHeading eyebrow="Dúvidas" title="O que perguntam antes de começar" />
+      <SectionHeading eyebrow="Antes de começar" title="O que costuma travar quem quer começar" />
 
       <div className="mx-auto mt-10 flex max-w-2xl flex-col gap-2.5">
         {QUESTIONS.map((item, index) => (
