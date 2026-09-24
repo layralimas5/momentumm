@@ -1,4 +1,5 @@
 import type { PushDevice, PushPermission } from '@/domain/notifications/push-device'
+import { isIos, isStandalone } from '@/infrastructure/pwa/platform'
 
 /**
  * A ponte com as APIs de notificação do navegador.
@@ -28,14 +29,13 @@ export function pushPermission(): PushPermission {
 /**
  * iPhone com o site aberto no Safari: a API não existe até a pessoa adicionar
  * à tela de início. É o caso em que a tela precisa explicar, não pedir.
+ *
+ * A checagem é pela plataforma, não pela ausência da API: o iOS antigo ao
+ * menos declara `PushManager` em alguns builds, e ali o caminho continua
+ * sendo a tela de início.
  */
 export function needsHomeScreenInstall(): boolean {
-  const ua = navigator.userAgent
-  const isIos = /iPhone|iPad|iPod/.test(ua) || (ua.includes('Mac') && 'ontouchend' in document)
-  const standalone =
-    window.matchMedia('(display-mode: standalone)').matches ||
-    (navigator as Navigator & { standalone?: boolean }).standalone === true
-  return isIos && !standalone && !pushSupported()
+  return isIos() && !isStandalone()
 }
 
 export async function currentDevice(): Promise<PushDevice | null> {
@@ -53,6 +53,8 @@ export async function subscribeDevice(vapidPublicKey: string): Promise<PushDevic
   const permission = await Notification.requestPermission()
   if (permission !== 'granted') return null
 
+  // O worker já foi registrado no boot; registrar de novo é idempotente e
+  // cobre o caso de o registro do boot ainda não ter terminado.
   const registration = await navigator.serviceWorker.register(SERVICE_WORKER_URL)
   await navigator.serviceWorker.ready
 

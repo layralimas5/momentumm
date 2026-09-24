@@ -45,6 +45,7 @@ import { ShareInvite } from '@/presentation/share/ShareInvite'
 import { ShareMomentsRow } from '@/presentation/share/ShareMomentsRow'
 import { QuoteCard } from '@/presentation/components/dashboard/QuoteCard'
 import { ReminderCard } from '@/presentation/notifications/ReminderCard'
+import { InstallCard } from '@/presentation/pwa/InstallCard'
 import { useIsDesktop } from '@/presentation/hooks/use-media-query'
 import { AiDayDialog } from '@/presentation/ai/AiDayDialog'
 import { AiRecoveryDialog } from '@/presentation/ai/AiRecoveryDialog'
@@ -373,6 +374,7 @@ export function DashboardPage() {
         />
         {resumeCard}
         {firstWinCard}
+        <InstallCard />
         <ReminderCard />
         <RecoveryCard
           state={recovery.state}
@@ -435,6 +437,7 @@ export function DashboardPage() {
 
         {firstWinCard}
 
+        <InstallCard />
         <ReminderCard />
 
         <RecoveryCard

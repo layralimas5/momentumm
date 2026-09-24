@@ -22,6 +22,7 @@ import { MobileShortcuts } from '@/presentation/components/mobile/MobileShortcut
 import { SecurityPanel } from '@/presentation/profile/SecurityPanel'
 import { SupportPanel } from '@/presentation/profile/SupportPanel'
 import { ReminderSettings } from '@/presentation/notifications/ReminderSettings'
+import { InstallSettings } from '@/presentation/pwa/InstallSettings'
 import { forgetActivation } from '@/presentation/planner/use-activation'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
@@ -246,6 +247,8 @@ export function ProfilePage() {
               <dd className="truncate text-ink">@{profile.handle}</dd>
             </div>
           </dl>
+
+          <InstallSettings />
 
           <ReminderSettings />
 

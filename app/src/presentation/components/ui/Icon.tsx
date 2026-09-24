@@ -18,6 +18,12 @@ export const ICON_PATHS = {
   mais: 'M12 5v14M5 12h14',
   busca: 'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM21 21l-4.3-4.3',
   sino: 'M18 16V11a6 6 0 1 0-12 0v5l-2 3h16l-2-3ZM10 21a2 2 0 0 0 4 0',
+  // O botao Compartilhar do iOS: quadrado com a seta saindo por cima.
+  compartilhar:
+    'M12 3v12M8.5 6.5 12 3l3.5 3.5M8 10H6a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1h-2',
+  celular: 'M7 3h10a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1ZM10 18h4',
+  // "Adicionar a Tela de Inicio": o mais dentro do quadrado.
+  maisQuadrado: 'M12 8v8M8 12h8M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z',
   play: 'm8 5 11 7-11 7V5Z',
   pausa: 'M9 5v14M15 5v14',
   check: 'm5 13 4 4L19 7',
