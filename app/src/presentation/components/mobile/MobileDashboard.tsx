@@ -1,28 +1,30 @@
 import { useMemo, useRef, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { Insight } from '@/domain/entities/insight'
 import type { DayLoad } from '@/domain/entities/adaptive-day'
 import type { Task } from '@/domain/entities/task'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { useFocus } from '@/presentation/focus/use-focus'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
-import type { DashboardView, GoalInMotion } from '@/presentation/planner/use-dashboard'
+import {
+  focusSummary,
+  goalsSummary,
+  insightSummary,
+  objectivesSummary,
+  winsSummary,
+} from '@/domain/entities/day-shortcuts'
+import type { DashboardView } from '@/presentation/planner/use-dashboard'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { ContextualFab } from './ContextualFab'
 import { MobileCheckIn } from './MobileCheckIn'
-import { MobileFocus } from './MobileFocus'
-import { MobileGoals } from './MobileGoals'
 import { MobileHabits } from './MobileHabits'
 import { AdaptiveDayCard } from '@/presentation/components/dashboard/AdaptiveDayCard'
 import { MobileTodayStats } from './MobileTodayStats'
 import { MobileWeekStrip } from './MobileWeekStrip'
 import { NextUpCard } from '@/presentation/components/dashboard/NextUpCard'
 import { TodayFocusCard } from '@/presentation/components/dashboard/TodayFocusCard'
-import { MobileInsight } from './MobileInsight'
 import { MobileMore } from './MobileMore'
-import { MobileObjectives } from './MobileObjectives'
+import { MobileShortcutRows, type ShortcutRow } from './MobileShortcutRows'
 import { MobilePriority } from './MobilePriority'
-import { MobileWins } from './MobileWins'
 import { ShareInvite } from '@/presentation/share/ShareInvite'
 import { ShareMomentsRow } from '@/presentation/share/ShareMomentsRow'
 import { QuoteCard } from '@/presentation/components/dashboard/QuoteCard'
@@ -39,8 +41,6 @@ interface MobileDashboardProps {
   readonly onPostponeTask: (task: Task) => Promise<void>
   readonly onBringToToday: (task: Task) => Promise<void>
   readonly onShrinkTask: (task: Task) => Promise<void>
-  readonly onApplyInsight: (insight: Insight) => Promise<void>
-  readonly onContinueGoal: (goal: GoalInMotion) => void
 }
 
 /**
@@ -62,8 +62,6 @@ export function MobileDashboard({
   onCompleteTask,
   onPostponeTask,
   onShrinkTask,
-  onApplyInsight,
-  onContinueGoal,
 }: MobileDashboardProps) {
   const planner = usePlanner()
   const composer = useComposer()
@@ -91,6 +89,36 @@ export function MobileDashboard({
   )
 
   // O que já apareceu no foco não se repete na lista de hábitos.
+  /*
+    As linhas do "ver mais". A ordem é a do ciclo do produto — objetivo vira
+    meta, meta vira leitura do ritmo, e foco e vitórias são o registro do que
+    saiu. Linha sem número nenhum fica de fora: "Vitórias —" não convida
+    ninguém a tocar.
+  */
+  const atalhos = useMemo<ShortcutRow[]>(() => {
+    const objetivos = objectivesSummary(view.objectives.map((item) => item.progress))
+    const metas = goalsSummary(view.goalsInMotion.map((item) => item.progress))
+    const leitura = insightSummary(view.insight !== null)
+    const foco = focusSummary(view.focusMinutesToday)
+    const vitorias = winsSummary(planner.wins, planner.today)
+
+    const linhas: ShortcutRow[] = [
+      { to: '/app/objetivos', icon: 'trofeu', label: 'Objetivos', ...objetivos },
+      { to: '/app/metas', icon: 'metas', label: 'Metas', ...metas },
+      { to: '/app/insights', icon: 'insights', label: 'Leitura do ritmo', ...leitura },
+      { to: '/app/foco', icon: 'relogio', label: 'Sessão de foco', ...foco },
+      { to: '/app/jornada', icon: 'jornada', label: 'Vitórias', ...vitorias },
+    ]
+    return linhas.filter((row) => row.value !== null)
+  }, [
+    view.objectives,
+    view.goalsInMotion,
+    view.insight,
+    view.focusMinutesToday,
+    planner.wins,
+    planner.today,
+  ])
+
   const focusedHabitIds = new Set(
     view.focus.items.filter((item) => item.kind === 'habito').map((item) => item.id),
   )
@@ -244,6 +272,10 @@ export function MobileDashboard({
         rolagem com a decisão do dia.
       */}
       <MobileMore>
+        {/*
+          A próxima do plano continua como card: é a única coisa aqui que é do
+          DIA, e que a pessoa pode começar sem sair da tela.
+        */}
         <NextUpCard
           nextUp={view.nextUp}
           mainPriority={view.mainPriority}
@@ -252,40 +284,19 @@ export function MobileDashboard({
           onBringToToday={(task) => void onBringToToday(task)}
         />
 
-        <MobileObjectives
-          objectives={view.objectives}
-          onCreate={() => composer.open('objetivo')}
-          onOpenReview={() => navigate('/app/review')}
-        />
+        {/*
+          O resto do produto em uma linha cada.
 
-        <MobileInsight
-          insight={view.insight}
-          onApply={onApplyInsight}
-          onDismiss={view.dismissInsight}
-        />
+          Aqui havia seis cards completos — objetivos com parágrafo de
+          diagnóstico, metas em carrossel, insight com dois botões, seletor de
+          foco e campo de vitórias. Seis telas de rolagem, todas versões
+          encolhidas de telas que já existem. O resumo de uma tela não
+          substitui a tela: compete com ela, e perde.
 
-        <div ref={focusRef}>
-          <MobileFocus
-            task={view.mainPriority}
-            capacity={view.capacity}
-            minutesToday={view.focusMinutesToday}
-          />
-        </div>
-
-        <MobileGoals
-          goals={view.goalsInMotion}
-          onContinue={onContinueGoal}
-          onCreateTask={(goal) => composer.open('acao', { presetGoalId: goal.progress.goal.id })}
-          onManage={() => navigate('/app/metas')}
-          onCreateGoal={() => composer.open('meta')}
-        />
-
-        <MobileWins
-          wins={planner.wins}
-          todayWin={view.todayWin}
-          today={planner.today}
-          onSave={(text) => planner.saveWin({ day: planner.today, text })}
-        />
+          Fica o número que faz decidir se vale abrir. O toque leva pro lugar
+          onde a coisa é feita de verdade.
+        */}
+        <MobileShortcutRows rows={atalhos} />
       </MobileMore>
 
       {/*

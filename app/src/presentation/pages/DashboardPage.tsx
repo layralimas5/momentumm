@@ -391,8 +391,6 @@ export function DashboardPage() {
           onPostponeTask={postponeTask}
           onBringToToday={bringToToday}
           onShrinkTask={shrinkTask}
-          onApplyInsight={applyInsight}
-          onContinueGoal={continueGoal}
         />
         {reviewLayer}
       </div>

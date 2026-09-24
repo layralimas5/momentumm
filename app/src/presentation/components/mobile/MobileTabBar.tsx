@@ -47,9 +47,18 @@ const PROFILE: TabItem = { to: '/app/perfil', label: 'Perfil', icon: 'trofeu', e
  *
  * É uma pílula solta sobre o conteúdo, não uma faixa colada na borda: o
  * conteúdo passa por baixo dela e a barra continua parecendo um controle, não
- * uma parede. Só ícones; o nome da aba vai pro leitor de tela. A aba ativa
- * ganha um fundo arredondado em vez de só trocar de cor, porque cor sozinha
- * some no sol.
+ * uma parede. A aba ativa ganha um fundo arredondado em vez de só trocar de
+ * cor, porque cor sozinha some no sol.
+ *
+ * ## O nome embaixo do ícone
+ *
+ * Os ícones eram mudos, com o nome só pro leitor de tela. Funciona pra quem já
+ * decorou a barra e falha exatamente com quem acabou de chegar — que é quem
+ * mais precisa dela. Ícone sozinho é adivinhação: alvo, troféu e gráfico não
+ * dizem "objetivos", "perfil" e "progresso" pra ninguém na primeira semana.
+ *
+ * O rótulo custa 12px de altura e devolve a tela inteira navegável sem tentar
+ * e errar.
  *
  * O último item é o avatar da pessoa: é assim que ela reconhece "o meu" sem
  * ler nada. O adicionar fica no centro pelo mesmo motivo de sempre: é o alvo
@@ -102,11 +111,11 @@ export function MobileTabBar() {
                 <Avatar
                   name={profile.name}
                   src={profile.avatarUrl}
-                  className={cn('size-8', isActive && 'ring-2 ring-brand ring-offset-2 ring-offset-surface-hi')}
+                  className={cn('size-6', isActive && 'ring-2 ring-brand ring-offset-2 ring-offset-surface-hi')}
                   textClassName="text-xs"
                 />
               ) : (
-                <Icon name={PROFILE.icon} className="size-[22px]" strokeWidth={isActive ? 2.25 : 1.75} />
+                <Icon name={PROFILE.icon} className="size-5" strokeWidth={isActive ? 2.25 : 1.75} />
               )
             }
           </TabLink>
@@ -134,8 +143,9 @@ function TabLink({
         aria-label={item.label}
         className={({ isActive }) =>
           cn(
-            // 48px de altura e 56 de largura: alvo confortável sem mirar.
-            'grid h-12 w-14 place-items-center rounded-full transition-colors',
+            // 52px de altura e 60 de largura: alvo confortável sem mirar, já
+            // contando o rótulo embaixo do ícone.
+            'flex h-[52px] w-16 flex-col items-center justify-center gap-0.5 rounded-2xl transition-colors',
             isActive ? 'bg-surface-hi text-ink' : 'text-ink-faint active:bg-surface-hi',
           )
         }
@@ -145,9 +155,15 @@ function TabLink({
             {children ? (
               children(isActive)
             ) : (
-              <Icon name={item.icon} className="size-[22px]" strokeWidth={isActive ? 2.25 : 1.75} />
+              <Icon name={item.icon} className="size-5" strokeWidth={isActive ? 2.25 : 1.75} />
             )}
-            <span className="sr-only">{item.label}</span>
+            {/*
+              `aria-hidden` porque o link já tem `aria-label`: sem isso o
+              leitor de tela anuncia o nome da aba duas vezes.
+            */}
+            <span aria-hidden="true" className="text-[0.625rem] leading-none font-medium">
+              {item.label}
+            </span>
           </>
         )}
       </NavLink>
