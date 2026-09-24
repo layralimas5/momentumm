@@ -43,7 +43,7 @@ export function Adaptive() {
   const cta = useSiteCta('lp-retomada')
 
   return (
-    <Section id="retomada" className="border-t border-line">
+    <Section id="retomada" className="border-y border-brand/20 bg-brand-dim">
       <SectionHeading
         eyebrow="Quando a rotina sai do eixo"
         title={
@@ -89,7 +89,7 @@ export function Adaptive() {
 /** O dia que encolheu: 20 minutos e o plano cabendo neles. */
 function ShrinkCard() {
   return (
-    <div className="pulse-on-hover flex h-full flex-col rounded-card border border-line bg-surface p-5 sm:p-7">
+    <div className="pulse-on-hover flex h-full flex-col rounded-card border border-line-hi bg-canvas p-5 sm:p-7">
       <p className="text-sm font-medium text-brand-hi">O dia apertou</p>
       <h3 className="mt-1.5 text-balance text-xl font-semibold text-ink">
         Você tem 20 minutos hoje. O plano cabe neles.
@@ -127,7 +127,7 @@ function ShrinkCard() {
 /** A retomada: o contador que não zera. */
 function ResumeCard() {
   return (
-    <div className="pulse-on-hover flex h-full flex-col rounded-card border border-line bg-surface p-5 sm:p-7">
+    <div className="pulse-on-hover flex h-full flex-col rounded-card border border-line-hi bg-canvas p-5 sm:p-7">
       <p className="text-sm font-medium text-brand-hi">A semana sumiu</p>
       <h3 className="mt-1.5 text-balance text-xl font-semibold text-ink">
         Você volta de onde parou, não do zero.
