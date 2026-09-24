@@ -1,5 +1,5 @@
 /*
-  A regra do lembrete (migration 0055), contra um Postgres de verdade.
+  A regra do lembrete (migration 0056), contra um Postgres de verdade.
 
   O que este teste garante, que é exatamente a lista de coisas que só se
   descobre em produção quando não existe teste:

@@ -1,5 +1,5 @@
 /*
-  O deploy da 0055, ensaiado sobre o banco que já roda.
+  O deploy da 0056, ensaiado sobre o banco que já roda.
 
   Mesma pergunta do `deploy-0048-0051`, e ela não é a do `db:test`: aplicar
   todas as migrations num banco vazio prova que o conjunto é coerente; aplicar
@@ -18,13 +18,13 @@ import { boot, migrate } from './harness.mjs'
 const db = await boot()
 const q = async (s) => (await db.query(s)).rows
 
-const base = await migrate(db, { until: '0054_aviso_de_teste_sem_cortesia.sql', stopOnError: true })
+const base = await migrate(db, { until: '0055_landing_funnel.sql', stopOnError: true })
 if (base.length) { console.log('base falhou:', base); process.exit(1) }
-console.log('base em 0054: ok')
+console.log('base em 0055: ok')
 
-const nova = await migrate(db, { from: '0054_aviso_de_teste_sem_cortesia.sql', stopOnError: true })
+const nova = await migrate(db, { from: '0055_landing_funnel.sql', stopOnError: true })
 if (nova.length) { console.log('FALHOU:', nova); process.exit(1) }
-console.log('0055 aplicada: ok')
+console.log('0056 aplicada: ok')
 
 const regras = (await q(`select count(*)::int as c from public.notification_rules`))[0].c
 console.log('linha de regras:', regras === 1 ? 'ok, uma só' : `FALHOU: ${regras}`)
@@ -40,7 +40,7 @@ try {
 }
 if (fusoOk) console.log('fuso com dígito: ok, aceito')
 
-const denovo = await migrate(db, { from: '0054_aviso_de_teste_sem_cortesia.sql', stopOnError: false })
+const denovo = await migrate(db, { from: '0055_landing_funnel.sql', stopOnError: false })
 console.log('aplicar de novo:', denovo.length === 0 ? 'ok, idempotente' : `FALHOU: ${JSON.stringify(denovo)}`)
 
 process.exit(regras === 1 && fusoOk && denovo.length === 0 ? 0 : 1)

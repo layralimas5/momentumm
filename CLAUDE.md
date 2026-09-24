@@ -1142,7 +1142,7 @@ O app já era instalável; o que faltava era o produto em volta disso.
   vai chegar e só então o toque abre o pedido do sistema. Instalação e
   lembrete nunca dividem a tela: o convite de instalar vem primeiro, porque
   no iPhone ele é pré-requisito do aviso.
-- **O aviso passou a olhar o dia** (migration 0055). Antes só existia na
+- **O aviso passou a olhar o dia** (migration 0056). Antes só existia na
   hora preferida; agora `proximo_passo` e `dia_dificil` saem a qualquer
   hora entre 08:00 e 21:30 locais quando existe ação em aberto e já fazem
   ~4 horas sem atividade. Os outros quatro tipos seguem com hora marcada.
@@ -1157,10 +1157,10 @@ O app já era instalável; o que faltava era o produto em volta disso.
   sozinha na função antiga.
 - **Bug achado no caminho:** a constraint de fuso da 0036 recusava
   `Etc/GMT+3`. Quem tivesse esse fuso nunca gravava presença — e portanto
-  nunca recebia nada, silenciosamente. Corrigido na 0055.
+  nunca recebia nada, silenciosamente. Corrigido na 0056.
 - Testes: `supabase/tests/pglite/lembrete-contextual.mjs` (29 casos, com o
   tempo controlado por fuso em vez do relógio de quem roda) e
-  `deploy-0055.mjs` (a migration sobre o banco que já roda).
+  `deploy-0056.mjs` (a migration sobre o banco que já roda).
 
 ### Teste de ofertas no TikTok e o primeiro resultado (21/09/2026)
 

@@ -141,7 +141,7 @@ cada hora; ela lê `notifications_due()`, que devolve quem deveria receber e
 QUAL dos seis tipos, e manda um aviso pra cada aparelho. Endpoint morto
 (404/410) é apagado; outro erro marca `failed_at`.
 
-A regra inteira mora no banco (migrations 0050 e 0055), não aqui:
+A regra inteira mora no banco (migrations 0050 e 0056), não aqui:
 
 - **quando** — janela de 08:00 às 21:30 no fuso da pessoa, mais a janela de
   silêncio que ela escolheu (a mais apertada ganha);
@@ -173,7 +173,7 @@ Compatibilidade: sem a 0050 aplicada, a função cai sozinha em
 deploy do app não pode ficar sem lembrete porque a migration ainda não subiu.
 
 ```bash
-# 1. migrations 0036, 0050 e 0055 (supabase db push)
+# 1. migrations 0036, 0050 e 0056 (supabase db push)
 
 # 2. chaves VAPID, uma vez. A pública vai também pro app (VITE_VAPID_PUBLIC_KEY
 #    no Netlify); a privada só aqui. Trocar uma sem a outra invalida toda
@@ -216,4 +216,4 @@ service worker registrado no boot são o que tornam isso possível; o app
 explica os três toques em Configurações e no convite do Hoje.
 
 Testes do banco: `supabase/tests/pglite/push.mjs`, `notifications.mjs`,
-`lembrete-contextual.mjs` e `deploy-0055.mjs` (`npm run db:test`).
+`lembrete-contextual.mjs` e `deploy-0056.mjs` (`npm run db:test`).

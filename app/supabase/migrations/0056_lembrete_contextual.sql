@@ -155,7 +155,7 @@ revoke all on function public.notified_recently(uuid, public.notification_type, 
     continuidade   avançou ontem, mas hoje ainda não abriu.
     progresso      nada urgente; só a leitura da semana.
 
-  O que a 0055 acrescenta, e vale pra TODOS os tipos:
+  O que a 0056 acrescenta, e vale pra TODOS os tipos:
 
     janela do dia     nada fora de 08:00–21:30 locais, nem no silêncio que a
                       pessoa configurou. A mais apertada das duas ganha.
