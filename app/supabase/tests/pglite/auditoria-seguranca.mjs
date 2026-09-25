@@ -92,4 +92,15 @@ const mudas = await q(`
 console.log(`  ${mudas.length}: ${mudas.map((r) => r.relname).join(', ') || 'nenhuma'}`)
 
 console.log(`\n${achados} ponto(s) para olhar.`)
-process.exit(0)
+/*
+  Sai com falha quando acha alguma coisa.
+
+  Saía sempre com 0, e nessa forma a auditoria não podia entrar no `db:test`:
+  ela imprimia o problema e o comando seguia verde. Uma varredura de privilégio
+  que não reprova é uma varredura que ninguém lê.
+
+  As duas últimas seções são INVENTÁRIO, não acusação — função aberta pro
+  anônimo e tabela com RLS e zero política são listas pra conferir de olho, e
+  por isso não contam em `achados`.
+*/
+process.exit(achados === 0 ? 0 : 1)

@@ -27,6 +27,51 @@ export const SUPPORT_CATEGORY_LABELS: Readonly<Record<SupportCategory, string>> 
   privacidade: 'Privacidade',
 }
 
+/**
+ * As categorias que são DIREITO, e por isso valem em qualquer plano.
+ *
+ * Exclusão de conta, exportação, privacidade e segurança são obrigação legal;
+ * pagamento e acesso são a porta de quem não consegue entrar ou foi cobrado
+ * errado — trancar qualquer uma delas atrás do PRO seria pedir assinatura pra
+ * pessoa exercer um direito, ou pra ela conseguir reclamar da própria cobrança.
+ * Denúncia fica junto pelo mesmo motivo: num produto com camada social, só
+ * quem paga poder denunciar é um problema de segurança, não de plano.
+ *
+ * O que sobra — "Ajuda com o app" — é suporte de PRODUTO, e esse é do PRO.
+ */
+export const RIGHT_SUPPORT_CATEGORIES: readonly SupportCategory[] = [
+  'exportacao',
+  'exclusao',
+  'denuncia',
+  'pagamento',
+  'acesso',
+  'seguranca',
+  'privacidade',
+]
+
+/** Categorias que exigem PRO. O servidor recusa (`open_support_request`, 0058). */
+export const PRO_SUPPORT_CATEGORIES: readonly SupportCategory[] = SUPPORT_CATEGORIES.filter(
+  (category) => !RIGHT_SUPPORT_CATEGORIES.includes(category),
+)
+
+export function isProSupportCategory(category: SupportCategory): boolean {
+  return PRO_SUPPORT_CATEGORIES.includes(category)
+}
+
+/**
+ * As categorias que esta conta pode abrir.
+ *
+ * Uma função só, usada pelos DOIS formulários que existem (a tela de Suporte e
+ * o painel do perfil). Duas listas montadas na mão divergiriam no dia em que
+ * uma categoria nova entrasse — e a que ficasse pra trás ofereceria um botão
+ * que o servidor recusa.
+ */
+export function supportCategoriesFor(appSupport: boolean): readonly SupportCategory[] {
+  return appSupport
+    ? SUPPORT_CATEGORIES
+    : SUPPORT_CATEGORIES.filter((category) => !isProSupportCategory(category))
+}
+
 export const SUPPORT_PRIORITIES = ['baixa', 'normal', 'alta', 'urgente'] as const
 export type SupportPriority = (typeof SUPPORT_PRIORITIES)[number]
 

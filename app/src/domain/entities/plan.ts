@@ -26,6 +26,26 @@ export interface PlanLimits {
   readonly tier: PlanTier
   /** Objetivos em andamento ao mesmo tempo (pausado e concluído não contam). */
   readonly activeObjectives: number
+  /**
+   * Objetivos ativos que cabem na MESMA área.
+   *
+   * No gratuito é um, e era a regra de todo mundo até a 0057: dois objetivos no
+   * mesmo eixo somam das mesmas atividades, então o progresso dos dois mede o
+   * mesmo volume. No PRO não tem teto, porque "Projeto" é uma área e não um
+   * projeto — lançar o app, criar o curso e subir o faturamento são três
+   * objetivos com alvos e prazos próprios, e obrigar a arquivar um pra abrir
+   * outro era o app decidindo pela pessoa quantas frentes ela pode ter.
+   *
+   * Aqui "ativo" é o NÃO ARQUIVADO, incluindo pausado e concluído — janela
+   * diferente de `activeObjectives`, que conta só o que está em andamento. A
+   * diferença é deliberada e vem do que cada regra protege: a vaga do eixo
+   * existe porque a soma das atividades continua ambígua com o objetivo parado,
+   * e a vaga do plano existe porque pausar é justamente como a pessoa abre
+   * espaço sem apagar.
+   *
+   * O teto é aplicado no servidor (migration 0057), nas mesmas contagens.
+   */
+  readonly objectivesPerAxis: number
   readonly activeHabits: number
   /** Objetivos ativos com plano por etapas. */
   readonly activePlans: number
@@ -51,6 +71,20 @@ export interface PlanLimits {
   readonly shareTemplates: number
   readonly shareCustomization: boolean
   readonly dataExport: boolean
+  /**
+   * "Ajuda com o app": a categoria de suporte que existe por PRODUTO.
+   *
+   * É a única do canal que é benefício de plano. As outras — exclusão de conta,
+   * exportação, privacidade, segurança, pagamento, acesso e denúncia — são
+   * DIREITO, e direito não entra em pacote: trancá-las atrás do PRO
+   * transformaria obrigação legal em item de tabela de preços, e deixaria quem
+   * está no gratuito sem caminho pra apagar a própria conta ou relatar um
+   * problema de segurança.
+   *
+   * O teto é aplicado no servidor (`open_support_request`, migration 0058). O
+   * seletor que esconde a categoria é cortesia, não fechadura.
+   */
+  readonly appSupport: boolean
   readonly remindersPerHabit: number
   readonly themes: boolean
   /** Chamadas à Momentumm AI por mês (a franquia). O teto é aplicado no servidor. */
@@ -91,6 +125,7 @@ export const PLAN_LIMITS: Readonly<Record<PlanTier, PlanLimits>> = {
   free: {
     tier: 'free',
     activeObjectives: 2,
+    objectivesPerAxis: 1,
     activeHabits: 5,
     activePlans: 1,
     actionsPerDay: 5,
@@ -108,6 +143,7 @@ export const PLAN_LIMITS: Readonly<Record<PlanTier, PlanLimits>> = {
     shareTemplates: 3,
     shareCustomization: false,
     dataExport: false,
+    appSupport: false,
     remindersPerHabit: 1,
     themes: false,
     aiCallsPerMonth: 0,
@@ -118,6 +154,7 @@ export const PLAN_LIMITS: Readonly<Record<PlanTier, PlanLimits>> = {
   pro: {
     tier: 'pro',
     activeObjectives: UNLIMITED,
+    objectivesPerAxis: UNLIMITED,
     activeHabits: UNLIMITED,
     activePlans: UNLIMITED,
     actionsPerDay: UNLIMITED,
@@ -135,6 +172,7 @@ export const PLAN_LIMITS: Readonly<Record<PlanTier, PlanLimits>> = {
     shareTemplates: UNLIMITED,
     shareCustomization: true,
     dataExport: true,
+    appSupport: true,
     remindersPerHabit: UNLIMITED,
     themes: true,
     aiCallsPerMonth: 150,
@@ -198,6 +236,11 @@ export function planMatrix(): readonly PlanMatrixRow[] {
   const free = PLAN_LIMITS.free
   return [
     { feature: 'Objetivos ativos', free: count(free.activeObjectives, 'objetivo', 'objetivos'), pro: 'Ilimitados' },
+    {
+      feature: 'Objetivos na mesma área',
+      free: count(free.objectivesPerAxis, 'objetivo por área', 'objetivos por área'),
+      pro: 'Quantos você quiser',
+    },
     { feature: 'Hábitos ativos', free: count(free.activeHabits, 'hábito', 'hábitos'), pro: 'Ilimitados' },
     { feature: 'Planos ativos', free: String(free.activePlans), pro: 'Ilimitados' },
     { feature: 'Ações no Hoje', free: `Até ${free.actionsPerDay} por dia`, pro: 'Ilimitadas' },
@@ -229,6 +272,16 @@ export function planMatrix(): readonly PlanMatrixRow[] {
       pro: `Os ${ENCOURAGEMENT_KINDS.length} gestos, todo dia`,
     },
     { feature: 'Exportação de dados', free: 'Não disponível', pro: 'PDF, imagem e CSV' },
+    {
+      feature: 'Ajuda com o app',
+      free: 'Não disponível',
+      pro: 'Chamado com protocolo e prazo',
+    },
+    {
+      feature: 'Conta, cobrança e privacidade',
+      free: 'Sempre disponível',
+      pro: 'Sempre disponível, na frente da fila',
+    },
     { feature: 'Lembretes', free: `${free.remindersPerHabit} lembrete por hábito`, pro: 'Lembretes personalizados' },
     { feature: 'Personalização', free: 'Tema padrão', pro: 'Temas, cores e preferências' },
   ]

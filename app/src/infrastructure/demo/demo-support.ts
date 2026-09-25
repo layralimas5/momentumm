@@ -1,7 +1,10 @@
 import type { AdminGateway } from '@/domain/admin/admin-gateway'
 import type { MyAccessGrant, MySupportRequest, PublicSettings } from '@/domain/admin/admin-schemas'
 import type { SupportRepository, SupportRequestEvent } from '@/domain/repositories/support-repository'
+import { limitsOf } from '@/domain/entities/plan'
+import { isProSupportCategory } from '@/domain/support/support-request'
 import type { CancelReason, SupportCategory } from '@/domain/support/support-request'
+import { demoStore } from './demo-store'
 import { DomainError } from '@/shared/errors'
 
 /**
@@ -18,6 +21,18 @@ export class DemoSupportRepository implements SupportRepository {
 
   async openRequest(category: SupportCategory, subject: string, description: string) {
     if (description.trim().length === 0) throw new DomainError('Conta o que aconteceu.')
+    /*
+      A mesma recusa do servidor (`open_support_request`, 0058).
+
+      O demo precisa reproduzir o caminho inteiro: sem isso, uma conta gratuita
+      no modo demo abriria "ajuda com o app" e a mesma tela recusaria em
+      produção — dois produtos saindo do mesmo código.
+    */
+    if (isProSupportCategory(category) && !limitsOf(demoStore.profile().plan).appSupport) {
+      throw new DomainError(
+        'Ajuda com o app faz parte do PRO. Conta, cobrança, acesso, privacidade, segurança, denúncia, exportação e exclusão continuam abertas no teu plano.',
+      )
+    }
     this.counter += 1
     const id = `demo-${this.counter}`
     const protocol = `MM-DEMO-${String(this.counter).padStart(5, '0')}`

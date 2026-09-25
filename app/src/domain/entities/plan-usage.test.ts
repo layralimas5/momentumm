@@ -8,11 +8,13 @@ import { createPlanStage, type PlanStage } from './plan-stage'
 import {
   actionsLimit,
   assertWithinLimit,
+  axisObjectiveLimit,
   habitLimit,
   objectiveLimit,
   PlanLimitError,
   planLimit,
   planUsageOf,
+  takenAxesFor,
   withinHistory,
 } from './plan-usage'
 import { createTask, type Task } from './task'
@@ -193,10 +195,83 @@ describe('planMatrix', () => {
 
   it('cobre a matriz inteira, sem linha vazia', () => {
     const rows = planMatrix()
-    expect(rows).toHaveLength(22)
+    expect(rows).toHaveLength(25)
     for (const row of rows) {
       expect(row.free.length).toBeGreaterThan(0)
       expect(row.pro.length).toBeGreaterThan(0)
     }
+  })
+})
+
+/**
+ * Quantos objetivos cabem na MESMA área.
+ *
+ * O teste existe por causa de um beco sem saída real: a regra era um por eixo
+ * pra todo mundo, escrita como índice único no banco, e uma conta com objetivo
+ * em todas as áreas de fábrica abria o diálogo de objetivo novo preso em
+ * "Leitura", sem nenhum cartão clicável e sem nada explicando o motivo.
+ *
+ * O que ele trava é a fronteira que resolveu isso: `takenAxesFor` devolve VAZIO
+ * quando o plano não tem teto por eixo. É dessa lista que o seletor decide o que
+ * desabilitar, então uma lista cheia ali é a tela travada de volta.
+ */
+describe('objetivos na mesma área', () => {
+  it('no gratuito o segundo objetivo da área não cabe', () => {
+    const objectives = [objective('o1')]
+    expect(axisObjectiveLimit(FREE, objectives, 'leitura').reached).toBe(true)
+    expect(axisObjectiveLimit(FREE, objectives, 'treino').reached).toBe(false)
+  })
+
+  it('no PRO vários objetivos coexistem na mesma área', () => {
+    const objectives = [objective('o1'), objective('o2'), objective('o3'), objective('o4')]
+    expect(axisObjectiveLimit(PRO, objectives, 'leitura').reached).toBe(false)
+    expect(axisObjectiveLimit(PRO, objectives, 'leitura').message).toBeNull()
+  })
+
+  /*
+    Pausado e concluído CONTINUAM ocupando a vaga do eixo — janela diferente da
+    de `objectiveLimit`, onde eles liberam. A diferença é a regra do índice que a
+    0057 substituiu, e ela vale porque a soma das atividades do eixo não para de
+    ser ambígua só porque um dos objetivos parou.
+  */
+  it('pausado e concluído ainda ocupam a vaga da área', () => {
+    const pausado = [objective('o1', { pausedAt: new Date() })]
+    expect(axisObjectiveLimit(FREE, pausado, 'leitura').reached).toBe(true)
+    expect(objectiveLimit(FREE, pausado).used).toBe(0)
+
+    const concluido = [objective('o1', { completedAt: new Date() })]
+    expect(axisObjectiveLimit(FREE, concluido, 'leitura').reached).toBe(true)
+  })
+
+  it('arquivado libera a área', () => {
+    const objectives = [objective('o1', { archivedAt: new Date() })]
+    expect(axisObjectiveLimit(FREE, objectives, 'leitura').reached).toBe(false)
+  })
+
+  it('a lista de áreas cheias vem vazia no PRO, com ou sem objetivos', () => {
+    expect(takenAxesFor(PRO, [objective('o1'), objective('o2')])).toEqual([])
+    expect(takenAxesFor(PRO, [])).toEqual([])
+  })
+
+  it('a lista de áreas cheias diz quais são, no gratuito', () => {
+    const objectives = [objective('o1'), objective('o2', { axis: 'treino' })]
+    expect([...takenAxesFor(FREE, objectives)].sort()).toEqual(['leitura', 'treino'])
+  })
+
+  it('a mensagem da área cheia oferece a saída, não só o erro', () => {
+    const message = axisObjectiveLimit(FREE, [objective('o1')], 'leitura').message
+    expect(message).toMatch(/PRO/)
+    expect(message).toMatch(/outra/i)
+  })
+
+  it('o uso do plano expõe as duas leituras juntas', () => {
+    const usage = planUsageOf(PRO, {
+      objectives: [objective('o1'), objective('o2')],
+      planStages: [],
+      habits: [],
+      tasks: [],
+    })
+    expect(usage.takenAxes).toEqual([])
+    expect(usage.axisObjectivesOn('leitura').reached).toBe(false)
   })
 })

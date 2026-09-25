@@ -28,10 +28,10 @@ import {
   type JourneyVisibility,
   type NewJourneyEventInput,
 } from '@/domain/entities/journey-event'
-import { limitsOf } from '@/domain/entities/plan'
 import {
   actionsLimit,
   assertWithinLimit,
+  axisObjectiveLimit,
   habitLimit,
   hasPlan,
   objectiveLimit,
@@ -58,6 +58,7 @@ import type { TaskReorder, TaskUpdate } from '@/domain/repositories/task-reposit
 import { track } from '@/infrastructure/analytics/track'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
+import { usePlanLimits } from '@/presentation/plan/use-plan-limits'
 import { DomainError, toUserMessage } from '@/shared/errors'
 import { PlannerContext, type PlannerState } from './planner-context'
 
@@ -125,7 +126,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   // Recalculado a cada render: o app aberto virando o dia acompanha a data.
   const today = dayKeyOf(new Date())
 
-  const limits = useMemo(() => limitsOf(profile?.plan ?? 'free'), [profile])
+  const limits = usePlanLimits()
 
   useEffect(() => {
     mounted.current = true
@@ -345,6 +346,15 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   const createObjective = useCallback(
     async (input: Omit<NewObjectiveInput, 'userId'>): Promise<Objective | null> => {
       if (!user) return null
+      /*
+        A área vem antes da quantidade, na mesma ordem do trigger da 0057: quem
+        esbarra na área tem uma saída específica (qual objetivo ocupa o lugar),
+        e recebê-la como "acabaram tuas vagas" manda a pessoa pro lugar errado.
+      */
+      assertWithinLimit(
+        'Objetivos na mesma área',
+        axisObjectiveLimit(limits, snapshot.current.objectives, input.axis),
+      )
       assertWithinLimit('Objetivos ativos', objectiveLimit(limits, snapshot.current.objectives))
       const objective = await container.objectives.create({ userId: user.id, ...input })
       setData((current) => ({ ...current, objectives: [...current.objectives, objective] }))

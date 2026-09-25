@@ -17,7 +17,7 @@ import { TimeBudgetFields } from './TimeBudgetFields'
 interface ObjectiveDialogProps {
   readonly open: boolean
   readonly today: DayKey
-  /** Áreas que já têm objetivo ativo: uma por eixo é regra de domínio. */
+  /** Áreas sem vaga pra outro objetivo. Quantas cabem por área é o plano que diz. */
   readonly takenAxes: readonly ActivityTypeSlug[]
   readonly onClose: () => void
   readonly onSubmit: (plans: readonly PlanDraft[]) => Promise<void>
@@ -68,11 +68,17 @@ function ObjectiveForm({ today, takenAxes, onClose, onSubmit }: Omit<ObjectiveDi
     onClose()
   })
 
+  /*
+    Sem área livre o diálogo não monta formulário nenhum, e isso só acontece no
+    gratuito: o PRO não tem teto por eixo, então `takenAxes` chega vazio pra ele.
+    A saída é dita inteira aqui porque antes ela não era dita em lugar nenhum —
+    a tela abria num eixo ocupado e ficava travada sem explicar o motivo.
+  */
   if (!entry) {
     return (
       <EmptyState
-        title="Nenhuma área disponível"
-        description="Cria uma área nova ou arquiva um objetivo pra abrir espaço."
+        title="Nenhuma área com vaga"
+        description="No plano gratuito cada área guarda um objetivo ativo. Cria uma área nova, arquiva um objetivo pra abrir espaço, ou assina o PRO pra manter várias frentes na mesma área."
       />
     )
   }
@@ -99,7 +105,8 @@ function ObjectiveForm({ today, takenAxes, onClose, onSubmit }: Omit<ObjectiveDi
           role="status"
           className="rounded-card border border-flame/30 bg-flame-dim/40 px-4 py-3 text-sm text-ink"
         >
-          Essa área já tem um objetivo ativo. Escolhe outra, ou cria uma em “Outra área”.
+          Essa área já tem um objetivo ativo. Escolhe outra, cria uma em “Outra área”, ou assina o
+          PRO pra manter várias frentes na mesma área.
         </p>
       ) : null}
 
