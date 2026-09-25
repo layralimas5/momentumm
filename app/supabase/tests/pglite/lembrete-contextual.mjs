@@ -126,7 +126,19 @@ await situar(LAY, { hora: 3, paradaHa: 6 })
 check('às 3h da manhã não avisa', (await decidir()) === null)
 
 console.log('\n## Fim de tarde vira dia difícil, não cobrança')
+/*
+  Semeia DEPOIS de mudar a hora, como toda outra seção faz.
+
+  Faltava o `limpar` + `comAcaoPendente` aqui, e a seção reaproveitava as ações
+  criadas lá em cima, sob o fuso das 10h. Mudar a hora muda o FUSO, e mudar o
+  fuso pode mudar o dia local: a ação de "hoje" virava a de ontem, a conta ficava
+  sem nada em aberto e a decisão vinha nula. Como o fuso é calculado a partir da
+  hora UTC real, isso dependia da hora em que o teste rodava — passava de manhã e
+  falhava à noite, que é o pior tipo de teste vermelho.
+*/
+await limpar()
 await situar(LAY, { hora: 19, paradaHa: 6 })
+await comAcaoPendente()
 check('das 18h em diante o tipo muda', (await decidir()) === 'dia_dificil')
 
 console.log('\n## Cooldown e teto do dia')

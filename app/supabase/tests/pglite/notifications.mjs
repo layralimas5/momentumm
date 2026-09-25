@@ -72,9 +72,29 @@ await db.exec(`insert into public.tasks (user_id, title, day, status, completed_
 await db.exec(`insert into public.tasks (user_id, title, day, status)
                values ('${LAY}', 'Publicar conteudo', current_date, 'pendente')`)
 
-const agora = (await one(`select extract(hour from (now() at time zone 'America/Sao_Paulo'))::int as h`)).h
-const foraDaJanela = agora < 8 || agora >= 22
-const esperado = foraDaJanela ? null : agora >= 18 ? 'dia_dificil' : 'proximo_passo'
+/*
+  A janela sai da TABELA de regras, não de números escritos aqui.
+
+  Estava fixo em 8h..22h, que era a regra antes da 0056 — de lá pra cá o fim é
+  21h30. Entre 21h30 e 22h o teste esperava aviso e o banco, corretamente, não
+  mandava nada: três checagens ficavam vermelhas só por causa da hora em que o
+  comando rodou. Comparar em MINUTOS é o que faz a meia hora contar.
+*/
+const regras = await one(`select * from public.notification_rules_current()`)
+const [aberturaH, aberturaM] = regras.window_start.split(':').map(Number)
+const [fechamentoH, fechamentoM] = regras.window_end.split(':').map(Number)
+const agoraMin = (await one(
+  `select (extract(hour from (now() at time zone 'America/Sao_Paulo')) * 60
+         + extract(minute from (now() at time zone 'America/Sao_Paulo')))::int as m`,
+)).m
+const agora = Math.floor(agoraMin / 60)
+const foraDaJanela =
+  agoraMin < aberturaH * 60 + aberturaM || agoraMin >= fechamentoH * 60 + fechamentoM
+const esperado = foraDaJanela
+  ? null
+  : agora >= regras.hard_day_from_hour
+    ? 'dia_dificil'
+    : 'proximo_passo'
 check(`com ação pendente a decisão é ${esperado}`, (await decidir()) === esperado, `veio ${await decidir()}`)
 
 console.log('\n## Quem avançou hoje não é interrompido')

@@ -38,10 +38,11 @@ with objetos(versao, tipo, nome) as (
     ('0050', 'tabela',     'notification_preferences'),
     ('0051', 'funcao',     'grant_courtesy_to_staff'),
     ('0052', 'chave',      'plans.free/pairEncouragementsPerDay'),
-    ('0053', 'funcao',     'pair_capacity_for'),
+    ('0053', 'funcao',     'pair_limit_for'),
     ('0054', 'funcao',     'trial_notices_due'),
     ('0055', 'funcao',     'quiz_event_names'),
-    ('0056', 'tabela',     'notification_rules')
+    ('0056', 'tabela',     'notification_rules'),
+    ('0057', 'funcao',     'objectives_assert_plan_room')
 ),
 conferido as (
   select
@@ -78,6 +79,6 @@ select
     (select string_agg(versao, ' ' order by versao) from conferido where not aplicada),
     'nenhuma'
   ) as faltando,
-  (select count(*) from conferido where aplicada) as aplicadas_de_24,
+  (select count(*) from conferido where aplicada) as aplicadas_de_25,
   (select value ->> 'juntos' from public.product_settings where key = 'features') as juntos_ligado,
   (select value ->> 'sessionMinutes' from public.product_settings where key = 'admin.security') as sessao_admin_min;
