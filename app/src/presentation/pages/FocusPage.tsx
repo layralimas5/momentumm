@@ -1,11 +1,13 @@
 import { useMemo } from 'react'
-import { totalMinutes } from '@/domain/entities/activity'
+import { formatActivityWindow, totalMinutes } from '@/domain/entities/activity'
 import { activityType } from '@/domain/entities/activity-type'
-import { addDays, formatDayLabel } from '@/domain/entities/day'
+import { addDays, formatClock, formatDayLabel } from '@/domain/entities/day'
+import { formatElapsed } from '@/domain/entities/timer'
 import { FocusCard } from '@/presentation/components/dashboard/FocusCard'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { EmptyState } from '@/presentation/components/ui/States'
 import { Panel, PanelHeader, ProgressBar } from '@/presentation/components/ui/Surface'
+import { useFocus } from '@/presentation/focus/use-focus'
 import { useDashboard } from '@/presentation/planner/use-dashboard'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { PageHeader } from './PageHeader'
@@ -16,6 +18,7 @@ const HISTORY_DAYS = 7
 export function FocusPage() {
   const planner = usePlanner()
   const view = useDashboard()
+  const focus = useFocus()
 
   const sessions = useMemo(
     () => planner.activities.filter((activity) => activity.source === 'timer').slice(0, 12),
@@ -88,13 +91,17 @@ export function FocusPage() {
           <Panel aria-labelledby="sessoes-titulo">
             <PanelHeader id="sessoes-titulo" title="Últimas sessões" icon="relogio" />
 
+            {focus.session ? <RunningSessionRow /> : null}
+
             {sessions.length === 0 ? (
-              <div className="mt-4">
-                <EmptyState
-                  title="Nenhuma sessão de foco ainda"
-                  description="Começa pela prioridade do dia. No fim vira registro."
-                />
-              </div>
+              focus.session ? null : (
+                <div className="mt-4">
+                  <EmptyState
+                    title="Nenhuma sessão de foco ainda"
+                    description="Começa pela prioridade do dia. No fim vira registro."
+                  />
+                </div>
+              )
             ) : (
               <ul className="mt-4 flex flex-col gap-2">
                 {sessions.map((activity) => {
@@ -113,10 +120,7 @@ export function FocusPage() {
                         </p>
                         <p className="text-xs text-ink-faint">
                           {formatDayLabel(activity.day, planner.today)} ·{' '}
-                          {activity.occurredAt.toLocaleTimeString('pt-BR', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
+                          {formatActivityWindow(activity)}
                         </p>
                       </div>
                       <span className="tabular shrink-0 text-sm text-ink-muted">
@@ -130,6 +134,40 @@ export function FocusPage() {
           </Panel>
         </div>
       </div>
+    </div>
+  )
+}
+
+/**
+ * A sessão que está correndo agora, no alto do histórico. Sem ela, quem começa
+ * um foco e vem conferir a aba vê a lista de ontem e nada do que está em curso:
+ * o registro só apareceria no fim, e o começo nunca teria existido na tela.
+ */
+function RunningSessionRow() {
+  const focus = useFocus()
+  const session = focus.session
+  if (!session) return null
+
+  const type = activityType(session.type)
+
+  return (
+    <div
+      className="mt-4 flex items-center gap-3 rounded-xl border border-dashed border-line bg-surface-hi/30 px-3.5 py-2.5"
+      aria-live="polite"
+    >
+      <span aria-hidden="true" style={{ color: type.colorToken }}>
+        <Icon name="foco" className="size-4 shrink-0" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm text-ink">{session.label ?? type.label}</p>
+        <p className="text-xs text-ink-faint">
+          Começou às {formatClock(session.startedAt)} ·{' '}
+          {focus.running ? 'em andamento' : 'pausada'}
+        </p>
+      </div>
+      <span className="tabular shrink-0 text-sm text-ink-muted">
+        {formatElapsed(focus.elapsed)}
+      </span>
     </div>
   )
 }

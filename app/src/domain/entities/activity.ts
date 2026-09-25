@@ -5,7 +5,7 @@ import {
   type ActivityTypeSlug,
   type ActivityUnit,
 } from './activity-type'
-import { dayKeyOf, type DayKey } from './day'
+import { dayKeyOf, formatClock, type DayKey } from './day'
 
 /**
  * A unidade única do Momentumm. Leitura, estudo, treino e meditação são a mesma
@@ -21,6 +21,13 @@ export interface Activity {
   readonly durationMin: number
   readonly note: string | null
   readonly day: DayKey
+  /**
+   * Quando a sessão de foco começou. Só existe em registro de cronômetro: no
+   * registro manual a pessoa informa o que fez, não a hora em que sentou.
+   * Não dá pra derivar de `occurredAt - durationMin` porque a pausa tira tempo
+   * da duração sem tirar do relógio.
+   */
+  readonly startedAt: Date | null
   readonly occurredAt: Date
   readonly visibility: ActivityVisibility
   readonly source: ActivitySource
@@ -51,6 +58,7 @@ export interface NewActivityInput {
   readonly value: number
   readonly durationMin?: number
   readonly note?: string | null
+  readonly startedAt?: Date | null
   readonly occurredAt?: Date
   readonly visibility?: ActivityVisibility
   readonly source?: ActivitySource
@@ -67,6 +75,7 @@ export function createActivity(input: NewActivityInput, id: string): Activity {
 
   const note = normalizeNote(input.note)
   const durationMin = resolveDuration(input.durationMin, type.unit, value)
+  const startedAt = normalizeStartedAt(input.startedAt, occurredAt)
 
   return {
     id,
@@ -77,6 +86,7 @@ export function createActivity(input: NewActivityInput, id: string): Activity {
     durationMin,
     note,
     day: dayKeyOf(occurredAt),
+    startedAt,
     occurredAt,
     visibility: input.visibility ?? 'publica',
     source: input.source ?? 'manual',
@@ -106,6 +116,17 @@ function normalizeNote(note: string | null | undefined): string | null {
   return trimmed
 }
 
+function normalizeStartedAt(startedAt: Date | null | undefined, occurredAt: Date): Date | null {
+  if (!startedAt) return null
+  if (Number.isNaN(startedAt.getTime())) {
+    throw new DomainError('O início da sessão não é uma data válida.')
+  }
+  if (startedAt.getTime() > occurredAt.getTime()) {
+    throw new DomainError('A sessão não pode começar depois de terminar.')
+  }
+  return startedAt
+}
+
 function resolveDuration(
   durationMin: number | undefined,
   unit: ActivityUnit,
@@ -122,6 +143,16 @@ function resolveDuration(
 export function describeActivity(activity: Activity): string {
   const type = activityType(activity.type)
   return `${type.verb} ${formatUnit(type, activity.value)}`
+}
+
+/**
+ * A janela da sessão: `14:02 → 14:27` quando o início foi gravado, só a hora
+ * do fim quando não foi (registro manual ou sessão anterior à migration 0059).
+ */
+export function formatActivityWindow(activity: Activity): string {
+  const end = formatClock(activity.occurredAt)
+  if (!activity.startedAt) return end
+  return `${formatClock(activity.startedAt)} → ${end}`
 }
 
 export function totalMinutes(activities: readonly Activity[]): number {

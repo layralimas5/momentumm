@@ -90,3 +90,8 @@ export function formatDayLong(key: DayKey, today: DayKey = dayKeyOf(new Date()))
     ...(sameYear ? {} : { year: 'numeric' }),
   })
 }
+
+/** `HH:MM` no relógio local. A hora que a pessoa viu no próprio dia. */
+export function formatClock(date: Date): string {
+  return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+}

@@ -123,6 +123,7 @@ export function finishTimer(
     value,
     durationMin,
     note: input.note ?? session.label,
+    startedAt: session.startedAt,
     occurredAt: now,
     source: 'timer',
   }

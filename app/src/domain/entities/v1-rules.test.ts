@@ -308,6 +308,7 @@ describe('fator de retomada', () => {
       durationMin: 10,
       note: null,
       day,
+      startedAt: null,
       occurredAt: new Date(`${day}T09:00:00`),
       visibility: 'publica' as const,
       source: 'manual' as const,

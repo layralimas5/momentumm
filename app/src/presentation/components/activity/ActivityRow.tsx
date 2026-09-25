@@ -1,5 +1,5 @@
 import type { Activity } from '@/domain/entities/activity'
-import { describeActivity } from '@/domain/entities/activity'
+import { describeActivity, formatActivityWindow } from '@/domain/entities/activity'
 import { activityType } from '@/domain/entities/activity-type'
 
 interface ActivityRowProps {
@@ -9,10 +9,8 @@ interface ActivityRowProps {
 
 export function ActivityRow({ activity, onRemove }: ActivityRowProps) {
   const type = activityType(activity.type)
-  const time = activity.occurredAt.toLocaleTimeString('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  // Sessão de foco mostra a janela inteira; registro manual só tem a hora do fim.
+  const time = formatActivityWindow(activity)
 
   return (
     <li className="flex items-center gap-3 border-b border-line py-3 last:border-b-0">
