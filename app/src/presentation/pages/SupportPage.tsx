@@ -4,13 +4,14 @@ import { isPro } from '@/domain/entities/plan'
 import {
   MAX_SUPPORT_DESCRIPTION,
   MAX_SUPPORT_SUBJECT,
-  SUPPORT_CATEGORIES,
   SUPPORT_CATEGORY_LABELS,
+  supportCategoriesFor,
   SUPPORT_STATUS_LABELS,
   type SupportCategory,
 } from '@/domain/support/support-request'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
+import { usePlanLimits } from '@/presentation/plan/use-plan-limits'
 import { Button } from '@/presentation/components/ui/Button'
 import { Field, Select, TextInput } from '@/presentation/components/ui/Field'
 import { Icon } from '@/presentation/components/ui/Icon'
@@ -40,6 +41,12 @@ export function SupportPage() {
   const { requests, loading, error, reload } = useMyRequests()
   const [openId, setOpenId] = useState<string | null>(null)
   const pro = profile ? isPro(profile.plan) : false
+  /*
+    Quem decide o formulário é a CAPACIDADE do plano, não o nome dele. `pro`
+    continua existindo pra falar de fila; quem abre ou fecha "Ajuda com o app" é
+    `appSupport`, que é a mesma chave que o servidor aplica.
+  */
+  const appSupport = usePlanLimits().appSupport
 
   return (
     <div className="flex flex-col gap-6">
@@ -52,7 +59,7 @@ export function SupportPage() {
         }
       />
 
-      <NewRequest onOpened={reload} pro={pro} />
+      <NewRequest onOpened={reload} pro={pro} appSupport={appSupport} />
 
       <Panel>
         <PanelHeader title="Meus chamados" icon="plano" />
@@ -87,8 +94,24 @@ export function SupportPage() {
 
 // ---------------------------------------------------------------------------
 
-function NewRequest({ onOpened, pro }: { readonly onOpened: () => Promise<void>; readonly pro: boolean }) {
-  const [category, setCategory] = useState<SupportCategory>('suporte')
+function NewRequest({
+  onOpened,
+  pro,
+  appSupport,
+}: {
+  readonly onOpened: () => Promise<void>
+  readonly pro: boolean
+  readonly appSupport: boolean
+}) {
+  /*
+    A lista sai do plano, e a primeira dela é o valor inicial.
+
+    Fixar 'suporte' aqui deixaria o gratuito com o formulário abrindo numa
+    categoria que o servidor recusa: a pessoa escreveria o chamado inteiro pra
+    receber "faz parte do PRO" no envio.
+  */
+  const categories = supportCategoriesFor(appSupport)
+  const [category, setCategory] = useState<SupportCategory>(() => categories[0] ?? 'acesso')
   const [subject, setSubject] = useState('')
   const [description, setDescription] = useState('')
   const [protocol, setProtocol] = useState<string | null>(null)
@@ -112,7 +135,11 @@ function NewRequest({ onOpened, pro }: { readonly onOpened: () => Promise<void>;
       {pro ? (
         <PanelHeader title="Abrir um chamado" icon="sino" hint="Atendimento prioritário do PRO." />
       ) : (
-        <PanelHeader title="Abrir um chamado" icon="sino" />
+        <PanelHeader
+          title="Abrir um chamado"
+          icon="sino"
+          hint="Conta, cobrança, acesso, privacidade, segurança, denúncia, exportação e exclusão. Ajuda com o app faz parte do PRO."
+        />
       )}
 
       <form
@@ -130,7 +157,7 @@ function NewRequest({ onOpened, pro }: { readonly onOpened: () => Promise<void>;
               value={category}
               onChange={(event) => setCategory(event.target.value as SupportCategory)}
             >
-              {SUPPORT_CATEGORIES.map((item) => (
+              {categories.map((item) => (
                 <option key={item} value={item}>
                   {SUPPORT_CATEGORY_LABELS[item]}
                 </option>

@@ -6,8 +6,8 @@ import {
   CONTENT_SCOPE_LABELS,
   MAX_SUPPORT_DESCRIPTION,
   MAX_SUPPORT_SUBJECT,
-  SUPPORT_CATEGORIES,
   SUPPORT_CATEGORY_LABELS,
+  supportCategoriesFor,
   SUPPORT_STATUS_LABELS,
   type SupportCategory,
 } from '@/domain/support/support-request'
@@ -17,6 +17,7 @@ import { Button } from '@/presentation/components/ui/Button'
 import { Field, Select, TextInput } from '@/presentation/components/ui/Field'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { Panel, PanelHeader, Tag } from '@/presentation/components/ui/Surface'
+import { usePlanLimits } from '@/presentation/plan/use-plan-limits'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 import { toUserMessage } from '@/shared/errors'
 
@@ -58,7 +59,7 @@ export function SupportPanel() {
         <PanelHeader
           title="Ajuda e solicitações"
           icon="sino"
-          hint="Suporte, exportação, exclusão, pagamento, acesso, segurança ou privacidade. Cada pedido ganha um protocolo e um prazo."
+          hint="Exportação, exclusão, pagamento, acesso, segurança, denúncia ou privacidade — em qualquer plano. Ajuda com o app faz parte do PRO. Cada pedido ganha um protocolo e um prazo."
         />
         {error ? <p className="mt-3 text-sm text-danger">{error}</p> : null}
         <NewRequestForm onCreated={load} />
@@ -80,8 +81,16 @@ export function SupportPanel() {
 }
 
 function NewRequestForm({ onCreated }: { readonly onCreated: () => Promise<void> }) {
+  /*
+    A mesma lista da tela de Suporte, pela mesma função.
+
+    São dois formulários pro mesmo canal, e montar a lista na mão em cada um é
+    como um deles oferecer uma categoria que o servidor recusa no dia em que a
+    regra mudar.
+  */
+  const categories = supportCategoriesFor(usePlanLimits().appSupport)
   const [open, setOpen] = useState(false)
-  const [category, setCategory] = useState<SupportCategory>('suporte')
+  const [category, setCategory] = useState<SupportCategory>(() => categories[0] ?? 'acesso')
   const [subject, setSubject] = useState('')
   const [description, setDescription] = useState('')
   const [protocol, setProtocol] = useState<string | null>(null)
@@ -123,7 +132,7 @@ function NewRequestForm({ onCreated }: { readonly onCreated: () => Promise<void>
       <Field label="Sobre o quê">
         {(id) => (
           <Select id={id} value={category} onChange={(event) => setCategory(event.target.value as SupportCategory)}>
-            {SUPPORT_CATEGORIES.map((item) => (
+            {categories.map((item) => (
               <option key={item} value={item}>
                 {SUPPORT_CATEGORY_LABELS[item]}
               </option>
