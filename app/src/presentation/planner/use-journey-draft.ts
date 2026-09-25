@@ -64,7 +64,7 @@ export interface JourneyDraftState {
 interface Options {
   /** Todas as áreas disponíveis, incluindo as que a pessoa criou. */
   readonly axes: readonly ActivityType[]
-  /** Áreas que já têm objetivo ativo. Um por eixo é regra de domínio. */
+  /** Áreas sem vaga pra outro objetivo. Quem calcula é `planUsageOf`, pelo plano. */
   readonly takenAxes?: readonly ActivityTypeSlug[]
   /** Quantos objetivos podem ser criados de uma vez. O diálogo usa 1. */
   readonly max?: number
@@ -87,23 +87,31 @@ export function useJourneyDraft(today: DayKey, options: Options): JourneyDraftSt
   const takenAxes = useMemo(() => options.takenAxes ?? [], [options.takenAxes])
   const max = Math.min(options.max ?? MAX_OBJECTIVES_AT_ONCE, MAX_OBJECTIVES_AT_ONCE)
 
+  /*
+    A área inicial é a primeira LIVRE, e quando não existe nenhuma o rascunho
+    nasce VAZIO — nunca num eixo qualquer.
+
+    Aqui morava um `?? 'leitura'`. Numa conta com objetivo em todas as áreas de
+    fábrica, ele abria o diálogo apontando pra Leitura, que é justamente uma das
+    ocupadas: o cartão dela vinha desabilitado por estar tomada, os outros por
+    não caberem, e o botão de criar vinha desabilitado pelo aviso de conflito. O
+    formulário ficava preso numa área que a pessoa não escolheu e não conseguia
+    trocar. Sem entrada nenhuma o diálogo mostra o vazio que explica o que fazer,
+    e é essa a diferença entre um app sem espaço e um app travado.
+
+    Numa conta PRO isso deixa de acontecer por outro motivo: `takenAxes` chega
+    vazio, porque o plano dela não tem teto por eixo.
+  */
   const [entries, setEntries] = useState<readonly ObjectiveEntry[]>(() => {
-    const first = axes.find((axis) => !takenAxes.includes(axis.slug))?.slug ?? 'leitura'
-    return [newEntry(first)]
+    const first = axes.find((axis) => !takenAxes.includes(axis.slug))?.slug
+    return first ? [newEntry(first)] : []
   })
   const [minutesPerDay, setMinutesPerDay] = useState(DEFAULT_MINUTES_PER_DAY)
   const [daysPerWeek, setDaysPerWeek] = useState(DEFAULT_DAYS_PER_WEEK)
 
   const addObjective = useCallback(
     (axis: ActivityTypeSlug) => {
-      setEntries((current) => {
-        if (current.length >= max) return current
-        if (current.some((entry) => entry.axis === axis)) return current
-        // Quando o limite é 1 (o diálogo), escolher outra área é TROCAR de
-        // área, não empilhar: senão o botão da área nova não faria nada.
-        if (max === 1) return [newEntry(axis)]
-        return [...current, newEntry(axis)]
-      })
+      setEntries((current) => withAxisAdded(current, axis, max))
     },
     [max],
   )
@@ -119,8 +127,9 @@ export function useJourneyDraft(today: DayKey, options: Options): JourneyDraftSt
   const updateObjective = useCallback(
     (axis: ActivityTypeSlug, changes: Partial<ObjectiveEntry>) => {
       setEntries((current) => {
-        // Trocar de área é permitido, desde que a nova ainda esteja livre: dois
-        // objetivos no mesmo eixo tornariam o progresso ambíguo.
+        // Trocar de área é permitido, desde que a nova não esteja JÁ NESTE
+        // rascunho: duas entradas no mesmo eixo virariam dois cartões idênticos
+        // no seletor. Área cheia pelo plano é barrada antes, por `taken`.
         if (changes.axis && changes.axis !== axis) {
           if (current.some((entry) => entry.axis === changes.axis)) return current
         }
@@ -186,4 +195,25 @@ export function useJourneyDraft(today: DayKey, options: Options): JourneyDraftSt
 
 function newEntry(axis: ActivityTypeSlug): ObjectiveEntry {
   return { axis, title: '', motive: '', days: DEFAULT_DAYS, target: '' }
+}
+
+/**
+ * O que acontece com o rascunho quando a pessoa escolhe uma área.
+ *
+ * Está fora do hook pra poder ser testada: aqui morava o bug de "a área fica
+ * presa em Leitura". Com `max` em 1 — que é o caso do diálogo de objetivo novo —
+ * a guarda `current.length >= max` era verdade em TODO clique, então a função
+ * devolvia o estado intocado e o cartão da área nova não fazia nada. Trocar de
+ * área precisa vir antes de qualquer guarda de tamanho, porque trocar não
+ * aumenta o rascunho.
+ */
+export function withAxisAdded(
+  current: readonly ObjectiveEntry[],
+  axis: ActivityTypeSlug,
+  max: number,
+): readonly ObjectiveEntry[] {
+  if (current.some((entry) => entry.axis === axis)) return current
+  if (max === 1) return [newEntry(axis)]
+  if (current.length >= max) return current
+  return [...current, newEntry(axis)]
 }

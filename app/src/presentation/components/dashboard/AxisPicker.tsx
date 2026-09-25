@@ -15,7 +15,7 @@ interface AxisPickerProps {
   readonly axes: readonly ActivityType[]
   /** Áreas já escolhidas, na ordem em que entraram. */
   readonly selected: readonly ActivityTypeSlug[]
-  /** Áreas que já têm objetivo ativo e por isso não entram de novo. */
+  /** Áreas sem vaga pra outro objetivo. Quantas cabem por área é o plano que diz. */
   readonly taken?: readonly ActivityTypeSlug[]
   readonly onAdd: (axis: ActivityTypeSlug) => void
   readonly onRemove: (axis: ActivityTypeSlug) => void
@@ -32,8 +32,13 @@ interface AxisPickerProps {
  *
  * Dá pra escolher mais de uma, e a tela mostra isso sem precisar de instrução:
  * o cartão marcado tem um check. O que ela NÃO deixa fazer é escolher a mesma
- * área duas vezes — um objetivo por eixo é regra de domínio, porque o progresso
- * dos dois sairia das mesmas atividades.
+ * área duas vezes NO MESMO rascunho — um rascunho é um objetivo por área, e o
+ * seletor não tem como dizer qual dos dois cartões iguais é qual.
+ *
+ * Área CHEIA é outra coisa e chega em `taken`: quantos objetivos cabem no mesmo
+ * eixo é o plano que decide, então no PRO essa lista vem vazia. Ela nunca é
+ * calculada aqui — um seletor que decide teto de plano é um seletor que vai
+ * divergir do servidor.
  *
  * A quinta opção é escrever a própria área. Ela vira um eixo de verdade: tem
  * cor, entra no filtro do histórico, no registro rápido e no gráfico da semana.

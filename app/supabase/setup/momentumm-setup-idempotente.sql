@@ -505,10 +505,11 @@ create table if not exists public.objectives (
   constraint objectives_deadline_after_start check (deadline > started_on)
 );
 
--- Um objetivo ativo por eixo. É a mesma regra que o onboarding aplica ao pedir
--- uma área só: dois objetivos disputando o mesmo eixo tornam o progresso
--- ambíguo, porque os dois somam das mesmas atividades.
-create unique index if not exists objectives_one_active_per_axis
+-- Quantos objetivos cabem no mesmo eixo é o PLANO que diz, e a regra mora no
+-- trigger `objectives_plan_room` (0057). Aqui fica só o índice de LEITURA: este
+-- arquivo para na 0007, e recriar o índice único de 0003 devolveria a limitação
+-- que a 0057 tirou — num banco que já roda, e sem ninguém perceber.
+create index if not exists objectives_active_user_axis_idx
   on public.objectives (user_id, axis_slug)
   where archived_at is null;
 

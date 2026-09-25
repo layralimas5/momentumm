@@ -1,7 +1,8 @@
 import { DomainError } from '@/shared/errors'
+import type { ActivityTypeSlug } from './activity-type'
 import { addDays, type DayKey } from './day'
 import { isHabitRunning, type Habit } from './habit'
-import { isRunning, type Objective } from './objective'
+import { isActiveObjective, isRunning, type Objective } from './objective'
 import { checkLimit, type LimitCheck, type PlanLimits } from './plan'
 import type { PlanStage } from './plan-stage'
 import { OPEN_TASK_STATUSES, type Task } from './task'
@@ -36,6 +37,53 @@ export class PlanLimitError extends DomainError {
 
 export function objectiveLimit(limits: PlanLimits, objectives: readonly Objective[]): LimitCheck {
   return checkLimit(objectives.filter(isRunning).length, limits.activeObjectives, 'objetivos ativos')
+}
+
+/**
+ * Quantos objetivos a conta já tem nessa área, contra o que o plano dela deixa.
+ *
+ * Conta o NÃO ARQUIVADO — pausado e concluído incluídos —, que é a mesma janela
+ * do índice que a 0057 substituiu e a mesma da contagem do servidor. É diferente
+ * da janela de `objectiveLimit` de propósito: ver `plan.objectivesPerAxis`.
+ */
+export function axisObjectiveLimit(
+  limits: PlanLimits,
+  objectives: readonly Objective[],
+  axis: ActivityTypeSlug,
+): LimitCheck {
+  const used = objectives.filter(
+    (objective) => objective.axis === axis && isActiveObjective(objective),
+  ).length
+  const check = checkLimit(used, limits.objectivesPerAxis, 'objetivos na mesma área')
+  return {
+    ...check,
+    message: check.reached
+      ? 'Essa área já tem um objetivo ativo. Escolhe outra, ou assina o PRO pra manter várias frentes na mesma área.'
+      : null,
+  }
+}
+
+/**
+ * Áreas que não cabem outro objetivo agora.
+ *
+ * É o que o seletor de área usa pra desabilitar cartão, e é por isso que ela
+ * devolve VAZIO quando o plano não tem teto por eixo: no PRO nenhuma área está
+ * ocupada, e uma lista cheia ali era exatamente o que travava o diálogo de
+ * objetivo novo em "Leitura", sem nada clicável.
+ */
+export function takenAxesFor(
+  limits: PlanLimits,
+  objectives: readonly Objective[],
+): readonly ActivityTypeSlug[] {
+  if (!Number.isFinite(limits.objectivesPerAxis)) return []
+  const perAxis = new Map<ActivityTypeSlug, number>()
+  for (const objective of objectives) {
+    if (!isActiveObjective(objective)) continue
+    perAxis.set(objective.axis, (perAxis.get(objective.axis) ?? 0) + 1)
+  }
+  return [...perAxis.entries()]
+    .filter(([, used]) => used >= limits.objectivesPerAxis)
+    .map(([axis]) => axis)
 }
 
 /** Um plano é um objetivo em andamento com pelo menos uma etapa. */
@@ -77,7 +125,10 @@ export interface PlanUsage {
   readonly objectives: LimitCheck
   readonly plans: LimitCheck
   readonly habits: LimitCheck
+  /** Áreas sem vaga pra outro objetivo. Vazio quando o plano não tem teto por eixo. */
+  readonly takenAxes: readonly ActivityTypeSlug[]
   actionsOn(day: DayKey): LimitCheck
+  axisObjectivesOn(axis: ActivityTypeSlug): LimitCheck
 }
 
 export function planUsageOf(limits: PlanLimits, input: PlanUsageInput): PlanUsage {
@@ -85,7 +136,9 @@ export function planUsageOf(limits: PlanLimits, input: PlanUsageInput): PlanUsag
     objectives: objectiveLimit(limits, input.objectives),
     plans: planLimit(limits, input.objectives, input.planStages),
     habits: habitLimit(limits, input.habits),
+    takenAxes: takenAxesFor(limits, input.objectives),
     actionsOn: (day) => actionsLimit(limits, input.tasks, day),
+    axisObjectivesOn: (axis) => axisObjectiveLimit(limits, input.objectives, axis),
   }
 }
 

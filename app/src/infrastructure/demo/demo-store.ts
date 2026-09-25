@@ -48,7 +48,7 @@ import {
   type NewObjectiveInput,
   type Objective,
 } from '@/domain/entities/objective'
-import type { PlanTier } from '@/domain/entities/plan'
+import { limitsOf, type PlanTier } from '@/domain/entities/plan'
 import {
   createPlanStage,
   rebalanceWeights,
@@ -1011,12 +1011,18 @@ export const demoStore = {
 
   addObjective(input: NewObjectiveInput): Objective {
     const current = load()
-    const duplicate = current.objectives.some(
+    /*
+      O teto por área sai do PLANO da conta demo, não de um `some()` fixo.
+
+      Com o número escrito aqui, o modo demo de uma conta PRO recusaria o que o
+      Supabase aceita — e é justamente no demo que a regra é vista primeiro. O
+      erro tipado continua o mesmo, porque a saída que a tela oferece é a mesma.
+    */
+    const limits = limitsOf(current.profile.plan ?? 'free')
+    const perAxis = current.objectives.filter(
       (objective) => objective.archivedAt === null && objective.axis === input.axis,
-    )
-    if (duplicate) {
-      // O mesmo erro tipado do Supabase: o modo demo precisa reproduzir o
-      // caminho inteiro, inclusive o da saída que a tela oferece.
+    ).length
+    if (perAxis >= limits.objectivesPerAxis) {
       throw new ObjectiveAxisConflictError(
         input.axis,
         'Você já tem um objetivo ativo nessa área. Fecha ou arquiva ele antes de abrir outro.',

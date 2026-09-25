@@ -12,9 +12,13 @@ import type { Priority } from './priority'
  * alvo acumulado e uma data em que fecha, e é dele que sai o plano — hábitos e
  * ações existem pra empurrar um objetivo, não o contrário.
  *
- * Um objetivo ativo por eixo. Não é limitação técnica: é a mesma regra que o
- * onboarding aplica ao pedir uma área só. Dois objetivos disputando o mesmo
- * eixo tornam o progresso ambíguo e a decisão do dia, impossível.
+ * Quantos objetivos cabem no MESMO eixo é o plano que diz
+ * (`plan.objectivesPerAxis`, servidor na 0057). No gratuito é um, e o motivo é o
+ * de sempre: dois objetivos disputando o mesmo eixo somam das mesmas atividades,
+ * então o progresso dos dois mede o mesmo volume. No PRO não tem teto, porque
+ * "Projeto" é uma área e não um projeto — lançar o app e criar o curso são duas
+ * frentes com alvo e prazo próprios, e a ambiguidade da soma é um preço que
+ * quem paga escolhe pagar.
  */
 
 export const MAX_OBJECTIVE_TITLE = 80
@@ -26,11 +30,13 @@ export const MAX_OBJECTIVE_DAYS = 366
 export const MIN_OBJECTIVE_DAYS = 7
 
 /**
- * Já existe um objetivo ativo nessa área.
+ * A área já está cheia pro plano da conta.
  *
- * É uma regra do banco (`objectives_one_active_per_axis`, 0003) e não uma
- * falha: dois objetivos disputando o mesmo eixo tornam o progresso ambíguo,
- * porque os dois somam das mesmas atividades.
+ * É uma regra do banco (trigger `objectives_plan_room`, 0057, que substituiu o
+ * índice único de 0003) e não uma falha: no gratuito cada área guarda um
+ * objetivo ativo, porque dois objetivos no mesmo eixo somam das mesmas
+ * atividades. No PRO esse erro não acontece — o plano dele não tem teto por
+ * eixo, e é por isso que o nome do erro fala de EIXO e não de plano.
  *
  * O erro carrega o EIXO porque quem for mostrar isso precisa dizer qual
  * objetivo está ocupando o lugar. Uma mensagem sem o eixo obriga a tela a

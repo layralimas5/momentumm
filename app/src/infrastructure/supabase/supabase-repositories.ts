@@ -43,6 +43,7 @@ import {
   type NewObjectiveInput,
   type Objective,
 } from '@/domain/entities/objective'
+import { PlanLimitError } from '@/domain/entities/plan-usage'
 import type { Profile } from '@/domain/entities/profile'
 import {
   assertValidBio,
@@ -111,6 +112,15 @@ import {
 } from './schemas'
 
 const UNIQUE_VIOLATION = '23505'
+/*
+  Regra de plano recusando a escrita.
+
+  É o mesmo `22023` que `rpc.ts` deixa subir com o texto original, e por isso as
+  mensagens do servidor que usam esse código são escritas pra serem lidas na
+  tela. Aqui ele nunca é genérico: quem o levanta é uma guarda de plano, e a
+  mensagem dela já diz o que destrava.
+*/
+const PLAN_REFUSED = '22023'
 /*
   Função ausente: base que ainda não rodou a 0012. A busca cai na parcial em
   vez de estourar — pior que não achar pelo @ exato é a tela do Círculo inteira
@@ -361,6 +371,17 @@ export class SupabaseObjectiveRepository implements ObjectiveRepository {
       .single()
 
     if (error) {
+      /*
+        O teto de objetivos ativos do plano, aplicado pelo trigger da 0057.
+
+        Sobe como `PlanLimitError` porque é o tipo que a ativação do plano do
+        quiz já sabe tratar: ela diz qual limite parou e oferece o que destrava.
+        Caindo no `fail` genérico viraria "Falha ao criar o objetivo." — e a
+        pessoa ficaria sem saber que a saída existe.
+      */
+      if (error.code === PLAN_REFUSED) {
+        throw new PlanLimitError('Objetivos ativos', error.message)
+      }
       if (error.code === UNIQUE_VIOLATION) {
         /*
           Erro TIPADO, com o eixo junto. Quem chama precisa saber qual área
