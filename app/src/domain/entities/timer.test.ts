@@ -60,6 +60,14 @@ describe('finishTimer', () => {
     expect(input.occurredAt).toEqual(at(12))
   })
 
+  it('carrega o início real da sessão, não o fim menos a duração', () => {
+    // Vinte minutos de pausa no meio: a duração encolhe, o relógio não.
+    const session = resumeTimer(pauseTimer(startTimer('estudo', START), at(10)), at(30))
+    const input = finishTimer(session, at(40))
+    expect(input.startedAt).toEqual(START)
+    expect(input.durationMin).toBe(20)
+  })
+
   it('recusa sessão de menos de um minuto', () => {
     expect(() => finishTimer(startTimer('estudo', START), at(0, 40))).toThrow(DomainError)
   })

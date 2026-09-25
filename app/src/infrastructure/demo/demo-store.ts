@@ -742,7 +742,12 @@ interface StoredState {
     plan?: PlanTier
     restWeekdays?: number[]
   }
-  activities: Array<Omit<Activity, 'occurredAt'> & { occurredAt: string }>
+  activities: Array<
+    Omit<Activity, 'occurredAt' | 'startedAt'> & {
+      occurredAt: string
+      startedAt?: string | null
+    }
+  >
   objectives: Array<
     Omit<Objective, 'createdAt' | 'completedAt' | 'archivedAt'> & {
       createdAt: string
@@ -817,6 +822,7 @@ function revive(raw: string): DemoState {
     },
     activities: parsed.activities.map((item) => ({
       ...item,
+      startedAt: item.startedAt ? new Date(item.startedAt) : null,
       occurredAt: new Date(item.occurredAt),
     })),
     objectives: (parsed.objectives ?? []).map((item) => ({

@@ -69,6 +69,7 @@ function activity(day: DayKey, value: number, type = 'treino'): Activity {
     durationMin: value,
     note: null,
     day,
+    startedAt: null,
     occurredAt: new Date(`${day}T12:00:00`),
     visibility: 'privada',
     source: 'manual',

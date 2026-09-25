@@ -223,6 +223,7 @@ export class SupabaseActivityRepository implements ActivityRepository {
         duration_min: draft.durationMin,
         note: draft.note,
         day: draft.day,
+        started_at: draft.startedAt?.toISOString() ?? null,
         occurred_at: draft.occurredAt.toISOString(),
         visibility: draft.visibility,
         source: draft.source,
