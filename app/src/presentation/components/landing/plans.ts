@@ -39,11 +39,6 @@ export interface Price {
   readonly perks?: readonly string[]
 }
 
-export interface FeatureGroup {
-  readonly label: string
-  readonly items: readonly string[]
-}
-
 export interface PricingPlan {
   readonly id: string
   readonly badge: string
@@ -52,7 +47,7 @@ export interface PricingPlan {
   readonly description: string
   /** Linha que abre a lista, quando o plano soma sobre outro ("Tudo do gratuito, e mais:"). */
   readonly featuresIntro?: string
-  readonly features: readonly FeatureGroup[]
+  readonly features: readonly string[]
   /** O que o plano NÃO tem ou limita. Aparece com marcação neutra, nunca com o check de vantagem. */
   readonly limits?: readonly string[]
   readonly cta: string
@@ -83,16 +78,11 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
     prices: { mensal: FREE_PRICE, anual: FREE_PRICE },
     description: FREE_DESCRIPTION,
     features: [
-      {
-        label: 'Incluso',
-        items: [
-          'Objetivos com plano por etapas e ações',
-          'Hábitos com versão mínima e sequência',
-          'A tela Hoje, com Dia Adaptável e Modo Retomada',
-          'Momentumm Score de hoje',
-          `Juntos: ${plural(free.pairs, 'dupla', 'duplas')}`,
-        ],
-      },
+      'Objetivos com plano por etapas e ações',
+      'Hábitos com versão mínima e sequência',
+      'A tela Hoje, com Dia Adaptável e Modo Retomada',
+      'Momentumm Score de hoje',
+      `Juntos: ${plural(free.pairs, 'dupla', 'duplas')}`,
     ],
     limits: [
       `Até ${plural(free.activeObjectives, 'objetivo', 'objetivos')}, ${plural(free.activeHabits, 'hábito', 'hábitos')} e ${plural(free.activePlans, 'plano', 'planos')} ativos`,
@@ -124,48 +114,23 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
     description: 'O mesmo produto sem limites, com o histórico inteiro e a leitura da IA.',
     featuresIntro: 'Tudo do gratuito, e mais:',
     features: [
-      {
-        label: 'Sem limites',
-        items: [
-          'Objetivos, hábitos e planos ativos sem limite',
-          'Ações por dia sem limite',
-          'Histórico completo, desde o primeiro dia',
-        ],
-      },
-      {
-        label: 'Progresso',
-        items: [
-          'Momentumm Score com evolução e detalhamento',
-          'Review semanal completo, cruzando os seus dados',
-          'Métricas dos últimos 7 dias e do mês inteiro',
-          'Onde você avançou e o que pede atenção, com o ajuste pronto pra aplicar',
-        ],
-      },
-      {
-        label: 'Momentumm AI',
-        items: [
-          `${PLAN_LIMITS.pro.aiCallsPerMonth} leituras por mês`,
-          'Transforma um objetivo em plano por etapas que cabe no seu tempo',
-          'Lê o seu progresso e sugere o próximo ajuste',
-          'Avisa quando uma etapa trava, a constância cai ou o dia passa da sua capacidade',
-        ],
-      },
-      {
-        label: 'Juntos',
-        items: [
-          'Duplas ilimitadas',
-          `A semana inteira da dupla (${PAIR_DAYS} dias)`,
-          `Os ${ENCOURAGEMENT_KINDS.length} incentivos, todo dia`,
-        ],
-      },
-      {
-        label: 'E ainda',
-        items: [
-          'Notas nos registros de atividade',
-          'Todos os modelos de card pra compartilhar, com personalização',
-          'Atendimento prioritário no suporte',
-        ],
-      },
+      'Objetivos, hábitos e planos ativos sem limite',
+      'Ações por dia sem limite',
+      'Histórico completo, desde o primeiro dia',
+      'Momentumm Score com evolução e detalhamento',
+      'Review semanal completo, cruzando os seus dados',
+      'Métricas dos últimos 7 dias e do mês inteiro',
+      'Onde você avançou e o que pede atenção, com o ajuste pronto pra aplicar',
+      `Momentumm AI: ${PLAN_LIMITS.pro.aiCallsPerMonth} leituras por mês`,
+      'A IA transforma um objetivo em plano por etapas que cabe no seu tempo',
+      'A IA lê o seu progresso e sugere o próximo ajuste',
+      'Aviso quando uma etapa trava, a constância cai ou o dia passa da sua capacidade',
+      'Juntos: duplas ilimitadas',
+      `Juntos: a semana inteira da dupla (${PAIR_DAYS} dias)`,
+      `Juntos: os ${ENCOURAGEMENT_KINDS.length} incentivos, todo dia`,
+      'Notas nos registros de atividade',
+      'Todos os modelos de card pra compartilhar, com personalização',
+      'Atendimento prioritário no suporte',
     ],
     cta: 'Assinar o PRO',
     highlight: true,
