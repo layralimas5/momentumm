@@ -6,6 +6,7 @@ import { cn } from '@/shared/lib/cn'
 import { trackLanding, useSectionView } from './landing-analytics'
 import {
   ANNUAL_EXTRAS,
+  ANNUAL_SAVINGS,
   PRICING_FOOTNOTE,
   PRICING_PLANS,
   type BillingCycle,
@@ -45,11 +46,11 @@ export function Pricing() {
           <CycleToggle value={cycle} onChange={setCycle} />
         </div>
 
-        <ul className="mx-auto mt-8 grid max-w-4xl items-stretch gap-4 md:grid-cols-2">
+        <ul className="mx-auto mt-8 grid max-w-5xl items-stretch gap-5 md:grid-cols-[0.85fr_1.15fr]">
           {PRICING_PLANS.map((plan, index) => (
-            <li key={plan.id} className="h-full">
+            <li key={plan.id} className={cn('h-full', plan.highlight && 'order-first md:order-none')}>
               <Reveal delay={index * 0.08} className="h-full">
-                <PlanCard plan={plan} cycle={cycle} />
+                <PlanCard plan={plan} cycle={cycle} onPickAnnual={() => setCycle('anual')} />
               </Reveal>
             </li>
           ))}
@@ -74,11 +75,22 @@ export function Pricing() {
   )
 }
 
-function PlanCard({ plan, cycle }: { plan: PricingPlan; cycle: BillingCycle }) {
+interface PlanCardProps {
+  readonly plan: PricingPlan
+  readonly cycle: BillingCycle
+  readonly onPickAnnual: () => void
+}
+
+/**
+ * O PRO é o card que a página quer que a pessoa escolha, e o desenho diz
+ * isso: mais largo, fundo de marca, preço maior, a lista inteira do que ele
+ * tem e o bloco do anual sempre à vista. O gratuito fica contido, e os
+ * limites dele aparecem como limites (marcação neutra), não como vantagens.
+ */
+function PlanCard({ plan, cycle, onPickAnnual }: PlanCardProps) {
   const cta = useSiteCta('lp-precos')
   const price = plan.prices[cycle]
   const isPro = plan.highlight === true
-  const showAnnualExtras = isPro && cycle === 'anual'
 
   // O card do gratuito usa o CTA da página inteira; o do PRO leva pro checkout.
   const to = isPro ? `/app/assinatura?ciclo=${cycle}` : cta.primary.to
@@ -88,27 +100,41 @@ function PlanCard({ plan, cycle }: { plan: PricingPlan; cycle: BillingCycle }) {
     <article
       aria-labelledby={`plano-${plan.id}`}
       className={cn(
-        'pulse-on-hover flex h-full flex-col rounded-card border p-6',
-        isPro ? 'border-brand bg-brand-dim/30 shadow-xl shadow-brand/10' : 'border-line bg-surface',
+        'pulse-on-hover flex h-full flex-col rounded-card border',
+        isPro
+          ? 'surface-brand edge-light border-brand p-6 shadow-2xl shadow-brand/20 ring-1 ring-brand/40 sm:p-8'
+          : 'border-line bg-surface p-6',
       )}
     >
-      <p
-        className={cn(
-          'inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wide',
-          isPro ? 'bg-brand text-white' : 'border border-line text-ink-muted',
-        )}
-      >
-        {isPro ? <BoltIcon /> : null}
-        {plan.badge}
-      </p>
+      <div className="flex items-center justify-between gap-3">
+        <p
+          className={cn(
+            'inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wide',
+            isPro ? 'bg-brand text-white' : 'border border-line text-ink-muted',
+          )}
+        >
+          {isPro ? <BoltIcon /> : null}
+          {plan.badge}
+        </p>
+        {isPro ? (
+          <p className="rounded-full border border-brand/40 bg-brand-dim/40 px-2.5 py-1 text-xs font-medium text-brand-ink">
+            Recomendado
+          </p>
+        ) : null}
+      </div>
 
-      <h3 id={`plano-${plan.id}`} className="mt-4 text-balance text-lg font-semibold text-ink">
+      <h3
+        id={`plano-${plan.id}`}
+        className={cn('mt-4 text-balance font-semibold', isPro ? 'text-xl text-ink' : 'text-lg text-ink-muted')}
+      >
         {plan.headline}
       </h3>
 
       <div className="mt-4 min-h-[5.5rem]" aria-live="polite">
         <p className="flex flex-wrap items-baseline gap-x-1">
-          <span className="tabular text-3xl font-semibold text-ink">{price.amount}</span>
+          <span className={cn('tabular font-semibold text-ink', isPro ? 'text-4xl sm:text-5xl' : 'text-3xl')}>
+            {price.amount}
+          </span>
           <span className="text-sm text-ink-muted">{price.period}</span>
           {price.strike ? (
             <>
@@ -128,31 +154,41 @@ function PlanCard({ plan, cycle }: { plan: PricingPlan; cycle: BillingCycle }) {
 
       <p className="mt-2 text-pretty text-sm text-ink-muted">{plan.description}</p>
 
-      <ul className="mt-5 flex flex-1 flex-col gap-2 border-t border-line pt-5">
-        {plan.features.map((feature) => (
-          <li key={feature} className="flex gap-2.5 text-sm text-ink-muted">
-            <CheckIcon />
-            {feature}
-          </li>
-        ))}
-        {showAnnualExtras
-          ? ANNUAL_EXTRAS.map((feature) => (
-              <li key={feature} className="flex gap-2.5 text-sm text-ink">
-                <CheckIcon highlight />
-                {feature}
+      <div className="mt-5 flex flex-1 flex-col border-t border-line pt-5">
+        {plan.featuresIntro ? (
+          <p className="mb-3 text-sm font-semibold text-ink">{plan.featuresIntro}</p>
+        ) : null}
+        <ul className="flex flex-col gap-2.5">
+          {plan.features.map((feature) => (
+            <li key={feature} className={cn('flex gap-2.5 text-sm', isPro ? 'text-ink' : 'text-ink-muted')}>
+              <CheckIcon tone={isPro ? 'brand' : 'muted'} />
+              {feature}
+            </li>
+          ))}
+        </ul>
+
+        {plan.limits ? (
+          <ul className="mt-4 flex flex-col gap-2 border-t border-dashed border-line pt-4">
+            {plan.limits.map((limit) => (
+              <li key={limit} className="flex gap-2.5 text-sm text-ink-faint">
+                <MinusIcon />
+                {limit}
               </li>
-            ))
-          : null}
-      </ul>
+            ))}
+          </ul>
+        ) : null}
+
+        {isPro ? <AnnualBlock cycle={cycle} onPickAnnual={onPickAnnual} /> : null}
+      </div>
 
       <Link
         to={to}
         onClick={() => trackLanding('pricing_cta_clicked')}
         className={cn(
-          'pulse-button mt-6 inline-flex h-11 items-center justify-center rounded-xl px-4 text-sm font-medium transition-colors',
+          'pulse-button mt-6 inline-flex items-center justify-center rounded-xl px-4 font-medium transition-colors',
           isPro
-            ? 'bg-brand text-white hover:bg-brand-hi'
-            : 'border border-line text-ink hover:border-line-hi',
+            ? 'h-12 bg-brand text-base text-white hover:bg-brand-hi'
+            : 'h-11 border border-line text-sm text-ink hover:border-line-hi',
         )}
       >
         {label}
@@ -168,12 +204,51 @@ function PlanCard({ plan, cycle }: { plan: PricingPlan; cycle: BillingCycle }) {
   )
 }
 
-function CheckIcon({ highlight = false }: { highlight?: boolean }) {
+/**
+ * O anual sempre à vista dentro do PRO. No mensal ele vira o convite pra
+ * trocar, com a economia no título e um botão que muda o ciclo ali mesmo.
+ */
+function AnnualBlock({ cycle, onPickAnnual }: { cycle: BillingCycle; onPickAnnual: () => void }) {
+  const isAnnual = cycle === 'anual'
+
+  return (
+    <div className="mt-5 rounded-2xl border border-brand/30 bg-canvas/40 p-4">
+      <p className="text-sm font-semibold text-ink">
+        {isAnnual ? 'No plano anual:' : `No anual, você economiza ${ANNUAL_SAVINGS} por ano:`}
+      </p>
+      <ul className="mt-2.5 flex flex-col gap-2">
+        {ANNUAL_EXTRAS.map((extra) => (
+          <li key={extra} className="flex gap-2.5 text-sm text-ink">
+            <CheckIcon tone="positive" />
+            {extra}
+          </li>
+        ))}
+      </ul>
+      {isAnnual ? null : (
+        <button
+          type="button"
+          onClick={onPickAnnual}
+          className="mt-3 rounded text-sm font-medium text-brand-hi underline-offset-4 hover:underline focus-visible:underline"
+        >
+          Ver o preço do anual
+        </button>
+      )}
+    </div>
+  )
+}
+
+const CHECK_TONE = {
+  brand: 'text-brand-hi',
+  positive: 'text-positive',
+  muted: 'text-ink-faint',
+} as const
+
+function CheckIcon({ tone }: { tone: keyof typeof CHECK_TONE }) {
   return (
     <svg
       viewBox="0 0 24 24"
       aria-hidden="true"
-      className={cn('mt-0.5 inline size-4 shrink-0', highlight ? 'text-brand-hi' : 'text-positive')}
+      className={cn('mt-0.5 inline size-4 shrink-0', CHECK_TONE[tone])}
       fill="none"
       stroke="currentColor"
       strokeWidth="2.5"
@@ -181,6 +256,22 @@ function CheckIcon({ highlight = false }: { highlight?: boolean }) {
       strokeLinejoin="round"
     >
       <path d="m5 13 4 4L19 7" />
+    </svg>
+  )
+}
+
+function MinusIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="mt-0.5 inline size-4 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+    >
+      <path d="M6 12h12" />
     </svg>
   )
 }

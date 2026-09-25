@@ -6,6 +6,7 @@ import {
 } from '@/domain/billing/billing-plans'
 import { TRIAL_DAYS } from '@/domain/billing/trial'
 import { PLAN_LIMITS } from '@/domain/entities/plan'
+import { ENCOURAGEMENT_KINDS, PAIR_DAYS } from '@/domain/entities/pair'
 import { TRIAL_PROMISE_VERIFIED } from './site'
 
 /**
@@ -42,13 +43,20 @@ export interface PricingPlan {
   readonly headline: string
   readonly prices: Readonly<Record<BillingCycle, Price>>
   readonly description: string
+  /** Linha que abre a lista, quando o plano soma sobre outro ("Tudo do gratuito, e mais:"). */
+  readonly featuresIntro?: string
   readonly features: readonly string[]
+  /** O que o plano NÃO tem ou limita. Aparece com marcação neutra, nunca com o check de vantagem. */
+  readonly limits?: readonly string[]
   readonly cta: string
   readonly highlight?: boolean
 }
 
 const free = PLAN_LIMITS.free
 const pro = PRO_PRICES
+
+/** A economia do anual é conta, não promoção: doze meses do mensal menos o anual. */
+export const ANNUAL_SAVINGS = formatBRL(pro.anual.strikeCents - pro.anual.amountCents)
 
 function plural(count: number, singular: string, pluralForm: string): string {
   return `${count} ${count === 1 ? singular : pluralForm}`
@@ -72,9 +80,13 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
       'Hábitos com versão mínima e sequência',
       'A tela Hoje, com Dia Adaptável e Modo Retomada',
       'Momentumm Score de hoje',
-      `Juntos: ${plural(free.pairs, 'dupla', 'duplas')} pra um acompanhar o dia do outro`,
-      `Limites do gratuito: ${plural(free.activeObjectives, 'objetivo', 'objetivos')}, ${plural(free.activeHabits, 'hábito', 'hábitos')}, ${plural(free.activePlans, 'plano', 'planos')}, ${free.actionsPerDay} ações por dia`,
+      `Juntos: ${plural(free.pairs, 'dupla', 'duplas')}`,
+    ],
+    limits: [
+      `Até ${plural(free.activeObjectives, 'objetivo', 'objetivos')}, ${plural(free.activeHabits, 'hábito', 'hábitos')} e ${plural(free.activePlans, 'plano', 'planos')} ativos`,
+      `Até ${free.actionsPerDay} ações por dia`,
       `Histórico dos últimos ${free.historyDays} dias`,
+      'Sem Momentumm AI, review completo e métricas',
     ],
     cta: 'Criar meu plano',
   },
@@ -92,17 +104,22 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
         period: '/ano',
         strike: formatBRL(pro.anual.strikeCents),
         note: `equivale a ${formatBRL(monthlyEquivalentCents('anual'))}/mês`,
-        savings: 'Mesmo PRO, cobrado uma vez por ano',
+        savings: `Economia de ${ANNUAL_SAVINGS} por ano`,
       },
     },
     description: 'O mesmo produto sem limites, com o histórico inteiro e a leitura da IA.',
+    featuresIntro: 'Tudo do gratuito, e mais:',
     features: [
-      'Tudo do gratuito, sem limite de quantidade',
-      'Histórico completo, com a evolução do Momentumm Score',
+      'Objetivos, hábitos, planos e ações por dia sem limite',
+      'Histórico completo, desde o primeiro dia',
+      'Momentumm Score com evolução e detalhamento',
       'Review semanal completo, cruzando os seus dados',
+      'Métricas de 7 dias, do mês e comparação entre semanas',
       `Momentumm AI: ${PLAN_LIMITS.pro.aiCallsPerMonth} leituras por mês`,
-      'Métricas de período e comparação entre semanas',
-      'Juntos sem teto: quantas duplas quiser',
+      'Análises da IA: padrões, gargalos e recomendações',
+      'Notas nos registros de atividade',
+      `Juntos sem teto: duplas ilimitadas, a semana inteira da dupla (${PAIR_DAYS} dias) e os ${ENCOURAGEMENT_KINDS.length} incentivos todo dia`,
+      'Todos os modelos de card pra compartilhar, com personalização',
     ],
     cta: 'Assinar o PRO',
     highlight: true,
@@ -114,9 +131,10 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
  * aqui promete função que o mensal não tenha.
  */
 export const ANNUAL_EXTRAS = [
+  `Sai por ${formatBRL(monthlyEquivalentCents('anual'))} por mês`,
   'Preço protegido na renovação*',
-  'Um pagamento por ano, sem cobrança mensal',
+  'Um pagamento só, sem cobrança todo mês',
 ] as const
 
 export const PRICING_FOOTNOTE =
-  '* O preço protegido vale enquanto a assinatura anual não for cancelada. O valor riscado é quanto custariam doze meses do plano mensal.'
+  '* O preço protegido vale enquanto a assinatura anual não for cancelada. O valor riscado e a economia são a conta de doze meses do plano mensal.'
