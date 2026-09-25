@@ -3,6 +3,7 @@ import type { PushPermission } from '@/domain/notifications/push-device'
 import { track } from '@/infrastructure/analytics/track'
 import { vapidPublicKey } from '@/infrastructure/config/env'
 import { container } from '@/infrastructure/container'
+import { reportCaughtError } from '@/infrastructure/errors/error-reporter'
 import {
   currentDevice,
   needsHomeScreenInstall,
@@ -108,6 +109,16 @@ export function usePushReminders(): PushRemindersController {
       track('push_subscription_created', 'notificacoes')
       track('reminder_enabled')
     } catch (cause) {
+      /*
+        O relato vai junto com a mensagem na tela.
+
+        Sem ele o erro morre no `catch`: a pessoa vê "não consegui", tenta de
+        novo, funciona, e não sobra nada pra descobrir o que falhou. Ligar o
+        lembrete atravessa permissão do navegador, service worker, chave VAPID e
+        o servidor — cada um falha com uma cara diferente, e sem o relato não dá
+        pra saber qual foi.
+      */
+      reportCaughtError(cause, 'push.enable', 'alta')
       setError(toUserMessage(cause))
     } finally {
       setBusy(false)
@@ -123,6 +134,7 @@ export function usePushReminders(): PushRemindersController {
       setEnabled(false)
       track('reminder_disabled')
     } catch (cause) {
+      reportCaughtError(cause, 'push.disable', 'media')
       setError(toUserMessage(cause))
     } finally {
       setBusy(false)
