@@ -35,6 +35,13 @@ export interface Price {
   readonly strike?: string
   readonly note?: string
   readonly savings?: string
+  /** O que muda no jeito de pagar deste ciclo. Não é recurso: nenhuma linha promete função que o outro ciclo não tenha. */
+  readonly perks?: readonly string[]
+}
+
+export interface FeatureGroup {
+  readonly label: string
+  readonly items: readonly string[]
 }
 
 export interface PricingPlan {
@@ -45,7 +52,7 @@ export interface PricingPlan {
   readonly description: string
   /** Linha que abre a lista, quando o plano soma sobre outro ("Tudo do gratuito, e mais:"). */
   readonly featuresIntro?: string
-  readonly features: readonly string[]
+  readonly features: readonly FeatureGroup[]
   /** O que o plano NÃO tem ou limita. Aparece com marcação neutra, nunca com o check de vantagem. */
   readonly limits?: readonly string[]
   readonly cta: string
@@ -56,7 +63,7 @@ const free = PLAN_LIMITS.free
 const pro = PRO_PRICES
 
 /** A economia do anual é conta, não promoção: doze meses do mensal menos o anual. */
-export const ANNUAL_SAVINGS = formatBRL(pro.anual.strikeCents - pro.anual.amountCents)
+const ANNUAL_SAVINGS = formatBRL(pro.anual.strikeCents - pro.anual.amountCents)
 
 function plural(count: number, singular: string, pluralForm: string): string {
   return `${count} ${count === 1 ? singular : pluralForm}`
@@ -76,11 +83,16 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
     prices: { mensal: FREE_PRICE, anual: FREE_PRICE },
     description: FREE_DESCRIPTION,
     features: [
-      'Objetivos com plano por etapas e ações',
-      'Hábitos com versão mínima e sequência',
-      'A tela Hoje, com Dia Adaptável e Modo Retomada',
-      'Momentumm Score de hoje',
-      `Juntos: ${plural(free.pairs, 'dupla', 'duplas')}`,
+      {
+        label: 'Incluso',
+        items: [
+          'Objetivos com plano por etapas e ações',
+          'Hábitos com versão mínima e sequência',
+          'A tela Hoje, com Dia Adaptável e Modo Retomada',
+          'Momentumm Score de hoje',
+          `Juntos: ${plural(free.pairs, 'dupla', 'duplas')}`,
+        ],
+      },
     ],
     limits: [
       `Até ${plural(free.activeObjectives, 'objetivo', 'objetivos')}, ${plural(free.activeHabits, 'hábito', 'hábitos')} e ${plural(free.activePlans, 'plano', 'planos')} ativos`,
@@ -98,6 +110,7 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
       mensal: {
         amount: formatBRL(pro.mensal.amountCents),
         period: '/mês',
+        perks: ['Sem fidelidade: cancela quando quiser'],
       },
       anual: {
         amount: formatBRL(pro.anual.amountCents),
@@ -105,36 +118,59 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
         strike: formatBRL(pro.anual.strikeCents),
         note: `equivale a ${formatBRL(monthlyEquivalentCents('anual'))}/mês`,
         savings: `Economia de ${ANNUAL_SAVINGS} por ano`,
+        perks: ['Um pagamento só, sem cobrança todo mês', 'Preço protegido na renovação*'],
       },
     },
     description: 'O mesmo produto sem limites, com o histórico inteiro e a leitura da IA.',
     featuresIntro: 'Tudo do gratuito, e mais:',
     features: [
-      'Objetivos, hábitos, planos e ações por dia sem limite',
-      'Histórico completo, desde o primeiro dia',
-      'Momentumm Score com evolução e detalhamento',
-      'Review semanal completo, cruzando os seus dados',
-      'Métricas de 7 dias, do mês e comparação entre semanas',
-      `Momentumm AI: ${PLAN_LIMITS.pro.aiCallsPerMonth} leituras por mês`,
-      'Análises da IA: padrões, gargalos e recomendações',
-      'Notas nos registros de atividade',
-      `Juntos sem teto: duplas ilimitadas, a semana inteira da dupla (${PAIR_DAYS} dias) e os ${ENCOURAGEMENT_KINDS.length} incentivos todo dia`,
-      'Todos os modelos de card pra compartilhar, com personalização',
+      {
+        label: 'Sem limites',
+        items: [
+          'Objetivos, hábitos e planos ativos sem limite',
+          'Ações por dia sem limite',
+          'Histórico completo, desde o primeiro dia',
+        ],
+      },
+      {
+        label: 'Progresso',
+        items: [
+          'Momentumm Score com evolução e detalhamento',
+          'Review semanal completo, cruzando os seus dados',
+          'Métricas dos últimos 7 dias e do mês inteiro',
+          'Onde você avançou e o que pede atenção, com o ajuste pronto pra aplicar',
+        ],
+      },
+      {
+        label: 'Momentumm AI',
+        items: [
+          `${PLAN_LIMITS.pro.aiCallsPerMonth} leituras por mês`,
+          'Transforma um objetivo em plano por etapas que cabe no seu tempo',
+          'Lê o seu progresso e sugere o próximo ajuste',
+          'Avisa quando uma etapa trava, a constância cai ou o dia passa da sua capacidade',
+        ],
+      },
+      {
+        label: 'Juntos',
+        items: [
+          'Duplas ilimitadas',
+          `A semana inteira da dupla (${PAIR_DAYS} dias)`,
+          `Os ${ENCOURAGEMENT_KINDS.length} incentivos, todo dia`,
+        ],
+      },
+      {
+        label: 'E ainda',
+        items: [
+          'Notas nos registros de atividade',
+          'Todos os modelos de card pra compartilhar, com personalização',
+          'Atendimento prioritário no suporte',
+        ],
+      },
     ],
     cta: 'Assinar o PRO',
     highlight: true,
   },
 ]
-
-/**
- * O que muda no anual. Não é recurso: é compromisso e preço. Nenhuma linha
- * aqui promete função que o mensal não tenha.
- */
-export const ANNUAL_EXTRAS = [
-  `Sai por ${formatBRL(monthlyEquivalentCents('anual'))} por mês`,
-  'Preço protegido na renovação*',
-  'Um pagamento só, sem cobrança todo mês',
-] as const
 
 export const PRICING_FOOTNOTE =
   '* O preço protegido vale enquanto a assinatura anual não for cancelada. O valor riscado e a economia são a conta de doze meses do plano mensal.'

@@ -5,8 +5,6 @@ import { Icon } from '@/presentation/components/ui/Icon'
 import { cn } from '@/shared/lib/cn'
 import { trackLanding, useSectionView } from './landing-analytics'
 import {
-  ANNUAL_EXTRAS,
-  ANNUAL_SAVINGS,
   PRICING_FOOTNOTE,
   PRICING_PLANS,
   type BillingCycle,
@@ -50,7 +48,7 @@ export function Pricing() {
           {PRICING_PLANS.map((plan, index) => (
             <li key={plan.id} className={cn('h-full', plan.highlight && 'order-first md:order-none')}>
               <Reveal delay={index * 0.08} className="h-full">
-                <PlanCard plan={plan} cycle={cycle} onPickAnnual={() => setCycle('anual')} />
+                <PlanCard plan={plan} cycle={cycle} />
               </Reveal>
             </li>
           ))}
@@ -78,19 +76,20 @@ export function Pricing() {
 interface PlanCardProps {
   readonly plan: PricingPlan
   readonly cycle: BillingCycle
-  readonly onPickAnnual: () => void
 }
 
 /**
  * O PRO é o card que a página quer que a pessoa escolha, e o desenho diz
- * isso: mais largo, fundo de marca, preço maior, a lista inteira do que ele
- * tem e o bloco do anual sempre à vista. O gratuito fica contido, e os
- * limites dele aparecem como limites (marcação neutra), não como vantagens.
+ * isso: mais largo, fundo de marca, preço maior e a lista inteira do que ele
+ * tem, em grupos. O que muda no jeito de pagar (anual ou mensal) fica colado
+ * no preço. O gratuito fica contido, e os limites dele aparecem como limites
+ * (marcação neutra), não como vantagens.
  */
-function PlanCard({ plan, cycle, onPickAnnual }: PlanCardProps) {
+function PlanCard({ plan, cycle }: PlanCardProps) {
   const cta = useSiteCta('lp-precos')
   const price = plan.prices[cycle]
   const isPro = plan.highlight === true
+  const showGroupLabels = plan.features.length > 1
 
   // O card do gratuito usa o CTA da página inteira; o do PRO leva pro checkout.
   const to = isPro ? `/app/assinatura?ciclo=${cycle}` : cta.primary.to
@@ -150,22 +149,42 @@ function PlanCard({ plan, cycle, onPickAnnual }: PlanCardProps) {
             {price.savings}
           </p>
         ) : null}
+        {price.perks ? (
+          <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
+            {price.perks.map((perk) => (
+              <li key={perk} className="inline-flex items-center gap-1.5 text-xs text-ink-muted">
+                <CheckIcon tone="positive" />
+                {perk}
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </div>
 
-      <p className="mt-2 text-pretty text-sm text-ink-muted">{plan.description}</p>
+      <p className="mt-3 text-pretty text-sm text-ink-muted">{plan.description}</p>
 
       <div className="mt-5 flex flex-1 flex-col border-t border-line pt-5">
         {plan.featuresIntro ? (
-          <p className="mb-3 text-sm font-semibold text-ink">{plan.featuresIntro}</p>
+          <p className="mb-4 text-sm font-semibold text-ink">{plan.featuresIntro}</p>
         ) : null}
-        <ul className="flex flex-col gap-2.5">
-          {plan.features.map((feature) => (
-            <li key={feature} className={cn('flex gap-2.5 text-sm', isPro ? 'text-ink' : 'text-ink-muted')}>
-              <CheckIcon tone={isPro ? 'brand' : 'muted'} />
-              {feature}
-            </li>
+
+        <div className="flex flex-col gap-5">
+          {plan.features.map((group) => (
+            <div key={group.label}>
+              {showGroupLabels ? (
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-brand-hi">{group.label}</p>
+              ) : null}
+              <ul className="flex flex-col gap-2">
+                {group.items.map((item) => (
+                  <li key={item} className={cn('flex gap-2.5 text-sm', isPro ? 'text-ink' : 'text-ink-muted')}>
+                    <CheckIcon tone={isPro ? 'brand' : 'muted'} />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
-        </ul>
+        </div>
 
         {plan.limits ? (
           <ul className="mt-4 flex flex-col gap-2 border-t border-dashed border-line pt-4">
@@ -177,8 +196,6 @@ function PlanCard({ plan, cycle, onPickAnnual }: PlanCardProps) {
             ))}
           </ul>
         ) : null}
-
-        {isPro ? <AnnualBlock cycle={cycle} onPickAnnual={onPickAnnual} /> : null}
       </div>
 
       <Link
@@ -201,39 +218,6 @@ function PlanCard({ plan, cycle, onPickAnnual }: PlanCardProps) {
           : 'Grátis e sem cartão. Sem prazo pra decidir.'}
       </p>
     </article>
-  )
-}
-
-/**
- * O anual sempre à vista dentro do PRO. No mensal ele vira o convite pra
- * trocar, com a economia no título e um botão que muda o ciclo ali mesmo.
- */
-function AnnualBlock({ cycle, onPickAnnual }: { cycle: BillingCycle; onPickAnnual: () => void }) {
-  const isAnnual = cycle === 'anual'
-
-  return (
-    <div className="mt-5 rounded-2xl border border-brand/30 bg-canvas/40 p-4">
-      <p className="text-sm font-semibold text-ink">
-        {isAnnual ? 'No plano anual:' : `No anual, você economiza ${ANNUAL_SAVINGS} por ano:`}
-      </p>
-      <ul className="mt-2.5 flex flex-col gap-2">
-        {ANNUAL_EXTRAS.map((extra) => (
-          <li key={extra} className="flex gap-2.5 text-sm text-ink">
-            <CheckIcon tone="positive" />
-            {extra}
-          </li>
-        ))}
-      </ul>
-      {isAnnual ? null : (
-        <button
-          type="button"
-          onClick={onPickAnnual}
-          className="mt-3 rounded text-sm font-medium text-brand-hi underline-offset-4 hover:underline focus-visible:underline"
-        >
-          Ver o preço do anual
-        </button>
-      )}
-    </div>
   )
 }
 
