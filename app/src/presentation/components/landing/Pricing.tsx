@@ -81,7 +81,7 @@ interface PlanCardProps {
 /**
  * O PRO é o card que a página quer que a pessoa escolha, e o desenho diz
  * isso: mais largo, fundo de marca, preço maior e a lista inteira do que ele
- * tem, em grupos. O que muda no jeito de pagar (anual ou mensal) fica colado
+ * tem. O que muda no jeito de pagar (anual ou mensal) fica colado
  * no preço. O gratuito fica contido, e os limites dele aparecem como limites
  * (marcação neutra), não como vantagens.
  */
@@ -89,7 +89,6 @@ function PlanCard({ plan, cycle }: PlanCardProps) {
   const cta = useSiteCta('lp-precos')
   const price = plan.prices[cycle]
   const isPro = plan.highlight === true
-  const showGroupLabels = plan.features.length > 1
 
   // O card do gratuito usa o CTA da página inteira; o do PRO leva pro checkout.
   const to = isPro ? `/app/assinatura?ciclo=${cycle}` : cta.primary.to
@@ -168,23 +167,14 @@ function PlanCard({ plan, cycle }: PlanCardProps) {
           <p className="mb-4 text-sm font-semibold text-ink">{plan.featuresIntro}</p>
         ) : null}
 
-        <div className="flex flex-col gap-5">
-          {plan.features.map((group) => (
-            <div key={group.label}>
-              {showGroupLabels ? (
-                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-brand-hi">{group.label}</p>
-              ) : null}
-              <ul className="flex flex-col gap-2">
-                {group.items.map((item) => (
-                  <li key={item} className={cn('flex gap-2.5 text-sm', isPro ? 'text-ink' : 'text-ink-muted')}>
-                    <CheckIcon tone={isPro ? 'brand' : 'muted'} />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
+        <ul className="flex flex-col gap-2.5">
+          {plan.features.map((feature) => (
+            <li key={feature} className={cn('flex gap-2.5 text-sm', isPro ? 'text-ink' : 'text-ink-muted')}>
+              <CheckIcon tone={isPro ? 'brand' : 'muted'} />
+              {feature}
+            </li>
           ))}
-        </div>
+        </ul>
 
         {plan.limits ? (
           <ul className="mt-4 flex flex-col gap-2 border-t border-dashed border-line pt-4">
