@@ -185,7 +185,7 @@ export function MobileDashboard({
       {/* 1. O que ficou pra trás. Dois recados, no máximo, e cada um com a
           saída ao lado: é o que determina o tamanho do dia que vem logo
           abaixo. O resto da lista continua no sino. */}
-      <MobileAlerts alerts={alerts} />
+      <MobileAlerts alerts={alerts.alerts} onDismiss={alerts.dismiss} />
 
       {/* 2. A pergunta que monta o dia: vem antes dele, nunca depois. Respondida,
           ela encolhe pra uma linha e a ação assume a primeira dobra. */}

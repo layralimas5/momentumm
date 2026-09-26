@@ -1,9 +1,11 @@
+import { useCallback, useEffect, useState } from 'react'
 import { activityType } from '@/domain/entities/activity-type'
 import { addDays } from '@/domain/entities/day'
 import { countsAsDone, habitsScheduledOn, statusOf } from '@/domain/entities/habit'
 import { isDone, isPending } from '@/domain/entities/task'
 import type { IconName } from '@/presentation/components/ui/Icon'
 import { usePlanner } from '@/presentation/planner/use-planner'
+import { dismissAlert, dismissedAlerts } from '@/presentation/planner/alert-dismissals'
 import { shareNudgeSeen } from '@/presentation/share/share-nudge'
 import { useMyRequests, withAnswer } from '@/presentation/support/use-my-requests'
 
@@ -41,9 +43,37 @@ export interface DayAlert {
  * Recado só entra quando existe algo real pendente E quando ele muda uma
  * decisão de hoje. "Tudo certo" não é alerta.
  */
-export function useDayAlerts(): readonly DayAlert[] {
+export interface DayAlertsView {
+  /** Os recados que ainda valem hoje: o que foi dispensado não vem. */
+  readonly alerts: readonly DayAlert[]
+  /** Existe recado dispensado hoje? O sino usa pra explicar a lista vazia. */
+  readonly hasDismissed: boolean
+  /** Lido, sai da tela. Volta amanhã se o motivo continuar de pé. */
+  dismiss(id: string): void
+}
+
+export function useDayAlerts(): DayAlertsView {
   const planner = usePlanner()
   const { requests } = useMyRequests()
+  const [dismissed, setDismissed] = useState<ReadonlySet<string>>(() =>
+    dismissedAlerts(planner.today),
+  )
+
+  /*
+    Virou o dia com o app aberto (quem deixa o Momentumm em segundo plano à
+    noite): a lista de ontem para de valer sozinha, sem precisar recarregar.
+  */
+  useEffect(() => {
+    setDismissed(dismissedAlerts(planner.today))
+  }, [planner.today])
+
+  const dismiss = useCallback(
+    (id: string) => {
+      setDismissed(dismissAlert(planner.today, id))
+    },
+    [planner.today],
+  )
+
   const alerts: DayAlert[] = []
 
   /*
@@ -161,5 +191,9 @@ export function useDayAlerts(): readonly DayAlert[] {
     })
   }
 
-  return alerts
+  return {
+    alerts: alerts.filter((alert) => !dismissed.has(alert.id)),
+    hasDismissed: alerts.some((alert) => dismissed.has(alert.id)),
+    dismiss,
+  }
 }

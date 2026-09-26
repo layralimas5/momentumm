@@ -32,7 +32,12 @@ export function MobileTopBar() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const [alertsOpen, setAlertsOpen] = useState(false)
-  const alerts = useDayAlerts()
+  /*
+    A mesma lista do Hoje, e a mesma dispensa: o que a pessoa marcou como lido
+    lá em cima some daqui também. Duas verdades sobre "o que está pendente"
+    seria o sino cobrando o que a tela já deu por resolvido.
+  */
+  const { alerts, hasDismissed } = useDayAlerts()
 
   const firstName = profile?.name.split(' ')[0] ?? null
   const now = new Date()
@@ -134,7 +139,9 @@ export function MobileTopBar() {
       >
         {alerts.length === 0 ? (
           <p className="pb-2 text-sm text-ink-muted">
-            Nada pendente agora. O dia está sob controle.
+            {hasDismissed
+              ? 'Tudo dispensado por hoje. O que continuar pendente volta amanhã.'
+              : 'Nada pendente agora. O dia está sob controle.'}
           </p>
         ) : (
           <ul className="flex flex-col gap-1">

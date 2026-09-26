@@ -430,29 +430,19 @@ export interface UnlockSpec {
 /**
  * Só o que existe de verdade no produto entra aqui. Um desbloqueio que
  * promete um tema que ainda não foi desenhado é uma dívida com a pessoa.
+ *
+ * Foi por essa regra que os três arranjos de compartilhamento saíram daqui: o
+ * estúdio ficou com dois arranjos, os dois abertos a todo mundo, e prometer
+ * "Lista" no nível 2 passaria a ser promessa de uma coisa que não existe mais.
+ * Os níveis 2, 3 e 8 ficaram sem recompensa própria — é melhor um nível mudo
+ * do que um presente que não chega.
  */
 export const UNLOCKS: readonly UnlockSpec[] = [
-  {
-    key: 'share_lista',
-    kind: 'share',
-    label: 'Arranjo "Lista"',
-    hint: 'O que saiu, com os dias da semana, no Share Studio.',
-    level: 2,
-    requiresPro: false,
-  },
   {
     key: 'titulo_em_ritmo',
     kind: 'titulo',
     label: 'Título "Em ritmo"',
     hint: 'Aparece embaixo do teu nome no perfil.',
-    level: 3,
-    requiresPro: false,
-  },
-  {
-    key: 'share_anel',
-    kind: 'share',
-    label: 'Arranjo "Anel"',
-    hint: 'Números em cima, o progresso desenhado.',
     level: 3,
     requiresPro: false,
   },
@@ -479,14 +469,6 @@ export const UNLOCKS: readonly UnlockSpec[] = [
     hint: 'Um anel de luz no teu avatar.',
     level: 7,
     requiresPro: true,
-  },
-  {
-    key: 'share_figura',
-    kind: 'share',
-    label: 'Arranjo "Figura"',
-    hint: 'O desenho no centro, os números embaixo.',
-    level: 8,
-    requiresPro: false,
   },
   {
     key: 'titulo_mestre',
