@@ -82,6 +82,17 @@ describe('códigos de link do quiz', () => {
     expect(attributionForCode('lp-fim')?.campaign).toBe('cta-final')
   })
 
+  /* A tela de entrada não é a landing: quem começa por ela não some no balde do site. */
+  it('a tela de entrada tem meio próprio', () => {
+    expect(attributionForCode('inicio')).toEqual({
+      source: 'site',
+      medium: 'inicio',
+      campaign: 'tela-inicio',
+      content: 'inicio',
+      theme: null,
+    })
+  })
+
   it('o canal pedido na URL vence o meio do código', () => {
     expect(attributionForCode('lp-hero', 'dm')?.medium).toBe('dm')
   })

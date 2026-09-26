@@ -17,6 +17,9 @@ const LandingPage = lazy(() =>
 const AppLayout = lazy(() =>
   import('@/presentation/layouts/AppLayout').then((m) => ({ default: m.AppLayout })),
 )
+const StartPage = lazy(() =>
+  import('@/presentation/pages/StartPage').then((m) => ({ default: m.StartPage })),
+)
 const AuthPage = lazy(() =>
   import('@/presentation/pages/AuthPage').then((m) => ({ default: m.AuthPage })),
 )
@@ -193,6 +196,7 @@ export function App() {
         <Suspense fallback={<RouteFallback />}>
           <Routes>
             <Route path="/" element={<LandingPage />} />
+            <Route path="/inicio" element={<StartPage />} />
             <Route
               path="/entrar"
               element={isAuthBypass ? <Navigate to="/app" replace /> : <AuthPage />}
