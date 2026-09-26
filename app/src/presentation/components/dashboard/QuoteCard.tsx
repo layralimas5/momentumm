@@ -67,36 +67,56 @@ export function QuoteCard({
 
   const body = compact ? (
     <>
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.blockquote
-          key={quote.id}
-          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
-          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="min-w-0 flex-1 text-base leading-snug font-medium text-balance text-ink"
-        >
-          {quote.text}
-        </motion.blockquote>
-      </AnimatePresence>
+      {/*
+        O selo de aspas à esquerda faz o bloco ser lido como citação antes de
+        qualquer palavra. Sem ele a frase era mais uma linha de texto no meio
+        de uma tela cheia de texto.
+      */}
+      <span
+        aria-hidden="true"
+        className="grid size-11 shrink-0 place-items-center rounded-2xl bg-brand-dim/70 text-brand-ink"
+      >
+        <Icon name="aspas" className="size-5" strokeWidth={2} />
+      </span>
 
-      <div className="flex shrink-0 items-center gap-0.5">
-        <button
-          type="button"
-          onClick={() => setSharing(quote)}
-          className="grid size-10 place-items-center rounded-full text-ink-faint transition-colors active:bg-surface-hi"
-        >
-          <Icon name="globo" className="size-4" />
-          <span className="sr-only">Compartilhar a frase</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setPicking(true)}
-          className="grid size-10 place-items-center rounded-full text-ink-faint transition-colors active:bg-surface-hi"
-        >
-          <Icon name="busca" className="size-4" />
-          <span className="sr-only">Escolher outra frase</span>
-        </button>
+      <div className="min-w-0 flex-1">
+        <p className="text-[0.6875rem] font-medium tracking-[0.12em] text-ink-faint uppercase">
+          Frase do dia
+        </p>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.blockquote
+            key={quote.id}
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-1.5 text-[0.9375rem] leading-snug font-medium text-balance text-ink"
+          >
+            “{quote.text}”
+          </motion.blockquote>
+        </AnimatePresence>
+
+        {/*
+          Trocar a frase e compartilhar continuam a um toque, agora em tom de
+          rodapé: no topo eles pesavam tanto quanto a própria frase.
+        */}
+        <div className="-ml-2.5 mt-1 flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setPicking(true)}
+            className="min-h-9 rounded-full px-2.5 text-xs font-medium text-ink-faint transition-colors active:bg-surface-hi active:text-ink"
+          >
+            Trocar frase
+          </button>
+          <button
+            type="button"
+            onClick={() => setSharing(quote)}
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium text-ink-faint transition-colors active:bg-surface-hi active:text-ink"
+          >
+            <Icon name="globo" className="size-3.5" />
+            Compartilhar
+          </button>
+        </div>
       </div>
     </>
   ) : (
@@ -133,8 +153,8 @@ export function QuoteCard({
 
   return (
     <Panel
-      tone="brand"
-      className={cn('overflow-hidden', compact && 'flex items-center gap-3 px-4 py-3', className)}
+      tone={compact ? 'plain' : 'brand'}
+      className={cn('overflow-hidden', compact && 'flex items-start gap-3.5 px-4 py-4', className)}
       aria-labelledby="frase-do-dia"
     >
       <h2 id="frase-do-dia" className="sr-only">

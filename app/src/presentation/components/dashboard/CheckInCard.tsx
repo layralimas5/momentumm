@@ -35,7 +35,7 @@ interface CheckInCardProps {
 }
 
 /**
- * "Como você está chegando hoje?" — a primeira pergunta do dia e a que calibra
+ * "Como você está se sentindo hoje?" — a primeira pergunta do dia e a que calibra
  * todo o resto da tela.
  *
  * Depois de respondido o card encolhe: ele já cumpriu a função e não pode ficar
@@ -131,7 +131,7 @@ function CheckInForm({
     <Panel tone="brand" aria-labelledby="checkin-titulo">
       <PanelHeader
         id="checkin-titulo"
-        title="Como você está chegando hoje?"
+        title="Como você está se sentindo hoje?"
         icon="raio"
       />
 

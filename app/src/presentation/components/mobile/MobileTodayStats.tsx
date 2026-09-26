@@ -41,7 +41,7 @@ export function MobileTodayStats({
   return (
     <section aria-label="Resumo de hoje" className="grid grid-cols-3 gap-2.5">
       <Tile to="/app/progresso" label="Momentum" icon="raio" tone={tone}>
-        <p className="tabular mt-2.5 text-3xl leading-none font-semibold tracking-tight text-ink">
+        <p className="tabular mt-3 text-[1.75rem] leading-none font-semibold tracking-tight text-ink">
           {momentum.value}
         </p>
         <p className="mt-1.5 truncate text-[0.6875rem] text-ink-faint">
@@ -50,9 +50,9 @@ export function MobileTodayStats({
       </Tile>
 
       <Tile to="/app/plano" label="Hoje" icon="check" tone="positive">
-        <p className="tabular mt-2.5 text-3xl leading-none font-semibold tracking-tight text-ink">
+        <p className="tabular mt-3 text-[1.75rem] leading-none font-semibold tracking-tight text-ink">
           {done}
-          <span className="text-lg text-ink-faint">/{total}</span>
+          <span className="text-base text-ink-faint">/{total}</span>
         </p>
         <p className="mt-1.5 truncate text-[0.6875rem] text-ink-faint">
           {total === 0 ? 'nada planejado' : done >= total ? 'dia cumprido' : 'concluídas'}
@@ -60,9 +60,9 @@ export function MobileTodayStats({
       </Tile>
 
       <Tile to="/app/foco" label="Foco" icon="relogio" tone="brand">
-        <p className="tabular mt-2.5 text-3xl leading-none font-semibold tracking-tight text-ink">
+        <p className="tabular mt-3 text-[1.75rem] leading-none font-semibold tracking-tight text-ink">
           {focusMinutes}
-          <span className="text-lg text-ink-faint">min</span>
+          <span className="text-base text-ink-faint">min</span>
         </p>
         <p className="mt-1.5 truncate text-[0.6875rem] text-ink-faint">
           {focusMinutes === 0 ? 'ainda hoje' : 'registrados hoje'}
@@ -109,19 +109,26 @@ function TileHead({
 }) {
   return (
     <span className="flex items-center gap-1">
+      {/*
+        Disco em vez de quadradinho, e do tamanho de um ícone de verdade: os
+        três tiles são lidos de relance pela cor, e um selo de 20px não
+        registrava como cor nenhuma.
+      */}
       <span
         className={cn(
-          'grid size-5 shrink-0 place-items-center rounded-md',
+          'grid size-6 shrink-0 place-items-center rounded-full',
           tone === 'positive'
             ? 'bg-positive/15 text-positive'
             : tone === 'warn'
               ? 'bg-flame-dim/60 text-flame'
-              : 'bg-brand-dim/60 text-brand-ink',
+              : 'bg-brand-dim/70 text-brand-ink',
         )}
       >
-        <Icon name={icon} className="size-3" strokeWidth={2.5} />
+        <Icon name={icon} className="size-3.5" strokeWidth={2.25} />
       </span>
-      <span className="text-[0.625rem] font-medium tracking-tight text-ink-muted">{label}</span>
+      <span className="truncate text-[0.625rem] font-medium tracking-tight text-ink-muted">
+        {label}
+      </span>
     </span>
   )
 }

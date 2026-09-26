@@ -364,13 +364,17 @@ export function DashboardPage() {
         {planner.error ? (
           <ErrorNote message={planner.error} onRetry={() => void planner.reload()} />
         ) : null}
+        {/*
+          No celular o atraso virou cartão de alerta dentro do dashboard, com a
+          saída junto: repetir a mesma contagem aqui em cima seria a mesma frase
+          duas vezes antes da primeira decisão. Sobra a nota de retomada, que o
+          cartão não cobre.
+        */}
         <DayHeader
           compact
           name={profile?.name.split(' ')[0] ?? null}
           headline={view.headline}
           resumeNote={view.resumeNote}
-          overdue={view.overdueCount}
-          onReviewOverdue={() => navigate('/app/plano')}
         />
         {resumeCard}
         {firstWinCard}

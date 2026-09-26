@@ -1,7 +1,5 @@
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { useAuth } from '@/presentation/auth/use-auth'
-import { Avatar } from '@/presentation/components/ui/Avatar'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
 import { cn } from '@/shared/lib/cn'
 import { AddSheet } from './AddSheet'
@@ -23,7 +21,7 @@ export const TAB_ROUTES: readonly string[] = [
 
 /** Dois de cada lado do botão central. Mais que isso vira alvo pequeno demais. */
 const LEFT: readonly TabItem[] = [
-  { to: '/app', label: 'Hoje', icon: 'hoje', end: true },
+  { to: '/app', label: 'Hoje', icon: 'casa', end: true },
   { to: '/app/objetivos', label: 'Objetivos', icon: 'objetivo', end: false },
 ]
 
@@ -40,15 +38,19 @@ const RIGHT: readonly TabItem[] = [
   { to: '/app/progresso', label: 'Progresso', icon: 'progresso', end: false },
 ]
 
-const PROFILE: TabItem = { to: '/app/perfil', label: 'Perfil', icon: 'trofeu', end: false }
+const PROFILE: TabItem = { to: '/app/perfil', label: 'Perfil', icon: 'pessoa', end: false }
 
 /**
  * Barra inferior do celular.
  *
- * É uma pílula solta sobre o conteúdo, não uma faixa colada na borda: o
- * conteúdo passa por baixo dela e a barra continua parecendo um controle, não
- * uma parede. A aba ativa ganha um fundo arredondado em vez de só trocar de
- * cor, porque cor sozinha some no sol.
+ * Uma faixa de largura cheia, ancorada na borda de baixo, com uma linha
+ * separando do conteúdo. Ela era uma pílula flutuante com margem dos dois
+ * lados — bonita parada, e estreita justo onde o polegar erra: cada alvo
+ * perdia 32px de largura pra margem, e o botão de adicionar ficava a meio
+ * caminho do meio da tela.
+ *
+ * A aba ativa acende em cor de marca e ganha um traço embaixo. Cor sozinha
+ * some no sol; o traço é o que sobrevive à luz forte e ao daltonismo.
  *
  * ## O nome embaixo do ícone
  *
@@ -67,20 +69,17 @@ const PROFILE: TabItem = { to: '/app/perfil', label: 'Perfil', icon: 'trofeu', e
  */
 export function MobileTabBar() {
   const [addOpen, setAddOpen] = useState(false)
-  const { profile } = useAuth()
 
   return (
     <>
       <nav
         aria-label="Navegação principal"
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden"
+        className={cn(
+          'fixed inset-x-0 bottom-0 z-40 border-t border-line bg-canvas/95 backdrop-blur-xl lg:hidden',
+          'pb-[max(0.5rem,env(safe-area-inset-bottom))]',
+        )}
       >
-        <ul
-          className={cn(
-            'pointer-events-auto flex w-full max-w-sm items-center justify-between gap-1 rounded-full p-1.5',
-            'border border-line bg-surface/90 shadow-[0_18px_40px_-16px_rgba(0,0,0,0.55)] backdrop-blur-xl',
-          )}
-        >
+        <ul className="mx-auto flex w-full max-w-md items-center justify-between px-2 pt-1.5">
           {LEFT.map((item) => (
             <TabLink key={item.to} item={item} />
           ))}
@@ -91,12 +90,14 @@ export function MobileTabBar() {
               onClick={() => setAddOpen(true)}
               aria-haspopup="dialog"
               className={cn(
-                'grid size-12 place-items-center rounded-full bg-brand text-white',
-                'shadow-[0_10px_24px_-10px_var(--color-brand)] transition-transform',
+                // Sobe acima da faixa: é o único alvo que não é navegação, e
+                // ficar na mesma linha dos outros o fazia parecer mais uma aba.
+                'grid size-14 -translate-y-3 place-items-center rounded-full bg-brand text-white',
+                'shadow-[0_12px_28px_-8px_var(--color-brand)] transition-transform',
                 'active:scale-95 active:bg-brand-hi',
               )}
             >
-              <Icon name="mais" className="size-6" strokeWidth={2.25} />
+              <Icon name="mais" className="size-7" strokeWidth={2.25} />
               <span className="sr-only">Adicionar</span>
             </button>
           </li>
@@ -105,20 +106,7 @@ export function MobileTabBar() {
             <TabLink key={item.to} item={item} />
           ))}
 
-          <TabLink item={PROFILE}>
-            {(isActive) =>
-              profile ? (
-                <Avatar
-                  name={profile.name}
-                  src={profile.avatarUrl}
-                  className={cn('size-6', isActive && 'ring-2 ring-brand ring-offset-2 ring-offset-surface-hi')}
-                  textClassName="text-xs"
-                />
-              ) : (
-                <Icon name={PROFILE.icon} className="size-5" strokeWidth={isActive ? 2.25 : 1.75} />
-              )
-            }
-          </TabLink>
+          <TabLink item={PROFILE} />
         </ul>
       </nav>
 
@@ -127,36 +115,25 @@ export function MobileTabBar() {
   )
 }
 
-function TabLink({
-  item,
-  children,
-}: {
-  item: TabItem
-  /** Substitui o ícone; recebe se a aba está ativa. */
-  children?: (isActive: boolean) => ReactNode
-}) {
+function TabLink({ item }: { item: TabItem }) {
   return (
-    <li>
+    <li className="flex-1">
       <NavLink
         to={item.to}
         end={item.end}
         aria-label={item.label}
         className={({ isActive }) =>
           cn(
-            // 52px de altura e 60 de largura: alvo confortável sem mirar, já
-            // contando o rótulo embaixo do ícone.
-            'flex h-[52px] w-16 flex-col items-center justify-center gap-0.5 rounded-2xl transition-colors',
-            isActive ? 'bg-surface-hi text-ink' : 'text-ink-faint active:bg-surface-hi',
+            // 56px de altura: alvo confortável sem mirar, já contando o rótulo
+            // embaixo do ícone e o traço de aba ativa.
+            'relative flex h-14 w-full flex-col items-center justify-center gap-1 transition-colors',
+            isActive ? 'text-brand-hi' : 'text-ink-faint active:text-ink',
           )
         }
       >
         {({ isActive }) => (
           <>
-            {children ? (
-              children(isActive)
-            ) : (
-              <Icon name={item.icon} className="size-5" strokeWidth={isActive ? 2.25 : 1.75} />
-            )}
+            <Icon name={item.icon} className="size-5" strokeWidth={isActive ? 2.25 : 1.75} />
             {/*
               `aria-hidden` porque o link já tem `aria-label`: sem isso o
               leitor de tela anuncia o nome da aba duas vezes.
@@ -164,6 +141,12 @@ function TabLink({
             <span aria-hidden="true" className="text-[0.625rem] leading-none font-medium">
               {item.label}
             </span>
+            {isActive ? (
+              <span
+                aria-hidden="true"
+                className="absolute inset-x-0 -bottom-1.5 mx-auto h-0.5 w-8 rounded-full bg-brand-hi"
+              />
+            ) : null}
           </>
         )}
       </NavLink>
