@@ -72,8 +72,28 @@ export function FocusCard({ task, capacity, minutesToday }: FocusCardProps) {
           <Button size="sm" onClick={() => focus.setImmersive(true)}>
             Modo sem distrações
           </Button>
-          <Button variant="ghost" size="sm" onClick={focus.discard}>
-            Encerrar
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              /*
+                Encerrar não joga mais o tempo fora. Abaixo de um minuto não há
+                o que registrar; no eixo medido em páginas o registro depende de
+                um número que só o modo sem distrações pergunta.
+              */
+              if (!focus.canFinish) {
+                focus.discard()
+                return
+              }
+              if (focus.needsValue) {
+                focus.setImmersive(true)
+                return
+              }
+              void focus.stop()
+            }}
+            loading={focus.saving}
+          >
+            {focus.canFinish ? 'Encerrar e registrar' : 'Encerrar'}
           </Button>
         </div>
       </Panel>
