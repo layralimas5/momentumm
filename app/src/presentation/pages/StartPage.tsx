@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useAuth } from '@/presentation/auth/use-auth'
-import { LogoMark, Wordmark } from '@/presentation/components/brand/Logo'
+import { Wordmark } from '@/presentation/components/brand/Logo'
 import { useSiteCta } from '@/presentation/components/landing/use-site-cta'
 
 /**
@@ -37,11 +37,7 @@ export function StartPage() {
 
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center text-center sm:flex-none">
         <Reveal delay={0}>
-          <LogoMark className="size-16 drop-shadow-[0_0_28px_var(--color-brand)] sm:size-20" />
-        </Reveal>
-
-        <Reveal delay={0.12}>
-          <Wordmark className="mt-5 w-44 sm:w-52" />
+          <Wordmark className="w-48 sm:w-56" />
         </Reveal>
 
         <Reveal delay={0.28}>
