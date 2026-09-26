@@ -16,6 +16,7 @@ export function FocusSession() {
   const focus = useFocus()
   const planner = usePlanner()
   const [pages, setPages] = useState('')
+  const [discarding, setDiscarding] = useState(false)
 
   const session = focus.session
 
@@ -115,25 +116,50 @@ export function FocusSession() {
             )}
 
             {focus.needsValue ? null : (
-              <Button
-                size="lg"
-                onClick={() => void focus.finish()}
-                disabled={!focus.canFinish}
-                loading={focus.saving}
-              >
-                <Icon name="check" className="size-4" />
-                Concluir ação
-              </Button>
+              <>
+                <Button
+                  size="lg"
+                  onClick={() => void focus.finish()}
+                  disabled={!focus.canFinish}
+                  loading={focus.saving}
+                >
+                  <Icon name="check" className="size-4" />
+                  Concluir ação
+                </Button>
+
+                {/* Parar no meio não pode custar o tempo já feito: encerrar
+                    registra a sessão e deixa a ação de origem em aberto. */}
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  onClick={() => void focus.stop()}
+                  disabled={!focus.canFinish}
+                  loading={focus.saving}
+                >
+                  <Icon name="relogio" className="size-4" />
+                  Encerrar e registrar
+                </Button>
+              </>
             )}
 
           </div>
 
+          {/* Jogar a sessão fora continua possível, agora em dois toques: é a
+              única saída que apaga trabalho, e ela não pode ficar do lado das
+              outras duas esperando um toque distraído. */}
           <button
             type="button"
-            onClick={focus.discard}
+            onClick={() => {
+              if (discarding) {
+                focus.discard()
+                return
+              }
+              setDiscarding(true)
+            }}
+            onBlur={() => setDiscarding(false)}
             className="mt-5 min-h-11 px-3 text-sm text-ink-faint transition-colors hover:text-ink-muted"
           >
-            Encerrar sem registrar
+            {discarding ? 'Descartar mesmo? O tempo se perde.' : 'Descartar sessão'}
           </button>
 
           {focus.needsValue ? (
@@ -165,6 +191,19 @@ export function FocusSession() {
               >
                 Concluir
               </Button>
+              {/* Sem ação de origem, concluir e encerrar seriam o mesmo botão. */}
+              {session.taskId ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="lg"
+                  onClick={() => void focus.stop(pagesValue)}
+                  disabled={!pagesAreValid || !focus.canFinish}
+                  loading={focus.saving}
+                >
+                  Encerrar
+                </Button>
+              ) : null}
             </form>
           ) : null}
 

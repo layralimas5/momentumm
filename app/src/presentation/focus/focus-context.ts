@@ -26,7 +26,11 @@ export interface FocusState {
   start(input: StartFocusInput): void
   pause(): void
   resume(): void
+  /** Conclui: registra a sessão e dá a ação de origem por feita. */
   finish(value?: number): Promise<void>
+  /** Encerra: registra o tempo e deixa a ação de origem em aberto. */
+  stop(value?: number): Promise<void>
+  /** Joga a sessão fora. O tempo não vira registro nenhum. */
   discard(): void
   setImmersive(immersive: boolean): void
 }

@@ -104,8 +104,13 @@ export function FocusProvider({ children }: { children: ReactNode }) {
     commit(null)
   }, [commit])
 
-  const finish = useCallback(
-    async (value?: number) => {
+  /*
+    Concluir e encerrar gravam a MESMA sessão; o que muda é o destino da ação de
+    origem. Quem para no meio do caminho continua tendo o tempo registrado — o
+    contrário ensina a pessoa que sair da sessão custa o trabalho já feito.
+  */
+  const save = useCallback(
+    async ({ value, completeTask }: { value?: number | undefined; completeTask: boolean }) => {
       if (!session) return
       setSaving(true)
       setError(null)
@@ -113,7 +118,7 @@ export function FocusProvider({ children }: { children: ReactNode }) {
         // Só limpa depois que o registro foi aceito: falha de rede não pode
         // apagar uma sessão de uma hora.
         await logActivity(finishTimer(session, new Date(), value === undefined ? {} : { value }))
-        if (session.taskId) {
+        if (completeTask && session.taskId) {
           await updateTask(session.taskId, {
             status: 'feita',
             completedAt: new Date(),
@@ -129,6 +134,16 @@ export function FocusProvider({ children }: { children: ReactNode }) {
       }
     },
     [session, logActivity, updateTask, today, commit],
+  )
+
+  const finish = useCallback(
+    (value?: number) => save({ value, completeTask: true }),
+    [save],
+  )
+
+  const stop = useCallback(
+    (value?: number) => save({ value, completeTask: false }),
+    [save],
   )
 
   const value = useMemo<FocusState>(() => {
@@ -147,10 +162,11 @@ export function FocusProvider({ children }: { children: ReactNode }) {
       pause,
       resume,
       finish,
+      stop,
       discard,
       setImmersive,
     }
-  }, [session, running, now, immersive, error, saving, start, pause, resume, finish, discard])
+  }, [session, running, now, immersive, error, saving, start, pause, resume, finish, stop, discard])
 
   return <FocusContext.Provider value={value}>{children}</FocusContext.Provider>
 }

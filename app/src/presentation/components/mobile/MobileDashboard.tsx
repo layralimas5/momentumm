@@ -153,11 +153,6 @@ export function MobileDashboard({
       {/* 1. Como estou? Três números e nada de texto solto entre eles. */}
       <MobileTodayStats
         momentum={view.momentum}
-        history={view.momentumSeries}
-        today={planner.today}
-        recommendation={view.recommendation}
-        detail={planner.limits.momentumDetail}
-        nextAction={view.nextAction}
         done={view.dayProgress.done}
         total={view.dayProgress.total}
         focusMinutes={view.focusMinutesToday}
