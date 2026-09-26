@@ -6,6 +6,10 @@ import type { ChallengeRepository } from '@/domain/repositories/challenge-reposi
 import type { CheckInRepository } from '@/domain/repositories/checkin-repository'
 import type { GoalRepository } from '@/domain/repositories/goal-repository'
 import type { FriendshipRepository } from '@/domain/repositories/friendship-repository'
+import type { FollowRepository } from '@/domain/repositories/follow-repository'
+import type { DayPhotoRepository } from '@/domain/repositories/day-photo-repository'
+import type { ReferralRepository } from '@/domain/repositories/referral-repository'
+import type { ClubRepository } from '@/domain/repositories/club-repository'
 import type { HabitRepository } from '@/domain/repositories/habit-repository'
 import type { JourneyEventRepository } from '@/domain/repositories/journey-event-repository'
 import type { ObjectiveRepository } from '@/domain/repositories/objective-repository'
@@ -45,6 +49,10 @@ import {
   DemoCheckInRepository,
   DemoGoalRepository,
   DemoFriendshipRepository,
+  DemoFollowRepository,
+  DemoDayPhotoRepository,
+  DemoReferralRepository,
+  DemoClubRepository,
   DemoHabitRepository,
   DemoEvolutionRepository,
   DemoJourneyEventRepository,
@@ -65,6 +73,10 @@ import {
   SupabaseCheckInRepository,
   SupabaseGoalRepository,
   SupabaseFriendshipRepository,
+  SupabaseFollowRepository,
+  SupabaseDayPhotoRepository,
+  SupabaseReferralRepository,
+  SupabaseClubRepository,
   SupabaseHabitRepository,
   SupabaseJourneyEventRepository,
   SupabaseObjectiveRepository,
@@ -102,6 +114,20 @@ export interface Container {
   readonly evolution: EvolutionRepository
   /** O Círculo: amizades e a busca por gente. */
   readonly friendships: FriendshipRepository
+  /**
+   * Seguir, de uma via. Convive com a amizade e não substitui: seguir alguém
+   * não abre nada que já não fosse público.
+   */
+  readonly follows: FollowRepository
+  /** A foto de cada dia — o vínculo dia -> arquivo. O arquivo em si é `media`. */
+  readonly dayPhotos: DayPhotoRepository
+  /** De onde a conta veio. Atribuição de convite, sem recompensa nenhuma. */
+  readonly referrals: ReferralRepository
+  /**
+   * Os clubes. Criar exige PRO — e quem confere é o servidor, não a tela.
+   * Perder a assinatura tira a administração, nunca o clube.
+   */
+  readonly clubs: ClubRepository
   /**
    * Os desafios entre amigos e quem está em cada um. O progresso de cada
    * pessoa é publicado por ela mesma: aqui não se lê a rotina de ninguém.
@@ -162,6 +188,10 @@ export const container: Container = isDemoMode
       journeyEvents: new DemoJourneyEventRepository(),
       evolution: new DemoEvolutionRepository(),
       friendships: new DemoFriendshipRepository(),
+      follows: new DemoFollowRepository(),
+      dayPhotos: new DemoDayPhotoRepository(),
+      referrals: new DemoReferralRepository(),
+      clubs: new DemoClubRepository(),
       challenges: new DemoChallengeRepository(),
       ai: new SimulatedAiService(),
       legal: new DemoLegalAcceptanceRepository(),
@@ -189,6 +219,10 @@ export const container: Container = isDemoMode
       journeyEvents: new SupabaseJourneyEventRepository(),
       evolution: new SupabaseEvolutionRepository(),
       friendships: new SupabaseFriendshipRepository(),
+      follows: new SupabaseFollowRepository(),
+      dayPhotos: new SupabaseDayPhotoRepository(),
+      referrals: new SupabaseReferralRepository(),
+      clubs: new SupabaseClubRepository(),
       challenges: new SupabaseChallengeRepository(),
       ai: new SupabaseAiService(),
       legal: new SupabaseLegalAcceptanceRepository(),

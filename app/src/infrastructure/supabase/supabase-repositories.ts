@@ -86,6 +86,27 @@ import type {
   ChallengeUpdate,
 } from '@/domain/repositories/challenge-repository'
 import type { FriendshipRepository } from '@/domain/repositories/friendship-repository'
+import type { FollowRepository } from '@/domain/repositories/follow-repository'
+import type { ReferralRepository } from '@/domain/repositories/referral-repository'
+import type { ClubRepository } from '@/domain/repositories/club-repository'
+import {
+  assertValidClubDescription,
+  assertValidClubName,
+  rankClubMembers,
+  type Club,
+  type ClubMember,
+  type ClubRankedMember,
+  type NewClubInput,
+} from '@/domain/entities/club'
+import type { DayPhotoRepository } from '@/domain/repositories/day-photo-repository'
+import {
+  createFollow,
+  EMPTY_FOLLOW_COUNTS,
+  type Follow,
+  type FollowCounts,
+  type NewFollowInput,
+} from '@/domain/entities/follow'
+import { createDayPhoto, type DayPhoto, type NewDayPhotoInput } from '@/domain/entities/day-photo'
 import type { JourneyEventRepository } from '@/domain/repositories/journey-event-repository'
 import type { WeeklyReviewRepository } from '@/domain/repositories/weekly-review-repository'
 import type { WinRepository } from '@/domain/repositories/win-repository'
@@ -105,6 +126,12 @@ import {
   toObjective,
   toHabitLog,
   toProfile,
+  toFollow,
+  toFollowCounts,
+  toDayPhoto,
+  toClub,
+  toClubMember,
+  toClubRankingRow,
   toPlanStage,
   toTask,
   toWeeklyReview,
@@ -474,6 +501,16 @@ export class SupabaseProfileRepository implements ProfileRepository {
           ? { status_emoji: status?.emoji ?? null, status_text: status?.text ?? null }
           : {}),
         ...(changes.banner !== undefined ? { banner: changes.banner } : {}),
+        /*
+          Rede por rede, e não o objeto inteiro: mandar `socials` fechado faria
+          "só troquei o Instagram" apagar o TikTok e o LinkedIn, porque o que
+          não vem no objeto vem como `undefined` e viraria `null` na coluna.
+        */
+        ...(changes.socials?.instagram !== undefined
+          ? { instagram: changes.socials.instagram }
+          : {}),
+        ...(changes.socials?.tiktok !== undefined ? { tiktok: changes.socials.tiktok } : {}),
+        ...(changes.socials?.linkedin !== undefined ? { linkedin: changes.socials.linkedin } : {}),
       })
       .eq('id', id)
       .select('*')
@@ -1334,6 +1371,9 @@ export class SupabaseChallengeRepository implements ChallengeRepository {
       .from('challenges')
       .insert({
         owner_id: draft.ownerId,
+        // Só vai quando existe: base anterior à 0062 não tem a coluna, e
+        // mandar `null` nela quebraria a criação de desafio comum.
+        ...(draft.clubId ? { club_id: draft.clubId } : {}),
         name: draft.name,
         description: draft.description,
         axis: draft.axis,
@@ -1485,5 +1525,292 @@ export class SupabaseChallengeRepository implements ChallengeRepository {
 
     if (error) fail(error, 'publicar teu avanço no desafio')
     return toChallengeParticipant(data)
+  }
+}
+
+/**
+ * Seguir, contra o Supabase.
+ *
+ * As contagens NÃO saem de um `select count`: a política de `follows` só deixa
+ * cada pessoa ver as próprias linhas, então contar pelo select daria "1
+ * seguidor" em qualquer perfil que você mesma segue. Elas vêm da função
+ * `follow_counts` (0060), que devolve dois números e nada mais.
+ */
+export class SupabaseFollowRepository implements FollowRepository {
+  async counts(userId: string): Promise<FollowCounts> {
+    const { data, error } = await supabase().rpc('follow_counts', { target: userId })
+    if (error) fail(error, 'carregar seguidores')
+
+    // A função devolve UMA linha; o PostgREST entrega como lista.
+    const row = Array.isArray(data) ? data[0] : data
+    return row ? toFollowCounts(row) : EMPTY_FOLLOW_COUNTS
+  }
+
+  async isFollowing(followerId: string, followingId: string): Promise<boolean> {
+    const { count, error } = await supabase()
+      .from('follows')
+      .select('*', { count: 'exact', head: true })
+      .eq('follower_id', followerId)
+      .eq('following_id', followingId)
+
+    if (error) fail(error, 'conferir se você já segue')
+    return (count ?? 0) > 0
+  }
+
+  async follow(input: NewFollowInput): Promise<Follow> {
+    const draft = createFollow(input)
+
+    const { data, error } = await supabase()
+      .from('follows')
+      .upsert(
+        {
+          follower_id: draft.followerId,
+          following_id: draft.followingId,
+        },
+        // Seguir de novo é a mesma linha, não um erro pra tela resolver.
+        { onConflict: 'follower_id,following_id', ignoreDuplicates: false },
+      )
+      .select('*')
+      .single()
+
+    if (error) fail(error, 'seguir')
+    return toFollow(data)
+  }
+
+  async unfollow(followerId: string, followingId: string): Promise<void> {
+    const { error } = await supabase()
+      .from('follows')
+      .delete()
+      .eq('follower_id', followerId)
+      .eq('following_id', followingId)
+
+    if (error) fail(error, 'deixar de seguir')
+  }
+}
+
+/**
+ * A foto do dia, contra o Supabase.
+ *
+ * Aqui mora só o vínculo dia -> caminho. O arquivo sobe e é assinado pelo
+ * `MediaRepository`, que já tem bucket, limite de tamanho e link temporário —
+ * duplicar isso daria duas regras de upload discordando na primeira mudança.
+ */
+export class SupabaseDayPhotoRepository implements DayPhotoRepository {
+  async listBetween(userId: string, from: DayKey, to: DayKey): Promise<DayPhoto[]> {
+    const { data, error } = await supabase()
+      .from('day_photos')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('day', from)
+      .lte('day', to)
+      .order('day', { ascending: false })
+
+    if (error) fail(error, 'carregar as fotos do mês')
+    return (data ?? []).map(toDayPhoto)
+  }
+
+  async save(input: NewDayPhotoInput): Promise<DayPhoto> {
+    const draft = createDayPhoto(input)
+
+    const { data, error } = await supabase()
+      .from('day_photos')
+      .upsert(
+        { user_id: draft.userId, day: draft.day, path: draft.path },
+        // Uma por dia: a segunda foto do mesmo dia troca a primeira.
+        { onConflict: 'user_id,day' },
+      )
+      .select('*')
+      .single()
+
+    if (error) fail(error, 'guardar a foto do dia')
+    return toDayPhoto(data)
+  }
+
+  async remove(userId: string, day: DayKey): Promise<void> {
+    const { error } = await supabase()
+      .from('day_photos')
+      .delete()
+      .eq('user_id', userId)
+      .eq('day', day)
+
+    if (error) fail(error, 'tirar a foto do dia')
+  }
+}
+
+/**
+ * O convite de amigo, contra o Supabase.
+ *
+ * O registro passa por `register_referral` (0061), que aplica as regras e
+ * resolve o @ em id. A contagem sai do SELECT normal: a política deixa cada
+ * pessoa ver as próprias linhas, e "quantos entraram pelo meu convite" é
+ * exatamente uma delas.
+ */
+export class SupabaseReferralRepository implements ReferralRepository {
+  async register(inviteCode: string): Promise<boolean> {
+    const { data, error } = await supabase().rpc('register_referral', {
+      inviter_handle: inviteCode,
+    })
+
+    /*
+      Falhar aqui não pode estragar o primeiro minuto de uso: isto roda logo
+      depois de a conta nascer, e nada do que a pessoa veio fazer depende
+      disso. Erro vira "não registrei", e segue.
+    */
+    if (error) return false
+    return data === true
+  }
+
+  async countInvited(userId: string): Promise<number> {
+    const { count, error } = await supabase()
+      .from('referrals')
+      .select('*', { count: 'exact', head: true })
+      .eq('inviter_id', userId)
+
+    if (error) return 0
+    return count ?? 0
+  }
+}
+
+/**
+ * Os clubes, contra o Supabase.
+ *
+ * Criar passa pela função `create_club` (0062), que confere a assinatura e
+ * coloca o dono dentro na mesma transação. Editar e arquivar vão pelo UPDATE
+ * normal, onde a política já exige dono COM PRO — a tela esconde o botão, o
+ * banco recusa a escrita, e é o banco que vale.
+ */
+export class SupabaseClubRepository implements ClubRepository {
+  async listMine(userId: string): Promise<Club[]> {
+    const { data, error } = await supabase()
+      .from('club_members')
+      .select('clubs(*)')
+      .eq('user_id', userId)
+
+    if (error) fail(error, 'carregar teus clubes')
+
+    return (data ?? [])
+      .flatMap((row) => {
+        const club = (row as { clubs: unknown }).clubs
+        return club ? [toClub(club)] : []
+      })
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+  }
+
+  async listOpen(limit = 20): Promise<Club[]> {
+    /*
+      A política já esconde o que é por convite. O filtro aqui é pra não
+      arrastar os clubes de que a pessoa participa pra dentro da descoberta —
+      eles têm lista própria.
+    */
+    const { data, error } = await supabase()
+      .from('clubs')
+      .select('*')
+      .eq('privacy', 'aberto')
+      .is('archived_at', null)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) fail(error, 'carregar os clubes abertos')
+    return (data ?? []).map(toClub)
+  }
+
+  async findById(id: string): Promise<Club | null> {
+    const { data, error } = await supabase().from('clubs').select('*').eq('id', id).maybeSingle()
+    if (error) fail(error, 'abrir o clube')
+    return data ? toClub(data) : null
+  }
+
+  async listMembers(clubId: string): Promise<ClubMember[]> {
+    const { data, error } = await supabase()
+      .from('club_members')
+      .select('*')
+      .eq('club_id', clubId)
+      .order('joined_at', { ascending: true })
+
+    if (error) fail(error, 'carregar os membros')
+    return (data ?? []).map(toClubMember)
+  }
+
+  async ranking(clubId: string): Promise<ClubRankedMember[]> {
+    const { data, error } = await supabase().rpc('club_ranking', { club: clubId })
+    if (error) fail(error, 'carregar o ranking do clube')
+
+    const rows = ((data ?? []) as unknown[]).map(toClubRankingRow)
+    return rankClubMembers(rows)
+  }
+
+  async create(input: NewClubInput): Promise<Club> {
+    assertValidClubName(input.name)
+    assertValidClubDescription(input.description)
+
+    const { data, error } = await supabase().rpc('create_club', {
+      p_name: input.name.trim(),
+      p_description: input.description?.trim() || null,
+      p_category: input.category,
+      p_cover: input.cover,
+      p_privacy: input.privacy,
+    })
+
+    if (error) {
+      // O código que a função usa pra recusar quem não assina. A tela precisa
+      // distinguir isso de uma falha, pra oferecer o PRO em vez de um erro.
+      if (error.code === 'P0001') {
+        throw new DomainError('Criar clube faz parte do Momentumm PRO.')
+      }
+      fail(error, 'criar o clube')
+    }
+
+    // A função devolve a linha inteira; o PostgREST entrega como objeto.
+    return toClub(Array.isArray(data) ? data[0] : data)
+  }
+
+  async update(id: string, changes: Partial<NewClubInput>): Promise<Club> {
+    if (changes.name !== undefined) assertValidClubName(changes.name)
+    if (changes.description !== undefined) assertValidClubDescription(changes.description)
+
+    const { data, error } = await supabase()
+      .from('clubs')
+      .update({
+        ...(changes.name !== undefined ? { name: changes.name.trim() } : {}),
+        ...(changes.description !== undefined
+          ? { description: changes.description?.trim() || null }
+          : {}),
+        ...(changes.category !== undefined ? { category: changes.category } : {}),
+        ...(changes.cover !== undefined ? { cover: changes.cover } : {}),
+        ...(changes.privacy !== undefined ? { privacy: changes.privacy } : {}),
+      })
+      .eq('id', id)
+      .select('*')
+      .single()
+
+    if (error) fail(error, 'salvar o clube')
+    return toClub(data)
+  }
+
+  async archive(id: string): Promise<void> {
+    const { error } = await supabase()
+      .from('clubs')
+      .update({ archived_at: new Date().toISOString() })
+      .eq('id', id)
+
+    if (error) fail(error, 'arquivar o clube')
+  }
+
+  async join(clubId: string, userId: string): Promise<void> {
+    const { error } = await supabase()
+      .from('club_members')
+      .insert({ club_id: clubId, user_id: userId, role: 'membro' })
+
+    if (error) fail(error, 'entrar no clube')
+  }
+
+  async leave(clubId: string, userId: string): Promise<void> {
+    const { error } = await supabase()
+      .from('club_members')
+      .delete()
+      .eq('club_id', clubId)
+      .eq('user_id', userId)
+
+    if (error) fail(error, 'sair do clube')
   }
 }

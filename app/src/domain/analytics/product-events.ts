@@ -79,6 +79,34 @@ export const PRODUCT_EVENTS = [
   'push_subscription_created',
 
   /* Instalação do app. `pwa_installed` só existe no Android: o iOS não avisa. */
+  /*
+    Convite de amigo e o teto social do gratuito (0061).
+
+    `free_friend_limit_reached` é o que responde a pergunta comercial desta
+    entrega: o teto de dois amigos produz conversa sobre o PRO, ou produz
+    abandono? Sem o evento, a resposta seria opinião.
+  */
+  'friend_invite_started',
+  'friend_invite_shared',
+  'friend_invite_opened',
+  'friend_invite_accepted',
+  'friend_added',
+  'friend_ranking_viewed',
+  'free_friend_limit_reached',
+
+  /*
+    Clubes (0062). O par paywall/upgrade existe pra separar duas perguntas que
+    parecem uma: quanta gente CHEGA na porta do recurso, e quanta gente decide
+    atravessar. Sem os dois, um número baixo de assinaturas não diz se o
+    problema é a oferta ou o caminho até ela.
+  */
+  'club_creation_paywall_viewed',
+  'club_creation_upgrade_clicked',
+  'club_created',
+  'club_joined',
+  'club_left',
+  'club_ranking_viewed',
+
   'pwa_install_prompted',
   'pwa_installed',
   'ios_install_shown',

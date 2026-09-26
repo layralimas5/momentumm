@@ -69,6 +69,22 @@ import type {
   ChallengeUpdate,
 } from '@/domain/repositories/challenge-repository'
 import type { FriendshipRepository } from '@/domain/repositories/friendship-repository'
+import type { FollowRepository } from '@/domain/repositories/follow-repository'
+import type { ReferralRepository } from '@/domain/repositories/referral-repository'
+import type { ClubRepository } from '@/domain/repositories/club-repository'
+import {
+  assertValidClubDescription,
+  assertValidClubName,
+  isClubRunning,
+  rankClubMembers,
+  type Club,
+  type ClubMember,
+  type ClubRankedMember,
+  type NewClubInput,
+} from '@/domain/entities/club'
+import type { DayPhotoRepository } from '@/domain/repositories/day-photo-repository'
+import type { Follow, FollowCounts, NewFollowInput } from '@/domain/entities/follow'
+import type { DayPhoto, NewDayPhotoInput } from '@/domain/entities/day-photo'
 import type { JourneyEventRepository } from '@/domain/repositories/journey-event-repository'
 import type { WeeklyReviewRepository } from '@/domain/repositories/weekly-review-repository'
 import type { WinRepository } from '@/domain/repositories/win-repository'
@@ -661,5 +677,171 @@ export class DemoMediaRepository implements MediaRepository {
     return [...this.files.values()]
       .map((entry) => entry.media)
       .filter((media) => media.kind === kind && media.path.startsWith(`${userId}/`))
+  }
+}
+
+/**
+ * Seguir, no modo demo.
+ *
+ * Sem RLS, o filtro por dono não existe: a demo tem uma conta só, e a regra de
+ * quem pode ver o quê mora no banco quando existe banco.
+ */
+export class DemoFollowRepository implements FollowRepository {
+  async counts(userId: string): Promise<FollowCounts> {
+    return demoStore.followCounts(userId)
+  }
+
+  async isFollowing(followerId: string, followingId: string): Promise<boolean> {
+    return demoStore.isFollowing(followerId, followingId)
+  }
+
+  async follow(input: NewFollowInput): Promise<Follow> {
+    return demoStore.addFollow(input)
+  }
+
+  async unfollow(followerId: string, followingId: string): Promise<void> {
+    demoStore.removeFollow(followerId, followingId)
+  }
+}
+
+/**
+ * A foto do dia, no modo demo.
+ *
+ * O `path` aqui é um data URL, não um caminho de bucket: sem servidor, a
+ * imagem mora na própria linha do armazenamento local. É a única diferença
+ * em relação ao Supabase, e ela é invisível pra quem chama — a tela pede a
+ * URL de exibição pro mesmo lugar nos dois casos.
+ */
+export class DemoDayPhotoRepository implements DayPhotoRepository {
+  async listBetween(_userId: string, from: DayKey, to: DayKey): Promise<DayPhoto[]> {
+    return demoStore.dayPhotos(from, to)
+  }
+
+  async save(input: NewDayPhotoInput): Promise<DayPhoto> {
+    return demoStore.saveDayPhoto(input)
+  }
+
+  async remove(_userId: string, day: DayKey): Promise<void> {
+    demoStore.removeDayPhoto(day)
+  }
+}
+
+/**
+ * O convite de amigo, no modo demo.
+ *
+ * Não existe outra conta pra ter convidado esta, então o registro nunca
+ * acontece e a contagem é zero. Fingir um convidado aqui inflaria o número que
+ * a tela mostra e ensinaria a pessoa a não confiar nele.
+ */
+export class DemoReferralRepository implements ReferralRepository {
+  async register(): Promise<boolean> {
+    return false
+  }
+
+  async countInvited(): Promise<number> {
+    return 0
+  }
+}
+
+/**
+ * Os clubes, no modo demo.
+ *
+ * A recusa por plano acontece AQUI porque não existe servidor pra recusar: no
+ * Supabase quem confere a assinatura é a função `create_club`, e o demo precisa
+ * dar a mesma resposta — senão a tela de convite ao PRO nunca apareceria pra
+ * quem está experimentando.
+ *
+ * O ranking soma os dias publicados nos desafios do clube, igual ao do
+ * servidor. Fora de uma base de verdade, ele quase sempre dá zero: os desafios
+ * da demo não pertencem a clube nenhum.
+ */
+export class DemoClubRepository implements ClubRepository {
+  async listMine(userId: string): Promise<Club[]> {
+    const meus = new Set(
+      demoStore
+        .clubMembers()
+        .filter((item) => item.userId === userId)
+        .map((item) => item.clubId),
+    )
+    return demoStore.clubs().filter((club) => meus.has(club.id))
+  }
+
+  async listOpen(limit = 20): Promise<Club[]> {
+    return demoStore
+      .clubs()
+      .filter((club) => club.privacy === 'aberto' && isClubRunning(club))
+      .slice(0, limit)
+  }
+
+  async findById(id: string): Promise<Club | null> {
+    return demoStore.clubs().find((club) => club.id === id) ?? null
+  }
+
+  async listMembers(clubId: string): Promise<ClubMember[]> {
+    return demoStore.clubMembers().filter((item) => item.clubId === clubId)
+  }
+
+  async ranking(clubId: string): Promise<ClubRankedMember[]> {
+    const doClube = new Set(
+      demoStore
+        .challenges()
+        .filter((challenge) => challenge.clubId === clubId)
+        .map((challenge) => challenge.id),
+    )
+
+    const rows = demoStore
+      .clubMembers()
+      .filter((item) => item.clubId === clubId)
+      .map((item) => {
+        const person = demoStore.people([item.userId])[0]
+        const days = demoStore
+          .challengeParticipants()
+          .filter(
+            (participant) =>
+              participant.userId === item.userId &&
+              doClube.has(participant.challengeId) &&
+              participant.status === 'ativo',
+          )
+          .reduce((sum, participant) => sum + participant.doneDays, 0)
+
+        return {
+          userId: item.userId,
+          name: person?.name ?? demoStore.profile().name,
+          avatarUrl: person?.avatarUrl ?? demoStore.profile().avatarUrl,
+          days,
+        }
+      })
+      .sort((a, b) => b.days - a.days || a.name.localeCompare(b.name))
+
+    return rankClubMembers(rows)
+  }
+
+  async create(input: NewClubInput): Promise<Club> {
+    assertValidClubName(input.name)
+    assertValidClubDescription(input.description)
+
+    if (demoStore.profile().plan !== 'pro') {
+      throw new DomainError('Criar clube faz parte do Momentumm PRO.')
+    }
+
+    return demoStore.addClub(input, demoStore.profile().id)
+  }
+
+  async update(id: string, changes: Partial<NewClubInput>): Promise<Club> {
+    if (changes.name !== undefined) assertValidClubName(changes.name)
+    if (changes.description !== undefined) assertValidClubDescription(changes.description)
+    return demoStore.updateClub(id, changes)
+  }
+
+  async archive(id: string): Promise<void> {
+    demoStore.archiveClub(id)
+  }
+
+  async join(clubId: string, userId: string): Promise<void> {
+    demoStore.joinClub(clubId, userId)
+  }
+
+  async leave(clubId: string, userId: string): Promise<void> {
+    demoStore.leaveClub(clubId, userId)
   }
 }

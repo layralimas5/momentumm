@@ -3,6 +3,7 @@ import type { ActivityVisibility } from './activity'
 import { MAX_REST_WEEKDAYS, normalizeRestWeekdays } from './momentum'
 import type { PlanTier } from './plan'
 import type { ProfileStatus } from './profile-banner'
+import type { SocialLinks } from './social-link'
 
 /**
  * Quem enxerga o teu perfil.
@@ -60,6 +61,11 @@ export interface Profile {
   readonly status: ProfileStatus | null
   /** Capa atrás do avatar: chave de preset ou foto em data URL. `null` usa o preset padrão. */
   readonly banner: string | null
+  /**
+   * Instagram, TikTok e LinkedIn, guardados como @ limpo. Aparecem no perfil
+   * pra quem gostou do que viu conseguir continuar acompanhando fora daqui.
+   */
+  readonly socials: SocialLinks
   /**
    * Dias da semana de descanso planejado (0 = domingo). Vazio é o padrão:
    * ninguém nasce com folga marcada, e o Momentumm só tira da conta o que a

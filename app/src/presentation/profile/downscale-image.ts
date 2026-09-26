@@ -56,6 +56,57 @@ export async function downscaleToBanner(file: File): Promise<string> {
   }
 }
 
+/**
+ * A foto do dia: quadrada e pequena.
+ *
+ * Ela é desenhada num círculo de ~44px no calendário e, aberta, ocupa a largura
+ * do celular. 640px cobre os dois casos em tela retina e mantém o arquivo em
+ * algumas dezenas de KB — e isso importa aqui mais do que no avatar, porque são
+ * até 365 por ano e cada mês aberto baixa trinta delas.
+ */
+export const DAY_PHOTO_SIZE = 640
+
+export async function downscaleToDayPhoto(file: File): Promise<Blob> {
+  if (!file.type.startsWith('image/')) {
+    throw new DomainError('Esse arquivo não é uma imagem.')
+  }
+  if (file.size > MAX_BYTES) {
+    throw new DomainError('Essa imagem é grande demais. Tenta uma foto menor.')
+  }
+
+  const url = URL.createObjectURL(file)
+  try {
+    const image = await loadImage(url)
+    return await toBlob(cropCover(image, DAY_PHOTO_SIZE, DAY_PHOTO_SIZE))
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
+/** O mesmo recorte, mas em data URL: é o formato que o modo demo guarda. */
+export async function downscaleToDayPhotoDataUrl(file: File): Promise<string> {
+  if (!file.type.startsWith('image/')) {
+    throw new DomainError('Esse arquivo não é uma imagem.')
+  }
+  if (file.size > MAX_BYTES) {
+    throw new DomainError('Essa imagem é grande demais. Tenta uma foto menor.')
+  }
+
+  const url = URL.createObjectURL(file)
+  try {
+    const image = await loadImage(url)
+    return cropCover(image, DAY_PHOTO_SIZE, DAY_PHOTO_SIZE)
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
+/** O data URL virando arquivo, que é o que o bucket recebe. */
+async function toBlob(dataUrl: string): Promise<Blob> {
+  const response = await fetch(dataUrl)
+  return response.blob()
+}
+
 /** Recorte pelo centro na proporção pedida, como `object-fit: cover`. */
 function cropCover(image: HTMLImageElement, width: number, height: number): string {
   const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight)

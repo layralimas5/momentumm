@@ -10,6 +10,7 @@ import { MobileTabBar } from '@/presentation/components/mobile/MobileTabBar'
 import { TrialBanner } from '@/presentation/plan/TrialBanner'
 import { SUBSCRIPTION_PATH } from '@/presentation/plan/subscription-path'
 import { MobileTopBar } from '@/presentation/components/mobile/MobileTopBar'
+import { useInviteCapture } from '@/presentation/circle/use-invite-capture'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { EvolutionNotice } from '@/presentation/evolution/EvolutionNotice'
 import { EvolutionProvider } from '@/presentation/evolution/EvolutionProvider'
@@ -75,6 +76,10 @@ function LayoutShell() {
   const [collapsed, setCollapsed] = useState(readCollapsed)
   const isDesktop = useIsDesktop()
   const { pathname } = useLocation()
+  const isProfile = pathname === '/app/perfil'
+
+  // O convite que trouxe a pessoa até aqui, gasto uma vez e esquecido.
+  useInviteCapture()
   useUsageEvents()
   /* Abriu por um aviso? Carimba a abertura e limpa o `?n=` da URL. */
   useNotificationOpen()
@@ -110,7 +115,12 @@ function LayoutShell() {
       <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {isDesktop ? <AppHeader /> : <MobileTopBar />}
+        {/*
+          O perfil traz a própria barra de cima no celular — marca, as três
+          seções e a engrenagem, numa faixa só. Empilhar a barra padrão em cima
+          dela daria duas logos e duas linhas de controle antes do conteúdo.
+        */}
+        {isDesktop ? <AppHeader /> : isProfile ? null : <MobileTopBar />}
         <SystemNotice />
         <OfflineBanner />
 
