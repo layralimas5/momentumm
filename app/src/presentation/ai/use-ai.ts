@@ -152,6 +152,8 @@ export function useAi() {
         objectives: progress.objectives,
         habits: planner.habits,
         habitLogs: planner.habitLogs,
+      routineItems: planner.routineItems,
+      routineOccurrences: planner.routineOccurrences,
         tasks: planner.tasks,
         reviews: planner.weeklyReviews,
         wins: planner.wins,

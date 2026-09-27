@@ -13,6 +13,7 @@ export const NOTIFICATION_TYPES = [
   'dia_dificil',
   'retomada',
   'social',
+  'rotina',
 ] as const
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number]
@@ -34,6 +35,12 @@ export interface NotificationSpec {
  * não muda o que alguém vai fazer é o primeiro a ensinar a ignorar os outros.
  */
 export const NOTIFICATION_SPECS: readonly NotificationSpec[] = [
+  {
+    type: 'rotina',
+    label: 'Lembrete da rotina',
+    description: 'Antes de um item da sua rotina que tem horário e lembrete marcados.',
+    defaultOn: true,
+  },
   {
     type: 'proximo_passo',
     label: 'Próximo passo',

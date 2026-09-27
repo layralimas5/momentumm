@@ -16,7 +16,14 @@ import {
   type MomentumScore,
   type MomentumWeights,
 } from './momentum'
-import { impactPointsOf, taskImpact } from './momentum-impact'
+import { impactPointsOf, routineImpact, taskImpact } from './momentum-impact'
+import {
+  isRoutineRunning,
+  isRoutineScheduledOn,
+  routineStatusOf,
+  type RoutineItem,
+  type RoutineOccurrence,
+} from './routine-item'
 import { isBlocked, isPending, type Task } from './task'
 
 /**
@@ -35,11 +42,17 @@ import { isBlocked, isPending, type Task } from './task'
  * pra fazer é o mesmo que não sugerir.
  */
 export interface MomentumNextAction {
-  readonly kind: 'acao' | 'habito'
+  readonly kind: 'acao' | 'habito' | 'rotina'
   readonly id: string
   readonly title: string
   readonly task: Task | null
   readonly habit: Habit | null
+  /**
+   * O item de rotina, quando a sugestão é um. Só entra aqui o que está ligado a
+   * um objetivo: é a mesma régua do score, e sugerir "acordar" como a coisa que
+   * mais sobe o número seria o card admitindo que o número não mede nada.
+   */
+  readonly routineItem: RoutineItem | null
   /** Pontos que o número exibido ganha hoje se isso sair, já com o limite diário. */
   readonly gain: number
   /** Pontos que o valor bruto ganha, sem o limite diário. */
@@ -58,7 +71,11 @@ export function bestNextAction(
   weights: MomentumWeights = DEFAULT_MOMENTUM_WEIGHTS,
 ): MomentumNextAction | null {
   const baseline = calculateMomentum(input, weights)
-  const candidates = [...taskCandidates(input), ...habitCandidates(input)]
+  const candidates = [
+    ...taskCandidates(input),
+    ...habitCandidates(input),
+    ...routineCandidates(input),
+  ]
   if (candidates.length === 0) return null
 
   let best: MomentumNextAction | null = null
@@ -84,6 +101,7 @@ export function bestNextAction(
       title: candidate.title,
       task: candidate.task,
       habit: candidate.habit,
+      routineItem: candidate.routineItem,
       gain: Math.max(0, Math.round(gain)),
       rawGain: Math.round(rawGain),
       factor,
@@ -95,11 +113,12 @@ export function bestNextAction(
 }
 
 interface Candidate {
-  readonly kind: 'acao' | 'habito'
+  readonly kind: 'acao' | 'habito' | 'rotina'
   readonly id: string
   readonly title: string
   readonly task: Task | null
   readonly habit: Habit | null
+  readonly routineItem: RoutineItem | null
   readonly impact: number
   readonly overdue: boolean
   simulate(input: MomentumInput): MomentumInput
@@ -120,6 +139,7 @@ function taskCandidates(input: MomentumInput): Candidate[] {
       title: task.title,
       task,
       habit: null,
+      routineItem: null,
       impact: impactPointsOf(taskImpact(task)),
       overdue: task.day < today,
       simulate: (current) => ({
@@ -148,6 +168,7 @@ function habitCandidates(input: MomentumInput): Candidate[] {
       title: habit.name,
       task: null,
       habit,
+      routineItem: null,
       impact: 1,
       overdue: false,
       simulate: (current) => ({
@@ -155,6 +176,60 @@ function habitCandidates(input: MomentumInput): Candidate[] {
         habitLogs: [...current.habitLogs, simulatedLog(habit, today)],
       }),
     }))
+}
+
+/**
+ * Os itens de rotina que disputam a sugestão.
+ *
+ * Só os ligados a um objetivo, porque só eles pontuam (`routineImpact`). O
+ * resto da rotina é o contorno do dia: sugerir "almoço" como a próxima coisa
+ * com mais potencial seria o card dizendo que o número mede a vida acontecendo.
+ */
+function routineCandidates(input: MomentumInput): Candidate[] {
+  const { today } = input
+  const items = input.routineItems ?? []
+  const occurrences = input.routineOccurrences ?? []
+
+  return items
+    .filter(
+      (item) =>
+        routineImpact(item) !== null &&
+        isRoutineRunning(item) &&
+        isRoutineScheduledOn(item, today) &&
+        routineStatusOf(occurrences, item.id, today) === 'pendente',
+    )
+    .map((item) => ({
+      kind: 'rotina' as const,
+      id: item.id,
+      title: item.title,
+      task: null,
+      habit: null,
+      routineItem: item,
+      impact: impactPointsOf(routineImpact(item) ?? 'baixo'),
+      overdue: false,
+      simulate: (current: MomentumInput) => ({
+        ...current,
+        routineOccurrences: [
+          ...(current.routineOccurrences ?? []),
+          simulatedOccurrence(item, today),
+        ],
+      }),
+    }))
+}
+
+function simulatedOccurrence(item: RoutineItem, day: DayKey): RoutineOccurrence {
+  return {
+    id: `simulated-${item.id}-${day}`,
+    userId: item.userId,
+    itemId: item.id,
+    day,
+    status: 'feito',
+    plannedTime: item.timeOfDay,
+    timeOverride: null,
+    movedToDay: null,
+    completedAt: new Date(),
+    createdAt: new Date(),
+  }
 }
 
 function simulatedLog(habit: Habit, day: DayKey): HabitLog {

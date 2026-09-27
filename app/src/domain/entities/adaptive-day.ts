@@ -14,6 +14,13 @@ import type { MomentumScore } from './momentum'
 import { impactPointsOf, taskImpact } from './momentum-impact'
 import { isRunning, type ObjectiveProgress } from './objective'
 import type { PlanProgress } from './plan-progress'
+import {
+  isRoutineRunning,
+  isRoutineScheduledOn,
+  routineStatusOf,
+  type RoutineItem,
+  type RoutineOccurrence,
+} from './routine-item'
 import { isPending, type Task } from './task'
 
 /**
@@ -116,6 +123,9 @@ export interface AdaptiveObjective {
 }
 
 export interface AdaptiveDayInput {
+  /** A rotina do dia. Só a ligada a objetivo reserva tempo (`routineReservedMin`). */
+  readonly routineItems?: readonly RoutineItem[]
+  readonly routineOccurrences?: readonly RoutineOccurrence[]
   readonly today: DayKey
   /** Quanto tempo a pessoa disse que tem, em minutos. */
   readonly availableMin: number
@@ -251,7 +261,16 @@ export function buildAdaptiveDay(input: AdaptiveDayInput): AdaptiveDayPlan {
     volta pra versão cheia.
   */
   const habits = candidates.filter((item) => item.kind === 'habito')
-  const reserved = habits.reduce((sum, item) => sum + item.minimalMin, 0)
+
+  /*
+    A rotina do objetivo reserva junto com o hábito, e pelo mesmo motivo: ela
+    não muda de data. A diferença é que ela não tem versão mínima nem recebe
+    veredito, ela é um compromisso já marcado. O que ela faz é ocupar o tempo
+    ANTES da disputa, pra o plano não prometer uma hora que já tem dono.
+  */
+  const reserved =
+    habits.reduce((sum, item) => sum + item.minimalMin, 0) +
+    routineReservedMin(input.routineItems ?? [], input.routineOccurrences ?? [], input.today)
 
   const decisions = new Map<string, AdaptiveItem>()
   let remaining = Math.max(0, available - reserved)
@@ -361,8 +380,37 @@ export function buildAdaptiveDay(input: AdaptiveDayInput): AdaptiveDayPlan {
 export interface DayLoad {
   /** Minutos que o dia pede como ele está montado agora. */
   readonly minutes: number
-  /** Itens em aberto: ações e hábitos que ainda esperam movimento. */
+  /** Itens em aberto: ações, hábitos e rotina de objetivo que ainda esperam movimento. */
   readonly items: number
+}
+
+/**
+ * O tempo que a rotina LIGADA A OBJETIVO reserva no dia.
+ *
+ * Só ela, e essa linha é a decisão inteira. "Treino, segunda, quarta e sexta",
+ * pendurado em "correr 5km", é execução: ele compete por tempo com as ações do
+ * plano e precisa entrar na conta, senão o app promete um dia que não cabe.
+ *
+ * "Almoço", "trabalho" e "acordar" NÃO entram. Quando a pessoa responde "tenho
+ * duas horas", ela está dizendo quanto tempo tem PRA ISSO, não quantas horas
+ * restam no relógio depois do expediente. Descontar a vida dela desse número
+ * devolveria meia hora de plano pra quem tem duas, e o recurso inteiro pararia
+ * de fazer sentido no primeiro uso.
+ */
+export function routineReservedMin(
+  items: readonly RoutineItem[],
+  occurrences: readonly RoutineOccurrence[],
+  today: DayKey,
+): number {
+  return items
+    .filter(
+      (item) =>
+        item.objectiveId !== null &&
+        isRoutineRunning(item) &&
+        isRoutineScheduledOn(item, today) &&
+        routineStatusOf(occurrences, item.id, today) === 'pendente',
+    )
+    .reduce((sum, item) => sum + (item.durationMin ?? 0), 0)
 }
 
 /**
@@ -378,6 +426,8 @@ export function dayLoadOf(input: {
   readonly tasks: readonly Task[]
   readonly habits: readonly Habit[]
   readonly habitLogs: readonly HabitLog[]
+  readonly routineItems?: readonly RoutineItem[]
+  readonly routineOccurrences?: readonly RoutineOccurrence[]
 }): DayLoad {
   const tasks = input.tasks.filter((task) => task.day === input.today && isPending(task))
 
@@ -385,14 +435,23 @@ export function dayLoadOf(input: {
     (habit) => !countsAsDone(statusOf(input.habitLogs, habit.id, input.today)),
   )
 
+  const routine = (input.routineItems ?? []).filter(
+    (item) =>
+      item.objectiveId !== null &&
+      isRoutineRunning(item) &&
+      isRoutineScheduledOn(item, input.today) &&
+      routineStatusOf(input.routineOccurrences ?? [], item.id, input.today) === 'pendente',
+  )
+
   const minutes =
     tasks.reduce((sum, task) => sum + task.estimatedMin, 0) +
     habits.reduce(
       (sum, habit) => sum + (activityType(habit.axis).unit === 'minutos' ? habit.target : 0),
       0,
-    )
+    ) +
+    routine.reduce((sum, item) => sum + (item.durationMin ?? 0), 0)
 
-  return { minutes, items: tasks.length + habits.length }
+  return { minutes, items: tasks.length + habits.length + routine.length }
 }
 
 export function clampAvailable(value: number): number {

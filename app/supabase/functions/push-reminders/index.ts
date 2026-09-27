@@ -43,6 +43,19 @@ type NotificationKind =
   | 'retomada'
   | 'social'
 
+/** Uma linha de `routine_reminders_due()` (migration 0066). */
+interface RoutineDueRow {
+  readonly subscription_id: string
+  readonly user_id: string
+  readonly endpoint: string
+  readonly p256dh: string
+  readonly auth: string
+  readonly first_name: string | null
+  readonly item_id: string
+  readonly title: string
+  readonly minutes_left: number
+}
+
 interface DueRow {
   readonly subscription_id: string
   readonly user_id: string
@@ -263,6 +276,62 @@ Deno.serve(async (req) => {
   let sent = 0
   let dropped = 0
   let failed = 0
+
+  /*
+    Os lembretes de rotina, primeiro.
+
+    Eles são outra coisa que os seis tipos abaixo: aqueles perguntam "por que
+    abrir o app agora" e saem no máximo um por dia; este é um COMPROMISSO com
+    hora marcada, sai por ITEM e não consome a cota dos outros. Se a 0066 não
+    estiver aplicada, a chamada falha e o resto do envio segue: aviso novo não
+    pode derrubar o aviso que já funcionava.
+  */
+  try {
+    const rotina = await admin.rpc('routine_reminders_due')
+    if (rotina.error) throw rotina.error
+
+    for (const item of (rotina.data ?? []) as RoutineDueRow[]) {
+      const oi = item.first_name ? `${item.first_name}, ` : ''
+      const faltam = item.minutes_left
+      const quando =
+        faltam <= 1 ? 'agora' : faltam < 60 ? `em ${faltam} minutos` : 'daqui a pouco'
+
+      try {
+        await webpush.sendNotification(
+          { endpoint: item.endpoint, keys: { p256dh: item.p256dh, auth: item.auth } },
+          JSON.stringify({
+            title: item.title,
+            body: `${oi}${item.title.toLowerCase()} ${quando}.`,
+            url: '/app?n=rotina',
+          }),
+          // TTL curto: lembrete de compromisso que chega duas horas depois não
+          // é lembrete, é ruído.
+          { TTL: 30 * 60, urgency: 'high' },
+        )
+
+        await admin.rpc('mark_routine_reminder_sent', {
+          p_user: item.user_id,
+          p_item: item.item_id,
+          p_day: new Date().toISOString().slice(0, 10),
+        })
+        await logEvent(admin, item.user_id, 'notification_sent', {
+          notification_type: 'rotina',
+          days_since_activity: 0,
+        })
+        sent += 1
+      } catch (cause) {
+        const status = (cause as { statusCode?: number }).statusCode
+        if (status === 404 || status === 410) {
+          await admin.from('push_subscriptions').delete().eq('id', item.subscription_id)
+          dropped += 1
+        } else {
+          failed += 1
+        }
+      }
+    }
+  } catch (cause) {
+    console.warn('routine_reminders_due indisponível', (cause as Error).message)
+  }
 
   for (const row of due) {
     const payload = reminderFor(row)

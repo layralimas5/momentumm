@@ -23,6 +23,12 @@ import type { Streak } from '@/domain/entities/streak'
 import { isPending, type Task } from '@/domain/entities/task'
 import { weekLabel, type WeeklyReview } from '@/domain/entities/weekly-review'
 import type { Win } from '@/domain/entities/win'
+import {
+  isRoutineDone,
+  routineDayStates,
+  type RoutineItem,
+  type RoutineOccurrence,
+} from '@/domain/entities/routine-item'
 
 /**
  * O que a Momentumm AI enxerga da conta.
@@ -142,12 +148,29 @@ export interface AiUserContext {
   }
   readonly objectives: readonly AiContextObjective[]
   readonly habits: readonly AiContextHabit[]
+  /**
+   * A rotina de hoje: o formato real do dia da pessoa.
+   *
+   * Sem isso, "reorganize meu dia" propunha mover uma ação pras 12h30 sem saber
+   * que ali tem almoço, e a proposta chegava plausível e impossível. Vai sem
+   * id: a IA não escreve em rotina, ela só precisa saber o que já ocupa o dia.
+   */
+  readonly routine: readonly AiContextRoutine[]
   readonly todayTasks: readonly AiContextTask[]
   readonly overdueTasks: readonly AiContextTask[]
   /** Pendentes dos próximos dias: é o que a reorganização do dia pode puxar ou empurrar. */
   readonly upcomingTasks: readonly AiContextTask[]
   readonly reviews: readonly AiContextReview[]
   readonly recentWins: readonly string[]
+}
+
+export interface AiContextRoutine {
+  readonly title: string
+  readonly time: string | null
+  readonly durationMin: number | null
+  readonly done: boolean
+  /** Ligado a um objetivo: é o que diferencia execução de contorno do dia. */
+  readonly ofObjective: boolean
 }
 
 export interface AiContextInput {
@@ -164,6 +187,8 @@ export interface AiContextInput {
   }[]
   readonly habits: readonly Habit[]
   readonly habitLogs: readonly HabitLog[]
+  readonly routineItems?: readonly RoutineItem[]
+  readonly routineOccurrences?: readonly RoutineOccurrence[]
   readonly tasks: readonly Task[]
   readonly reviews: readonly WeeklyReview[]
   readonly wins: readonly Win[]
@@ -310,6 +335,23 @@ export function buildAiContextBundle(input: AiContextInput): AiContextBundle {
     .slice(0, MAX_WINS)
     .map((win) => win.text)
 
+  /*
+    A rotina de hoje, já resolvida pela mesma função que as telas usam. Nomes e
+    horários, nada de id: a IA responde por REF, e não existe ref de rotina
+    porque ela não propõe escrita em rotina nenhuma.
+  */
+  const routine: AiContextRoutine[] = routineDayStates(
+    input.routineItems ?? [],
+    input.routineOccurrences ?? [],
+    input.today,
+  ).map((state) => ({
+    title: state.item.title,
+    time: state.time,
+    durationMin: state.item.durationMin,
+    done: isRoutineDone(state.status),
+    ofObjective: state.item.objectiveId !== null,
+  }))
+
   const context: AiUserContext = {
     today,
     momentum: {
@@ -350,6 +392,7 @@ export function buildAiContextBundle(input: AiContextInput): AiContextBundle {
     },
     objectives,
     habits,
+    routine,
     todayTasks,
     overdueTasks,
     upcomingTasks,
