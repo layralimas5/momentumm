@@ -222,64 +222,6 @@ export function overPhoto(theme: ShareTheme): ShareTheme {
 // composições
 // ---------------------------------------------------------------------------
 
-/** Selo — o selo do momento no alto, o número grande e o que ele é. */
-export const SHARE_COMPOSITION_SELO: ShareComposition = {
-  id: 'selo',
-  align: 'left',
-  anchor: 'center',
-  metricScale: 0.9,
-  titleSize: 72,
-}
-
-/**
- * Resumo — o título, três números em linha e a lista do que saiu.
- *
- * É o card de "como foi o dia": a linha de números responde rápido e a lista
- * conta o resto. Seis itens no máximo: acima disso o card vira relatório.
- */
-export const SHARE_COMPOSITION_RESUMO: ShareComposition = {
-  id: 'resumo',
-  align: 'left',
-  anchor: 'center',
-  maxItems: 6,
-  titleSize: 76,
-  metricScale: 0.5,
-}
-
-/**
- * Lista — o que saiu à esquerda e a semana à direita.
- *
- * A coluna de pontos faz o papel que a figura do corpo faz no app de treino:
- * mostra, sem palavra nenhuma, quanto da semana já tem movimento.
- */
-export const SHARE_COMPOSITION_LISTA: ShareComposition = {
-  id: 'lista',
-  align: 'left',
-  anchor: 'center',
-  maxItems: 7,
-  titleSize: 72,
-  metricScale: 0.5,
-}
-
-/** Anel — os números em cima e o progresso desenhado no meio. */
-export const SHARE_COMPOSITION_ANEL: ShareComposition = {
-  id: 'anel',
-  align: 'center',
-  anchor: 'center',
-  maxItems: 4,
-  titleSize: 64,
-  metricScale: 1,
-}
-
-/** Figura — o desenho no centro, título em cima e os números embaixo. */
-export const SHARE_COMPOSITION_FIGURA: ShareComposition = {
-  id: 'figura',
-  align: 'center',
-  anchor: 'center',
-  titleSize: 68,
-  metricScale: 1,
-}
-
 /** Grade — quatro números grandes, um em cada canto. */
 export const SHARE_COMPOSITION_GRADE: ShareComposition = {
   id: 'grade',
@@ -298,27 +240,7 @@ export const SHARE_COMPOSITION_PILHA: ShareComposition = {
   metricScale: 0.5,
 }
 
-/**
- * Recap — o ícone, o número e a frase que o explica.
- *
- * "10 treinos. São 8 horas de esforço." O número é a manchete e a frase é o
- * subtítulo, escrita a partir dos mesmos dados da linha de apoio.
- */
-export const SHARE_COMPOSITION_RECAP: ShareComposition = {
-  id: 'recap',
-  align: 'left',
-  anchor: 'center',
-  titleSize: 64,
-  metricScale: 1.1,
-}
-
 export const SHARE_COMPOSITIONS_BY_ID: Readonly<Record<ShareCompositionId, ShareComposition>> = {
-  selo: SHARE_COMPOSITION_SELO,
-  resumo: SHARE_COMPOSITION_RESUMO,
-  lista: SHARE_COMPOSITION_LISTA,
-  anel: SHARE_COMPOSITION_ANEL,
-  figura: SHARE_COMPOSITION_FIGURA,
   grade: SHARE_COMPOSITION_GRADE,
   pilha: SHARE_COMPOSITION_PILHA,
-  recap: SHARE_COMPOSITION_RECAP,
 }

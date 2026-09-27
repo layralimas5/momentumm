@@ -135,7 +135,7 @@ export interface NewCheckInInput {
 
 export function createCheckIn(input: NewCheckInInput, id: string, now = new Date()): CheckIn {
   if (!MOOD_STATES.includes(input.mood)) {
-    throw new DomainError('Escolhe como você está chegando hoje.')
+    throw new DomainError('Escolhe como você está se sentindo hoje.')
   }
   if (!ENERGY_LEVELS.includes(input.energy)) {
     throw new DomainError('O nível de energia vai de 1 a 5.')

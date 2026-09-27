@@ -75,6 +75,13 @@ export interface Challenge {
   readonly id: string
   /** Quem criou. É o único que edita, encerra e convida. */
   readonly ownerId: string
+  /**
+   * O clube a que este desafio pertence, quando pertence a algum.
+   *
+   * Nulo é o caso comum: um combinado entre amigos, sem clube nenhum. Quando
+   * existe, é ele que faz os dias cumpridos aqui contarem no ranking do clube.
+   */
+  readonly clubId: string | null
   readonly name: string
   readonly description: string | null
   /** O eixo que o desafio acompanha quando ninguém vinculou hábito. */
@@ -149,6 +156,8 @@ export interface NewChallengeInput {
   readonly target?: number
   readonly dailyTarget?: number
   readonly habitId?: string | null
+  /** O clube que abriga este desafio. Ausente é o caso comum. */
+  readonly clubId?: string | null
 }
 
 const MAX_TIMES_PER_WEEK = 7
@@ -189,6 +198,7 @@ export function createChallenge(
   return {
     id,
     ownerId: input.ownerId,
+    clubId: input.clubId ?? null,
     name,
     description,
     axis: input.axis,

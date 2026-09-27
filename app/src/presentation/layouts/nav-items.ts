@@ -101,6 +101,22 @@ const ALL_NAV: readonly AppNavItem[] = [
     e encerrar. Colocá-lo na barra principal criaria a expectativa de ter algo
     novo ali toda manhã — e a semana em que não tem nada ensinaria a ignorar.
   */
+  /*
+    Clube fica ao lado do desafio, e secundário pelo mesmo motivo: não é uma
+    tela de todo dia. A diferença entre os dois é o tempo — o desafio começa e
+    acaba, o clube fica — e é por isso que eles são entradas separadas em vez
+    de uma lista só.
+  */
+  {
+    to: '/app/clubes',
+    label: 'Clubes',
+    end: false,
+    icon: 'objetivo',
+    description: 'Comunidades com ranking. Criar faz parte do PRO',
+    secondary: true,
+    requiresCircle: true,
+  },
+
   {
     to: '/app/desafios',
     label: 'Desafios',

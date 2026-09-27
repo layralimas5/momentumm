@@ -9,7 +9,7 @@ import {
 } from '@/domain/auth/auth-throttle'
 import type { PlanTrial } from '@/domain/billing/trial'
 import type { Profile } from '@/domain/entities/profile'
-import { devAutoLogin } from '@/infrastructure/config/env'
+import { devAutoLogin, devAutoLoginProblem } from '@/infrastructure/config/env'
 import { container } from '@/infrastructure/container'
 import { AuthContext, type AuthState } from './auth-context'
 
@@ -82,10 +82,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let current = await container.auth.currentUser()
       // Só em `vite dev`, com as credenciais no .env.local: entra sozinho.
       if (!current && devAutoLogin && !container.demo) {
+        /*
+          A falha aqui era muda: o app caía na tela de criar conta sem dizer por
+          quê, e o palpite mais natural — "quebrei alguma coisa" — é o errado.
+          Continua caindo na tela normal, como deve: o que mudou é que agora ela
+          diz o motivo no console, e só em `vite dev`.
+        */
+        const problema = devAutoLoginProblem()
+        if (problema) {
+          console.warn(`[momentumm] entrada automática não vai funcionar: ${problema}`)
+        }
+
         try {
           current = await container.auth.signIn(devAutoLogin.email, devAutoLogin.password)
-        } catch {
-          // Senha errada no .env.local cai na tela de login normal.
+        } catch (cause) {
+          console.warn(
+            '[momentumm] entrada automática recusada pelo servidor:',
+            cause instanceof Error ? cause.message : cause,
+          )
         }
       }
       if (!mounted.current) return

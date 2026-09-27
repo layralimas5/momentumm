@@ -61,9 +61,9 @@ export function MobileCheckIn({ checkIn, capacity, onSave }: MobileCheckInProps)
   }
 
   return (
-    <Panel tone="brand" aria-labelledby="checkin-titulo" className="p-4">
+    <Panel aria-labelledby="checkin-titulo" className="p-4">
       <h2 id="checkin-titulo" className="text-sm font-semibold text-ink">
-        Como você está chegando hoje?
+        Como você está se sentindo hoje?
       </h2>
 
       {/*
@@ -73,7 +73,7 @@ export function MobileCheckIn({ checkIn, capacity, onSave }: MobileCheckInProps)
       */}
       <div
         role="group"
-        aria-label="Como você está chegando hoje"
+        aria-label="Como você está se sentindo hoje"
         className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {MOOD_OPTIONS.map((option) => {

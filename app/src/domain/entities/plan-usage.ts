@@ -35,6 +35,28 @@ export class PlanLimitError extends DomainError {
   }
 }
 
+/**
+ * Quanta gente cabe no círculo, contra o que o plano deixa.
+ *
+ * Conta só amizade ACEITA. Pedido enviado e ainda sem resposta não ocupa vaga:
+ * seria dar a alguém o poder de encher o círculo de outra pessoa só ignorando
+ * o convite dela.
+ *
+ * O teto é de tela, não de banco: nenhuma política recusa a amizade de número
+ * três. É uma decisão consciente — o limite aqui é comercial, não de
+ * segurança, e RLS existe pra proteger dado, não pra cobrar assinatura. O que
+ * o servidor garante é o que importa: ninguém vê o que não pode ver.
+ */
+export function friendLimit(limits: PlanLimits, acceptedFriends: number): LimitCheck {
+  const check = checkLimit(acceptedFriends, limits.friends, 'pessoas no círculo')
+  return {
+    ...check,
+    message: check.reached
+      ? `Seu círculo está completo: o plano gratuito acompanha até ${limits.friends} pessoas.`
+      : null,
+  }
+}
+
 export function objectiveLimit(limits: PlanLimits, objectives: readonly Objective[]): LimitCheck {
   return checkLimit(objectives.filter(isRunning).length, limits.activeObjectives, 'objetivos ativos')
 }

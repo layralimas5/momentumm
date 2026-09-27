@@ -40,6 +40,15 @@ import { STAGE_STATUSES, type PlanStage } from '@/domain/entities/plan-stage'
 import { PRIORITIES } from '@/domain/entities/priority'
 import { normalizeRestWeekdays } from '@/domain/entities/momentum'
 import { PROFILE_VISIBILITIES, type Profile } from '@/domain/entities/profile'
+import type { Follow, FollowCounts } from '@/domain/entities/follow'
+import type { DayPhoto } from '@/domain/entities/day-photo'
+import {
+  CLUB_CATEGORIES,
+  CLUB_PRIVACIES,
+  type Club,
+  type ClubMember,
+} from '@/domain/entities/club'
+import { BANNER_PRESETS } from '@/domain/entities/profile-banner'
 import { normalizeStatus } from '@/domain/entities/profile-banner'
 import { REVIEW_STEPS, type WeeklyReview } from '@/domain/entities/weekly-review'
 import { ParseError } from '@/shared/errors'
@@ -115,6 +124,10 @@ const profileRowSchema = z.object({
   plan_courtesy_until: z.string().nullish(),
   // Base anterior à 0018 responde sem a coluna: sem descanso marcado.
   rest_weekdays: z.array(z.number().int()).nullish(),
+  // 0060: as redes da pessoa. Base anterior responde sem as colunas.
+  instagram: z.string().nullish(),
+  tiktok: z.string().nullish(),
+  linkedin: z.string().nullish(),
   // 0035: status e capa. Base anterior responde sem as colunas.
   status_emoji: z.string().nullish(),
   status_text: z.string().nullish(),
@@ -239,6 +252,58 @@ export function toProfile(row: unknown): Profile {
     restWeekdays: normalizeRestWeekdays(parsed.rest_weekdays ?? []),
     status: normalizeStatus({ emoji: parsed.status_emoji ?? null, text: parsed.status_text ?? null }),
     banner: parsed.banner ?? null,
+    socials: {
+      instagram: parsed.instagram ?? null,
+      tiktok: parsed.tiktok ?? null,
+      linkedin: parsed.linkedin ?? null,
+    },
+    createdAt: new Date(parsed.created_at),
+  }
+}
+
+const followRowSchema = z.object({
+  follower_id: z.string(),
+  following_id: z.string(),
+  created_at: z.string(),
+})
+
+export function toFollow(row: unknown): Follow {
+  const parsed = parseOrThrow(followRowSchema, row, 'seguir')
+  return {
+    followerId: parsed.follower_id,
+    followingId: parsed.following_id,
+    createdAt: new Date(parsed.created_at),
+  }
+}
+
+const followCountsRowSchema = z.object({
+  followers: z.coerce.number().int().nonnegative(),
+  following: z.coerce.number().int().nonnegative(),
+})
+
+/**
+ * As contagens vêm de `follow_counts` (0060), e o Postgres devolve `bigint`
+ * como STRING no PostgREST. `coerce` é o que impede "132" de virar o número
+ * 132 só às vezes, dependendo do tamanho.
+ */
+export function toFollowCounts(row: unknown): FollowCounts {
+  const parsed = parseOrThrow(followCountsRowSchema, row, 'contagem de seguidores')
+  return { followers: parsed.followers, following: parsed.following }
+}
+
+const dayPhotoRowSchema = z.object({
+  user_id: z.string(),
+  day: z.string(),
+  path: z.string(),
+  created_at: z.string(),
+})
+
+export function toDayPhoto(row: unknown): DayPhoto {
+  const parsed = parseOrThrow(dayPhotoRowSchema, row, 'foto do dia')
+  return {
+    userId: parsed.user_id,
+    day: parseDayKey(parsed.day.slice(0, 10)),
+    path: parsed.path,
     createdAt: new Date(parsed.created_at),
   }
 }
@@ -663,6 +728,9 @@ const challengeRowSchema = z.object({
   name: z.string(),
   description: z.string().nullable(),
   axis: z.string(),
+  // Coluna nova (0062): base anterior responde sem ela, e desafio sem clube é
+  // o caso comum de qualquer jeito.
+  club_id: z.string().nullish(),
   mode: z.enum(CHALLENGE_MODES),
   target: z.number().int(),
   daily_target: z.number().int(),
@@ -678,6 +746,7 @@ export function toChallenge(row: unknown): Challenge {
   return {
     id: parsed.id,
     ownerId: parsed.owner_id,
+    clubId: parsed.club_id ?? null,
     name: parsed.name,
     description: parsed.description,
     axis: parsed.axis,
@@ -716,5 +785,78 @@ export function toChallengeParticipant(row: unknown): ChallengeParticipant {
     invitedAt: new Date(parsed.invited_at),
     joinedAt: parsed.joined_at ? new Date(parsed.joined_at) : null,
     completedAt: parsed.completed_at ? new Date(parsed.completed_at) : null,
+  }
+}
+
+const clubRowSchema = z.object({
+  id: z.string(),
+  owner_id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  category: z.enum(CLUB_CATEGORIES),
+  cover: z.string(),
+  privacy: z.enum(CLUB_PRIVACIES),
+  created_at: z.string(),
+  archived_at: z.string().nullable(),
+})
+
+export function toClub(row: unknown): Club {
+  const parsed = parseOrThrow(clubRowSchema, row, 'clube')
+  const cover = (BANNER_PRESETS as readonly string[]).includes(parsed.cover)
+    ? (parsed.cover as Club['cover'])
+    // Capa que o app não conhece (preset removido numa versão futura) cai no
+    // padrão em vez de deixar o card sem fundo.
+    : 'aurora'
+
+  return {
+    id: parsed.id,
+    ownerId: parsed.owner_id,
+    name: parsed.name,
+    description: parsed.description,
+    category: parsed.category,
+    cover,
+    privacy: parsed.privacy,
+    createdAt: new Date(parsed.created_at),
+    archivedAt: parsed.archived_at ? new Date(parsed.archived_at) : null,
+  }
+}
+
+const clubMemberRowSchema = z.object({
+  club_id: z.string(),
+  user_id: z.string(),
+  role: z.enum(['dono', 'membro']),
+  joined_at: z.string(),
+})
+
+export function toClubMember(row: unknown): ClubMember {
+  const parsed = parseOrThrow(clubMemberRowSchema, row, 'membro do clube')
+  return {
+    clubId: parsed.club_id,
+    userId: parsed.user_id,
+    role: parsed.role,
+    joinedAt: new Date(parsed.joined_at),
+  }
+}
+
+const clubRankingRowSchema = z.object({
+  user_id: z.string(),
+  name: z.string(),
+  avatar_url: z.string().nullable(),
+  // `bigint` chega como string pelo PostgREST: sem `coerce`, "12" nunca vira 12.
+  days: z.coerce.number().int().nonnegative(),
+})
+
+export function toClubRankingRow(row: unknown): {
+  userId: string
+  name: string
+  avatarUrl: string | null
+  days: number
+} {
+  const parsed = parseOrThrow(clubRankingRowSchema, row, 'ranking do clube')
+  return {
+    userId: parsed.user_id,
+    name: parsed.name,
+    avatarUrl: parsed.avatar_url,
+    days: parsed.days,
   }
 }

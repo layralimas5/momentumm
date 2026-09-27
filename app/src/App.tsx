@@ -38,6 +38,17 @@ const QuizActivationPage = lazy(() =>
 const JuntosPage = lazy(() =>
   import('@/presentation/pages/JuntosPage').then((m) => ({ default: m.JuntosPage })),
 )
+const ClubsPage = lazy(() =>
+  import('@/presentation/pages/ClubsPage').then((m) => ({ default: m.ClubsPage })),
+)
+const ClubDetailPage = lazy(() =>
+  import('@/presentation/pages/ClubDetailPage').then((m) => ({ default: m.ClubDetailPage })),
+)
+const FriendInvitePage = lazy(() =>
+  import('@/presentation/pages/FriendInvitePage').then((m) => ({
+    default: m.FriendInvitePage,
+  })),
+)
 const PairInvitePage = lazy(() =>
   import('@/presentation/pages/PairInvitePage').then((m) => ({ default: m.PairInvitePage })),
 )
@@ -85,6 +96,11 @@ const CirclePage = lazy(() =>
 )
 const ChallengesPage = lazy(() =>
   import('@/presentation/pages/ChallengesPage').then((m) => ({ default: m.ChallengesPage })),
+)
+const ChallengeRankingPage = lazy(() =>
+  import('@/presentation/pages/ChallengeRankingPage').then((m) => ({
+    default: m.ChallengeRankingPage,
+  })),
 )
 const ChallengeDetailPage = lazy(() =>
   import('@/presentation/pages/ChallengeDetailPage').then((m) => ({
@@ -229,6 +245,8 @@ export function App() {
               decide é o servidor.
             */}
             <Route path="/juntos/:token" element={<PairInvitePage />} />
+            {/* Convite de amigo: público, porque quem recebe quase nunca tem conta. */}
+            <Route path="/convite/:code" element={<FriendInvitePage />} />
             <Route path="/termos" element={<LegalPage kind="termos" />} />
             <Route path="/privacidade" element={<LegalPage kind="privacidade" />} />
 
@@ -266,6 +284,9 @@ export function App() {
                   <Route path="circulo" element={<CirclePage />} />
                   <Route path="desafios" element={<ChallengesPage />} />
                   <Route path="desafios/:id" element={<ChallengeDetailPage />} />
+                  <Route path="desafios/:id/ranking" element={<ChallengeRankingPage />} />
+                  <Route path="clubes" element={<ClubsPage />} />
+                  <Route path="clubes/:id" element={<ClubDetailPage />} />
                   <Route path="circulo/:id" element={<FriendProfilePage />} />
                 </>
               ) : (

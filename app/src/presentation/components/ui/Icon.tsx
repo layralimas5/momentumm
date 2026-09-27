@@ -71,6 +71,22 @@ export const ICON_PATHS = {
     'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM3 12h18M12 3c2.6 3 2.6 15 0 18M12 3c-2.6 3-2.6 15 0 18',
   sol: 'M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
   lua: 'M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z',
+  // As redes do perfil. Desenhos de traço, como o resto: a marca de cada uma
+  // reconhecida pela forma, sem colar o logotipo oficial de ninguém dentro do
+  // bundle.
+  instagram:
+    'M7.5 3.5h9a4 4 0 0 1 4 4v9a4 4 0 0 1-4 4h-9a4 4 0 0 1-4-4v-9a4 4 0 0 1 4-4ZM12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM17.2 6.9h.01',
+  tiktok:
+    'M14 4v10.2a3.3 3.3 0 1 1-2.6-3.2M14 4c.4 2.3 1.9 3.7 4.2 3.9M14 4h.01',
+  linkedin:
+    'M4.5 3.5h15a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1ZM8 10.5V16M8 7.8h.01M12 16v-3.2a1.8 1.8 0 0 1 3.6 0V16M12 10.5V16',
+  // A barra de baixo fala por desenho: casa e pessoa dizem "inicio" e "meu
+  // perfil" sem depender do rotulo embaixo.
+  casa: 'M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1v-8.5Z',
+  pessoa: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4.5 20a7.5 7.5 0 0 1 15 0',
+  // Aspas de abertura: marca a frase do dia sem precisar do rotulo em cima dela.
+  aspas:
+    'M6 16c-1.7 0-3-1.4-3-3.2 0-3.2 2.3-6 5.4-6.8M15 16c-1.7 0-3-1.4-3-3.2 0-3.2 2.3-6 5.4-6.8M3 12.8V16h5.4M12 12.8V16h5.4',
 } as const
 
 export type IconName = keyof typeof ICON_PATHS

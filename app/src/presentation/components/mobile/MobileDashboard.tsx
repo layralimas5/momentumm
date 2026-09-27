@@ -1,7 +1,9 @@
-import { useMemo, useRef, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { DayLoad } from '@/domain/entities/adaptive-day'
 import type { Task } from '@/domain/entities/task'
+import type { DayKey } from '@/domain/entities/day'
+import { summarizeDay } from '@/domain/entities/day-summary'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { useFocus } from '@/presentation/focus/use-focus'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
@@ -14,8 +16,11 @@ import {
 } from '@/domain/entities/day-shortcuts'
 import type { DashboardView } from '@/presentation/planner/use-dashboard'
 import { usePlanner } from '@/presentation/planner/use-planner'
+import { useDayAlerts } from '@/presentation/planner/use-day-alerts'
 import { ContextualFab } from './ContextualFab'
+import { MobileAlerts } from './MobileAlerts'
 import { MobileCheckIn } from './MobileCheckIn'
+import { DaySheet } from './DaySheet'
 import { MobileHabits } from './MobileHabits'
 import { AdaptiveDayCard } from '@/presentation/components/dashboard/AdaptiveDayCard'
 import { MobileTodayStats } from './MobileTodayStats'
@@ -67,22 +72,50 @@ export function MobileDashboard({
   const composer = useComposer()
   const focus = useFocus()
   const navigate = useNavigate()
+  const alerts = useDayAlerts()
+
+  /*
+    O dia aberto pela faixa da semana. Só o dia é guardado, e não o resumo: o
+    resumo é uma função pura dos dados que já estão aqui, então recalcular ao
+    abrir é mais barato do que manter uma cópia que envelhece a cada hábito
+    marcado.
+  */
+  const [pickedDay, setPickedDay] = useState<DayKey | null>(null)
+
+  const pickedSummary = useMemo(
+    () =>
+      pickedDay
+        ? summarizeDay(
+            {
+              activities: planner.activities,
+              habits: planner.habits,
+              habitLogs: planner.habitLogs,
+              tasks: planner.tasks,
+              checkIns: planner.checkIns,
+              wins: planner.wins,
+            },
+            pickedDay,
+          )
+        : null,
+    [
+      pickedDay,
+      planner.activities,
+      planner.habits,
+      planner.habitLogs,
+      planner.tasks,
+      planner.checkIns,
+      planner.wins,
+    ],
+  )
 
   const checkInRef = useRef<HTMLDivElement>(null)
   const priorityRef = useRef<HTMLDivElement>(null)
   const focusRef = useRef<HTMLDivElement>(null)
   const planRef = useRef<HTMLDivElement>(null)
 
-  const mainGoal = planner.goals.find((goal) => goal.id === view.mainPriority?.goalId) ?? null
-
-  // Os dois mapas de contexto do dia. Montados uma vez: cada linha da tela
-  // precisa dizer a que etapa e a que objetivo ela pertence, e uma busca por
-  // linha em cada render seria trabalho repetido à toa.
-  const stageTitles = useMemo(
-    () => new Map(planner.planStages.map((stage) => [stage.id, stage.title])),
-    [planner.planStages],
-  )
-
+  // O mapa de contexto do dia. Montado uma vez: cada linha da lista precisa
+  // dizer a que objetivo pertence, e uma busca por linha em cada render seria
+  // trabalho repetido à toa.
   const objectiveTitles = useMemo(
     () => new Map(planner.objectives.map((objective) => [objective.id, objective.title])),
     [planner.objectives],
@@ -127,14 +160,21 @@ export function MobileDashboard({
     A ordem do celular é uma narrativa vertical, não o desktop espremido, e a
     tela responde três perguntas, nessa ordem:
 
-      como estou -> o que importa hoje -> estou avançando.
+      o que ficou pra trás -> como cheguei -> o que importa hoje -> estou avançando.
 
-    O Momentumm abre porque é o estado atual em um número, e ele mudou de
-    lugar: antes vinha depois de tudo, quando a pessoa já tinha rolado meia
-    tela pra descobrir como estava. A frase e o check-in continuam ANTES da
-    ação, porque é a energia respondida que monta o dia; o que mudou é que
-    agora os dois são a antessala curta de um único bloco grande, a ação
-    principal, e não mais quatro cards de peso parecido.
+    O que mudou: a frase do dia, a faixa da semana e os três números abriam a
+    tela. Três blocos de leitura antes da primeira decisão, e a ação do dia
+    nascendo abaixo da dobra todo dia. Eles não sumiram — desceram pra depois
+    do botão de começar, que é onde leitura é leitura e não obstáculo.
+
+    No lugar deles entraram os recados: as ações atrasadas e o que ontem
+    deixou em aberto, que estavam escondidos atrás do sino. É o que ficou pra
+    trás que decide o tamanho do dia, então ele vem antes de montar o dia.
+
+    A energia continua ANTES da ação, porque é ela que define o tamanho da
+    sessão, a sugestão de foco e se a versão mínima aparece na frente. Perguntar
+    depois de mostrar o dia inverteria a única pergunta que muda o que a tela
+    oferece.
 
     Depois da ação vem o resto do dia recolhido, os hábitos como suporte, e o
     pulso da semana. Análise longa (objetivos, insight, metas, sessões) fica no
@@ -142,23 +182,13 @@ export function MobileDashboard({
   */
   return (
     <div className="flex flex-col gap-5">
-      {/* A frase abre a tela: é o empurrão pra encarar o que vem depois dela,
-          e por isso vem antes de qualquer número. Compacta, cabe em uma faixa
-          e não empurra a ação pra fora da primeira dobra. */}
-      <QuoteCard today={planner.today} compact />
+      {/* 1. O que ficou pra trás. Dois recados, no máximo, e cada um com a
+          saída ao lado: é o que determina o tamanho do dia que vem logo
+          abaixo. O resto da lista continua no sino. */}
+      <MobileAlerts alerts={alerts.alerts} onDismiss={alerts.dismiss} />
 
-      {/* Onde estou na semana: a data e os sete dias na mesma faixa. */}
-      <MobileWeekStrip week={view.week} />
-
-      {/* 1. Como estou? Três números e nada de texto solto entre eles. */}
-      <MobileTodayStats
-        momentum={view.momentum}
-        done={view.dayProgress.done}
-        total={view.dayProgress.total}
-        focusMinutes={view.focusMinutesToday}
-      />
-
-      {/* A pergunta que monta o dia: vem antes dele, nunca depois. */}
+      {/* 2. A pergunta que monta o dia: vem antes dele, nunca depois. Respondida,
+          ela encolhe pra uma linha e a ação assume a primeira dobra. */}
       <div ref={checkInRef} className="scroll-mt-20">
         <MobileCheckIn
           checkIn={view.checkIn}
@@ -191,11 +221,7 @@ export function MobileDashboard({
         <div ref={priorityRef} className="scroll-mt-20">
           <MobilePriority
             task={view.mainPriority}
-            stageTitle={stageTitles.get(view.mainPriority?.stageId ?? '') ?? null}
-            goal={mainGoal}
-            objective={planner.objectives.find(
-              (item) => item.id === view.mainPriority?.objectiveId,
-            )}
+            dayProgress={view.dayProgress}
             capacity={view.capacity}
             dayComplete={view.dayComplete}
             onStartFocus={onStartFocus}
@@ -207,6 +233,26 @@ export function MobileDashboard({
           />
         </div>
       ) : null}
+
+      {/* 4. O gás e o contexto, depois da decisão.
+
+          A frase abria a tela, e ela é a única coisa aqui que não muda decisão
+          nenhuma: em cima, empurrava a ação do dia pra fora da primeira dobra
+          todo santo dia. Logo abaixo do botão de começar, ela é o empurrão que
+          a pessoa lê no segundo exato em que precisa dele.
+
+          A semana e os três números vêm na sequência porque respondem "estou
+          avançando" — leitura, não ação. */}
+      <QuoteCard today={planner.today} compact />
+
+      <MobileWeekStrip week={view.week} onPickDay={setPickedDay} />
+
+      <MobileTodayStats
+        momentum={view.momentum}
+        done={view.dayProgress.done}
+        total={view.dayProgress.total}
+        focusMinutes={view.focusMinutesToday}
+      />
 
       {/* O resto do dia, com hierarquia menor: recolhido quando a ação
           principal já está decidida, card inteiro quando não há uma. */}
@@ -325,6 +371,8 @@ export function MobileDashboard({
           onClick={() => view.mainPriority && onStartFocus(view.mainPriority)}
         />
       ) : null}
+
+      <DaySheet summary={pickedSummary} today={planner.today} onClose={() => setPickedDay(null)} />
 
       {/*
         Respiro no fim da rolagem: o botão flutuante paira sobre o conteúdo, e

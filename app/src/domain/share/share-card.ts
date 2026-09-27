@@ -93,22 +93,16 @@ export const SHARE_TEMPLATE_SPECS: Readonly<Record<ShareTemplateId, ShareTemplat
  * mesma história de um jeito, e todas leem os MESMOS dados, sem que nenhuma
  * conheça hábito, objetivo ou etapa.
  *
- * As oito vêm da referência do Strava e do Hevy, adaptadas: lá o assunto é
- * treino (volume, recorde, músculo); aqui é ritmo (momentum, sequência,
- * execução). O que ficou igual é a gramática — selo de recorde, resumo em
- * linha, lista com figura, gráfico, grade de números, pilha centrada, recap
- * em frase — porque é a gramática que as pessoas já sabem postar.
+ * Eram oito, vindas da referência do Strava e do Hevy. Ficaram DUAS, e a
+ * escolha não é de código: com oito, escolher virava trabalho — a pessoa
+ * passava mais tempo decidindo o arranjo do que postando o card, e seis deles
+ * quase nunca eram escolhidos.
+ *
+ * Grade e pilha sobreviveram porque são as duas leituras que funcionam pra
+ * qualquer momento: quatro números em quadrantes, ou tudo centrado, um embaixo
+ * do outro. As duas exportam em PNG, como todas exportavam.
  */
-export const SHARE_COMPOSITIONS = [
-  'selo',
-  'resumo',
-  'lista',
-  'anel',
-  'figura',
-  'grade',
-  'pilha',
-  'recap',
-] as const
+export const SHARE_COMPOSITIONS = ['grade', 'pilha'] as const
 export type ShareCompositionId = (typeof SHARE_COMPOSITIONS)[number]
 
 export interface ShareCompositionSpec {
@@ -120,27 +114,20 @@ export interface ShareCompositionSpec {
 export const SHARE_COMPOSITION_SPECS: Readonly<
   Record<ShareCompositionId, ShareCompositionSpec>
 > = {
-  selo: { id: 'selo', label: 'Selo', hint: 'O selo do momento e o número' },
-  resumo: { id: 'resumo', label: 'Resumo', hint: 'Números em linha e a lista do dia' },
-  lista: { id: 'lista', label: 'Lista', hint: 'O que saiu, com os dias da semana' },
-  anel: { id: 'anel', label: 'Anel', hint: 'Números em cima, o progresso desenhado' },
-  figura: { id: 'figura', label: 'Figura', hint: 'O desenho no centro, os números embaixo' },
   grade: { id: 'grade', label: 'Grade', hint: 'Quatro números, um em cada canto' },
   pilha: { id: 'pilha', label: 'Pilha', hint: 'Tudo centrado, um embaixo do outro' },
-  recap: { id: 'recap', label: 'Recap', hint: 'O número e a frase que o explica' },
 }
 
-export const DEFAULT_SHARE_COMPOSITION: ShareCompositionId = 'selo'
+export const DEFAULT_SHARE_COMPOSITION: ShareCompositionId = 'grade'
 
 /**
- * O que o gratuito leva: três arranjos e TODAS as cores, inclusive o PNG.
+ * O gratuito leva os dois arranjos e todas as cores.
  *
- * Três arranjos e não um, porque um card só não deixa ninguém descobrir que
- * existe escolha, e é a escolha que faz a pessoa voltar ao estúdio. As cores
- * são todas de graça: cor não é o que diferencia o PRO (arranjo, foto de fundo
- * e os toggles são), e um card preso no preto parecia castigo, não plano.
+ * Com dois arranjos, prender um atrás do plano deixaria o gratuito com um card
+ * só — e um card só não deixa ninguém descobrir que existe escolha. O que
+ * diferencia o PRO aqui é a foto de fundo e os toggles, não o arranjo.
  */
-export const FREE_SHARE_COMPOSITIONS: readonly ShareCompositionId[] = ['selo', 'resumo', 'pilha']
+export const FREE_SHARE_COMPOSITIONS: readonly ShareCompositionId[] = [...SHARE_COMPOSITIONS]
 export const FREE_SHARE_TEMPLATES: readonly ShareTemplateId[] = [...SHARE_TEMPLATES]
 
 /**
@@ -150,11 +137,12 @@ export const FREE_SHARE_TEMPLATES: readonly ShareTemplateId[] = [...SHARE_TEMPLA
  * mandando: o PRO já tem tudo, e o gratuito ganha arranjo por arranjo conforme
  * sobe de nível. Nada aqui tira o que o plano dá; só acrescenta.
  */
-const COMPOSITION_UNLOCKS: Readonly<Record<string, ShareCompositionId>> = {
-  share_lista: 'lista',
-  share_anel: 'anel',
-  share_figura: 'figura',
-}
+/*
+  Vazio desde que o estúdio ficou com dois arranjos: os dois são de todo mundo,
+  e não sobrou o que destravar por nível. Quando entrar um arranjo novo, ele
+  volta a ser o lugar de prometê-lo.
+*/
+const COMPOSITION_UNLOCKS: Readonly<Record<string, ShareCompositionId>> = {}
 
 const TEMPLATE_UNLOCKS: Readonly<Record<string, ShareTemplateId>> = {}
 

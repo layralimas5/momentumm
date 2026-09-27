@@ -1,4 +1,5 @@
 import type { Profile } from '@/domain/entities/profile'
+import type { SocialLinks } from '@/domain/entities/social-link'
 import type { ProfileStatus } from '@/domain/entities/profile-banner'
 
 export interface ProfileUpdate {
@@ -24,6 +25,11 @@ export interface ProfileUpdate {
   readonly status?: ProfileStatus | null
   /** Capa do perfil (preset ou foto); `null` volta ao padrão. */
   readonly banner?: string | null
+  /**
+   * As redes da pessoa. Cada uma é o @ limpo, ou `null` pra tirar do perfil —
+   * a normalização (URL colada, @ na frente) acontece no domínio, antes daqui.
+   */
+  readonly socials?: Partial<SocialLinks>
   /**
    * Só o modo demo aplica. Em produção quem manda no plano é a assinatura, não
    * a tela de perfil — o repositório do Supabase ignora esse campo de propósito.

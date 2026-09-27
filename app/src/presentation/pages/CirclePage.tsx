@@ -7,6 +7,8 @@ import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/u
 import { Panel, PanelHeader } from '@/presentation/components/ui/Surface'
 import { CircleMomentCard } from '@/presentation/circle/CircleMomentCard'
 import { FriendSearch } from '@/presentation/circle/FriendSearch'
+import { InviteFriendCard } from '@/presentation/circle/InviteFriendCard'
+import { friendLimit } from '@/domain/entities/plan-usage'
 import { useCircle, type CirclePerson } from '@/presentation/circle/use-circle'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { useState } from 'react'
@@ -28,6 +30,13 @@ export function CirclePage() {
   const circle = useCircle()
   const planner = usePlanner()
   const [removing, setRemoving] = useState<CirclePerson | null>(null)
+
+  /*
+    O teto do círculo conta amizade ACEITA, e é ele que decide entre oferecer o
+    convite ou oferecer o PRO. Pedido sem resposta não ocupa vaga: seria deixar
+    alguém encher o círculo de outra pessoa só ignorando o convite dela.
+  */
+  const friendCheck = friendLimit(planner.limits, circle.friends.length)
 
   if (circle.loading) return <LoadingBlock label="Carregando teu círculo" />
 
@@ -120,6 +129,13 @@ export function CirclePage() {
         </section>
 
         <div className="flex flex-col gap-5 lg:gap-6">
+          {/*
+            O círculo com os lugares vazios vem ANTES da busca: procurar alguém
+            pelo @ só funciona pra quem já tem gente conhecida aqui dentro, e
+            quem está começando precisa primeiro de um jeito de chamar.
+          */}
+          <InviteFriendCard friends={circle.friends} limit={friendCheck} />
+
           <Panel>
             <PanelHeader title="Adicionar ao círculo" icon="busca" />
             <div className="mt-4">

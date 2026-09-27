@@ -117,9 +117,32 @@ export interface PlanLimits {
    * entrada: criar convite e aceitar convite.
    */
   readonly pairs: number
+  /**
+   * Gente no círculo, ao mesmo tempo.
+   *
+   * No gratuito são DUAS, e o número não é uma amostra arbitrária: é o tamanho
+   * em que a companhia ainda é companhia. Você e dois amigos é um grupo em que
+   * todo mundo se conhece e ninguém some no meio — e é o suficiente pra pessoa
+   * sentir a diferença entre tentar sozinha e tentar acompanhada, que é a
+   * única coisa que o gratuito precisa provar.
+   *
+   * No PRO o teto é trinta. Não é "ilimitado" de propósito: círculo é gente
+   * próxima, e uma lista de cem pessoas não é círculo, é plateia — quem quer
+   * plateia quer clube, que é outro recurso.
+   *
+   * O teto conta amizades ACEITAS. Pedido enviado e ainda sem resposta não
+   * ocupa vaga: seria dar a alguém o poder de encher o teu círculo sem tua
+   * permissão, só ignorando teu convite.
+   */
+  readonly friends: number
 }
 
 const UNLIMITED = Number.POSITIVE_INFINITY
+
+/** Você e mais dois: o menor grupo em que companhia ainda é companhia. */
+export const FREE_FRIENDS = 2
+/** Círculo é gente próxima. Acima disso é plateia, e plateia é outro recurso. */
+export const PRO_FRIENDS = 30
 
 export const PLAN_LIMITS: Readonly<Record<PlanTier, PlanLimits>> = {
   free: {
@@ -150,6 +173,7 @@ export const PLAN_LIMITS: Readonly<Record<PlanTier, PlanLimits>> = {
     pairDays: 3,
     pairEncouragementsPerDay: 1,
     pairs: 1,
+    friends: FREE_FRIENDS,
   },
   pro: {
     tier: 'pro',
@@ -179,6 +203,7 @@ export const PLAN_LIMITS: Readonly<Record<PlanTier, PlanLimits>> = {
     pairDays: PAIR_DAYS,
     pairEncouragementsPerDay: ENCOURAGEMENT_KINDS.length,
     pairs: UNLIMITED,
+    friends: PRO_FRIENDS,
   },
 }
 

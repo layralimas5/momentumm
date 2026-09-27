@@ -35,6 +35,9 @@ import {
   type Friendship,
   type NewFriendshipInput,
 } from '@/domain/entities/friendship'
+import { createFollow, type Follow, type FollowCounts, type NewFollowInput } from '@/domain/entities/follow'
+import { createDayPhoto, type DayPhoto, type NewDayPhotoInput } from '@/domain/entities/day-photo'
+import type { Club, ClubMember, NewClubInput } from '@/domain/entities/club'
 import {
   createJourneyEvent,
   journeyEventKey,
@@ -114,6 +117,12 @@ interface DemoState {
   weeklyReviews: WeeklyReview[]
   journeyEvents: JourneyEvent[]
   friendships: Friendship[]
+  /** Seguir, de uma via. Uma linha por direção, como no banco. */
+  follows: Follow[]
+  /** A foto de cada dia. No demo o caminho é um data URL: não há bucket. */
+  dayPhotos: DayPhoto[]
+  clubs: Club[]
+  clubMembers: ClubMember[]
   challenges: Challenge[]
   challengeParticipants: ChallengeParticipant[]
   /** Apoios dados e recebidos, no formato `eventId::userId`. */
@@ -152,6 +161,7 @@ function seed(): DemoState {
     status: { emoji: '🔥', text: 'Semana de foco no treino' },
     banner: 'aurora',
     restWeekdays: [],
+    socials: { instagram: null, tiktok: null, linkedin: null },
     // Doze semanas atrás: a demo precisa ter história pra "12 semanas no
     // Momentumm" significar alguma coisa na tela.
     createdAt: dateAt(addDays(today, -84), 9),
@@ -537,6 +547,14 @@ function seed(): DemoState {
     */
     journeyEvents: friendMoments(today),
     friendships: seedFriendships(),
+    follows: seedFollows(),
+    /*
+      Álbum vazio de fábrica. A foto é a coisa mais pessoal da tela: plantar
+      imagem de banco de dados no calendário de quem acabou de abrir o app
+      ensinaria que aquele espaço é decoração, e não memória.
+    */
+    dayPhotos: [],
+    ...seedClub(),
     ...seedChallenge(today, habits),
     supports: [],
     // XP não vem de fábrica pelo mesmo motivo dos momentos: é resultado.
@@ -621,6 +639,68 @@ function seedChallenge(
 
   return { challenges: [challenge], challengeParticipants: participants }
 }
+
+/**
+ * Um clube já rodando, no modo demo.
+ *
+ * Ele é da Marina, não da conta demo: assim a tela mostra o caso que importa —
+ * um clube ABERTO, de outra pessoa, que dá pra descobrir e entrar. Com o clube
+ * sendo da própria conta, a descoberta abriria vazia e o botão de entrar nunca
+ * apareceria.
+ *
+ * A conta demo nasce no gratuito, então tentar criar um clube aqui cai no
+ * convite ao PRO — que é exatamente o que precisa ser visto.
+ */
+function seedClub(): { clubs: Club[]; clubMembers: ClubMember[] } {
+  const [marina, rafa] = DEMO_PEOPLE as readonly CircleAuthor[]
+  if (!marina || !rafa) return { clubs: [], clubMembers: [] }
+
+  const club: Club = {
+    id: 'demo-clube-1',
+    ownerId: marina.id,
+    name: 'Projeto 90 Dias',
+    description: 'Três meses de constância, um dia de cada vez. Sem maratona, sem culpa.',
+    category: 'treino',
+    cover: 'brasa',
+    privacy: 'aberto',
+    createdAt: new Date(),
+    archivedAt: null,
+  }
+
+  return {
+    clubs: [club],
+    clubMembers: [
+      { clubId: club.id, userId: marina.id, role: 'dono', joinedAt: new Date() },
+      { clubId: club.id, userId: rafa.id, role: 'membro', joinedAt: new Date() },
+    ],
+  }
+}
+
+
+/**
+ * Quem segue quem, no modo demo.
+ *
+ * As três pessoas da demo seguem a conta, e a conta segue duas delas. Não é
+ * enfeite: sem nenhuma linha, o perfil abriria com três zeros e a tela pareceria
+ * quebrada em vez de vazia. Com números pequenos e assimétricos, ela mostra o
+ * que a tela faz — seguidores e seguindo são contagens diferentes — sem fingir
+ * uma audiência que ninguém construiu.
+ */
+function seedFollows(): Follow[] {
+  const [marina, rafa, bia] = DEMO_PEOPLE as readonly CircleAuthor[]
+  const now = new Date()
+  const lines: Follow[] = []
+
+  for (const person of [marina, rafa, bia]) {
+    if (person) lines.push({ followerId: person.id, followingId: DEMO_USER.id, createdAt: now })
+  }
+  for (const person of [marina, rafa]) {
+    if (person) lines.push({ followerId: DEMO_USER.id, followingId: person.id, createdAt: now })
+  }
+
+  return lines
+}
+
 
 /** As três relações da tela: dois amigos aceitos e um pedido esperando resposta. */
 function seedFriendships(): Friendship[] {
@@ -786,6 +866,12 @@ interface StoredState {
       respondedAt: string | null
     }
   >
+  follows?: Array<Omit<Follow, 'createdAt'> & { createdAt: string }>
+  clubs?: Array<
+    Omit<Club, 'createdAt' | 'archivedAt'> & { createdAt: string; archivedAt: string | null }
+  >
+  clubMembers?: Array<Omit<ClubMember, 'joinedAt'> & { joinedAt: string }>
+  dayPhotos?: Array<Omit<DayPhoto, 'createdAt'> & { createdAt: string }>
   challenges?: Array<
     Omit<Challenge, 'createdAt' | 'completedAt' | 'archivedAt'> & {
       createdAt: string
@@ -818,6 +904,10 @@ function revive(raw: string): DemoState {
       ...parsed.profile,
       plan: parsed.profile.plan ?? 'free',
       restWeekdays: parsed.profile.restWeekdays ?? [],
+      // Campo novo (0060): um estado salvo antes dele não tem as redes, e sem
+      // este padrão a tela de perfil leria `undefined` e quebraria na primeira
+      // abertura de quem já usava a demo.
+      socials: parsed.profile.socials ?? { instagram: null, tiktok: null, linkedin: null },
       createdAt: new Date(parsed.profile.createdAt),
     },
     activities: parsed.activities.map((item) => ({
@@ -875,6 +965,23 @@ function revive(raw: string): DemoState {
       ...item,
       createdAt: new Date(item.createdAt),
       respondedAt: item.respondedAt ? new Date(item.respondedAt) : null,
+    })),
+    follows: (parsed.follows ?? seedFollows()).map((item) => ({
+      ...item,
+      createdAt: new Date(item.createdAt),
+    })),
+    dayPhotos: (parsed.dayPhotos ?? []).map((item) => ({
+      ...item,
+      createdAt: new Date(item.createdAt),
+    })),
+    clubs: (parsed.clubs ?? seedClub().clubs).map((item) => ({
+      ...item,
+      createdAt: new Date(item.createdAt),
+      archivedAt: item.archivedAt ? new Date(item.archivedAt) : null,
+    })),
+    clubMembers: (parsed.clubMembers ?? seedClub().clubMembers).map((item) => ({
+      ...item,
+      joinedAt: new Date(item.joinedAt),
     })),
     challenges: (parsed.challenges ?? []).map((item) => ({
       ...item,
@@ -1481,6 +1588,146 @@ export const demoStore = {
     persist()
   },
 
+  clubs(): Club[] {
+    return [...load().clubs]
+  },
+
+  clubMembers(): ClubMember[] {
+    return [...load().clubMembers]
+  },
+
+  addClub(input: NewClubInput, ownerId: string): Club {
+    const current = load()
+    const club: Club = {
+      id: newId(),
+      ownerId,
+      name: input.name.trim(),
+      description: input.description?.trim() || null,
+      category: input.category,
+      cover: input.cover,
+      privacy: input.privacy,
+      createdAt: new Date(),
+      archivedAt: null,
+    }
+    current.clubs = [club, ...current.clubs]
+    current.clubMembers = [
+      { clubId: club.id, userId: ownerId, role: 'dono', joinedAt: new Date() },
+      ...current.clubMembers,
+    ]
+    persist()
+    return club
+  },
+
+  updateClub(id: string, changes: Partial<NewClubInput>): Club {
+    const current = load()
+    const club = current.clubs.find((item) => item.id === id)
+    if (!club) throw new DomainError('Esse clube não existe mais.')
+
+    const updated: Club = {
+      ...club,
+      ...(changes.name !== undefined ? { name: changes.name.trim() } : {}),
+      ...(changes.description !== undefined
+        ? { description: changes.description?.trim() || null }
+        : {}),
+      ...(changes.category !== undefined ? { category: changes.category } : {}),
+      ...(changes.cover !== undefined ? { cover: changes.cover } : {}),
+      ...(changes.privacy !== undefined ? { privacy: changes.privacy } : {}),
+    }
+    current.clubs = current.clubs.map((item) => (item.id === id ? updated : item))
+    persist()
+    return updated
+  },
+
+  archiveClub(id: string): void {
+    const current = load()
+    current.clubs = current.clubs.map((item) =>
+      item.id === id ? { ...item, archivedAt: new Date() } : item,
+    )
+    persist()
+  },
+
+  joinClub(clubId: string, userId: string): void {
+    const current = load()
+    const already = current.clubMembers.some(
+      (item) => item.clubId === clubId && item.userId === userId,
+    )
+    if (already) return
+
+    current.clubMembers = [
+      ...current.clubMembers,
+      { clubId, userId, role: 'membro', joinedAt: new Date() },
+    ]
+    persist()
+  },
+
+  leaveClub(clubId: string, userId: string): void {
+    const current = load()
+    current.clubMembers = current.clubMembers.filter(
+      (item) => !(item.clubId === clubId && item.userId === userId),
+    )
+    persist()
+  },
+
+  follows(): Follow[] {
+    return [...load().follows]
+  },
+
+  followCounts(userId: string): FollowCounts {
+    const lines = load().follows
+    return {
+      followers: lines.filter((item) => item.followingId === userId).length,
+      following: lines.filter((item) => item.followerId === userId).length,
+    }
+  },
+
+  isFollowing(followerId: string, followingId: string): boolean {
+    return load().follows.some(
+      (item) => item.followerId === followerId && item.followingId === followingId,
+    )
+  },
+
+  addFollow(input: NewFollowInput): Follow {
+    const current = load()
+    const existing = current.follows.find(
+      (item) => item.followerId === input.followerId && item.followingId === input.followingId,
+    )
+    // Seguir duas vezes é a mesma linha: o banco tem chave primária no par, e o
+    // demo precisa dar a mesma resposta.
+    if (existing) return existing
+
+    const follow = createFollow(input)
+    current.follows = [follow, ...current.follows]
+    persist()
+    return follow
+  },
+
+  removeFollow(followerId: string, followingId: string): void {
+    const current = load()
+    current.follows = current.follows.filter(
+      (item) => !(item.followerId === followerId && item.followingId === followingId),
+    )
+    persist()
+  },
+
+  dayPhotos(from: DayKey, to: DayKey): DayPhoto[] {
+    return load().dayPhotos.filter((photo) => photo.day >= from && photo.day <= to)
+  },
+
+  saveDayPhoto(input: NewDayPhotoInput): DayPhoto {
+    const current = load()
+    const photo = createDayPhoto(input)
+    // Uma por dia: a nova troca a antiga, como a chave primária faz no banco.
+    current.dayPhotos = [photo, ...current.dayPhotos.filter((item) => item.day !== input.day)]
+    persist()
+    return photo
+  },
+
+  removeDayPhoto(day: DayKey): void {
+    const current = load()
+    current.dayPhotos = current.dayPhotos.filter((photo) => photo.day !== day)
+    persist()
+  },
+
   people(ids: readonly string[]): CircleAuthor[] {
     const wanted = new Set(ids)
     return DEMO_PEOPLE.filter((person) => wanted.has(person.id))
@@ -1633,6 +1880,15 @@ export const demoStore = {
       // não a lista de gente que você conhece.
       journeyEvents: friendMoments(dayKeyOf(new Date())),
       friendships: seedFriendships(),
+      // Quem te segue continua te seguindo: recomeçar zera o teu progresso,
+      // não a tua audiência.
+      follows: seedFollows(),
+      // O álbum some junto com o resto do registro — e no demo os arquivos
+      // moram dentro da própria linha, então apagar a linha apaga a foto.
+      dayPhotos: [],
+      // O clube é de gente, não é progresso: recomeçar não expulsa ninguém de
+      // lugar nenhum, nem apaga a comunidade dos outros.
+      ...seedClub(),
       // Desafio some junto com o progresso, e não com o círculo: ele é um
       // combinado sobre dias cumpridos, e não faria sentido continuar de pé
       // marcando dias que a conta zerada não tem mais como explicar.
