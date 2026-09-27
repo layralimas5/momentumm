@@ -17,8 +17,9 @@ import { useSiteCta } from '@/presentation/components/landing/use-site-cta'
  * O destaque é de quem está chegando. Quem já é cliente acha a porta dele
  * sem precisar de cor.
  *
- * No celular os botões ficam no rodapé, na altura do polegar, como a primeira
- * tela de um app. Do `sm` pra cima eles sobem pra logo abaixo do texto, que
+ * Os dois botões ficam lado a lado e pulsam de leve no hover e no foco. No
+ * celular eles ficam no rodapé, na altura do polegar, como a primeira tela
+ * de um app. Do `sm` pra cima eles sobem pra logo abaixo do texto, que
  * num monitor largo o rodapé fica longe demais do olho.
  */
 
@@ -55,7 +56,7 @@ export function StartPage() {
       </div>
 
       <Reveal delay={0.6} className="mx-auto w-full max-w-md sm:mt-12">
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <Link
             to={cta.primary.to}
             className="pulse-button inline-flex h-14 w-full items-center justify-center rounded-2xl bg-brand text-base font-semibold text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-hi focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-hi"
@@ -65,7 +66,7 @@ export function StartPage() {
           {cta.entry ? (
             <Link
               to={cta.entry.to}
-              className="inline-flex h-14 w-full items-center justify-center rounded-2xl border border-line bg-surface/60 text-base font-medium text-ink backdrop-blur transition-colors hover:border-line-hi hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-hi"
+              className="pulse-button inline-flex h-14 w-full items-center justify-center rounded-2xl border border-line bg-surface/60 text-base font-medium text-ink backdrop-blur transition-colors hover:border-line-hi hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-hi"
             >
               Já tenho conta
             </Link>
