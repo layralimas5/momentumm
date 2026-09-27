@@ -240,3 +240,68 @@ describe('routineWeek', () => {
     expect(semana.map((dia) => dia.states.length)).toEqual([1, 0, 1])
   })
 })
+
+/**
+ * As datas, que é onde recorrência costuma quebrar.
+ *
+ * Todo cálculo de dia passa por `dayKeyToDate`, que ancora ao MEIO-DIA local
+ * justamente pra aritmética de dias sobreviver a horário de verão. Estes casos
+ * são o contrato disso valendo pra rotina também: sem eles, uma mudança em
+ * `day.ts` passaria a repetir ou pular um dia e ninguém descobriria até alguém
+ * reclamar que o treino de quarta sumiu.
+ */
+describe('recorrência ao longo do tempo', () => {
+  it('dias específicos caem o número exato de vezes em duas semanas', () => {
+    const treino = item('t', { weekdays: [1, 3, 5] })
+    const dias = Array.from({ length: 14 }, (_, index) => {
+      const base = new Date(2026, 8, 28 + index, 12)
+      return parseDayKey(
+        `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, '0')}-${String(base.getDate()).padStart(2, '0')}`,
+      )
+    })
+
+    const caem = dias.filter((day) => isRoutineScheduledOn(treino, day))
+    expect(caem).toHaveLength(6)
+  })
+
+  it('atravessa a virada do mês sem pular nem repetir', () => {
+    const diario = item('d', { recurrence: 'diario' })
+    const dias = ['2026-09-29', '2026-09-30', '2026-10-01', '2026-10-02'].map(parseDayKey)
+
+    expect(dias.every((day) => isRoutineScheduledOn(diario, day))).toBe(true)
+  })
+
+  it('atravessa a virada do ano', () => {
+    const antigo = createRoutineItem(
+      { userId: 'lay', title: 'Acordar' },
+      'a',
+      new Date('2026-12-30T08:00:00'),
+    )
+    const dias = ['2026-12-31', '2027-01-01', '2027-01-02'].map(parseDayKey)
+
+    expect(dias.every((day) => isRoutineScheduledOn(antigo, day))).toBe(true)
+  })
+
+  it('o dia da semana sai do calendário local, não de UTC', () => {
+    // 2026-10-05 é segunda. Quem calculasse por `toISOString` num fuso a oeste
+    // leria domingo aqui, e o treino de segunda apareceria no dia errado.
+    const segunda = item('s', { weekdays: [1] })
+
+    expect(isRoutineScheduledOn(segunda, parseDayKey('2026-10-05'))).toBe(true)
+    expect(isRoutineScheduledOn(segunda, parseDayKey('2026-10-04'))).toBe(false)
+    expect(isRoutineScheduledOn(segunda, parseDayKey('2026-10-06'))).toBe(false)
+  })
+
+  it('a semana inteira de um item de fim de semana são dois dias', () => {
+    const feira = item('f', { recurrence: 'fim-semana' })
+    const semana = routineWeek(
+      [feira],
+      [],
+      ['2026-10-05', '2026-10-06', '2026-10-07', '2026-10-08', '2026-10-09', '2026-10-10', '2026-10-11'].map(
+        parseDayKey,
+      ),
+    )
+
+    expect(semana.filter((dia) => dia.states.length > 0)).toHaveLength(2)
+  })
+})

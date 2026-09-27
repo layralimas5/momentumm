@@ -43,7 +43,7 @@ export function RoutinePage() {
   const [params, setParams] = useSearchParams()
 
   const [picked, setPicked] = useState<DayKey>(planner.today)
-  const [view, setView] = useState<'dia' | 'semana'>('dia')
+  const [view, setView] = useState<'dia' | 'semana' | 'todos'>('dia')
   const [editing, setEditing] = useState<RoutineItem | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [removing, setRemoving] = useState<RoutineItem | null>(null)
@@ -118,7 +118,7 @@ export function RoutinePage() {
         <>
           {/* Duas visões, um seletor. "Semana" é leitura; "dia" é onde se mexe. */}
           <div role="tablist" aria-label="Visão da rotina" className="flex gap-1.5">
-            {(['dia', 'semana'] as const).map((option) => (
+            {(['dia', 'semana', 'todos'] as const).map((option) => (
               <button
                 key={option}
                 type="button"
@@ -132,7 +132,7 @@ export function RoutinePage() {
                     : 'border-line text-ink-muted active:bg-surface-hi',
                 )}
               >
-                {option === 'dia' ? 'Dia' : 'Semana'}
+                {TAB_LABELS[option]}
               </button>
             ))}
           </div>
@@ -217,6 +217,36 @@ export function RoutinePage() {
           ) : null}
         </>
       )}
+
+      {/* Com a rotina vazia o convite já ocupa a tela: "0 itens" embaixo dele
+          seria a mesma notícia duas vezes, e a segunda em tom de relatório. */}
+      {!vazia && view === 'todos' ? (
+        <Panel tone="raised" aria-labelledby="rotina-todos">
+          <h2 id="rotina-todos" className="text-lg font-semibold tracking-tight text-ink">
+            Tudo que está na sua rotina
+          </h2>
+          <p className="mt-0.5 text-sm text-ink-muted">
+            {planner.routineItems.length}{' '}
+            {planner.routineItems.length === 1 ? 'item' : 'itens'}, em todos os dias da semana.
+          </p>
+
+          <ul className="mt-4 flex flex-col">
+            {[...planner.routineItems]
+              .sort(byTimeThenTitle)
+              .map((item) => (
+                <RoutineItemRow
+                  key={item.id}
+                  item={item}
+                  onEdit={() => {
+                    setEditing(item)
+                    setDialogOpen(true)
+                  }}
+                  onRemove={() => setRemoving(item)}
+                />
+              ))}
+          </ul>
+        </Panel>
+      ) : null}
 
       <RoutineItemDialog
         open={dialogOpen}
@@ -417,6 +447,92 @@ function RoutineRow({
       </div>
     </li>
   )
+}
+
+const TAB_LABELS: Readonly<Record<'dia' | 'semana' | 'todos', string>> = {
+  dia: 'Dia',
+  semana: 'Semana',
+  todos: 'Todos',
+}
+
+/**
+ * A lista completa.
+ *
+ * Ela existe porque a visão de dia não alcança o que não cai hoje: um item de
+ * "dias úteis" é invisível num domingo, e um item que ninguém consegue ver é um
+ * item que ninguém consegue editar nem tirar. Gerenciar é o papel desta tela, e
+ * não dá pra gerenciar o que a tela esconde.
+ *
+ * Aqui não há check: marcar acontece no dia, e um check numa lista sem data
+ * responderia "marquei em qual dia?" com silêncio.
+ */
+function RoutineItemRow({
+  item,
+  onEdit,
+  onRemove,
+}: {
+  readonly item: RoutineItem
+  readonly onEdit: () => void
+  readonly onRemove: () => void
+}) {
+  return (
+    <li className="flex items-start gap-3 border-t border-line py-2.5 first:border-t-0">
+      <span className="tabular mt-0.5 w-10 shrink-0 text-right text-[0.6875rem] leading-5 text-ink-muted">
+        {item.timeOfDay ?? <span aria-hidden="true">·</span>}
+      </span>
+
+      <div className="min-w-0 flex-1">
+        <p className="text-[0.95rem] font-medium text-pretty text-ink">{item.title}</p>
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-faint">
+          <span>{recurrenceLabel(item)}</span>
+          {item.durationMin ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>{item.durationMin} min</span>
+            </>
+          ) : null}
+          {item.category ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>{item.category}</span>
+            </>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="flex shrink-0 items-center gap-1">
+        {item.pausedAt ? <Tag>Pausado</Tag> : null}
+        <IconButton icon="editar" label={`Editar ${item.title}`} onClick={onEdit} />
+        <IconButton icon="lixeira" label={`Tirar ${item.title} da rotina`} onClick={onRemove} />
+      </div>
+    </li>
+  )
+}
+
+/**
+ * "Segunda, quarta e sexta" em vez de "Dias específicos".
+ *
+ * O rótulo genérico obriga a abrir o item pra saber em que dias ele cai, e a
+ * pergunta que esta lista existe pra responder é justamente essa.
+ */
+function recurrenceLabel(item: RoutineItem): string {
+  if (item.recurrence !== 'dias-semana') return ROUTINE_RECURRENCE_LABELS[item.recurrence]
+
+  const nomes = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
+  const dias = item.weekdays.map((day) => nomes[day]).filter(Boolean)
+  if (dias.length === 0) return ROUTINE_RECURRENCE_LABELS[item.recurrence]
+  if (dias.length === 1) return `Toda ${dias[0]}`
+  return dias.join(', ')
+}
+
+/** Sem horário vai pro fim: a lista é lida como uma linha do tempo. */
+function byTimeThenTitle(a: RoutineItem, b: RoutineItem): number {
+  if (a.timeOfDay && b.timeOfDay && a.timeOfDay !== b.timeOfDay) {
+    return a.timeOfDay.localeCompare(b.timeOfDay)
+  }
+  if (a.timeOfDay && !b.timeOfDay) return -1
+  if (!a.timeOfDay && b.timeOfDay) return 1
+  return a.title.localeCompare(b.title, 'pt-BR')
 }
 
 function nomeDoDia(day: DayKey): string {

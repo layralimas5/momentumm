@@ -1523,7 +1523,14 @@ export const demoStore = {
   // ------------------------------------------------------------------ rotina
 
   routineItems(): RoutineItem[] {
-    return [...load().routineItems]
+    /*
+      Arquivado fica FORA da lista, como no `habits()` e como no Supabase, que
+      filtra por `archived_at is null`. Divergência entre os dois repositórios
+      do mesmo contrato é o começo de dois produtos saindo do mesmo código: sem
+      este filtro, tirar um item da rotina o escondia até o próximo
+      carregamento e ele voltava sozinho.
+    */
+    return load().routineItems.filter((item) => item.archivedAt === null)
   },
 
   addRoutineItem(input: NewRoutineItemInput): RoutineItem {
