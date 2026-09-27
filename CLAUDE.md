@@ -1237,6 +1237,86 @@ primeira vitória. Links dos carrosséis levam pra lá com `utm_*` e `tema=`
   O gate deixa `SUBSCRIPTION_PATH` passar com plano pendente, sem isso o
   botão de assinar voltava pra `/app/ativar` em loop.
 
+### Hoje como central de execução, e a Rotina (27/09/2026)
+
+O app sabia planejar (objetivo → etapa → ação) e sabia repetir (hábito). O que
+ele não sabia era o resto do dia, e obrigava a pessoa a somar de cabeça, em três
+telas, o que ainda faltava.
+
+**HOJE responde "o que eu preciso fazer agora". ROTINA responde "como eu
+organizei meus dias".** Uma é execução, a outra é desenho, e as duas dividem o
+ESTADO, nunca a lista: marcar em qualquer uma escreve a mesma linha.
+
+**`day-agenda` é a função pura que monta o dia.** Ação, hábito e item de rotina
+numa lista só, agrupados em manhã, tarde, noite e "em algum momento de hoje",
+ordenados pelo relógio. O item aponta pro registro original (`task`,
+`HabitDayState`, `RoutineDayState`), então não existe segunda lista pro
+dashboard. O card "Seu dia" (`DayAgendaCard`) mostra TUDO: não há "ver mais" que
+esconda pendência, só recolhimento por trecho quando o dia passa de oito itens,
+e mesmo assim o cabeçalho diz o tamanho do trecho fechado.
+
+O que a agenda se recusa a fazer:
+
+- **Não puxa ação atrasada pro dia.** Ela já tem o recado no topo com a saída ao
+  lado, e misturar a dívida de ontem ao dia de hoje é o acúmulo com outro nome,
+  o mesmo que o Dia Adaptável recusa
+- **Não manda o concluído pro fim.** A lista se reorganizaria embaixo do dedo a
+  cada toque, e a leitura de linha do tempo morreria junto
+- **Não diz "atrasado".** Passou das 18:00 com o item aberto, a linha diz
+  "planejado para 18:00" e segue oferecendo a mesma coisa
+
+**A Rotina é a terceira espécie do dia** (`routine-item`, migration 0064):
+`routine_items` guarda a REGRA (o que se repete, em que dias, a que hora) e
+`routine_occurrences` guarda a EXECUÇÃO daquele dia, no mesmo desenho de
+`habits` + `habit_logs`. A ocorrência só existe quando alguém toca: um item
+diário de um ano não são 365 linhas esperando, são zero até o primeiro check, e
+sem linha o item está pendente.
+
+Por que não é hábito nem ação: `createHabit` exige eixo e alvo numérico com
+versão mínima, e hábito alimenta o Momentum Score, então doze itens de rotina
+virando hábito seriam a maneira mais rápida de inflar o número marcando
+"acordei". E `tasks` é de UMA data: o que se repete toda segunda, quarta e sexta
+viraria uma linha nova por ocorrência, pra sempre.
+
+**No score, só conta o item ligado a um objetivo** (`routineImpact`), como
+MÉDIO, dividindo com o hábito o mesmo teto diário de repetição. "Acordar" e
+"almoço" são o contorno do dia, não execução, e contá-los faria o número subir
+por marcar a vida acontecendo.
+
+**Reagendar na linha é SÓ HOJE** (escreve a ocorrência); mudar a regra é
+"Editar", que avisa que vale pra todos os dias daqui pra frente. Dois lugares de
+propósito: um diálogo perguntando "só hoje ou sempre?" a cada toque é a forma
+mais rápida de alguém mudar a recorrência inteira sem querer. **Hábito não é
+reagendado**, ele encolhe pra versão mínima ou é pulado, a mesma regra do Dia
+Adaptável. **"Pular hoje" não apaga nada**: a ocorrência fica registrada como
+pulada e a recorrência segue valendo amanhã.
+
+A tela (`/app/rotina`) tem três visões: **Dia** (a timeline, onde se marca),
+**Semana** (sete dias, um toque abre o dia; não é calendário, e agenda
+profissional é o que a Rotina não é) e **Todos** (a rotina inteira, porque a
+visão de dia não alcança o que não cai hoje, e item que ninguém vê é item que
+ninguém edita). O formulário liga o salvar com o NOME: horário, dias, duração,
+categoria, objetivo, lembrete e observação ficam atrás de "mais detalhes",
+fechado, porque sete campos obrigatórios por linha garantem que uma rotina de
+doze linhas nunca vai ser cadastrada.
+
+**Privacidade:** as duas tabelas nascem com as quatro políticas do molde
+`apply_owner_policies`, e nenhuma política dá a outra pessoa `select` em
+qualquer uma delas. O `user_id` da ocorrência é carimbado por trigger a partir
+do DONO DO ITEM, senão a linha seria minha, o item seria dela, e a rotina dela
+ganharia um dia que ela não marcou. As duas entram em `export_my_data` e em
+`reset_my_data`.
+
+**Saiu junto:** o card de hábitos do dashboard (todo hábito do dia já está na
+agenda, com o check na linha) e o modo recolhido do `TodayFocusCard`, que dizia
+"N outras ações" e abria mostrando três.
+
+**Pendente e declarado:** o lembrete por item (`reminder_min`) é guardado e não
+dispara; o push atual é `pg_cron` de hora em hora com seis tipos fechados no
+enum `notification_type`, e lembrete por item é infraestrutura nova. A rotina
+também ainda não entra no contexto da Momentumm AI, no Dia Adaptável nem no
+`momentum-next-action`.
+
 ### Celular
 
 O dashboard do celular é uma **árvore de componentes própria**
@@ -1287,6 +1367,6 @@ Quando incomodar, trocar por import dinâmico dentro do `container`.
 cd app
 npm install
 npm run dev     # modo demo, sem configurar nada
-npm test        # 735 testes
+npm test        # 983 testes
 npm run build
 ```
