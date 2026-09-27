@@ -12,7 +12,7 @@ import { useAdmin } from './admin-context'
 /**
  * As duas portas antes do painel: cadastrar o fator, ou verificá-lo.
  *
- * A sessão administrativa dura uma hora a partir da verificação — é o
+ * A sessão administrativa dura uma hora a partir da verificação, é o
  * carimbo do JWT que o banco lê, não um relógio de tela. Verificar de novo
  * renova o carimbo e reabre o painel.
  */

@@ -1,8 +1,8 @@
-// Momentumm — o aviso que traz alguém de volta pro próximo passo.
+// Momentumm, o aviso que traz alguém de volta pro próximo passo.
 //
 // Roda a cada hora (pg_cron → pg_net → aqui, migration 0036). Pergunta ao
-// banco QUEM deveria receber e QUAL aviso — `notifications_due()`, migrations
-// 0050 e 0055 —, e manda um Web Push pra cada aparelho inscrito.
+// banco QUEM deveria receber e QUAL aviso, `notifications_due()`, migrations
+// 0050 e 0055, e manda um Web Push pra cada aparelho inscrito.
 //
 // A regra inteira mora no banco, de propósito: horário, inatividade, cooldown,
 // preferências e prioridade entre os tipos são decisões sobre a pessoa, e
@@ -73,7 +73,7 @@ function timingSafeEqual(a: string, b: string): boolean {
  * A copy de cada tipo.
  *
  * Nenhuma frase cobra, nenhuma menciona o que ficou por fazer e nenhuma cita o
- * conteúdo da ação — a notificação aparece na tela bloqueada, onde qualquer
+ * conteúdo da ação, a notificação aparece na tela bloqueada, onde qualquer
  * pessoa lê, e o objetivo de alguém não é assunto de quem está ao lado. O que
  * chega é sempre a mesma promessa: existe um próximo passo, ele continua aqui,
  * e ele cabe no dia que sobrou.

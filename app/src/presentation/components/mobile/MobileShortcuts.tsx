@@ -8,14 +8,14 @@ import { TAB_ROUTES } from './MobileTabBar'
 /**
  * As telas que não cabem na barra inferior.
  *
- * A barra leva Hoje, Objetivos, Plano e Perfil. Todo o resto — Círculo,
- * Hábitos, Foco, Metas, Review, Configurações — chega por aqui, e a lista se
+ * A barra leva Hoje, Objetivos, Plano e Perfil. Todo o resto, Círculo,
+ * Hábitos, Foco, Metas, Review, Configurações, chega por aqui, e a lista se
  * deriva da navegação em vez de ser escrita à mão: tela nova aparece no atalho
  * sem ninguém lembrar de vir editar este arquivo.
  *
  * Ela vive no Perfil porque o Perfil é uma das quatro abas. Quando morava em
  * Configurações, e Configurações só era alcançável por ela mesma, o caminho se
- * fechava num círculo — dava pra sair, mas não pra voltar.
+ * fechava num círculo, dava pra sair, mas não pra voltar.
  */
 
 const SHORTCUTS = APP_NAV.filter((item) => !TAB_ROUTES.includes(item.to))

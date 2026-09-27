@@ -1,10 +1,10 @@
-// Momentumm — ações administrativas sobre contas.
+// Momentumm, ações administrativas sobre contas.
 //
 // A única porta pra ação que mexe em conta de outra pessoa. Ela existe por
 // dois motivos que o banco sozinho não cobre:
 //
 //   1. Contexto de segurança na auditoria: IP e agente só chegam aqui.
-//   2. Duas ações falam com o GoTrue por fora do SQL — reenviar a
+//   2. Duas ações falam com o GoTrue por fora do SQL, reenviar a
 //      confirmação de e-mail e apagar a conta (com os arquivos do Storage).
 //
 // O que ela NÃO faz: confiar em campo de papel vindo do cliente. O papel é
@@ -121,7 +121,7 @@ Deno.serve(async (request) => {
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   const authorization = request.headers.get('Authorization') ?? ''
 
-  // 1. Quem está pedindo. Sem JWT válido, 401 — antes de ler o corpo.
+  // 1. Quem está pedindo. Sem JWT válido, 401, antes de ler o corpo.
   const asUser = createClient(supabaseUrl, anonKey, {
     global: { headers: { Authorization: authorization } },
   })
@@ -148,7 +148,7 @@ Deno.serve(async (request) => {
 
   // 3. MFA: aal2, sessão administrativa dentro da hora, verificação recente.
   //    A exigência é um interruptor do owner (`admin.security.requireMfa`);
-  //    desligado, papel basta — e o painel avisa em vermelho.
+  //    desligado, papel basta, e o painel avisa em vermelho.
   const { data: security } = await admin.rpc('setting_value', { p_key: 'admin.security' })
   const seguranca = security as { requireMfa?: unknown; sessionMinutes?: unknown } | null
   const mfaRequired = seguranca?.requireMfa !== false
@@ -280,7 +280,7 @@ Deno.serve(async (request) => {
       }
       case 'resend_confirmation': {
         // GoTrue só reenvia pra conta ainda não confirmada; o e-mail nunca
-        // volta pro painel — a função lê e usa, e só.
+        // volta pro painel, a função lê e usa, e só.
         const { data: target, error: lookupError } = await admin.auth.admin.getUserById(body.userId)
         if (lookupError || !target.user?.email) {
           await audit('user.resend_confirmation', 'erro', body.reason)

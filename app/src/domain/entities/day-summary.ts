@@ -13,7 +13,7 @@ import type { Win } from './win'
  * responder "o que foi que eu fiz na terça". A faixa da semana mostrava sete
  * pontos: aceso ou apagado, sem jeito de perguntar o que havia atrás do ponto.
  *
- * Esta função é essa resposta, e ela é PURA de propósito — recebe as coleções e
+ * Esta função é essa resposta, e ela é PURA de propósito, recebe as coleções e
  * devolve o retrato. A mesma conta serve pro dia de hoje e pra qualquer dia que
  * já passou, e é isso que impede a tela do passado de discordar da tela de
  * hoje: um hábito cumprido conta igual nas duas.
@@ -60,7 +60,7 @@ export function summarizeDay(input: DaySummaryInput, day: DayKey): DaySummary {
 
   /*
     Os hábitos que estavam AGENDADOS naquele dia, e não todos os que existem
-    hoje. Um hábito de segunda não deveria aparecer como "não fiz" num sábado —
+    hoje. Um hábito de segunda não deveria aparecer como "não fiz" num sábado,
     e um hábito criado depois não deveria cobrar um dia em que ele não existia.
   */
   const habits = habitsScheduledOn(input.habits, day).map((habit) => ({

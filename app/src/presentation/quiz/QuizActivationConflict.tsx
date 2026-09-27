@@ -18,7 +18,7 @@ interface QuizActivationConflictProps {
  * O plano do quiz quer uma área que já tem objetivo ativo.
  *
  * É a regra do banco desde a 0003: um objetivo ativo por eixo, porque dois
- * disputando o mesmo eixo tornam o progresso ambíguo — os dois somam das
+ * disputando o mesmo eixo tornam o progresso ambíguo, os dois somam das
  * mesmas atividades.
  *
  * Antes disto, quem caía nesse caso via "Não consegui ativar seu plano" com
@@ -29,7 +29,7 @@ interface QuizActivationConflictProps {
  *
  * A tela agora faz o que resolve, no mesmo toque: mostra QUAL objetivo ocupa
  * a área e oferece concluir ou arquivar. E, acima de tudo, deixa entrar no
- * app sem o plano — porque uma tela sem saída é pior que qualquer erro.
+ * app sem o plano, porque uma tela sem saída é pior que qualquer erro.
  */
 export function QuizActivationConflictView({
   axis,
@@ -105,7 +105,7 @@ export function QuizActivationConflictView({
 
       {/*
         A saída, sempre. Ela fica por último e discreta porque não é o melhor
-        caminho — mas ela EXISTE, e é o que separa um erro de um beco sem
+        caminho, mas ela EXISTE, e é o que separa um erro de um beco sem
         saída. O plano do quiz não vale a conta inteira.
       */}
       <section className="mt-6 border-t border-line pt-4">

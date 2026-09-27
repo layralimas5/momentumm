@@ -29,7 +29,7 @@ import { supabase } from '@/infrastructure/supabase/client'
 import { InfrastructureError } from '@/shared/errors'
 
 /**
- * Momentumm AI — a implementação REAL, pela Edge Function `momentumm-ai`.
+ * Momentumm AI, a implementação REAL, pela Edge Function `momentumm-ai`.
  *
  * O app nunca fala com o modelo: manda o pedido (com o contexto da conta) pra
  * função, autenticado com a sessão da pessoa, e recebe de volta a estrutura

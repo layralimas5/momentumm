@@ -7,8 +7,8 @@ import { dayKeyOf, type DayKey } from './day'
  *
  * ## Por que não se chama `Activity`
  *
- * `Activity` já é a unidade do Momentumm — "leu 32 páginas", "treinou 45
- * minutos" — e é ela que alimenta streak, meta e histórico. O que esta entidade
+ * `Activity` já é a unidade do Momentumm, "leu 32 páginas", "treinou 45
+ * minutos", e é ela que alimenta streak, meta e histórico. O que esta entidade
  * guarda é outra coisa: o EVENTO que vale contar. Dia fechado, rotina cumprida,
  * objetivo concluído, momentum recorde, retomada. Um registro de esforço é
  * matéria-prima; um evento é resultado. Reaproveitar o nome faria as duas
@@ -19,14 +19,14 @@ import { dayKeyOf, type DayKey } from './day'
  *
  * Hoje: o Share Studio. Depois: feed de amigos, perfil, comunidade, desafios,
  * notificações e histórico de progresso. Por isso ela NÃO conhece hábito,
- * objetivo nem etapa — guarda `sourceType` + `sourceId` e os números já
+ * objetivo nem etapa, guarda `sourceType` + `sourceId` e os números já
  * apurados. Quem produz o evento é quem conhece a origem.
  *
  * ## Privado por padrão, sempre
  *
  * O produto continua single-player. `visibility` existe pra a camada social
  * não exigir migration destrutiva quando chegar, mas todo evento nasce
- * `privada` — e compartilhar externamente uma imagem NÃO muda isso: publicar
+ * `privada`, e compartilhar externamente uma imagem NÃO muda isso: publicar
  * no Instagram é uma decisão sobre um PNG, não sobre o dado.
  */
 
@@ -280,7 +280,7 @@ function stripItems(metadata: JourneyEventMetadata): JourneyEventMetadata {
  *
  * "Dia concluído" nasce de um clique em hábito, e o último hábito do dia pode
  * ser desmarcado e remarcado três vezes. Sem chave estável o histórico
- * acumularia três dias concluídos iguais — e o feed futuro os mostraria todos.
+ * acumularia três dias concluídos iguais, e o feed futuro os mostraria todos.
  */
 export function journeyEventKey(event: {
   readonly type: JourneyEventType

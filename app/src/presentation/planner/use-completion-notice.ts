@@ -128,7 +128,7 @@ export function useCompletionNotice(view: DashboardView): {
 
     A guarda fica no dispositivo: é contagem, não dado de negócio, e sem
     armazenamento o pior caso é o evento repetir na próxima sessão do mesmo
-    dia — o que é melhor do que não registrar.
+    dia, o que é melhor do que não registrar.
   */
   useEffect(() => {
     if (!dayComplete || total === 0) return

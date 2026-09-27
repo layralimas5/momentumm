@@ -21,7 +21,7 @@ import { DomainError } from '@/shared/errors'
  * ## Uma por dia
  *
  * A chave é (pessoa, dia). Escolher a segunda foto do mesmo dia TROCA a
- * primeira — não vira álbum. Álbum por dia é outro produto: pede ordem, capa,
+ * primeira, não vira álbum. Álbum por dia é outro produto: pede ordem, capa,
  * navegação, e a pergunta que esta tela responde é "como foi esse dia", que
  * tem uma resposta só.
  */

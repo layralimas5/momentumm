@@ -1,8 +1,8 @@
 /*
-  O deploy das 0048–0051, ensaiado.
+  O deploy das 0048 a 0051, ensaiado.
 
   `npm run db:test` aplica TODAS as migrations num banco vazio, e isso prova
-  que o conjunto é coerente — não prova que as quatro novas sobem num banco
+  que o conjunto é coerente, não prova que as quatro novas sobem num banco
   que já está rodando. São perguntas diferentes: a segunda é a que acontece
   em produção, e é a que quebra.
 

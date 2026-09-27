@@ -3,7 +3,7 @@ import { cycleFromProvider, type BillingCycle, PRO_PRICES } from './billing-plan
 import type { SubscriptionStatus } from './subscription'
 
 /**
- * O que um evento do Asaas significa pra assinatura — sem banco, sem rede.
+ * O que um evento do Asaas significa pra assinatura, sem banco, sem rede.
  *
  * O webhook (`supabase/functions/asaas-webhook`) recebe o evento, passa por
  * aqui e só então grava. Separar a decisão da gravação é o que deixa esta
@@ -15,7 +15,7 @@ import type { SubscriptionStatus } from './subscription'
  *   - `PAYMENT_*` traz `payment` com `customer`, `subscription` (quando a
  *     cobrança é de assinatura), `value` e `dueDate`
  *   - `SUBSCRIPTION_*` traz `subscription` com `customer` e `cycle`
- *   - `CHECKOUT_PAID` traz `checkout` com `customer` — é a primeira vez que
+ *   - `CHECKOUT_PAID` traz `checkout` com `customer`, é a primeira vez que
  *     ficamos sabendo qual cliente do Asaas é a pessoa
  *
  * Entrega é "pelo menos uma vez": o `id` do evento é a chave de repetição.
@@ -154,7 +154,7 @@ export function decideBillingEvent(event: AsaasWebhookEvent): BillingDecision {
 /**
  * Até quando um pagamento com vencimento em `dueDate` sustenta o PRO. O
  * Asaas gera a cobrança seguinte no vencimento seguinte, então o período é
- * o ciclo inteiro a partir da data de vencimento — não da data de pagamento,
+ * o ciclo inteiro a partir da data de vencimento, não da data de pagamento,
  * que pode vir antes (cartão) ou depois (boleto pago com atraso).
  */
 export function periodEndAfter(dueDate: string, cycle: BillingCycle): Date {

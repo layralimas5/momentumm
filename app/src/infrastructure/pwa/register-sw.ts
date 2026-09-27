@@ -6,7 +6,7 @@ import { isStandalone } from './platform'
  * Antes ele só era registrado quando a pessoa ligava o lembrete, e isso tinha
  * um custo escondido: o Chrome só oferece "Instalar app" pra quem já tem um
  * worker ativo que responde offline. Sem registro no boot, a instalação no
- * Android virava um atalho de navegador — que não recebe push.
+ * Android virava um atalho de navegador, que não recebe push.
  *
  * O `sw.js` não guarda a interface em cache (só a página offline), então
  * registrar cedo não arrisca servir uma versão velha do app.

@@ -24,7 +24,7 @@ interface ProfileCalendarProps {
 }
 
 /**
- * O mês em círculos — e o álbum da constância.
+ * O mês em círculos, e o álbum da constância.
  *
  * Um mapa de calor diria a mesma coisa em menos espaço: dia aceso, dia
  * apagado. A diferença é que ninguém sente saudade de um quadradinho verde. A
@@ -36,7 +36,7 @@ interface ProfileCalendarProps {
  * que o dia aconteceu. O dia de hoje é o único com anel.
  *
  * Dia no futuro não é tocável. Guardar foto de um dia que ainda não chegou é
- * registrar o que não aconteceu — a regra também está no domínio e no banco,
+ * registrar o que não aconteceu, a regra também está no domínio e no banco,
  * aqui ela só evita o toque que daria erro.
  */
 export function ProfileCalendar({

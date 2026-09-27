@@ -22,8 +22,8 @@ import { calculateStreakFromDays } from './streak'
 /**
  * A hierarquia inteira, do peso da ação até a previsão de conclusão.
  *
- * O caso que fecha o arquivo é o exemplo completo do produto — objetivo, cinco
- * etapas, ações no MVP, hábito de apoio — porque é ele que prova que as peças
+ * O caso que fecha o arquivo é o exemplo completo do produto, objetivo, cinco
+ * etapas, ações no MVP, hábito de apoio, porque é ele que prova que as peças
  * conversam. Testar cada função sozinha não pega o erro que importa aqui, que é
  * o de duas telas chegando em números diferentes pro mesmo objetivo.
  */

@@ -14,7 +14,7 @@ export interface PodiumPerson {
  *
  * A ordem na tela não é 1, 2, 3: é 2, 1, 3, com o primeiro no centro e mais
  * alto. É como um pódio é lido desde sempre, e ler a posição pelo LUGAR é mais
- * rápido do que ler pelo número — que continua ali, na medalha, pra quem
+ * rápido do que ler pelo número, que continua ali, na medalha, pra quem
  * precisa conferir.
  *
  * Com menos de três pessoas o pódio não aparece: um degrau sozinho no meio da
@@ -106,7 +106,7 @@ function Step({ person, place }: { readonly person: PodiumPerson; readonly place
 
       {/*
         Altura fixa pro bloco de texto: sem ela, um nome que quebra em duas
-        linhas empurra o degrau pra baixo e o pódio deixa de ter base reta —
+        linhas empurra o degrau pra baixo e o pódio deixa de ter base reta,
         que é a única coisa que faz três colunas parecerem um pódio.
       */}
       <span className="mt-4 flex h-11 w-full flex-col items-center justify-start">

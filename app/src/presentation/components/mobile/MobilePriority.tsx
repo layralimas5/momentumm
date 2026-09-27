@@ -128,7 +128,7 @@ export function MobilePriority({
         {/*
           Título e anel lado a lado.
 
-          O anel mede o DIA, não esta ação — é a resposta curta pra "quanto
+          O anel mede o DIA, não esta ação, é a resposta curta pra "quanto
           falta pra acabar", e ele mora aqui porque é aqui que a pessoa decide
           se começa mais uma. Em bloco só dele, lá embaixo, ele era placar; ao
           lado da ação, ele é argumento.
@@ -151,7 +151,7 @@ export function MobilePriority({
         {/*
           Uma pastilha só: o tempo.
 
-          Aqui havia o eixo, o esforço, a meta e a linha de etapa e objetivo —
+          Aqui havia o eixo, o esforço, a meta e a linha de etapa e objetivo,
           quatro metadados entre o título e o botão. São verdade, e nenhum deles
           muda a única pergunta que este card faz: começo ou não? O tempo fica
           porque é ele que responde "dá pra agora". O resto continua no menu de
@@ -173,7 +173,7 @@ export function MobilePriority({
         {/*
           Em dia de baixa energia a versão mínima assume o botão principal. O
           card não pode empurrar o plano cheio logo depois de a pessoa dizer que
-          não tem energia — é assim que o dia termina em zero.
+          não tem energia, é assim que o dia termina em zero.
         */}
         {preferMinimal ? (
           <>
@@ -210,7 +210,7 @@ export function MobilePriority({
             </Button>
             {/*
               A versão mínima vira linha de texto sob o botão. Como segundo
-              botão de largura cheia ela empatava com o "começar" — duas
+              botão de largura cheia ela empatava com o "começar", duas
               chapas coladas, e a decisão do dia virando escolha múltipla.
             */}
             {task.minimalVersion ? (
@@ -284,7 +284,7 @@ export function MobilePriority({
  *
  * Era uma pílula com borda, e ela competia com o título logo abaixo: dois
  * elementos marcados a 8px um do outro, e o olho sem saber qual ler primeiro.
- * Agora é etiqueta de seção — caps pequeno, espaçado, sem casca. O ponto
+ * Agora é etiqueta de seção, caps pequeno, espaçado, sem casca. O ponto
  * pulsante fica, porque é ele que diz que o dia ainda está em aberto.
  */
 function Eyebrow({ done = false }: { done?: boolean }) {
@@ -307,7 +307,7 @@ function Eyebrow({ done = false }: { done?: boolean }) {
 /**
  * O anel do dia: a fração concluída, no lugar em que ela muda uma decisão.
  *
- * Sem nada planejado ele não aparece — anel vazio com "0/0" no meio é um
+ * Sem nada planejado ele não aparece, anel vazio com "0/0" no meio é um
  * gráfico que mede o nada.
  */
 function DayRing({ progress }: { progress: DayProgress }) {

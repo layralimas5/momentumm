@@ -60,7 +60,7 @@ const MORNING_END_HOUR = 12
 
 /**
  * A conclusão escrita. Ela olha o padrão do horário porque é o dado que a
- * pessoa não enxerga sozinha — e que muda o planejamento da semana seguinte.
+ * pessoa não enxerga sozinha, e que muda o planejamento da semana seguinte.
  */
 function concludeWeek(input: MomentumInput, current: WeekTotals, previous: WeekTotals): string {
   if (current.activeDays === 0) {

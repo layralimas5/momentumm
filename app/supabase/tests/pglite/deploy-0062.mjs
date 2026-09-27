@@ -33,7 +33,7 @@ const zeca = (await one(`insert into auth.users (email) values ('zeca@momentumm.
 /*
   Quem escreve plano é o servidor (trigger da 0013): o ensaio assume esse papel.
 
-  E o rebaixamento é explícito porque o harness cria todo perfil já no PRO —
+  E o rebaixamento é explícito porque o harness cria todo perfil já no PRO,
   sem isto, "criar sem assinatura" seria testado com uma conta que assina.
 */
 await db.query(`select set_config('request.jwt.claims', $1, false)`, [
@@ -90,7 +90,7 @@ const fechado = await one(
 
   O pglite roda tudo como dono das tabelas, e o Postgres não aplica RLS ao dono
   (a menos de `force row level security`). Então um `insert` que passa aqui não
-  prova nada sobre o que o app consegue fazer em produção — e um que falhasse
+  prova nada sobre o que o app consegue fazer em produção, e um que falhasse
   seria falso negativo. O que dá pra garantir neste ensaio é que a política
   EXISTE e que a expressão dela diz o que deveria dizer.
 
@@ -168,7 +168,7 @@ console.log('o ranking recusa quem é de fora:', recusouRanking ? 'ok' : 'FALHOU
 
 /*
   Sem sessão pra mexer no plano: o trigger da 0051 recusa que a própria pessoa
-  escreva o próprio plano, e com razão — quem manda no plano é a assinatura, no
+  escreva o próprio plano, e com razão, quem manda no plano é a assinatura, no
   servidor. Aqui o ensaio faz o papel do servidor.
 */
 await db.query(`select set_config('request.jwt.claims', $1, false)`, [
@@ -183,7 +183,7 @@ console.log('sem PRO o clube continua no ar:',
   aindaLa?.id && aindaLa.archived_at === null && membrosContinuam.length === 2 ? 'ok' : 'FALHOU')
 
 // Que editar exige assinatura já foi lido na política, acima. O que este trecho
-// prova é o que importa pra pessoa: sem PRO, `has_pro` responde não — e é essa
+// prova é o que importa pra pessoa: sem PRO, `has_pro` responde não, e é essa
 // resposta que a política consulta.
 console.log('sem PRO o banco responde que não há assinatura:',
   (await one(`select public.has_pro($1) as pro`, [lay]))?.pro === false ? 'ok' : 'FALHOU')

@@ -16,14 +16,14 @@ import { challengeEventsToRecord } from './challenge-recorder'
  *
  * Esta é a tabela que o feed vai ler quando a comunidade existir, e o custo de
  * um erro aqui não aparece hoje: aparece no dia em que mil linhas gravadas com
- * a visibilidade errada ficam visíveis pra outras pessoas — e aí não há
+ * a visibilidade errada ficam visíveis pra outras pessoas, e aí não há
  * correção que desfaça o que já foi visto.
  *
  * Por isso as garantias estão travadas em teste, e não só no comentário:
  *
  *  1. todo momento nasce PRIVADO, venha de onde vier;
  *  2. mudar isso é uma decisão explícita, nunca um efeito colateral;
- *  3. todo tipo do enum tem caminho de gravação — um tipo que só existisse
+ *  3. todo tipo do enum tem caminho de gravação, um tipo que só existisse
  *     como evento efêmero (o card "meu dia às 15h") nunca alimentaria o feed;
  *  4. o que o feed do círculo mostra é um subconjunto do que é gravado.
  */
@@ -48,7 +48,7 @@ describe('privado por padrão', () => {
   it('os quatro degraus existem, e só o primeiro é usado ao criar', () => {
     expect(JOURNEY_VISIBILITIES).toEqual(['privada', 'amigos', 'comunidade', 'publica'])
 
-    // A visibilidade só sai de 'privada' quando alguém pede — e quem pede é o
+    // A visibilidade só sai de 'privada' quando alguém pede, e quem pede é o
     // botão do perfil, passando por `setEventVisibility`.
     const shared = createJourneyEvent(input({ type: 'day_completed', visibility: 'amigos' }), 'e1')
     expect(shared.visibility).toBe('amigos')
@@ -63,7 +63,7 @@ describe('nenhum tipo fica de fora da gravação', () => {
    * parada, momentum em recorde, objetivo cruzando faixa e marco alcançado.
    *
    * O estado é montado pra que TODOS os gravadores automáticos tenham o que
-   * produzir — é assim que o teste consegue afirmar que nenhum tipo depende de
+   * produzir, é assim que o teste consegue afirmar que nenhum tipo depende de
    * alguém lembrar de chamar `record` em algum componente.
    */
   const recorded = new Set<JourneyEventType>(
@@ -118,7 +118,7 @@ describe('nenhum tipo fica de fora da gravação', () => {
     })
 
     /*
-      O gravador nem sequer informa a visibilidade — quem decide é o default do
+      O gravador nem sequer informa a visibilidade, quem decide é o default do
       domínio e o do banco. Se um dia alguém passar 'amigos' aqui, uma rotina
       inteira começaria a nascer compartilhada sem ninguém pedir.
     */
@@ -147,7 +147,7 @@ describe('nenhum tipo fica de fora da gravação', () => {
     /*
       O evento precisa nascer no MESMO dia que o gravador está avaliando. A
       chave de repetição diária compara `event.day` com `today`, e `day` é
-      derivado de `occurredAt` — sem ancorar aqui, o teste passaria só no dia
+      derivado de `occurredAt`, sem ancorar aqui, o teste passaria só no dia
       em que foi escrito e a dedupe pareceria quebrada em toda execução futura.
     */
     const occurredAt = dayKeyToDate(today)
@@ -175,7 +175,7 @@ describe('nenhum tipo fica de fora da gravação', () => {
 
   it('os dois tipos sem gravador automático são gravados no clique', () => {
     /*
-      `goal_completed` e `weekly_review` são transições com hora marcada — o
+      `goal_completed` e `weekly_review` são transições com hora marcada, o
       objetivo que a pessoa fechou agora, a review que ela concluiu agora. Eles
       são gravados no `PlannerProvider`, no clique, e não no próximo
       carregamento do dashboard: adiar carimbaria o horário errado no que um
@@ -215,7 +215,7 @@ describe('o feed do círculo lê o que já existe', () => {
 
   it('comunidade e pública continuam sem leitor nenhum', () => {
     /*
-      Os dois degraus existem no enum pra o dia em que houver tela — e é
+      Os dois degraus existem no enum pra o dia em que houver tela, e é
       justamente por não haver que nenhuma parte do produto pode escrevê-los.
       Alcance que ninguém consegue conferir na interface é alcance que não
       deveria existir no banco.

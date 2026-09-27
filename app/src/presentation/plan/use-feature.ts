@@ -14,7 +14,7 @@ export type FeatureKey = 'juntos' | 'ai' | 'share' | 'circle' | 'challenges' | '
 /**
  * Uma leitura por carga de página, compartilhada.
  *
- * Sem o cache, cada tela que pergunta por uma flag faria a própria chamada —
+ * Sem o cache, cada tela que pergunta por uma flag faria a própria chamada,
  * e a barra de navegação, a tela e o card dentro dela perguntam a mesma coisa
  * na mesma renderização.
  */

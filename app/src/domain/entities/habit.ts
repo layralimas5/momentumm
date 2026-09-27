@@ -5,7 +5,7 @@ import type { Priority } from './priority'
 
 /**
  * Hábito: a repetição que sustenta o resto. Ele não é uma tarefa que some
- * quando acaba — é um compromisso que se repete e cuja constância importa mais
+ * quando acaba, é um compromisso que se repete e cuja constância importa mais
  * que qualquer dia isolado.
  *
  * Regra de produto: perder um dia NÃO é punido. Por isso `pulado` e `adiado`
@@ -230,7 +230,7 @@ export function isHabitRunning(habit: Habit): boolean {
  *
  * `vezes-semana` responde sim todo dia de propósito: ele não tem dia marcado,
  * tem cota semanal. Quem decide se a cota foi cumprida é `weeklyQuotaMet`, e é
- * ele — não este — que evita cobrar sete dias de um hábito de três.
+ * ele, não este, que evita cobrar sete dias de um hábito de três.
  */
 export function isScheduledOn(habit: Habit, day: DayKey): boolean {
   if (habit.frequency === 'dias-semana' && habit.weekdays.length > 0) {
@@ -294,7 +294,7 @@ export function habitsScheduledOn(habits: readonly Habit[], day: DayKey): Habit[
 
 /**
  * Os hábitos que aparecem no dia. Diferente de `habitsScheduledOn` porque tira
- * o `vezes-semana` que já bateu a cota — deixá-lo ali transformaria uma semana
+ * o `vezes-semana` que já bateu a cota, deixá-lo ali transformaria uma semana
  * cumprida em quatro linhas pendentes.
  */
 export function habitsForDay(
@@ -332,7 +332,7 @@ export interface HabitConsistency {
 /**
  * Taxa de consistência. Deliberadamente NÃO é sequência: o produto não pune
  * quem perde um dia, então a leitura que importa é "de dez vezes esperadas,
- * quantas saíram" — um número que uma falha isolada quase não move.
+ * quantas saíram", um número que uma falha isolada quase não move.
  */
 export function habitConsistency(
   habit: Habit,
@@ -348,8 +348,8 @@ export function habitConsistency(
   /*
     O esperado nunca fica abaixo do que foi feito.
 
-    Sem isso, cumprir o hábito num dia fora da frequência — sábado num hábito de
-    segunda a sexta, ou o próprio dia em que ele foi criado — produz "1 de 0":
+    Sem isso, cumprir o hábito num dia fora da frequência, sábado num hábito de
+    segunda a sexta, ou o próprio dia em que ele foi criado, produz "1 de 0":
     um número que não significa nada e uma taxa de 0% pra quem acabou de fazer.
     Fazer além do combinado dá 100%, nunca mais que isso.
   */
@@ -428,7 +428,7 @@ export function habitDayProgress(states: readonly HabitDayState[]): HabitDayProg
 const STREAK_LOOKBACK_DAYS = 400
 
 /**
- * Sequência do hábito. Só conta dia em que ele estava programado — quem faz um
+ * Sequência do hábito. Só conta dia em que ele estava programado, quem faz um
  * hábito de segunda a sexta não pode perder a sequência no sábado.
  *
  * Como no streak geral, hoje ainda pendente não quebra nada: abrir o app de

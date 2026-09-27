@@ -16,12 +16,12 @@ import { cn } from '@/shared/lib/cn'
  *
  * É o único lugar da tela que responde "o que eu faço agora", e por isso ele
  * ganha o maior peso visual e a primeira dobra. Ação e hábito aparecem na mesma
- * lista porque é assim que o dia é vivido — separar em dois cards obriga a
+ * lista porque é assim que o dia é vivido, separar em dois cards obriga a
  * pessoa a somar de cabeça o que falta.
  *
  * No máximo três itens. O quarto não cabe numa decisão: a partir dele a pessoa
  * para de escolher e passa a varrer. O resto continua a um toque em "ver tudo
- * do dia" — o dashboard ordena o trabalho, nunca esconde.
+ * do dia", o dashboard ordena o trabalho, nunca esconde.
  *
  * Concluir aqui escreve no registro original (ação ou hábito). Não existe uma
  * segunda lista pro dashboard.

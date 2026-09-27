@@ -17,7 +17,7 @@ import { MomentumRing } from './MomentumRing'
  * O Momentumm em uma faixa, não em um card.
  *
  * Ele precisa de destaque e não de espaço: é um número de contexto, não a ação
- * do dia. Como card grande ele disputava a primeira dobra com o foco — e a
+ * do dia. Como card grande ele disputava a primeira dobra com o foco, e a
  * pessoa abre o app pra decidir o que fazer, não pra ler a própria nota.
  *
  * O número nunca aparece sozinho. Sem a variação, a leitura em uma frase e o

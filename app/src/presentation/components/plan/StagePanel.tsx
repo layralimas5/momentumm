@@ -31,7 +31,7 @@ import { useTaskMove } from './use-task-move'
  *
  * É a tela que mostra a hierarquia existindo. Cada etapa carrega o peso que
  * tem no objetivo e o quanto dela saiu, e as ações aparecem DENTRO da etapa em
- * vez de numa lista chapada — porque é isso que responde "o que estou
+ * vez de numa lista chapada, porque é isso que responde "o que estou
  * construindo" em vez de "o que tenho pra fazer".
  *
  * No celular a etapa vem recolhida, exceto a atual. Cinco etapas abertas com
@@ -339,7 +339,7 @@ function StageBlock({
           )}
 
           {/*
-            A sugestão de concluir aparece quando as obrigatórias saíram — e é
+            A sugestão de concluir aparece quando as obrigatórias saíram, e é
             sugestão mesmo: quem fecha a etapa é a pessoa, porque ela pode ter
             critério que o app não conhece.
           */}

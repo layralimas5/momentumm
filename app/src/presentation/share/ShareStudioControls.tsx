@@ -16,7 +16,7 @@ interface TemplateControlsProps {
  * Seletor de COR.
  *
  * Quatro: preto, neon, branco e o PNG sem fundo. Como o arranjo virou uma
- * escolha própria — o carrossel do preview —, aqui sobrou só a pergunta que a
+ * escolha própria, o carrossel do preview, aqui sobrou só a pergunta que a
  * amostra responde de longe: claro, escuro, aceso ou sem fundo.
  *
  * A amostra é o fundo de cada cor, não um preview do card: quatro previews

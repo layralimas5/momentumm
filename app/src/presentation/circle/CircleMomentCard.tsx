@@ -20,7 +20,7 @@ interface CircleMomentCardProps {
  *
  * O card mostra o que a pessoa escolheu mostrar e nada além. Não existe menu de
  * três pontinhos, não existe caixa de comentário e não existe número de
- * seguidor — o único gesto possível é o apoio, e ele não gera notificação nem
+ * seguidor, o único gesto possível é o apoio, e ele não gera notificação nem
  * ranking.
  *
  * O Momentumm aparece como VARIAÇÃO ("+7"), nunca como pontuação absoluta. O

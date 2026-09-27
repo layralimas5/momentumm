@@ -10,7 +10,7 @@ interface AdminQuery<T> {
 
 /**
  * Uma leitura do painel: carrega, mostra erro legível, recarrega quando a
- * chave muda. Sem cache entre telas de propósito — número administrativo
+ * chave muda. Sem cache entre telas de propósito, número administrativo
  * velho é pior que esperar meio segundo.
  */
 export function useAdminQuery<T>(load: () => Promise<T>, key: string): AdminQuery<T> {

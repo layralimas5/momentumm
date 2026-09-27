@@ -8,13 +8,13 @@ import { container } from '@/infrastructure/container'
  * O app abriu por uma notificação?
  *
  * A Edge Function põe `?n=<tipo>` na URL do aviso. Este hook lê o parâmetro,
- * carimba a abertura no servidor, registra o evento e LIMPA a URL — deixar o
+ * carimba a abertura no servidor, registra o evento e LIMPA a URL, deixar o
  * `?n=` no endereço faria a pessoa recarregar a página e contar a mesma
  * abertura de novo, além de um endereço feio se ela compartilhar.
  *
  * A conversão (abriu e depois avançou) é carimbada em outro lugar: quando uma
  * ação é concluída. As duas pontas juntas respondem a única pergunta que
- * importa sobre notificação — ela fez alguém avançar, ou só incomodou?
+ * importa sobre notificação, ela fez alguém avançar, ou só incomodou?
  */
 export function useNotificationOpen(): void {
   const location = useLocation()

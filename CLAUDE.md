@@ -1,4 +1,4 @@
-# Momentumm — contexto do projeto
+# Momentumm, contexto do projeto
 
 Repositório zerado em 13/08/2026 para a reestruturação completa. O código do Aura
 foi removido; o histórico continua no git (tag `aura-final` e branch
@@ -6,9 +6,9 @@ foi removido; o histórico continua no git (tag `aura-final` e branch
 
 ## Quem
 
-**Layra Lima** (Lay) — solopreneur, criadora solo. O **Momentumm** é o SaaS próprio dela.
+**Layra Lima** (Lay), solopreneur, criadora solo. O **Momentumm** é o SaaS próprio dela.
 
-## Produto — Momentumm
+## Produto, Momentumm
 
 Rede social de evolução pessoal. O modelo é o Strava: em vez de corrida e pedal, a
 pessoa registra e compartilha o que faz pra crescer.
@@ -72,26 +72,26 @@ editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
 
 A tela `Hoje` responde quatro perguntas, nessa ordem: como estou hoje, o que
 importa agora, qual é a próxima ação, estou avançando de verdade. As seções não
-são independentes — o check-in define a capacidade do dia, a capacidade calibra a
+são independentes, o check-in define a capacidade do dia, a capacidade calibra a
 recomendação, hábitos e ações alimentam o momentum, o momentum vira progresso
 semanal e o conjunto gera o insight, que devolve um ajuste aplicável.
 
 Entidades novas (`app/src/domain/entities/`):
 
-- `checkin` — estado, energia (1-5) e foco do dia. Deriva a **capacidade**
+- `checkin`, estado, energia (1-5) e foco do dia. Deriva a **capacidade**
   (`minima` / `moderada` / `plena`), que é o que faz o app sugerir a versão
   mínima em vez de empurrar o plano cheio num dia ruim
-- `habit` + `HabitLog` — repetição com frequência, versão mínima e sequência
+- `habit` + `HabitLog`, repetição com frequência, versão mínima e sequência
   própria. `pulado` e `adiado` são estados legítimos: perder um dia não é punido
-- `task` — a ação que liga meta a movimento. Uma única **prioridade principal**
+- `task`, a ação que liga meta a movimento. Uma única **prioridade principal**
   por dia, com versão mínima pra dia ruim
-- `momentum` — pontuação de 0 a 100 com classificação, comparação com os 7 dias
+- `momentum`, pontuação de 0 a 100 com classificação, comparação com os 7 dias
   anteriores, explicação e recomendação. Quatro fatores (ver abaixo)
-- `week` — série de sete dias mais a conclusão escrita
-- `insight` — regras determinísticas sobre os dados reais. Sem padrão detectado
+- `week`, série de sete dias mais a conclusão escrita
+- `insight`, regras determinísticas sobre os dados reais. Sem padrão detectado
   não há insight: nada de frase motivacional genérica
-- `win` — uma vitória por dia
-- `plan` — a matriz de `free` e `pro`, numa frase: **o gratuito organiza e
+- `win`, uma vitória por dia
+- `plan`, a matriz de `free` e `pro`, numa frase: **o gratuito organiza e
   executa, o PRO registra, analisa e evolui**. Gratuito: 2 objetivos, 5
   hábitos, 1 plano por etapas, 5 ações por dia, 15 dias de histórico, só a
   pontuação de hoje do Momentum, check-in semanal manual de quatro perguntas
@@ -114,7 +114,7 @@ mesmo cronômetro. Rotas: `/app`, `/app/jornada`, `/app/habitos`, `/app/metas`,
 e `/app/perfil` redirecionam).
 
 **Atalho de dev:** `VITE_AUTH_BYPASS=true` no `.env.local` abre o app já
-autenticado na sessão demo, sem passar pelo login. Só vale em `vite dev` — em
+autenticado na sessão demo, sem passar pelo login. Só vale em `vite dev`, em
 build de produção a flag é ignorada.
 
 ### A hierarquia (o que amarra tudo)
@@ -124,16 +124,16 @@ O produto deixou de ser módulos vizinhos e virou um ciclo só:
 **Objetivo → Plano (etapas) → Ações e hábitos → Execução do dia → Progresso →
 Insight → Ajuste.**
 
-- `plan-stage` — a **etapa**, o degrau que faltava. Tem peso (o quanto vale do
+- `plan-stage`, a **etapa**, o degrau que faltava. Tem peso (o quanto vale do
   objetivo), ordem, situação e data prevista. Os pesos **somam 100 sempre**; o
   domínio recusa um conjunto que não fecha, e criar ou apagar etapa
-  redistribui sozinho. `atrasada` é derivada de `due_on`, nunca guardada — a
+  redistribui sozinho. `atrasada` é derivada de `due_on`, nunca guardada, a
   mesma decisão de estado x status que `objective` já tinha
-- `plan-progress` — a **única** resposta pra "quanto do objetivo está feito".
+- `plan-progress`, a **única** resposta pra "quanto do objetivo está feito".
   A conta sobe pela hierarquia: ação (peso) → etapa (peso) → objetivo. Detecta
   o **gargalo** e a **próxima ação**. Hábito NÃO entra: execução é execução.
   Objetivo sem etapa cai no volume registrado, e a tela diz isso em voz alta
-- `forecast` — **previsão** pela velocidade das últimas duas semanas. Sem sete
+- `forecast`, **previsão** pela velocidade das últimas duas semanas. Sem sete
   dias de história, duas conclusões e avanço na janela, ela se cala. A frase é
   sempre condicional ("mantendo esse ritmo")
 - Ação ganhou `stageId`, `weight` e `isRequired`; hábito ganhou `stageId`
@@ -141,7 +141,7 @@ Insight → Ajuste.**
 - Ação sem objetivo é legítima e vira **caixa de entrada**: ela não empurra
   progresso nenhum até ganhar destino, e o plano cobra isso
 - `momentum` lê o plano: o avanço dos objetivos é um dos quatro fatores do
-  score, e ele fica **neutro** quando não há plano montado — conta nova não
+  score, e ele fica **neutro** quando não há plano montado, conta nova não
   perde ponto por uma etapa que ela ainda não criou
 - `insight` ganhou oito regras que leem etapa, peso e previsão (gargalo, ritmo
   contra prazo, ação que destrava a etapa seguinte, semana maior que a
@@ -151,11 +151,11 @@ Insight → Ajuste.**
 O **Momentumm AI** grava as etapas que mostra: cada linha de `steps` vira uma
 `plan_stage` de verdade e cada ação nasce dentro da sua (`stepIndex` no contrato
 da sugestão). Antes disso a prévia prometia um caminho e salvava uma lista, e o
-objetivo criado por ali nascia sem plano — logo sem gargalo, sem previsão e fora
+objetivo criado por ali nascia sem plano, logo sem gargalo, sem previsão e fora
 de todas as regras de insight de etapa.
 
 **Todo objetivo nasce com caminho, não só o da IA.** `buildPlan` devolve três
-etapas — entrar no ritmo (20%), chegar na metade (40%), fechar (40%) — com data
+etapas, entrar no ritmo (20%), chegar na metade (40%), fechar (40%), com data
 proporcional ao peso, e cada ação já traz o `stageIndex` da sua. Três e não
 cinco porque o gerador não sabe nada do assunto: o que dá pra afirmar de
 qualquer objetivo com alvo e prazo é que existe um começo, uma metade e um fim.
@@ -166,7 +166,7 @@ desde o primeiro dia.
 
 `createStage` e `resolveStage` leem o snapshot corrente do provider, não o
 `data` do render: plano inteiro é gravado num `for` dentro do mesmo tick, e ler
-o estado do render fazia a segunda etapa nascer sem enxergar a primeira — peso
+o estado do render fazia a segunda etapa nascer sem enxergar a primeira, peso
 somando mais de 100 na tela, e a ação recusada com "essa etapa não existe mais"
 logo depois de a etapa ser criada.
 
@@ -178,7 +178,7 @@ etapa mais pesada levava o selo de "segurando o objetivo" no primeiro dia, que
 
 O insight `objetivo-sem-plano` fecha o elo que faltava: objetivo com três ou
 mais ações e nenhuma etapa é cobrado, porque ali a barra mede volume e ninguém
-consegue ver o que está travando. Abaixo desse número ele se cala — objetivo
+consegue ver o que está travando. Abaixo desse número ele se cala, objetivo
 recém-criado ainda não tem o que quebrar em etapas.
 
 A ponte entre o plano e o dia é o botão **Trazer pra hoje**, na linha de ação
@@ -197,8 +197,8 @@ obrigatórias saíram, e só. O único avanço automático é a etapa sair de "n
 iniciada" na primeira ação concluída.
 
 O plano de cada objetivo é calculado **uma vez** no `PlannerProvider` e lido por
-todas as telas (`plans`). Foi a divergência entre elas — o plano dividia ações
-concluídas pelo total, o detalhe mostrava volume sobre alvo — que motivou tudo
+todas as telas (`plans`). Foi a divergência entre elas, o plano dividia ações
+concluídas pelo total, o detalhe mostrava volume sobre alvo, que motivou tudo
 isso; recalcular por tela traz o problema de volta.
 
 Migration `0007_plan_stages.sql`: aditiva, com RLS, trigger que recusa etapa de
@@ -212,7 +212,7 @@ progresso × 0,20 + retomada × 0,15`. Quatro fatores, cada um normalizado de 0 
 prioridades (30%)**, **progresso nos objetivos (20%)** e **capacidade de
 retomada (15%)**. Os pesos vivem em `DEFAULT_MOMENTUM_WEIGHTS` e são a única
 coisa a mexer numa recalibragem. `MOMENTUM_FORMULA` e `MOMENTUM_RULES` são o
-texto de "Como seu score é calculado" — o mesmo no diálogo do dashboard, no
+texto de "Como seu score é calculado", o mesmo no diálogo do dashboard, no
 progresso e no system prompt da Momentumm AI.
 
 **O cálculo é um só** (`calculateMomentum`) e a entrada é uma só
@@ -235,7 +235,7 @@ dia vencido desconta; `adiada` pesa `POSTPONED_WEIGHT` (metade, porque adiar
 futura não é dívida. Sem nada de impacto médio ou alto planejado na janela o
 fator não passa de `PRIORITIES_CAP_WITHOUT_PRIORITY` (70): cumprir só o fácil
 não é executar prioridade. Semana sem nenhuma ação planejada deixa o fator
-sem base — uma razão de três semanas atrás carregando 30% do score de quem
+sem base, uma razão de três semanas atrás carregando 30% do score de quem
 parou de planejar seria a execução perfeita de quem não executa nada.
 
 **Descanso planejado** (`profiles.rest_weekdays`, migration 0018, no máximo
@@ -250,14 +250,14 @@ número, com o fator que puxou e o motivo. Aparece no diálogo do score, no
 progresso e no contexto da IA.
 
 **A janela é de 28 dias, com cada um dos últimos 7 valendo o triplo dos
-anteriores.** Sete dias sozinhos fazem o número virar termômetro de humor — uma
+anteriores.** Sete dias sozinhos fazem o número virar termômetro de humor, uma
 gripe apaga um mês de trabalho. Vinte e oito sozinhos fazem o contrário: a
 pessoa muda hoje e o número não reage, então ele deixa de servir pra decidir
 alguma coisa. Com o peso, a semana atual responde por metade do score.
 
 **O que conta é impacto, não quantidade** (`momentum-impact`). Cada item vale 1,
 2 ou 3: prioridade principal e ação de alta dentro de um objetivo valem 3,
-ação de objetivo vale 2, tarefa comum vale 1. Hábito tem **teto em 2** — são
+ação de objetivo vale 2, tarefa comum vale 1. Hábito tem **teto em 2**, são
 cinco marcações por dia contra uma, e repetição não pode competir com a ação que
 destrava a etapa. Além disso, hábitos e tarefas comuns rendem no máximo 2 pontos
 por dia cada, e o dia inteiro satura em 4: sem esses tetos, criar hábitos fáceis
@@ -266,12 +266,12 @@ que o produto defende.
 
 **O crédito de um dia é meio presença, meio tamanho.** Aparecer vale 0,5; o
 impacto do que saiu vale os outros 0,5. Só o impacto faria um dia de leitura
-curta valer um quarto de um dia normal — e a mensagem do produto é que
+curta valer um quarto de um dia normal, e a mensagem do produto é que
 constância ganha de volume. Só a presença faria marcar um hábito de dois minutos
 valer o mesmo que fechar a etapa.
 
 **Falhar um dia custa pouco e nunca zera**: com 28 dias na conta, o pior dia
-possível tira poucos pontos. E a retomada mede o TEMPO até o retorno — voltar em
+possível tira poucos pontos. E a retomada mede o TEMPO até o retorno, voltar em
 até dois dias devolve nota cheia, quatro dias devolve 0,6, mais de dez devolve
 0,1. Quem não parou não ganha nota cheia de graça: sem pausa não há retomada pra
 medir, e o fator herda a consistência.
@@ -279,13 +279,13 @@ medir, e o fator herda a consistência.
 **A janela nunca começa antes do primeiro registro da conta, e nunca é menor que
 sete dias.** O primeiro corte impede medir uma conta de duas semanas contra 14
 dias em que ela não existia; o piso impede que "registrei hoje" empate com
-"registrei a semana toda" — e é no começo que a constância mais precisa
+"registrei a semana toda", e é no começo que a constância mais precisa
 significar alguma coisa. Abaixo de sete dias de história, `hasEnoughData` é
 falso e a tela diz que o número ainda está se formando, em vez de vender
 precisão que não existe.
 
 **Fator sem base herda a consistência em vez de zerar**, e `basis` diz quais
-foram medidos de verdade — o detalhamento avisa em voz alta. Zerar o fator de
+foram medidos de verdade, o detalhamento avisa em voz alta. Zerar o fator de
 objetivos de quem não montou plano seria cobrar uma etapa que não existe.
 
 O dashboard mostra número, classificação, variação contra a semana anterior,
@@ -299,7 +299,7 @@ Os pontos por fator são repartidos pra somar exatamente o score
 que a conta da tela não é confiável.
 
 `momentumHistory` recalcula o score REAL de cada dia pela mesma função, em vez
-de guardar uma série à parte — histórico separado é como a curva começa a
+de guardar uma série à parte, histórico separado é como a curva começa a
 discordar do número grande no dia seguinte a qualquer ajuste de peso.
 
 ### Dia Adaptável e Modo Retomada
@@ -309,11 +309,11 @@ ideal. São entidades separadas (`adaptive-day`, `recovery`) e desembocam na
 MESMA revisão: reorganizar o dia é uma operação só.
 
 **Dia Adaptável** (`buildAdaptiveDay`). A pessoa diz quanto tempo tem e o
-domínio devolve um plano com três vereditos por item — **manter**, **reduzir**
+domínio devolve um plano com três vereditos por item, **manter**, **reduzir**
 pra versão mínima, **reagendar**. A ordem sai de um score que soma impacto,
 prioridade, vínculo com objetivo, prazo e progresso (juntos: "atrasado" já é a
 comparação entre os dois), gargalo da etapa, tempo estimado, sequência do
-hábito, há quantos dias a ação está sendo arrastada e o nível do Momentum —
+hábito, há quantos dias a ação está sendo arrastada e o nível do Momentum,
 ritmo caindo empurra a repetição pra frente, ritmo alto empurra o objetivo.
 Pesos em `WEIGHT`, num lugar só.
 
@@ -327,16 +327,16 @@ O que ele se recusa a fazer é o que define o recurso:
   pessoa costuma planejar, nunca um número fixo
 - **Não tira hábito do dia.** Hábito não muda de data: ele encolhe pra versão
   mínima, e é ela que preserva a sequência. A reserva de tempo dele é sempre a
-  mínima — reservar a cheia faria a rotina comer o que move o objetivo
+  mínima, reservar a cheia faria a rotina comer o que move o objetivo
 - **Não devolve dia vazio, e não deixa o protegido cair.** A prioridade
   principal encolhe mas não sai; sem versão mínima, o plano diz em voz alta que
   ela não cabe em vez de escondê-la numa data futura
 - **Não grava nada sozinho.** A revisão ("Vamos proteger seu Momentum") mostra
   item por item com o motivo, e só o "Confirmar" escreve
 
-**Modo Retomada** (`detectRecovery`). Liga com **sinais combinados** — três
+**Modo Retomada** (`detectRecovery`). Liga com **sinais combinados**, três
 dias de baixa execução, objetivo sem avanço há uma semana, adiamentos
-recorrentes, queda de 8+ pontos no Momentum — e exige pelo menos dois: um sinal
+recorrentes, queda de 8+ pontos no Momentum, e exige pelo menos dois: um sinal
 sozinho é quase sempre ruído (viagem, férias, espera de terceiro). Cada sinal
 mostra o número que o produziu. Hoje não conta como dia fraco (ainda está
 acontecendo) e quem já se moveu hoje não vê o card.
@@ -354,7 +354,7 @@ de outra data.
 caminhos que já existiam: o passo escolhido vira a prioridade principal, e
 prioridade vale 3 pontos de impacto contra 1 de tarefa comum; e a retomada mais
 recente passou a pesar o dobro das anteriores no fator de capacidade de
-retomada (`LATEST_RETURN_WEIGHT`) — o fator pergunta "você consegue voltar?", e
+retomada (`LATEST_RETURN_WEIGHT`), o fator pergunta "você consegue voltar?", e
 a resposta que vale é a de agora. Nada é gravado pra inflar o número: o crédito
 só existe se houve movimento de verdade no dia.
 
@@ -383,8 +383,8 @@ capacidade e prioridade do dia), e é por isso que o progresso consegue aplicar
 o mesmo ajuste sem montar o dashboard inteiro.
 
 **Quem descreve, resolve.** A tela de Insights passou a receber os objetivos
-com plano e previsão — sem isso as oito regras que leem etapa, peso e prazo
-nunca disparavam ali, justamente as que percebem o plano travando — e cada
+com plano e previsão, sem isso as oito regras que leem etapa, peso e prazo
+nunca disparavam ali, justamente as que percebem o plano travando, e cada
 leitura ganhou o botão que executa. O progresso ganhou "o próximo ajuste" com
 a mesma ação, no lugar de uma frase sobre o fator mais fraco. O cartão de
 objetivo ganhou "trazer pra hoje" na próxima ação: marcar um objetivo como
@@ -395,7 +395,7 @@ tratamento.
 de IA ao lado de "Hábitos" e "Progresso" apresenta o produto como uma coleção
 de recursos. Ela continua inteira, achável pela busca e pelos atalhos do
 perfil. No lugar dela entrou o que estava **órfão**: `/app/insights` existia
-como rota e como tela e nenhuma parte do app levava até ela — nem a busca, que
+como rota e como tela e nenhuma parte do app levava até ela, nem a busca, que
 lê `APP_NAV`. Agora é "Leituras do ritmo", com entrada no dashboard, no
 progresso e no sheet do celular. As descrições da navegação passaram a dizer o
 PAPEL de cada tela no ciclo, não a funcionalidade dela.
@@ -407,26 +407,26 @@ protegidas. O que faltava era a camada em volta dela, e uma falha dentro dela.
 
 **A falha:** `profiles.plan` era coluna de `profiles`, e a policy de update
 liberava a linha inteira pro dono. Qualquer conta podia mandar um PATCH com
-`{"plan":"pro"}` direto na API e virar PRO — o front nunca enviava esse campo,
+`{"plan":"pro"}` direto na API e virar PRO, o front nunca enviava esse campo,
 que é justamente por que passou despercebido. A regra que sai disso vale pra
 sempre: **entitlement nao mora em coluna que o dono edita**. Hoje um trigger
 recusa a mudança fora de `service_role` ou admin com MFA.
 
 **Papel fica fora de `profiles`** (`user_roles`, migration 0013), sem nenhuma
 política de escrita pra API pública. `is_admin()` exige as duas coisas juntas:
-papel de admin E sessão em `aal2` — o nível vem assinado no JWT, então "MFA
+papel de admin E sessão em `aal2`, o nível vem assinado no JWT, então "MFA
 obrigatório pra admin" é condição de leitura no banco, não tela que dá pra
 pular. `assert_admin()` é a versão que explode, pras funções privilegiadas:
 uma checagem que devolve falso vira `update ... where false`, responde 200 e o
 app acha que deu certo.
 
 **`audit_logs`** tem uma política só, de leitura pra admin em aal2. Não existe
-política de insert, update nem delete — e a ausência é a proteção: com RLS
+política de insert, update nem delete, e a ausência é a proteção: com RLS
 ligada, o que não tem política é negado. Quem grava é `record_audit`, que
 carimba o autor com `auth.uid()` em vez de aceitá-lo por parâmetro.
 
 **Políticas separadas por comando** (0015). As `for all` antigas já traziam
-`using` e `with check`, então não eram furo; o ganho é de revisão — afrouxar a
+`using` e `with check`, então não eram furo; o ganho é de revisão, afrouxar a
 leitura amanhã não toca mais na mesma linha que governa o delete.
 `apply_owner_policies` é o molde, pra a próxima tabela nascer com as quatro.
 
@@ -439,7 +439,7 @@ junto com a conta.
 **Autenticação** (`domain/auth`, `infrastructure/supabase/supabase-auth`):
 Google, recuperação, troca de senha com reautenticação, MFA por TOTP e
 encerramento global de sessão. Nenhuma resposta revela se um e-mail tem
-conta — o `error.message` do GoTrue diz "User already registered" com todas as
+conta, o `error.message` do GoTrue diz "User already registered" com todas as
 letras, e ele subia direto pra tela. O freio de tentativas (`auth-throttle`) é
 do navegador e não substitui o limite do servidor: ele impede o formulário de
 virar ferramenta de teste de senha.
@@ -543,7 +543,7 @@ coletados lá, nunca aqui). `domain/billing/` tem o preço (`PRO_PRICES`, em
 centavos, o mesmo número da landing e do checkout), a assinatura como a
 pessoa a vê e a decisão de cada evento do webhook (`decideBillingEvent` +
 `transitionFor`, puros, com teste). Migration 0030: `billing_customers`,
-`billing_checkouts`, `billing_webhook_events` — sem política nenhuma, só
+`billing_checkouts`, `billing_webhook_events`, sem política nenhuma, só
 service role.
 
 Duas Edge Functions: `asaas-billing` (JWT da pessoa: abre o checkout,
@@ -560,7 +560,7 @@ o card da landing) leva pra `/app/assinatura`; `/#pro` fica como comparação.
 
 Migrations 0022 a 0028; suíte `supabase/tests/admin-authorization.sql` (109
 casos). Roda contra um Postgres embutido com stub do `auth`/`storage` quando o
-CLI não está logado — a única diferença conhecida é o trigger
+CLI não está logado, a única diferença conhecida é o trigger
 `storage.protect_delete`, que o stub não tem.
 
 ### Share Studio e a camada de momentos
@@ -570,12 +570,12 @@ fez em imagem compartilhável. A referência é o Strava, aplicada a rotina,
 objetivo, constância e Momentum.
 
 **A entidade nova NÃO se chama `Activity`.** `activity` já é a unidade do
-Momentumm — esforço registrado, "leu 32 páginas" — e é ela que alimenta streak,
+Momentumm, esforço registrado, "leu 32 páginas", e é ela que alimenta streak,
 meta e histórico. O que o Share Studio precisa é de outra coisa: o EVENTO que
 vale contar. Reaproveitar o nome faria as duas tabelas discordarem sobre o que
 "atividade" significa, e o feed futuro leria a errada.
 
-- `journey-event` — o momento notável. Treze tipos (`day_completed`,
+- `journey-event`, o momento notável. Treze tipos (`day_completed`,
   `routine_completed`, `goal_progress`, `goal_completed`, `milestone`,
   `weekly_review`, `comeback`, `momentum_record`, `habit_completed` e os quatro
   de desafio: `challenge_joined`, `challenge_progress`, `challenge_milestone`,
@@ -593,10 +593,10 @@ vale contar. Reaproveitar o nome faria as duas tabelas discordarem sobre o que
 
 **Dois caminhos, um destino.** Transição gravada vira linha no banco
 (objetivo concluído no `PlannerProvider`, review concluído no `saveWeeklyReview`,
-dia fechado no `DashboardPage` — que é quem sabe quando o dia fecha). "Compartilhar
+dia fechado no `DashboardPage`, que é quem sabe quando o dia fecha). "Compartilhar
 meu dia às 15h de uma terça comum" não é fato, é uma FOTO do estado: sai de
 `domain/share/journey-event-builders`, é efêmero e não vai pro banco. O Share
-Studio não sabe de onde veio o evento — que é o desacoplamento que o feed vai
+Studio não sabe de onde veio o evento, que é o desacoplamento que o feed vai
 precisar.
 
 **A cadeia é `JourneyEvent → ShareCardData → template → exportação`**, e cada
@@ -608,13 +608,13 @@ etapa.
 percentual, momentum, duração, sequência, contagens de hábitos e ações, dias
 ativos, volume registrado contra o alvo ("1.240 de 1.800 páginas"), etapas
 fechadas, prazo restante e a lista do que saiu. Continuam desligados só os três
-que carregam TEXTO escrito por ela — título do objetivo, área que ela criou e o
-próprio nome — mais a frase do app.
+que carregam TEXTO escrito por ela, título do objetivo, área que ela criou e o
+próprio nome, mais a frase do app.
 
 Com o conteúdo escolhido pela pessoa, a pilha passou a poder estourar 1920px.
 Cada bloco declara uma ordem de sacrifício (`drop`) e o renderizador corta o de
 maior ordem até caber: lista antes da linha de apoio, linha de apoio antes do
-momentum. Cortar é melhor que encolher — reduzir a fonte faria dois cards do
+momentum. Cortar é melhor que encolher, reduzir a fonte faria dois cards do
 mesmo dia saírem com tipografias diferentes.
 
 **Mais informação dentro do card, por escolha.** Além do número e da lista, o
@@ -622,7 +622,7 @@ card tem uma LINHA DE APOIO com sequência, área, avanço do objetivo
 ("42% → 58%") e as contagens de hábitos e ações. Ela é uma lista (`stats`), não
 campos soltos: um dado novo passa a aparecer sem que nenhum template saiba o
 que ele é, pelo mesmo motivo de `items` ser uma lista. Só a sequência nasce
-ligada — é o dado que faz o card ser postado; o resto entra num toque.
+ligada, é o dado que faz o card ser postado; o resto entra num toque.
 
 E o painel passou a oferecer o que ESTE evento tem, não o que o tipo dele
 suporta em tese (`availableFieldsForEvent`): hábito marcado sem cronômetro não
@@ -630,14 +630,14 @@ mostra "Duração", dia sem sequência não mostra "Sequência". Toggle que não
 nada ensina a desconfiar dos outros.
 
 **Privacidade por menor exposição.** Nome do objetivo, lista de hábitos e nome
-da pessoa começam **desligados** — são os três campos que carregam texto escrito
+da pessoa começam **desligados**, são os três campos que carregam texto escrito
 por ela. Campo desligado não vira placeholder: ele some. Um card com "Objetivo
 oculto" denunciaria que havia algo escondido. Toggle que o tipo de evento não
 suporta não aparece: toggle que não muda nada ensina a desconfiar dos outros.
 
 **Renderização em canvas, não HTML fotografado.** As bibliotecas que fotografam
 DOM erram em `oklch` (o padrão do Tailwind v4) e `foreignObject` em SVG quebra
-no Safari do iPhone — o aparelho onde o Stories acontece. Existe UM renderizador
+no Safari do iPhone, o aparelho onde o Stories acontece. Existe UM renderizador
 (`render-share-card`) num espaço fixo de 1080 de largura; o preview é o mesmo
 desenho em escala menor. "O que você vê é o que sai" fica garantido por
 construção, não por disciplina.
@@ -645,7 +645,7 @@ construção, não por disciplina.
 **O card é do Story, e só.** Post 4:5 e quadrado saíram: feed é publicação
 permanente, e card gerado por app no meio do perfil de alguém é o que ninguém
 posta duas vezes. Com um formato só, o desenho é afinado pra ele em vez de
-servir aos três pela metade — e o seletor de formato sumiu junto, porque
+servir aos três pela metade, e o seletor de formato sumiu junto, porque
 pergunta com uma resposta só não é escolha.
 
 **Cor e arranjo são dimensões separadas.**
@@ -674,14 +674,14 @@ card. Arranjo e cor trancados continuam VISÍVEIS no estúdio, com o selo PRO:
 
 **A escolha do arranjo acontece no próprio card.** O preview é um carrossel:
 arrasta pro lado e a mesma informação se reorganiza, em tamanho real, com o
-desenho que vai sair no PNG. Os pontos abaixo são botões de verdade — deslizar
+desenho que vai sair no PNG. Os pontos abaixo são botões de verdade, deslizar
 não funciona por teclado nem por leitor de tela, e um seletor que só existe no
 gesto deixa de fora justamente quem mais precisa de alternativa. Sobre foto, a
 cor sai de cena (branco com sombra) e o arranjo continua valendo inteiro.
 
 O card também emagreceu. Saiu a barra de progresso (o "87%" já é a informação),
-o selo do momentum virou uma linha sem caixa — moldura desenhada por cima da
-foto de alguém é o que denuncia "isto saiu de um app" — e a frase do Momentumm
+o selo do momentum virou uma linha sem caixa, moldura desenhada por cima da
+foto de alguém é o que denuncia "isto saiu de um app", e a frase do Momentumm
 virou um toggle **desligado por padrão**. O card que a pessoa posta precisa
 parecer dela, não o print de um dashboard.
 
@@ -691,7 +691,7 @@ investimento novo.
 
 Saída sempre em PNG 1080×1920. Compartilhamento pelo
 share sheet nativo (Web Share API com arquivo) e download como saída quando ele
-não existe — sem SDK de Instagram, TikTok ou WhatsApp. Analytics tem contrato e
+não existe, sem SDK de Instagram, TikTok ou WhatsApp. Analytics tem contrato e
 ponto único de saída (`share-analytics`), com payload FECHADO: tipo, template e
 formato, nunca conteúdo escrito pela pessoa.
 
@@ -704,7 +704,7 @@ As garantias dessa camada estão travadas em teste (`journey-invariants.test.ts`
 não só em comentário: todo tipo nasce privado, o gravador nem informa
 visibilidade (quem decide é o default do domínio e o do banco), rodar de novo
 não duplica, e todo tipo que o feed do círculo mostra é um tipo que alguém
-grava. O custo de errar aqui não aparece hoje — aparece no dia em que mil
+grava. O custo de errar aqui não aparece hoje, aparece no dia em que mil
 linhas gravadas com a visibilidade errada ficam visíveis pra outra pessoa, e aí
 não há correção que desfaça o que já foi visto.
 
@@ -717,7 +717,7 @@ produto continua single-player.
 A camada de momentos deixou de depender de alguém lembrar de gravar. Quem
 decide o que vira registro é `journey-recorder`, uma função **pura**: recebe o
 estado do dia mais os eventos já gravados e devolve só o que falta. Rodar de
-novo não duplica nada, e dá pra provar isso em teste sem banco — que é o
+novo não duplica nada, e dá pra provar isso em teste sem banco, que é o
 oposto de espalhar `record(...)` por sete componentes.
 
 Ele cobre hábito concluído, rotina fechada, dia cumprido, retomada, recorde de
@@ -732,7 +732,7 @@ Evento de VIDA (marco, objetivo cruzando 25/50/75%) acontece uma vez só: a
 chave ignora a data, senão "100 hábitos concluídos" seria gravado de novo toda
 vez que a pessoa abrisse o app no dia seguinte.
 
-`milestone` guarda as regras dos marcos — faixas poucas e espaçadas de
+`milestone` guarda as regras dos marcos, faixas poucas e espaçadas de
 propósito, porque marco a cada dez vira ruído, e ruído é o oposto de conquista.
 A sequência usa o RECORDE e não a atual: conquista que some quando a pessoa
 perde um dia é conquista que o app tira de volta.
@@ -741,38 +741,37 @@ perde um dia é conquista que o app tira de volta.
 rede social. Ele responde "o quanto eu mudei desde que comecei", não "quem me
 segue", e funciona inteiro com uma pessoa só usando o app: momentum,
 constância, semanas de progresso, sequência, objetivos ativos, conquistas com o
-próximo marco e o progresso recente. Nenhum número é calculado aqui — todos vêm
+próximo marco e o progresso recente. Nenhum número é calculado aqui, todos vêm
 de onde já eram calculados, porque duas telas contando "constância" com contas
 diferentes é como um app começa a discordar de si mesmo.
 
 Nome, foto e bio se editam ali; @ e visibilidade padrão da ATIVIDADE continuam
 em Configurações, que é onde moram os ajustes de conta.
 
-A tela abre com a linha que resume a pessoa em números — momentum, objetivos
-ativos, consistência em porcentagem e tempo de casa ("12 semanas no Momentumm")
-—, e as conquistas têm um ícone por espécie: fogo pra sequência, alvo pra
+A tela abre com a linha que resume a pessoa em números, momentum, objetivos
+ativos, consistência em porcentagem e tempo de casa ("12 semanas no Momentumm"), e as conquistas têm um ícone por espécie: fogo pra sequência, alvo pra
 objetivo, relógio pra foco. O mesmo troféu repetido seis vezes achatava
 conquistas diferentes numa coisa só.
 
-**Visibilidade do perfil (migration `0012`).** Três degraus — `privado`
-(padrão), `amigos`, `publico` — e eles valem pro PERFIL, nunca pros momentos:
+**Visibilidade do perfil (migration `0012`).** Três degraus, `privado`
+(padrão), `amigos`, `publico`, e eles valem pro PERFIL, nunca pros momentos:
 perfil público não torna público nada que a pessoa não marcou. A política
 `using (true)` de `profiles`, que vinha da 0001 e deixava qualquer conta ler
 nome, @, bio e foto de toda a base, foi substituída por dono + amigo aceito +
-público + quem tem vínculo de amizade (aceito ou pendente — sem isso o pedido
+público + quem tem vínculo de amizade (aceito ou pendente, sem isso o pedido
 chega como "alguém quer te adicionar", impossível de responder).
 
 **A busca pelo @ EXATO continua achando todo mundo**, e isso é deliberado:
 perfil nasce privado, e uma busca que respeitasse a visibilidade sem exceção
-deixaria todo mundo invisível pra todo mundo — o Círculo nunca sairia do zero.
+deixaria todo mundo invisível pra todo mundo, o Círculo nunca sairia do zero.
 `find_profile_by_handle` é `security definer`, devolve só o cartão de visita
 (id, nome, @, foto), compara por igualdade (nunca `like`) e tem revoke
 explícito ao `anon`, pela lição da 0010. Busca PARCIAL, por nome, continua no
 SELECT normal e enxerga só quem escolheu `publico`.
 
 **A foto vive na coluna `avatar_url`**, reduzida a 256px e codificada como data
-URL (~20KB) antes de sair do aparelho. Evita um bucket de Storage inteiro —
-políticas, URL assinada, limpeza de órfão — por um arquivo que cada conta tem
+URL (~20KB) antes de sair do aparelho. Evita um bucket de Storage inteiro,
+políticas, URL assinada, limpeza de órfão, por um arquivo que cada conta tem
 UM. Quando existir foto de capa ou álbum, a migração é trocar o conteúdo da
 coluna por um caminho, e nada acima muda.
 
@@ -786,7 +785,7 @@ A primeira camada social, e ela entra com o freio puxado.
 
 **Amizade, não seguidor.** Uma linha por par, combinada dos dois lados. Duas
 linhas espelhadas exigiriam escrever nas duas pra aceitar, e uma falha no meio
-deixaria o par em desacordo consigo mesmo — A achando que são amigos e B não.
+deixaria o par em desacordo consigo mesmo, A achando que são amigos e B não.
 Seguidor traria junto o que o produto não quer: audiência, alcance e a pergunta
 "quantos me seguem".
 
@@ -798,7 +797,7 @@ esse botão.
 
 **O feed é curado por regra, não por algoritmo.** `circle-feed` define os cinco
 tipos que viram assunto entre amigos: rotina, objetivo (avanço e conclusão),
-marco, review e retomada. Hábito e dia ficam de fora — cinco hábitos por dia
+marco, review e retomada. Hábito e dia ficam de fora, cinco hábitos por dia
 vezes dez amigos são cinquenta linhas diárias, e feed que enche é feed que
 ninguém lê. A mesma lista decide o que PODE ser compartilhado: momento que não
 apareceria no feed não oferece o botão.
@@ -807,7 +806,7 @@ apareceria no feed não oferece o botão.
 "84". O score é a comparação da pessoa com ela mesma; exibi-lo absoluto num feed
 monta a tabela de classificação que o produto recusa, mesmo sem nunca chamar de
 tabela. Pelo mesmo motivo o perfil do amigo mostra só os momentos que ele
-compartilhou — sem objetivos, hábitos, notas, constância ou score.
+compartilhou, sem objetivos, hábitos, notas, constância ou score.
 
 **Um gesto só: apoio.** Curtida com seis emojis vira métrica de popularidade, e
 popularidade entre pessoas tentando mudar de vida é o começo do ranking. Uma
@@ -821,12 +820,12 @@ com amizade aceita. A checagem passa por `are_friends`, uma função
 `security definer` com `search_path` fixo: sem ela, a política de uma tabela
 consultaria a RLS da outra, o que custa caro e abre porta pra recursão.
 
-`comunidade` e `publica` seguem sem leitor nenhum — alcance que ninguém
+`comunidade` e `publica` seguem sem leitor nenhum, alcance que ninguém
 consegue conferir na interface é alcance que não deveria existir no banco.
 
 Migration `0010_are_friends_anon.sql`: o Supabase mantém DEFAULT PRIVILEGES
 concedendo EXECUTE em toda função nova do schema `public` pros papéis `anon` e
-`authenticated`, direto ao papel — então o `revoke ... from public` da 0009 não
+`authenticated`, direto ao papel, então o `revoke ... from public` da 0009 não
 alcançava. `are_friends` nasceu chamável sem login. Como `profiles` é legível
 por qualquer um desde a 0001, dava pra listar os ids de todo mundo e perguntar,
 par a par, quem é amigo de quem. **Toda função `security definer` neste projeto
@@ -848,27 +847,27 @@ e diferem só no que exigem dela: `diaria` (todo dia da janela), `semanal` (X
 dias por semana, sem dia marcado) e `total` (X dias ao longo da janela, quando
 não importa quais). Contar volume acumulado seria a quarta forma, e ela já
 existe: chama-se objetivo. O desafio é sobre APARECER, e é por isso que ele
-funciona entre pessoas cujas metas são diferentes — 30 minutos dela e 1h dele
+funciona entre pessoas cujas metas são diferentes, 30 minutos dela e 1h dele
 fecham o mesmo dia.
 
 **O desafio não guarda progresso por dia.** Quem move o progresso continua
-sendo a atividade — ou o hábito que a pessoa vinculou. `doneDaysOf` é uma
+sendo a atividade, ou o hábito que a pessoa vinculou. `doneDaysOf` é uma
 função pura sobre o que ela já registrou: com hábito vinculado, o dia fecha
 quando o hábito é marcado (a versão mínima conta, como em todo o resto); sem
 hábito, quando o volume do eixo alcança `dailyTarget`. O hábito vem primeiro
-porque é o que já existe na rotina — desafio que obriga a registrar de novo o
+porque é o que já existe na rotina, desafio que obriga a registrar de novo o
 que ela registrou hoje de manhã morre na segunda semana.
 
 **`done_days` é o único número que atravessa a fronteira entre duas pessoas.**
 Ele é materializado em `challenge_participants` porque o progresso de alguém
-sai de hábitos e atividades que a RLS não deixa mais ninguém ler — e nem
+sai de hábitos e atividades que a RLS não deixa mais ninguém ler, e nem
 deveria. Entrar num desafio é consentir em mostrar quantos dias você fechou
 NELE, e nada além: nem o hábito, nem o volume, nem o momentum. Quem escreve é
 sempre o dono da linha; o cliente recalcula, compara e só publica quando os dois
 divergem.
 
 **Ranking existe, e só dentro do desafio.** Ordena por dia cumprido, que é o que
-as duas pessoas combinaram — nunca por Momentum, constância ou volume. Empate
+as duas pessoas combinaram, nunca por Momentum, constância ou volume. Empate
 mantém a mesma posição: desempatar por horário premiaria quem acordou cedo. E
 os eventos de desafio saem SEM momentum de propósito, ao contrário de todos os
 outros: pendurar o score pessoal num card que vem acompanhado de uma lista de
@@ -877,7 +876,7 @@ participantes monta exatamente a comparação entre pessoas que o produto recusa
 `challenge-recorder` é o gravador, no mesmo molde do `journey-recorder`: função
 pura, recebe o estado mais o que já foi gravado, devolve só o que falta. Entrada,
 marco (25/50/75%) e conclusão são eventos de VIDA; avanço é de DIA, no máximo um
-por dia por desafio. Marco cruzado hoje CALA o avanço do mesmo dia — a versão
+por dia por desafio. Marco cruzado hoje CALA o avanço do mesmo dia, a versão
 menor da mesma frase, lado a lado no feed, seria a mesma notícia duas vezes.
 
 Os quatro tipos entram no `circle-feed` inteiros, inclusive o avanço. A regra que
@@ -887,7 +886,7 @@ entre gente que topou aparecer junto. E como todo evento, ele nasce `privada`:
 o feed só recebe o que a pessoa marcar.
 
 Migration `0011_challenges.sql`: `challenges` e `challenge_participants` com
-RLS, mais `is_challenge_member` e `owns_challenge` — as duas `security definer`
+RLS, mais `is_challenge_member` e `owns_challenge`, as duas `security definer`
 com `search_path` fixo e revoke explícito ao `anon`, seguindo a lição da 0010. A
 política de convite exige as duas condições juntas (é o dono E é amigo dele):
 sem a primeira, um participante encheria o desafio de gente que ninguém chamou;
@@ -895,7 +894,7 @@ sem a segunda, o convite viraria a porta dos fundos do Círculo. Os quatro
 valores novos do enum de evento entram aditivos e não são usados na mesma
 migration, que é a condição pra `add value` conviver com a transação do CLI.
 
-No modo demo o desafio vem de fábrica com as duas amigas dentro — diferente dos
+No modo demo o desafio vem de fábrica com as duas amigas dentro, diferente dos
 momentos, e por um motivo que não vale pros outros: desafio é a única parte do
 produto que não dá pra conferir sozinho.
 
@@ -923,7 +922,7 @@ os três últimos reviews escritos; vitórias recentes; o score aberto em
 fatores; a capacidade do check-in; as ações pendentes dos próximos 7 dias.
 Um contexto só, montado no `use-ai`, pra todos os pedidos, senão duas telas
 recebem leituras que se contradizem. Nenhum id atravessa a fronteira: a IA
-responde por posição (`stepIndex`) e por REF — apelido curto (`a1`, `o2`,
+responde por posição (`stepIndex`) e por REF, apelido curto (`a1`, `o2`,
 `h1`) que `buildAiContextBundle` atribui e traduz de volta pra id do lado do
 app (`AiRefs`). Ref inventado não bate com nada e a linha aparece bloqueada,
 com o motivo, em vez de virar escrita. Não saem: e-mail, nome, observação do
@@ -1001,38 +1000,38 @@ quebrado porque o Supabase passou a recusar delete em `storage.objects`
 
 O produto é um ciclo de três telas, nessa ordem:
 
-**1. Onboarding — ativação rápida** (`activation`, `Activation.tsx`). Quatro
+**1. Onboarding, ativação rápida** (`activation`, `Activation.tsx`). Quatro
 perguntas e um plano:
 
-1. **O que você quer mudar?** — a área da VIDA (saúde, carreira, estudos,
+1. **O que você quer mudar?**, a área da VIDA (saúde, carreira, estudos,
    projeto, finanças, pessoal, outra), não o eixo do app. Ninguém acorda
    querendo "meditação": quer dormir melhor, quer sair do emprego
-2. **O que você quer alcançar?** — texto livre, com as palavras dela
-3. **Quando?** — prazo flexível, preset ou data definida
-4. **Quanto tempo, de verdade?** — horas por dia OU por semana, mais os dias da
+2. **O que você quer alcançar?**, texto livre, com as palavras dela
+3. **Quando?**, prazo flexível, preset ou data definida
+4. **Quanto tempo, de verdade?**, horas por dia OU por semana, mais os dias da
    semana disponíveis (que viram os `weekdays` do hábito, em vez do palpite que
    o gerador fazia)
 
 A área vira eixo: `estudos` reaproveita o `estudo` de fábrica, e o resto cria
-uma linha em `activity_types` com o nome que a pessoa escolheu — a promessa da
+uma linha em `activity_types` com o nome que a pessoa escolheu, a promessa da
 arquitetura desde o primeiro commit. **O eixo só é criado ao salvar**, nunca no
 passo 1: senão cada pessoa que desistisse no meio deixaria uma área órfã no
 filtro do histórico. A prévia inteira funciona antes disso porque
-`PlanInput.axisLabel` carrega o nome — sem ele o hábito nascia "Dedicar tempo a
+`PlanInput.axisLabel` carrega o nome, sem ele o hábito nascia "Dedicar tempo a
 financas", com cara de identificador.
 
 **O alvo sai do que a pessoa escreveu, quando ela escreveu um número.**
 `readGoalQuantity` lê horas, minutos e páginas, e separa total de ritmo
 ("30 min por dia" é ritmo: tratar como alvo daria um objetivo de meia hora pra
-três meses). "Ler 6 livros" NÃO vira 1500 páginas — converter livro em página é
+três meses). "Ler 6 livros" NÃO vira 1500 páginas, converter livro em página é
 chutar a espessura do livro dela. Sem número reconhecível, o alvo sai do ritmo
 que o eixo sustenta (`comfortableSessionOf`), e a tela diz de onde veio.
 
-**Ambição contra disponibilidade, antes de salvar.** A comparação é semanal —
-é onde a frequência vive — e a frase é fixa: *"Seu plano exige aproximadamente
+**Ambição contra disponibilidade, antes de salvar.** A comparação é semanal,
+é onde a frequência vive, e a frase é fixa: *"Seu plano exige aproximadamente
 5h40, mas sua disponibilidade é de 2h. Vamos reorganizar?"*, seguida da base da
 conta. Quando não fecha, `ready` é falso e o CTA não existe: as saídas ocupam o
-lugar dele, cada uma **recalculada pelo mesmo gerador antes de virar botão** —
+lugar dele, cada uma **recalculada pelo mesmo gerador antes de virar botão**,
 reduzir as ações, ajustar a frequência, ampliar o prazo ou revisar
 manualmente. Opção que promete resolver e não resolve é pior que opção nenhuma,
 então só entra na lista a que de fato faz o plano caber. **Plano impossível não
@@ -1041,7 +1040,7 @@ então só entra na lista a que de fato faz o plano caber. **Plano impossível n
 O último passo fecha com *"Seu plano está pronto. Você não precisa resolver o
 objetivo inteiro hoje. Seu próximo passo é este."* e o CTA **Começar meu
 Momentum**, que grava tudo de uma vez por `applyPlan`: objetivo, meta semanal,
-os três marcos, o hábito e as ações — inclusive a de hoje, já como prioridade
+os três marcos, o hábito e as ações, inclusive a de hoje, já como prioridade
 principal.
 
 **Dá pra pular e retomar.** "Deixar pra depois" guarda passo e respostas no
@@ -1061,27 +1060,27 @@ prioridade do dia, hábitos, ações e check-in. O objetivo vem alto de propósi
 sem destino na frente, a pessoa cumpre a lista e não chega em lugar nenhum.
 
 **3. Review (`/app/review`).** Semanal: como foi, % de execução, onde perdeu
-ritmo, onde evoluiu, e uma recomendação pra semana seguinte. Tela separada —
+ritmo, onde evoluiu, e uma recomendação pra semana seguinte. Tela separada,
 relatório dentro do dia transforma execução em contabilidade.
 
 Entidades da jornada:
 
-- `objective` — o que a pessoa quer mudar, **com prazo**. Difere de `goal` por
+- `objective`, o que a pessoa quer mudar, **com prazo**. Difere de `goal` por
   natureza: a meta é um ritmo que se repete, o objetivo termina. Um ativo por
   eixo (índice único no banco). O progresso soma as `activities` do eixo dentro
   da janela, sem tabela de vínculo: a atividade continua sendo a unidade única
-- `activity-type` — deixou de ser constante e virou **registro**: quatro eixos
+- `activity-type`, deixou de ser constante e virou **registro**: quatro eixos
   de fábrica mais os que a conta criou, carregados no início da sessão por
   `registerCustomActivityTypes`. `ActivityTypeSlug` é `string` porque a lista é
-  aberta, e `activityType()` devolve um eixo genérico pra slug desconhecido —
+  aberta, e `activityType()` devolve um eixo genérico pra slug desconhecido,
   registro de uma área apagada continua aparecendo no histórico
-- `plan-builder` — o gerador de plano. Aritmética pura sobre alvo, prazo, dias
+- `plan-builder`, o gerador de plano. Aritmética pura sobre alvo, prazo, dias
   por semana e **minutos por dia**; o mesmo pedido gera sempre o mesmo plano. O
   tempo declarado é teto: nenhuma sessão pode passar dele. **Avisa quando não
-  cabe** e oferece as duas saídas honestas — o prazo que caberia (nunca um que o
+  cabe** e oferece as duas saídas honestas, o prazo que caberia (nunca um que o
   objetivo recusaria) ou o alvo que cabe no prazo atual. `buildCombinedPlan`
   faz o mesmo pra vários objetivos e diz se o conjunto cabe no dia
-- `review` — a leitura da semana. Regras determinísticas: sem padrão detectado,
+- `review`, a leitura da semana. Regras determinísticas: sem padrão detectado,
   o bloco não escreve nada. Não cobra dias anteriores à criação do hábito
 
 O rascunho e os planos vivem em `presentation/planner/use-journey-draft`,
@@ -1092,10 +1091,10 @@ os mesmos: `AxisPicker`, `ObjectiveFields`, `TimeBudgetFields` e
 
 `PlannerProvider.applyPlan` recebe a lista de planos e grava tudo numa operação:
 objetivo, ritmo semanal, hábitos e ações já apontando pra meta criada. **Só a
-primeira ação do primeiro plano vira prioridade principal** — é uma por dia, e
+primeira ação do primeiro plano vira prioridade principal**, é uma por dia, e
 três objetivos não podem virar três prioridades disputando o mesmo dia.
 
-No modo demo, Configurações tem **Recomeçar do zero** — é o caminho pra rever o
+No modo demo, Configurações tem **Recomeçar do zero**, é o caminho pra rever o
 onboarding sem abrir o devtools.
 
 ### Primeiro acesso, lembrete e o caminho de volta (21/09/2026)
@@ -1129,7 +1128,7 @@ O app já era instalável; o que faltava era o produto em volta disso.
 - **Service worker registrado no boot** (`infrastructure/pwa/register-sw`),
   não mais só quando a pessoa liga o lembrete. O `sw.js` ganhou um `fetch`
   de navegação (rede primeiro, `public/offline.html` como queda) porque o
-  Chrome só oferece "Instalar app" pra quem responde offline — sem isso a
+  Chrome só oferece "Instalar app" pra quem responde offline, sem isso a
   instalação no Android virava atalho de navegador, e atalho não recebe
   push. Ele continua sem cachear a interface: nenhum deploy fica preso.
 - **Instalar tem convite próprio** (`presentation/pwa`): no Android o
@@ -1147,7 +1146,7 @@ O app já era instalável; o que faltava era o produto em volta disso.
   hora entre 08:00 e 21:30 locais quando existe ação em aberto e já fazem
   ~4 horas sem atividade. Os outros quatro tipos seguem com hora marcada.
   Um por dia, cooldown de 20 horas por tipo, e os limiares moram em
-  `public.notification_rules` — dá pra mudar por SQL, sem deploy.
+  `public.notification_rules`, dá pra mudar por SQL, sem deploy.
 - **A Edge Function foi ligada na decisão da 0050**, que estava escrita e
   sem uso: ela lia `push_reminders_due` (a regra antiga, "não abriu hoje").
   Agora lê `notifications_due()`, carimba `mark_notification_sent`, manda o
@@ -1156,7 +1155,7 @@ O app já era instalável; o que faltava era o produto em volta disso.
   por `log_notification_event`. Se a 0050 não estiver aplicada, ela cai
   sozinha na função antiga.
 - **Bug achado no caminho:** a constraint de fuso da 0036 recusava
-  `Etc/GMT+3`. Quem tivesse esse fuso nunca gravava presença — e portanto
+  `Etc/GMT+3`. Quem tivesse esse fuso nunca gravava presença, e portanto
   nunca recebia nada, silenciosamente. Corrigido na 0056.
 - Testes: `supabase/tests/pglite/lembrete-contextual.mjs` (29 casos, com o
   tempo controlado por fuso em vez do relógio de quem roda) e
@@ -1191,7 +1190,7 @@ primeira vitória. Links dos carrosséis levam pra lá com `utm_*` e `tema=`
   lida em voz alta e digitada: `momentumm.com.br/plano/ig-proc` cabe, uma
   linha de `utm_*` não. O código resolve rede, assunto e tema de uma vez
   (`domain/analytics/quiz-links`), e o canal vai em `?c=dm` quando o envio
-  é pelo direct — sem isso, comentário e direct caem no mesmo balde do
+  é pelo direct, sem isso, comentário e direct caem no mesmo balde do
   funil. Código desconhecido abre o quiz sem origem em vez de dar 404:
   link errado numa campanha não pode virar página de erro. A tabela de
   links prontos pra copiar está em `docs/links-do-quiz.md`.
@@ -1201,7 +1200,7 @@ primeira vitória. Links dos carrosséis levam pra lá com `utm_*` e `tema=`
   quer saber se isso resolve o problema dele, e o quiz responde com um
   plano feito com as respostas dele antes de pedir conta. Os dois botões
   entram pelos códigos `lp-hero` e `lp-fim`, que trazem o próprio
-  `utm_medium` (`landing`) — sem código, quem vem do site cairia como
+  `utm_medium` (`landing`), sem código, quem vem do site cairia como
   "direto" no funil, junto de quem digitou o endereço. O modo demo
   continua em `/app`.
 
@@ -1235,7 +1234,7 @@ primeira vitória. Links dos carrosséis levam pra lá com `utm_*` e `tema=`
   `PlanLimitError` vira o status `limite` em `useQuizActivation`, e
   `QuizActivationLimit.tsx` oferece o que destrava: pausar um dos objetivos
   em andamento (um toque libera a vaga e a ativação roda de novo) ou o PRO.
-  O gate deixa `SUBSCRIPTION_PATH` passar com plano pendente — sem isso o
+  O gate deixa `SUBSCRIPTION_PATH` passar com plano pendente, sem isso o
   botão de assinar voltava pra `/app/ativar` em loop.
 
 ### Celular
@@ -1258,7 +1257,7 @@ decidir e começar, e a análise vem depois.
   pro botão de fechar
 - Em `Minha Jornada` a **sequência abre a página**. No desktop ela mora na
   coluna lateral, mas no celular, no fim da rolagem, ela simplesmente não é
-  vista — e é ela a resposta que traz a pessoa àquela tela
+  vista, e é ela a resposta que traz a pessoa àquela tela
 - Check-in resolve em **um toque**. A energia só é perguntada nos estados
   baixos, onde a resposta muda o plano (`defaultsForMood`)
 - Camada modal do celular é o `BottomSheet`, não o `Dialog`
@@ -1275,7 +1274,7 @@ recarregar a página e calcula o tempo por timestamp, nunca por contador de tiqu
 Eixo medido em páginas pede o valor no fim; os medidos em minutos registram
 direto. A atividade nasce com `source: 'timer'`.
 
-Pendente da fase 1: importações (Kindle, Health, Fit) — a tabela de fases as
+Pendente da fase 1: importações (Kindle, Health, Fit), a tabela de fases as
 coloca na fase 4, então não bloqueiam o resto. Fase 2 (feed, follows, kudos,
 recap) ainda não começou.
 

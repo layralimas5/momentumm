@@ -13,7 +13,7 @@ import type { ChallengeView } from './use-challenges'
  * O desafio na lista.
  *
  * Mostra o SEU avanço grande e o do grupo pequeno, nessa ordem. Invertido, a
- * primeira coisa que a pessoa leria seria a média dos outros — e desafio entre
+ * primeira coisa que a pessoa leria seria a média dos outros, e desafio entre
  * amigos que abre com a comparação vira cobrança antes de virar companhia.
  */
 export function ChallengeCard({

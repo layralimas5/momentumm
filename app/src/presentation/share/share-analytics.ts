@@ -9,7 +9,7 @@ import type {
  * Eventos internos do Share Studio.
  *
  * Ainda não existe destino: nenhum SDK de analytics entrou no bundle pra isso.
- * O que existe é o CONTRATO — nome do evento e formato do payload — e um ponto
+ * O que existe é o CONTRATO, nome do evento e formato do payload, e um ponto
  * único de saída. Quando a ferramenta chegar, ela se conecta em `onShareEvent`
  * e nenhuma tela muda.
  *
@@ -17,7 +17,7 @@ import type {
  *
  * Título de objetivo, nome de hábito, nome da pessoa, nota, descrição. O payload
  * é fechado por tipo de propósito: um `Record<string, unknown>` viraria, na
- * primeira pressa, o lugar onde alguém manda `title` "só pra debugar" — e aí o
+ * primeira pressa, o lugar onde alguém manda `title` "só pra debugar", e aí o
  * texto privado da pessoa está num servidor de terceiro.
  */
 

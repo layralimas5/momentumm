@@ -22,7 +22,7 @@ import type { NewTaskInput } from './task'
  *    entregar um cronograma que só funciona no papel.
  * 3. **O tempo declarado manda.** A pessoa diz quantos minutos por dia consegue
  *    dar, e nenhum plano pode pedir mais que isso. Quando pede, o plano diz em
- *    voz alta que não cabe — e mostra o prazo em que caberia.
+ *    voz alta que não cabe, e mostra o prazo em que caberia.
  * 4. **Sai daqui com uma ação pra hoje.** Plano que começa amanhã não começa.
  */
 
@@ -47,7 +47,7 @@ export interface PlannedTask extends Omit<NewTaskInput, 'userId'> {
  *
  * Sem ela o objetivo nasce como uma lista de três ações: a barra passa a medir
  * volume registrado, o app não consegue apontar gargalo nem previsão, e todas
- * as regras de insight que leem etapa ficam de fora — inclusive a que cobra
+ * as regras de insight que leem etapa ficam de fora, inclusive a que cobra
  * justamente o objetivo sem plano.
  */
 export interface PlannedStage {
@@ -82,7 +82,7 @@ export interface PlanDraft {
   /** Preenchido só quando o plano não cabe: o que fazer a respeito. */
   readonly warning: string | null
   /**
-   * Prazo que tornaria o plano sustentável. Null quando já está — e também
+   * Prazo que tornaria o plano sustentável. Null quando já está, e também
    * quando a data necessária passaria do limite do objetivo: oferecer um prazo
    * que o domínio vai recusar é pior que não oferecer nada.
    */
@@ -101,7 +101,7 @@ export interface PlanInput {
   readonly daysPerWeek: number
   /**
    * Os dias da semana escolhidos, quando a pessoa marcou quais são (0 =
-   * domingo). Sem isso o plano distribui por conta própria — o que é um
+   * domingo). Sem isso o plano distribui por conta própria, o que é um
    * palpite razoável, mas um palpite. Quem disse "terça e quinta" recebe terça
    * e quinta.
    */
@@ -111,7 +111,7 @@ export interface PlanInput {
   /**
    * Nome da área, quando o eixo ainda não existe no registro.
    *
-   * O onboarding monta a prévia inteira ANTES de gravar a área — é o que
+   * O onboarding monta a prévia inteira ANTES de gravar a área, é o que
    * evita uma linha órfã em `activity_types` pra cada pessoa que desiste no
    * meio. Sem este campo, o roteiro cairia no rótulo derivado do slug e o
    * hábito nasceria chamado "Dedicar tempo a financas", sem acento e com
@@ -144,7 +144,7 @@ const SESSION_LIMITS: Readonly<Record<string, SessionLimits>> = {
 
 /**
  * Área criada pela pessoa não tem limite estudado, então recebe um genérico
- * conservador: 30 minutos confortáveis, 90 de teto. Errar pra menos é seguro —
+ * conservador: 30 minutos confortáveis, 90 de teto. Errar pra menos é seguro,
  * o plano fica exigente e ela ajusta; errar pra mais entrega um cronograma que
  * ninguém cumpre.
  */
@@ -158,7 +158,7 @@ function limitsOfAxis(axis: ActivityTypeSlug): SessionLimits {
  * A sessão que se sustenta por meses nesse eixo, na unidade dele.
  *
  * Exportada porque é a régua de "quanto esse tipo de objetivo pede de
- * verdade" — e é contra ela que o onboarding compara a disponibilidade
+ * verdade", e é contra ela que o onboarding compara a disponibilidade
  * declarada antes de gerar qualquer plano. Note que ela NÃO leva o tempo da
  * pessoa em conta de propósito: é o pedido do eixo, não o que já foi cortado
  * pra caber.
@@ -388,7 +388,7 @@ export function buildPlan(input: PlanInput): PlanDraft {
     totalSessions,
     /*
       A conversão em minutos só aparece quando ela ACRESCENTA alguma coisa.
-      Num eixo medido em tempo a frase virava "30 minutos por sessão — cerca
+      Num eixo medido em tempo a frase virava "30 minutos por sessão, cerca
       de 30 minutos", que é o app repetindo o mesmo número e parecendo que
       não entendeu a própria conta.
     */
@@ -406,7 +406,7 @@ export function buildPlan(input: PlanInput): PlanDraft {
  *
  * Três e não cinco porque o plano é gerado sem saber nada do assunto: o que dá
  * pra afirmar de qualquer objetivo com alvo e prazo é que existe um começo, uma
- * metade e um fim. Quem quiser um caminho mais fino quebra as etapas na mão —
+ * metade e um fim. Quem quiser um caminho mais fino quebra as etapas na mão,
  * e aí o app tem o que refinar em vez de uma lista chapada.
  *
  * O peso não é igual: entrar no ritmo é o degrau mais curto e o que menos
@@ -499,7 +499,7 @@ function warningFor(
 
   /*
     As duas saídas honestas: esticar o prazo ou baixar o alvo. Quando nem o
-    prazo máximo resolve, sobra uma só — e é ela que o aviso oferece, em vez de
+    prazo máximo resolve, sobra uma só, e é ela que o aviso oferece, em vez de
     mandar a pessoa esperar dois anos por um objetivo.
   */
   const extraDays = suggestedDeadline ? daysBetween(input.deadline, suggestedDeadline) : 0
@@ -602,7 +602,7 @@ export interface CombinedPlan {
  * Vários objetivos dividindo o mesmo dia.
  *
  * O tempo é dividido em partes iguais porque é a única divisão que a pessoa
- * consegue conferir de cabeça — e porque no primeiro dia ninguém sabe ainda
+ * consegue conferir de cabeça, e porque no primeiro dia ninguém sabe ainda
  * qual objetivo merece mais. O que o app não faz é fingir que 30 minutos viram
  * 90 quando ela escolhe três áreas: o veredito soma o que os planos pedem e
  * compara com o que ela disse que tem.
@@ -632,7 +632,7 @@ export function buildCombinedPlan(input: CombinedPlanInput): CombinedPlan {
 
     Cada plano arredonda a sessão pra cima, então N planos podem somar até N
     minutos a mais que o orçamento por pura conta quebrada. Sem essa margem, a
-    tela diria "cada plano cabe" e "o conjunto não cabe" ao mesmo tempo — e
+    tela diria "cada plano cabe" e "o conjunto não cabe" ao mesmo tempo, e
     quem lê isso perde a confiança nos dois números.
   */
   const fits = requiredMinutesPerDay <= minutesPerDay + plans.length

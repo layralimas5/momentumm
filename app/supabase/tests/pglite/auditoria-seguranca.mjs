@@ -99,7 +99,7 @@ console.log(`\n${achados} ponto(s) para olhar.`)
   ela imprimia o problema e o comando seguia verde. Uma varredura de privilégio
   que não reprova é uma varredura que ninguém lê.
 
-  As duas últimas seções são INVENTÁRIO, não acusação — função aberta pro
+  As duas últimas seções são INVENTÁRIO, não acusação, função aberta pro
   anônimo e tabela com RLS e zero política são listas pra conferir de olho, e
   por isso não contam em `achados`.
 */

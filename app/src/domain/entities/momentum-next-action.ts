@@ -24,7 +24,7 @@ import { isBlocked, isPending, type Task } from './task'
  *
  * Não é uma heurística sobre o score: é o próprio score, recalculado com cada
  * item em aberto marcado como feito hoje. O que ganha é o que mais sobe o
- * número — pela MESMA função que o número usa. Uma regra à parte ("prioridade
+ * número, pela MESMA função que o número usa. Uma regra à parte ("prioridade
  * primeiro") divergiria do cálculo no primeiro dia em que a retomada valesse
  * mais que a prioridade, e a pessoa faria o que o card manda e veria o número
  * não mexer.

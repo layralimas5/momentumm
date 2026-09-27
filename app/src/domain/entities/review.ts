@@ -18,11 +18,11 @@ import type { ObjectiveProgress } from './objective'
  *
  * O dashboard responde "o que eu faço agora". A review responde outra coisa:
  * "o que a semana inteira me ensinou". São perguntas diferentes e por isso a
- * tela é outra — misturar as duas transforma o dia em relatório.
+ * tela é outra, misturar as duas transforma o dia em relatório.
  *
  * A ordem das respostas é fixa: como foi, quanto do planejado saiu, onde o
  * ritmo caiu, onde ele subiu, e o que mudar na semana que vem. Cada bloco sai
- * de contagem real. Sem padrão detectado, o bloco não escreve nada — o produto
+ * de contagem real. Sem padrão detectado, o bloco não escreve nada, o produto
  * inteiro é uma aposta contra a frase motivacional genérica.
  */
 

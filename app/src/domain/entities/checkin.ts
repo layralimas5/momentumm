@@ -4,7 +4,7 @@ import type { DayKey } from './day'
 /**
  * Check-in do momento. É a primeira pergunta do dashboard e a que muda todo o
  * resto: o Momentumm não trata todos os dias como iguais. Dia de pouca energia
- * não recebe o mesmo plano de um dia em alta — recebe a versão mínima dele.
+ * não recebe o mesmo plano de um dia em alta, recebe a versão mínima dele.
  */
 
 export const MOOD_STATES = ['sem-energia', 'automatico', 'estavel', 'motivado', 'em-alta'] as const

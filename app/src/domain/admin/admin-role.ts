@@ -3,7 +3,7 @@
  *
  * A matriz vale pra DESENHAR a tela: esconder o botão que o papel não tem,
  * não listar a rota que ele não abre. A regra que vale de verdade mora no
- * banco (`assert_admin_role` em cada função) e na Edge Function — o front
+ * banco (`assert_admin_role` em cada função) e na Edge Function, o front
  * nunca é a barreira, só a cortesia de não mostrar o que vai ser recusado.
  */
 export const ADMIN_ROLES = ['owner', 'admin', 'support', 'analyst'] as const

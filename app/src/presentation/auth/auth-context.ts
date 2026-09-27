@@ -10,8 +10,8 @@ export interface AuthState {
    * O que o SERVIDOR diz sobre a sessão: nível de garantia, se há segundo
    * fator registrado e se ela pode agir como administrativa.
    *
-   * Fica separado de `user` porque muda por outros motivos — completar o MFA
-   * eleva a sessão sem trocar de usuário — e porque nenhuma tela deve
+   * Fica separado de `user` porque muda por outros motivos, completar o MFA
+   * eleva a sessão sem trocar de usuário, e porque nenhuma tela deve
    * derivar permissão do perfil, que é editável pelo dono.
    */
   readonly session: SessionInfo | null
@@ -26,7 +26,7 @@ export interface AuthState {
 
   signIn(email: string, password: string): Promise<void>
   /**
-   * Devolve `true` quando falta confirmar o e-mail — o que inclui, de
+   * Devolve `true` quando falta confirmar o e-mail, o que inclui, de
    * propósito, o caso de a conta já existir. A tela mostra a mesma mensagem
    * nos dois: dizer "esse e-mail já tem conta" transforma o formulário num
    * verificador de e-mails.

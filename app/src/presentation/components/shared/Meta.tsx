@@ -53,7 +53,7 @@ export function ObjectiveStateTag({ state }: { readonly state: ObjectiveState })
  * O objetivo que uma ação ou hábito empurra, como link.
  *
  * É a peça que responde "pra que serve isso" sem obrigar a pessoa a sair da
- * tela pra descobrir — e é ela que separa o Momentumm de uma lista de tarefas.
+ * tela pra descobrir, e é ela que separa o Momentumm de uma lista de tarefas.
  */
 export function ObjectiveLink({
   objective,
@@ -87,7 +87,7 @@ export function ObjectiveLink({
  * onboarding" não diz nada sozinho; "Ação prioritária · Etapa: MVP · Objetivo:
  * Lançar meu SaaS" diz por que ela está na tela hoje. Ela vive aqui, junto das
  * outras etiquetas, porque aparece no dashboard, no plano, no foco e no
- * celular — e três desenhos diferentes pro mesmo caminho fariam a pessoa
+ * celular, e três desenhos diferentes pro mesmo caminho fariam a pessoa
  * reaprender a tela a cada aba.
  */
 export function ContextLine({

@@ -15,7 +15,7 @@ import { useAsyncAction } from '@/presentation/hooks/use-async-action'
  * O cancelamento do PRO, em dois passos que a pessoa vê como um.
  *
  * Primeiro o PEDIDO (motivo obrigatório de lista fechada, comentário
- * opcional lido só por owner e admin e apagado em 90 dias) — é o que o
+ * opcional lido só por owner e admin e apagado em 90 dias), é o que o
  * painel usa pra entender por que as pessoas saem. Depois o cancelamento
  * DE VERDADE, no Asaas, pela função de cobrança. Se o segundo passo falhar,
  * o pedido fica registrado e a equipe conclui pelo painel; a tela diz isso.

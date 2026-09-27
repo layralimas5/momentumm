@@ -7,7 +7,7 @@ import { cn } from '@/shared/lib/cn'
  * Uma seção do dashboard: título, conteúdo e um caminho pra tela completa.
  *
  * Existe porque nem toda informação merece virar card. Card é uma promessa de
- * importância — quando tudo é card, nada é. Aqui o agrupamento é feito por
+ * importância, quando tudo é card, nada é. Aqui o agrupamento é feito por
  * título e espaçamento, e o card fica reservado ao que a pessoa precisa
  * ATUAR: o foco de hoje.
  *

@@ -10,8 +10,8 @@ import { cn } from '@/shared/lib/cn'
 /**
  * A porta do Dia Adaptável: "quanto tempo você tem hoje?".
  *
- * Uma linha só, com os tempos que as pessoas realmente dizem — meia hora, uma
- * hora, uma hora e meia, três horas — e um campo pra quem quer outro número.
+ * Uma linha só, com os tempos que as pessoas realmente dizem, meia hora, uma
+ * hora, uma hora e meia, três horas, e um campo pra quem quer outro número.
  * Não é um formulário: perguntar energia aqui seria repetir o check-in, que já
  * respondeu isso e já está calibrando o plano por baixo.
  *

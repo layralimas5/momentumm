@@ -8,13 +8,13 @@ import { planRatioAt } from './plan-progress'
  *
  * A regra que manda aqui é a mais dura do arquivo: **sem dado, sem previsão**.
  * Um app que chuta uma data pra quem tem dois dias de uso não está ajudando,
- * está inventando — e quando a data erra, a pessoa para de acreditar em todos
+ * está inventando, e quando a data erra, a pessoa para de acreditar em todos
  * os outros números da tela junto.
  *
  * A conta é velocidade: quanto do plano avançou na janela recente, extrapolado
  * pro que falta. Nada de curva, nada de peso escondido. A frase que sai daqui
- * sempre diz de onde veio o número e sempre é condicional — "mantendo esse
- * ritmo" —, porque é exatamente isso que ela é.
+ * sempre diz de onde veio o número e sempre é condicional, "mantendo esse
+ * ritmo", porque é exatamente isso que ela é.
  */
 
 /** Janela de observação da velocidade. Duas semanas absorvem um fim de semana ruim. */
@@ -141,7 +141,7 @@ function consistencyOf(input: ForecastInput): number | null {
 
 /**
  * Confiança da estimativa. Janela curta e poucas conclusões viram "baixa", e a
- * tela usa isso pra escolher o quanto destacar o número — previsão frágil não
+ * tela usa isso pra escolher o quanto destacar o número, previsão frágil não
  * pode aparecer do mesmo tamanho de uma com dois meses de série.
  */
 function confidenceOf(

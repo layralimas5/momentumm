@@ -32,7 +32,7 @@ interface MobileCheckInProps {
  * Check-in do celular: um toque resolve.
  *
  * Escolher o estado já grava. A energia só é perguntada quando a resposta muda
- * o dia — ou seja, nos estados baixos, onde ela decide entre plano cheio e
+ * o dia, ou seja, nos estados baixos, onde ela decide entre plano cheio e
  * versão mínima. Em dia bom, perguntar mais seria burocracia: o app já sabe o
  * que vai recomendar.
  */

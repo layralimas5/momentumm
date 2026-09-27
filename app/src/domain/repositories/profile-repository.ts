@@ -9,8 +9,8 @@ export interface ProfileUpdate {
   /**
    * A foto do perfil, já como data URL reduzida.
    *
-   * Guardar a imagem na própria coluna evita um bucket de Storage inteiro —
-   * políticas, URL assinada e limpeza de órfão — pra um arquivo de ~20KB que
+   * Guardar a imagem na própria coluna evita um bucket de Storage inteiro,
+   * políticas, URL assinada e limpeza de órfão, pra um arquivo de ~20KB que
    * cada conta tem UM. Quando existir foto de capa, álbum ou qualquer coisa que
    * multiplique isso, a migração pro Storage é trocar o conteúdo desta coluna
    * por um caminho, e nada acima daqui muda.
@@ -26,13 +26,13 @@ export interface ProfileUpdate {
   /** Capa do perfil (preset ou foto); `null` volta ao padrão. */
   readonly banner?: string | null
   /**
-   * As redes da pessoa. Cada uma é o @ limpo, ou `null` pra tirar do perfil —
+   * As redes da pessoa. Cada uma é o @ limpo, ou `null` pra tirar do perfil,
    * a normalização (URL colada, @ na frente) acontece no domínio, antes daqui.
    */
   readonly socials?: Partial<SocialLinks>
   /**
    * Só o modo demo aplica. Em produção quem manda no plano é a assinatura, não
-   * a tela de perfil — o repositório do Supabase ignora esse campo de propósito.
+   * a tela de perfil, o repositório do Supabase ignora esse campo de propósito.
    */
   readonly plan?: Profile['plan']
 }
@@ -55,7 +55,7 @@ export interface ProfileRepository {
   resetData(): Promise<void>
   /**
    * Tudo que a conta registrou, num JSON só (`momentumm.export.v1`). É o
-   * direito de portabilidade: a pessoa leva o que é dela, e só o que é dela —
+   * direito de portabilidade: a pessoa leva o que é dela, e só o que é dela,
    * o dado do amigo que ela enxerga pelo Círculo não entra.
    */
   exportData(): Promise<AccountExport>

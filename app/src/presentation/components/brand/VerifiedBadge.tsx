@@ -3,7 +3,7 @@ import { cn } from '@/shared/lib/cn'
 /**
  * O selo da conta PRO.
  *
- * É o único emblema preenchido do app — todo o resto é desenho de traço. A
+ * É o único emblema preenchido do app, todo o resto é desenho de traço. A
  * exceção é o ponto: um selo em contorno, do lado de um nome, lê como ícone de
  * função ("editar", "configurar") e não como carimbo. Carimbo é sólido.
  *

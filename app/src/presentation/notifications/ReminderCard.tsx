@@ -19,7 +19,7 @@ import { usePushReminders } from './use-push-reminders'
  *
  * Nunca divide a tela com o convite de instalar: dois cards pedindo coisas
  * diferentes no mesmo lugar viram um bloco que a pessoa aprende a pular. A
- * instalação vem primeiro — no iPhone ela é pré-requisito do aviso.
+ * instalação vem primeiro, no iPhone ela é pré-requisito do aviso.
  */
 export function ReminderCard() {
   const reminders = usePushReminders()

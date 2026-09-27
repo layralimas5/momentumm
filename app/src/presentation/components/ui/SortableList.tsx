@@ -6,7 +6,7 @@ import { cn } from '@/shared/lib/cn'
 /**
  * Uma lista que se reordena arrastando.
  *
- * Existe como componente porque a mesma lista aparece em quatro lugares — as
+ * Existe como componente porque a mesma lista aparece em quatro lugares, as
  * etapas do objetivo, as ações de uma etapa, a caixa de entrada e a visão por
  * prazo. Quatro cópias do arraste seriam quatro jeitos de reordenar, e é assim
  * que uma delas acaba esquecendo de salvar a ordem nova.

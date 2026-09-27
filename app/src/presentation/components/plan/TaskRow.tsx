@@ -15,7 +15,7 @@ import { cn } from '@/shared/lib/cn'
  *
  * Ela mora aqui e não dentro de uma tela porque o plano, a etapa dentro do
  * objetivo e a caixa de entrada mostram a MESMA ação. Três cópias dessa linha
- * seria três jeitos diferentes de concluir, adiar e cancelar — e é assim que
+ * seria três jeitos diferentes de concluir, adiar e cancelar, e é assim que
  * uma delas acaba esquecendo de carimbar a data de conclusão.
  *
  * A ordem se muda arrastando pela alça, que quem desenha a lista entrega em
@@ -52,7 +52,7 @@ export function TaskRow({
     /*
       No celular a linha empilha: título em cima, ações embaixo. Lado a lado,
       quatro botões e a etiqueta de prioridade comem a largura toda e o título
-      quebra em uma palavra por linha — a lista deixa de ser legível justamente
+      quebra em uma palavra por linha, a lista deixa de ser legível justamente
       no aparelho em que ela é mais usada.
     */
     <div className="flex flex-col gap-2 py-3 sm:flex-row sm:items-start sm:gap-3">
@@ -120,7 +120,7 @@ export function TaskRow({
           <>
             {/*
               A ponte entre o plano e o dia. Sem ela a ação atrasada só podia
-              ser adiada mais um dia ou editada num diálogo — e o passo que o
+              ser adiada mais um dia ou editada num diálogo, e o passo que o
               plano acabou de mostrar como próximo não tinha caminho até `Hoje`,
               que é a única tela onde ele vira execução.
             */}

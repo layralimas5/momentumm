@@ -15,7 +15,7 @@ export const PROFILE_TAB_LABELS: Readonly<Record<ProfileTab, string>> = {
 /**
  * As três leituras do mesmo perfil.
  *
- *   Atividades  o que aconteceu, em ordem — o histórico.
+ *   Atividades  o que aconteceu, em ordem, o histórico.
  *   Progresso   o quanto mudou: o calendário do mês, o nível e os números.
  *   Perfil      os ajustes: quem vê, o que aparece, e o resto do app.
  *
@@ -67,7 +67,7 @@ export function ProfileTabs({
       </nav>
 
       {/*
-        A engrenagem leva pros ajustes da conta — plano, segurança, dados. Ela
+        A engrenagem leva pros ajustes da conta, plano, segurança, dados. Ela
         fica aqui, e não dentro da aba Perfil, porque é o caminho que a pessoa
         procura sem ler: canto de cima, à direita, como em todo lugar.
       */}

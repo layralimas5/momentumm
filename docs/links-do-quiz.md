@@ -45,7 +45,7 @@ no fim. O código faz duas coisas ao mesmo tempo:
 
 ## Comentário ou direct
 
-O link acima já é o do **comentário** — é o caso em que a URL fica visível pra
+O link acima já é o do **comentário**, é o caso em que a URL fica visível pra
 todo mundo, então ele não leva parâmetro nenhum.
 
 Quando você manda o mesmo link no **direct**, acrescenta `?c=dm`:
@@ -64,7 +64,7 @@ que é o padrão).
 ## O que fazer quando errar o link
 
 Nada quebra. Código que não existe abre o quiz normal, com a copy padrão e sem
-origem — um link errado numa campanha nunca vira página de erro. O que você
+origem, um link errado numa campanha nunca vira página de erro. O que você
 perde é só a marcação daquele envio.
 
 ## Criar um código novo
@@ -75,7 +75,7 @@ existe e que o código é curto o bastante pra caber num comentário.
 
 O tema (`theme`) precisa ser um dos cinco que o quiz conhece: `procrastinacao`,
 `constancia`, `tempo`, `comeco`, `foco`. Com `theme: null` o quiz abre com a
-copy padrão, o que é o certo pra link de bio — ali a pessoa não vem de um
+copy padrão, o que é o certo pra link de bio, ali a pessoa não vem de um
 assunto específico.
 
 ## Onde ver o resultado

@@ -32,12 +32,12 @@ export const SUPPORT_CATEGORY_LABELS: Readonly<Record<SupportCategory, string>> 
  *
  * Exclusão de conta, exportação, privacidade e segurança são obrigação legal;
  * pagamento e acesso são a porta de quem não consegue entrar ou foi cobrado
- * errado — trancar qualquer uma delas atrás do PRO seria pedir assinatura pra
+ * errado, trancar qualquer uma delas atrás do PRO seria pedir assinatura pra
  * pessoa exercer um direito, ou pra ela conseguir reclamar da própria cobrança.
  * Denúncia fica junto pelo mesmo motivo: num produto com camada social, só
  * quem paga poder denunciar é um problema de segurança, não de plano.
  *
- * O que sobra — "Ajuda com o app" — é suporte de PRODUTO, e esse é do PRO.
+ * O que sobra, "Ajuda com o app", é suporte de PRODUTO, e esse é do PRO.
  */
 export const RIGHT_SUPPORT_CATEGORIES: readonly SupportCategory[] = [
   'exportacao',
@@ -63,7 +63,7 @@ export function isProSupportCategory(category: SupportCategory): boolean {
  *
  * Uma função só, usada pelos DOIS formulários que existem (a tela de Suporte e
  * o painel do perfil). Duas listas montadas na mão divergiriam no dia em que
- * uma categoria nova entrasse — e a que ficasse pra trás ofereceria um botão
+ * uma categoria nova entrasse, e a que ficasse pra trás ofereceria um botão
  * que o servidor recusa.
  */
 export function supportCategoriesFor(appSupport: boolean): readonly SupportCategory[] {

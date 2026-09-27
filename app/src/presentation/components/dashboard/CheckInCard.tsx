@@ -35,7 +35,7 @@ interface CheckInCardProps {
 }
 
 /**
- * "Como você está se sentindo hoje?" — a primeira pergunta do dia e a que calibra
+ * "Como você está se sentindo hoje?", a primeira pergunta do dia e a que calibra
  * todo o resto da tela.
  *
  * Depois de respondido o card encolhe: ele já cumpriu a função e não pode ficar

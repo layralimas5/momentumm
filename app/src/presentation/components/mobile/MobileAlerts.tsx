@@ -14,7 +14,7 @@ const TONES: Record<AlertTone, string> = {
 /**
  * Os recados que abrem o dia, logo abaixo da saudação.
  *
- * Eram notificações dentro do sino — e notificação escondida atrás de um ícone
+ * Eram notificações dentro do sino, e notificação escondida atrás de um ícone
  * não muda decisão nenhuma. Aqui elas são a primeira coisa que a pessoa lê,
  * porque é o que ficou pra trás que determina o tamanho do dia que ela vai
  * montar logo abaixo.
@@ -24,7 +24,7 @@ const TONES: Record<AlertTone, string> = {
  * tela que começa com uma cobrança. O resto continua inteiro no sino.
  *
  * Cada cartão tem duas saídas: o texto leva pra tela que resolve, e o X diz
- * "já li". Dispensar vale pelo DIA — amanhã, se o motivo continuar de pé, o
+ * "já li". Dispensar vale pelo DIA, amanhã, se o motivo continuar de pé, o
  * recado volta. Esconder um problema para sempre porque alguém o viu uma vez
  * seria o app mentindo por educação.
  */

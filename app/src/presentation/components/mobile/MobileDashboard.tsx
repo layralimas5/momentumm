@@ -52,7 +52,7 @@ interface MobileDashboardProps {
  * O dashboard do celular.
  *
  * A ordem responde ao uso real: quem abre o app no meio do dia quer registrar
- * como está, ver o que importa e começar — nessa sequência. Análise (momentum,
+ * como está, ver o que importa e começar, nessa sequência. Análise (momentum,
  * metas, insight) vem depois, porque ninguém interpreta gráfico de pé no ponto
  * de ônibus. As regras, os dados e os cálculos são exatamente os do desktop;
  * o que muda é a ordem, a densidade e o tamanho dos alvos.
@@ -123,9 +123,9 @@ export function MobileDashboard({
 
   // O que já apareceu no foco não se repete na lista de hábitos.
   /*
-    As linhas do "ver mais". A ordem é a do ciclo do produto — objetivo vira
+    As linhas do "ver mais". A ordem é a do ciclo do produto, objetivo vira
     meta, meta vira leitura do ritmo, e foco e vitórias são o registro do que
-    saiu. Linha sem número nenhum fica de fora: "Vitórias —" não convida
+    saiu. Linha sem número nenhum fica de fora: "Vitórias" sem número não convida
     ninguém a tocar.
   */
   const atalhos = useMemo<ShortcutRow[]>(() => {
@@ -164,7 +164,7 @@ export function MobileDashboard({
 
     O que mudou: a frase do dia, a faixa da semana e os três números abriam a
     tela. Três blocos de leitura antes da primeira decisão, e a ação do dia
-    nascendo abaixo da dobra todo dia. Eles não sumiram — desceram pra depois
+    nascendo abaixo da dobra todo dia. Eles não sumiram, desceram pra depois
     do botão de começar, que é onde leitura é leitura e não obstáculo.
 
     No lugar deles entraram os recados: as ações atrasadas e o que ontem
@@ -242,7 +242,7 @@ export function MobileDashboard({
           a pessoa lê no segundo exato em que precisa dele.
 
           A semana e os três números vêm na sequência porque respondem "estou
-          avançando" — leitura, não ação. */}
+          avançando", leitura, não ação. */}
       <QuoteCard today={planner.today} compact />
 
       <MobileWeekStrip week={view.week} onPickDay={setPickedDay} />
@@ -328,7 +328,7 @@ export function MobileDashboard({
         {/*
           O resto do produto em uma linha cada.
 
-          Aqui havia seis cards completos — objetivos com parágrafo de
+          Aqui havia seis cards completos, objetivos com parágrafo de
           diagnóstico, metas em carrossel, insight com dois botões, seletor de
           foco e campo de vitórias. Seis telas de rolagem, todas versões
           encolhidas de telas que já existem. O resumo de uma tela não

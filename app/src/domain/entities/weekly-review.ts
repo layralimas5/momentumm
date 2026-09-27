@@ -6,7 +6,7 @@ import { addDays, dayKeyToDate, startOfWeek, type DayKey } from './day'
  *
  * A `WeekReview` de `review.ts` é a leitura que o app FAZ dos dados. Esta aqui
  * é o que a PESSOA escreve: dificuldade, aprendizado, ajuste e prioridades da
- * semana seguinte. São coisas diferentes e por isso moram separadas — uma é
+ * semana seguinte. São coisas diferentes e por isso moram separadas, uma é
  * calculada e nunca é salva, a outra é digitada e precisa sobreviver.
  *
  * O fluxo é guiado e salva a cada passo. Review pela metade é o caso comum, não
@@ -102,7 +102,7 @@ export const MAX_PRIORITIES = 3
  * O check-in do gratuito: quatro perguntas, respondidas de memória.
  *
  * O review completo cruza os dados reais da semana (execução, pendências,
- * hábitos, a recomendação) e isso é analisar — o PRO. O gratuito não perde a
+ * hábitos, a recomendação) e isso é analisar, o PRO. O gratuito não perde a
  * pausa semanal, perde a leitura automática: as perguntas guardam nos mesmos
  * campos, então quem passa pro PRO reencontra o que escreveu no lugar certo.
  */

@@ -12,7 +12,7 @@ import { cn } from '@/shared/lib/cn'
  *
  * A faixa da semana dizia se o dia teve movimento e parava aí: sete pontos,
  * aceso ou apagado, sem jeito de perguntar o que havia atrás do ponto. Esta
- * folha é a pergunta respondida — e ela é de LEITURA. Não dá pra marcar hábito
+ * folha é a pergunta respondida, e ela é de LEITURA. Não dá pra marcar hábito
  * de terça no sábado, nem concluir ação do passado por aqui: reescrever um dia
  * que já fechou é o caminho mais curto pra um histórico que não significa nada.
  *
@@ -20,7 +20,7 @@ import { cn } from '@/shared/lib/cn'
  * cards da própria tela, logo abaixo.
  *
  * A ordem responde a pergunta na velocidade em que ela é feita: primeiro o
- * estado (como cheguei), depois o que saiu, depois o que ficou — e a vitória
+ * estado (como cheguei), depois o que saiu, depois o que ficou, e a vitória
  * fecha, porque é ela que a pessoa quer reler.
  */
 export function DaySheet({
@@ -160,7 +160,7 @@ export function DaySheet({
 
           {summary.empty ? (
             <p className="text-sm text-pretty text-ink-muted">
-              Nada registrado nesse dia. Descanso também faz parte — e um dia em branco no meio da
+              Nada registrado nesse dia. Descanso também faz parte, e um dia em branco no meio da
               semana não apaga o que veio antes.
             </p>
           ) : null}

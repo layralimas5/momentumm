@@ -4,7 +4,7 @@ import { DomainError } from '@/shared/errors'
  * As redes da pessoa, no perfil.
  *
  * Três, e fixas: Instagram, TikTok e LinkedIn. Uma lista aberta ("adicionar
- * link") viraria árvore de links, e árvore de links é outro produto — o perfil
+ * link") viraria árvore de links, e árvore de links é outro produto, o perfil
  * do Momentumm é sobre o que a pessoa está construindo, e as redes estão aqui
  * só pra quem gostou do que viu conseguir continuar acompanhando.
  *
@@ -58,8 +58,8 @@ const ALLOWED = /^[a-zA-Z0-9._-]+$/
 /**
  * O que a pessoa colou vira um @.
  *
- * Aceita as três formas que ela vai usar na prática — `@lay`, `lay` e a URL
- * inteira, com ou sem `https://`, com ou sem parâmetros — e devolve sempre
+ * Aceita as três formas que ela vai usar na prática, `@lay`, `lay` e a URL
+ * inteira, com ou sem `https://`, com ou sem parâmetros, e devolve sempre
  * `lay`. Campo vazio devolve `null`, que é como "não tenho essa rede" é
  * guardado.
  */

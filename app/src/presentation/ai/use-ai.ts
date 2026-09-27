@@ -131,7 +131,7 @@ export interface RecoveryInput {
  *
  * O contexto é um recorte fechado (`buildAiContextBundle`): objetivos,
  * etapas, hábitos, ações, capacidade, progresso, score, últimos reviews e
- * vitórias recentes. Nada além disso sai do aparelho — nem e-mail, nem nome,
+ * vitórias recentes. Nada além disso sai do aparelho, nem e-mail, nem nome,
  * nem a observação do check-in. Os `refs` ficam aqui, do lado do app, e são a
  * única forma de a resposta apontar pra uma linha de verdade.
  */

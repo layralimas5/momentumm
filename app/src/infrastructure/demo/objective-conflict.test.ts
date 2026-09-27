@@ -10,13 +10,13 @@ import { demoStore, DEMO_USER } from './demo-store'
  *
  * O teste nasce de um beco sem saída real: a ativação do plano do quiz
  * esbarrava nessa regra, mostrava "Não consegui ativar seu plano" e oferecia
- * dois botões que falhavam sempre — "tentar de novo" (mesma regra) e "refazer
+ * dois botões que falhavam sempre, "tentar de novo" (mesma regra) e "refazer
  * o quiz" (mesma área). Como a casca do app manda pra tela de ativação
  * enquanto houver plano pendente, a conta ficava inacessível.
  *
  * A saída exigiu um erro TIPADO, com o eixo junto: sem saber a área, a tela
  * não consegue mostrar quem está ocupando o lugar nem oferecer liberar. Este
- * teste trava as duas coisas — o tipo do erro e o eixo dentro dele.
+ * teste trava as duas coisas, o tipo do erro e o eixo dentro dele.
  */
 
 const objectives = new DemoObjectiveRepository()
@@ -25,7 +25,7 @@ const TODAY = dayKeyOf(new Date())
 
 /*
   A conta demo já nasce com objetivo em leitura, estudo e treino. Os testes
-  usam `meditacao`, que é o único eixo de fábrica livre — num eixo ocupado o
+  usam `meditacao`, que é o único eixo de fábrica livre, num eixo ocupado o
   primeiro `create` já falharia e o teste provaria outra coisa.
 */
 function novoObjetivo(titulo: string, axis: ActivityTypeSlug) {
@@ -76,7 +76,7 @@ describe('um objetivo ativo por área', () => {
  * O teste nasce de outro beco sem saída: a regra "um por eixo" era do banco e
  * valia pra todo mundo, então quem pagava esbarrava nela igual. Numa conta com
  * objetivo em todas as áreas de fábrica, o diálogo de objetivo novo abria preso
- * em "Leitura" — cartão desabilitado, botão desabilitado, nenhuma saída.
+ * em "Leitura", cartão desabilitado, botão desabilitado, nenhuma saída.
  *
  * O que ele trava é que o teto por área saiu do código e passou a ser o PLANO,
  * inclusive no modo demo. Um `some()` fixo aqui faria o demo recusar o que o

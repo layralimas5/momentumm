@@ -28,7 +28,7 @@ type Mode = 'plano' | 'leitura'
  * Duas funções, sem chat. Chat convida a conversar e o produto não precisa de
  * conversa: precisa de um plano que vira dado e de uma leitura que vira ajuste.
  *
- * O plano NUNCA é salvo direto. A prévia é editável e a pessoa confirma — é
+ * O plano NUNCA é salvo direto. A prévia é editável e a pessoa confirma, é
  * ela que responde pelo próprio calendário, e um plano gravado sem revisão é a
  * forma mais rápida de encher a semana de coisa que ninguém vai fazer.
  */
@@ -288,7 +288,7 @@ function PlanPreview({
     /*
       As etapas da prévia viram etapas de verdade ANTES das ações: é o vínculo
       que faz o objetivo nascer com plano em vez de com uma lista. Sem peso
-      declarado, o provider redistribui pra somar 100 — a mesma regra do plano
+      declarado, o provider redistribui pra somar 100, a mesma regra do plano
       montado na mão.
     */
     const stageIds: (string | null)[] = []

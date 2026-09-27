@@ -9,7 +9,7 @@ import { cn } from '@/shared/lib/cn'
  * automática transformaria uma variação de três pontos numa montanha, e a
  * pessoa leria queda livre onde houve estabilidade.
  *
- * Desenhado em SVG à mão porque é uma polilinha — trazer uma biblioteca de
+ * Desenhado em SVG à mão porque é uma polilinha, trazer uma biblioteca de
  * gráficos pra isso custaria mais bytes que a tela inteira.
  */
 export function MomentumHistoryChart({

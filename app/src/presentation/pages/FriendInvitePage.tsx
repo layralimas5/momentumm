@@ -16,7 +16,7 @@ import { Panel } from '@/presentation/components/ui/Surface'
  * maior parte dos convites.
  *
  * O que ela NÃO mostra: quem convidou. O código é um @, e confirmar na tela
- * que aquele @ existe transformaria o link numa sonda — qualquer pessoa
+ * que aquele @ existe transformaria o link numa sonda, qualquer pessoa
  * poderia descobrir quem tem conta aqui testando nomes. Quem convidou a pessoa
  * sabe; ela vai reconhecer o nome quando o pedido de amizade chegar, depois do
  * cadastro, com o aceite dos dois lados.
@@ -65,7 +65,7 @@ export function FriendInvitePage() {
 
         <p className="mt-3 text-sm text-pretty text-ink-muted">
           O Momentumm é onde você decide o que importa hoje e vê o quanto já andou. Quem te chamou
-          já está por aqui — e vocês podem acompanhar o progresso um do outro, se os dois quiserem.
+          já está por aqui, e vocês podem acompanhar o progresso um do outro, se os dois quiserem.
         </p>
 
         <ul className="mt-5 flex flex-col gap-2.5 text-left">

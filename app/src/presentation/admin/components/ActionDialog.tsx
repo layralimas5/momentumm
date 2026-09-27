@@ -13,7 +13,7 @@ const MIN_REASON = 5
  * chamar o servidor.
  *
  * O motivo vai pra auditoria. Cinco caracteres é o mínimo pra "cliente
- * pediu" caber — e é o banco quem recusa abaixo disso, esta tela só evita
+ * pediu" caber, e é o banco quem recusa abaixo disso, esta tela só evita
  * a viagem.
  */
 export function ActionDialog({

@@ -26,7 +26,7 @@ interface BottomSheetProps {
  * Bottom sheet: a camada modal do celular.
  *
  * Sobe pela borda de baixo porque é onde o polegar alcança, e nunca passa de
- * 88% da altura — a faixa que sobra em cima mostra que existe tela atrás e
+ * 88% da altura, a faixa que sobra em cima mostra que existe tela atrás e
  * dá um alvo grande pra fechar sem procurar o X.
  *
  * Vai pro `body` por portal: `backdrop-filter` e `transform` no ancestral

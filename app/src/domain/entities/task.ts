@@ -24,7 +24,7 @@ export const TASK_EFFORT_LABELS: Readonly<Record<TaskEffort, string>> = {
 /**
  * Estados da ação.
  *
- * `em-andamento` existe pro cronômetro ter onde marcar que a ação começou —
+ * `em-andamento` existe pro cronômetro ter onde marcar que a ação começou,
  * sem ele, sair no meio de uma sessão de foco deixa a ação indistinguível de
  * uma nunca tocada. `cancelada` é diferente de excluída: a decisão de largar
  * uma ação é informação, e é ela que a review usa pra perguntar o porquê.
@@ -68,7 +68,7 @@ export interface Task {
   /**
    * Etapa do plano em que essa ação vive. É o vínculo que faz a conclusão
    * empurrar uma barra de progresso específica em vez de sumir numa lista.
-   * Null significa ação sem etapa — legítima quando o objetivo ainda não tem
+   * Null significa ação sem etapa, legítima quando o objetivo ainda não tem
    * plano, e caixa de entrada quando nem objetivo tem.
    */
   readonly stageId: string | null
@@ -79,7 +79,7 @@ export interface Task {
   readonly weight: number
   /**
    * Obrigatória pra etapa fechar. A opcional soma progresso quando sai, mas não
-   * segura a conclusão da etapa — senão toda melhoria "se der tempo" viraria um
+   * segura a conclusão da etapa, senão toda melhoria "se der tempo" viraria um
    * bloqueio permanente.
    */
   readonly isRequired: boolean
@@ -276,7 +276,7 @@ export function tasksOfDay(tasks: readonly Task[], day: DayKey): Task[] {
 
 /**
  * A prioridade principal do dia. Quando ninguém marcou uma, o dashboard elege
- * a primeira pendente — a tela não pode ficar sem resposta pra "o que agora?".
+ * a primeira pendente, a tela não pode ficar sem resposta pra "o que agora?".
  */
 export function mainPriorityOf(tasks: readonly Task[], day: DayKey): Task | null {
   const pending = tasksOfDay(tasks, day).filter(isPending)
@@ -339,7 +339,7 @@ export interface PlanHorizon {
 /**
  * Os horizontes do plano. Diferente de `groupPendingTasks`, que serve ao dia e
  * de propósito puxa o atrasado pra hoje: aqui o atraso aparece separado, porque
- * a tela do plano existe justamente pra a pessoa decidir o que fazer com ele —
+ * a tela do plano existe justamente pra a pessoa decidir o que fazer com ele,
  * refazer a data, encolher ou cancelar.
  */
 export function planHorizons(tasks: readonly Task[], today: DayKey): PlanHorizon[] {
@@ -433,7 +433,7 @@ export function tasksOfStage(tasks: readonly Task[], stageId: string): Task[] {
 /**
  * Ação sem objetivo: a captura rápida.
  *
- * Ela é permitida de propósito — obrigar a escolher um objetivo pra anotar algo
+ * Ela é permitida de propósito, obrigar a escolher um objetivo pra anotar algo
  * que acabou de surgir faz a pessoa anotar fora do app, e aí o app perde a
  * informação. O que ela NÃO faz é influenciar progresso: fica na caixa de
  * entrada até ganhar um destino.

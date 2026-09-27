@@ -6,7 +6,7 @@ import { addDays, type DayKey } from './day'
 /**
  * O resumo de uma linha para cada parte do produto.
  *
- * A tela Hoje mostrava seis cards completos atrás de "ver mais" — versões
+ * A tela Hoje mostrava seis cards completos atrás de "ver mais", versões
  * encolhidas de telas que já existem. Aqui nasce o que substitui isso: o
  * número que faz alguém decidir se vale abrir.
  *
@@ -67,7 +67,7 @@ export function goalsSummary(progresses: readonly GoalProgress[]): ShortcutSumma
   }
 }
 
-/** Foco: minutos de hoje. Zero também é informação — é o convite. */
+/** Foco: minutos de hoje. Zero também é informação, é o convite. */
 export function focusSummary(minutesToday: number): ShortcutSummary {
   return { value: `${minutesToday} min hoje`, alert: false }
 }

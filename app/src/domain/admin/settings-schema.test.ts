@@ -6,7 +6,7 @@ describe('configurações do produto', () => {
     O painel espelha `public.validate_setting`, e é aqui que os dois se
     desencontram primeiro: uma chave que o banco já guarda e o painel não
     conhece cai no `.strict()` e faz a gravação ser recusada com "chave
-    desconhecida" — mesmo quando o que foi editado é outro limite.
+    desconhecida", mesmo quando o que foi editado é outro limite.
   */
   it('aceita as chaves do Juntos que a 0052 e a 0053 acrescentaram', () => {
     const free = {

@@ -53,7 +53,7 @@ import { cn } from '@/shared/lib/cn'
  *
  * É um painel da evolução pessoal, não uma página de rede social. A diferença
  * é o que ele responde: não "quem me segue", mas "o quanto eu mudei desde que
- * comecei". Por isso ele funciona inteiro com uma pessoa só usando o app —
+ * comecei". Por isso ele funciona inteiro com uma pessoa só usando o app,
  * momentum, constância, semanas de progresso, objetivos e conquistas são todos
  * dados que a própria pessoa gerou.
  *
@@ -73,7 +73,7 @@ export function PersonalProfilePage() {
 
   /*
     A aba abre no Progresso: é a resposta que a pessoa vem buscar quando abre o
-    próprio perfil — o mês, o que ela sustentou. Atividades é histórico e Perfil
+    próprio perfil, o mês, o que ela sustentou. Atividades é histórico e Perfil
     é ajuste, e nenhum dos dois é a primeira pergunta.
   */
   const [tab, setTab] = useState<ProfileTab>('progresso')
@@ -120,7 +120,7 @@ export function PersonalProfilePage() {
   )
 
   /**
-   * Os dias em que alguma coisa se moveu — o ponto embaixo de cada número do
+   * Os dias em que alguma coisa se moveu, o ponto embaixo de cada número do
    * calendário.
    *
    * Conta os três registros que o produto trata como movimento: atividade
@@ -147,8 +147,8 @@ export function PersonalProfilePage() {
     A consistência em PORCENTAGEM, e não em "5/7".
 
     A fração é a leitura do dashboard, onde a semana é o assunto e cada dia
-    ainda dá pra recuperar. Aqui a pergunta é outra — "o quanto eu venho
-    sustentando isso" — e a porcentagem é o que responde numa linha só, junto
+    ainda dá pra recuperar. Aqui a pergunta é outra, "o quanto eu venho
+    sustentando isso", e a porcentagem é o que responde numa linha só, junto
     com objetivos ativos e tempo de casa.
 
     O número é o FATOR de consistência do próprio score (28 dias, a última
@@ -172,7 +172,7 @@ export function PersonalProfilePage() {
 
         Ele substituiu o cabeçalho de página com capa, avatar montado na borda e
         uma linha de cinco números em texto corrido. Aquilo respondia "como vou
-        indo" antes mesmo de dizer quem estava indo — e as mesmas medidas
+        indo" antes mesmo de dizer quem estava indo, e as mesmas medidas
         aparecem inteiras na aba Progresso, onde elas têm espaço pra significar
         alguma coisa.
       */}
@@ -251,7 +251,7 @@ export function PersonalProfilePage() {
         O mês vem primeiro, antes de qualquer número.
 
         Ele responde a pergunta do perfil na forma mais curta que existe: o que
-        eu sustentei. E responde com memória, não com estatística — a foto de um
+        eu sustentei. E responde com memória, não com estatística, a foto de um
         dia diz o que aconteceu nele melhor que qualquer barra de progresso.
       */}
       <ProfileCalendar
@@ -495,14 +495,14 @@ export function PersonalProfilePage() {
       {/*
         O aviso de privacidade fecha a página de propósito. Enquanto o produto
         for de uma pessoa só, é importante deixar explícito que nada disso está
-        exposto — e que compartilhar gera uma imagem, não uma publicação.
+        exposto, e que compartilhar gera uma imagem, não uma publicação.
       */}
       <p className="flex items-start gap-2.5 text-sm text-ink-faint">
         <Icon name="cadeado" className="mt-0.5 size-4 shrink-0" />
         <span>
           O que você registra é só seu: o calendário, as fotos e os números não
           saem daqui. Quem te segue vê o que você publica, e compartilhar cria
-          uma imagem no teu aparelho — não uma publicação.
+          uma imagem no teu aparelho, não uma publicação.
         </span>
       </p>
       </>
@@ -520,7 +520,7 @@ export function PersonalProfilePage() {
  *
  * O botão só aparece nos tipos que o feed aceita. Oferecer "mostrar no círculo"
  * num hábito solto faria a pessoa marcar, não ver aparecer e concluir que
- * quebrou — quando na verdade o produto decidiu que hábito avulso não é assunto
+ * quebrou, quando na verdade o produto decidiu que hábito avulso não é assunto
  * de feed.
  */
 function CircleToggle({
@@ -570,7 +570,7 @@ function MomentumDelta({ event }: { readonly event: JourneyEvent }) {
  * Um ícone por espécie de marco.
  *
  * O troféu repetido em toda linha achatava conquistas diferentes numa coisa só.
- * Sequência é fogo, objetivo é alvo, foco é relógio — os mesmos símbolos que
+ * Sequência é fogo, objetivo é alvo, foco é relógio, os mesmos símbolos que
  * essas ideias já têm no resto do app, e é isso que faz a lista ser lida sem
  * legenda.
  */

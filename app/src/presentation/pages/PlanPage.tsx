@@ -24,7 +24,7 @@ type PlanMode = 'objetivo' | 'prazo'
  * A tela existe pra mostrar OBJETIVO VIRANDO PASSO. Por isso a visão padrão é
  * por objetivo e não uma lista de tarefas: uma lista chapada de trinta ações
  * não diz o que está sendo construído, e a pessoa executa sem chegar em lugar
- * nenhum — que é exatamente a dor que o produto ataca.
+ * nenhum, que é exatamente a dor que o produto ataca.
  *
  * A visão por prazo existe ao lado porque a pergunta "o que está atrasado" é
  * real, e ela não se responde olhando objetivo por objetivo.
@@ -37,7 +37,7 @@ export function PlanPage() {
   const [mode, setMode] = useState<PlanMode>('objetivo')
 
   // Caixa de entrada: capturada sem objetivo, então não empurra progresso
-  // nenhum. Ela existe pra a captura rápida não morrer — o que ela não pode é
+  // nenhum. Ela existe pra a captura rápida não morrer, o que ela não pode é
   // ficar invisível, senão vira um monte de ação órfã que ninguém revisita.
   const inbox = useMemo(() => inboxTasks(planner.tasks), [planner.tasks])
 
@@ -218,7 +218,7 @@ export function PlanPage() {
  * As ações de um bloco do plano, reordenáveis pela alça.
  *
  * Mora aqui porque a caixa de entrada e a visão por prazo mostram a mesma
- * lista com o mesmo comportamento — e o dia em que uma delas ganhar arraste e
+ * lista com o mesmo comportamento, e o dia em que uma delas ganhar arraste e
  * a outra não é o dia em que a ordem passa a depender de onde a pessoa clicou.
  */
 function TaskList({ tasks, label }: { readonly tasks: readonly Task[]; readonly label: string }) {

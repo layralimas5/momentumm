@@ -20,7 +20,7 @@ interface ObjectiveFieldsProps {
  * Os campos de um objetivo: título, motivo, prazo e alvo.
  *
  * Um bloco só, repetido por objetivo. Quem escolhe três áreas responde as
- * mesmas quatro perguntas três vezes, no mesmo formato — variar o formulário
+ * mesmas quatro perguntas três vezes, no mesmo formato, variar o formulário
  * por área faria a pessoa reaprender a tela a cada bloco.
  */
 export function ObjectiveFields({ entry, onChange, onRemove }: ObjectiveFieldsProps) {

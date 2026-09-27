@@ -53,7 +53,7 @@ import { AiEntry } from '@/presentation/ai/AiBits'
 import { useAi } from '@/presentation/ai/use-ai'
 
 /**
- * "Hoje" — o dashboard.
+ * "Hoje", o dashboard.
  *
  * A tela tem TRÊS níveis de atenção, e a diferença entre eles é deliberada:
  *
@@ -71,13 +71,13 @@ import { useAi } from '@/presentation/ai/use-ai'
  *      serve o mesmo dia pra quem chegou sem energia e pra quem chegou em
  *      alta, e perguntar isso DEPOIS de mostrar o dia inverteria a única
  *      pergunta que muda o que a tela oferece.
- *   2. Objetivos, hábitos e insight — responde "estou avançando".
- *   3. Semana, check-in, foco cronometrado, metas e vitórias — consulta.
+ *   2. Objetivos, hábitos e insight, responde "estou avançando".
+ *   3. Semana, check-in, foco cronometrado, metas e vitórias, consulta.
  *
  * O que mudou em relação à versão anterior, e por quê: eram doze cards com o
  * mesmo peso visual, e uma tela onde tudo grita é uma tela onde nada é lido. Só
  * o foco de hoje continua sendo card de destaque, porque é o único bloco em que
- * a pessoa ATUA. O resto virou seção — título, espaçamento e uma saída pra tela
+ * a pessoa ATUA. O resto virou seção, título, espaçamento e uma saída pra tela
  * completa do assunto.
  *
  * A largura é limitada mesmo sobrando tela. Em 1920px o conteúdo chegava a
@@ -96,7 +96,7 @@ export function DashboardPage() {
     Os dois recursos que reagem ao estado do dia em vez de esperarem um clique
     no lugar certo. O Dia Adaptável responde "tenho pouco tempo"; o Modo
     Retomada responde "sumi por uns dias". Os dois desembocam na MESMA revisão
-    — reorganizar o dia é uma operação só, e duas telas fazendo isso seriam
+, reorganizar o dia é uma operação só, e duas telas fazendo isso seriam
     duas contas discordando na primeira mudança de regra.
   */
   const adaptive = useAdaptiveDay(view)
@@ -106,7 +106,7 @@ export function DashboardPage() {
     As duas portas da IA no Hoje: "Reorganizar meu dia" ao lado do Dia
     Adaptável e "Criar plano de retorno" dentro do Modo Retomada. A IA lê o
     mesmo estado que a aritmética, e devolve propostas que a pessoa confirma
-    uma a uma — nunca uma gravação direta.
+    uma a uma, nunca uma gravação direta.
   */
   const ai = useAi()
   const [aiDayOpen, setAiDayOpen] = useState(false)
@@ -135,7 +135,7 @@ export function DashboardPage() {
     marco alcançado.
 
     Mora no dashboard porque é a tela que a pessoa abre todo dia. A decisão do
-    QUE gravar é uma função pura (`eventsToRecord`) — aqui não há regra, só a
+    QUE gravar é uma função pura (`eventsToRecord`), aqui não há regra, só a
     chamada.
   */
   useJourneyRecorder(view)
@@ -188,7 +188,7 @@ export function DashboardPage() {
    * O passo de retomada escolhido.
    *
    * Ele é protegido, entra no dia mesmo vindo de outra data e vira a
-   * prioridade principal — e é aí que mora a recompensa: prioridade concluída
+   * prioridade principal, e é aí que mora a recompensa: prioridade concluída
    * vale o triplo de uma tarefa comum no Momentumm, e fechar a pausa de hoje é
    * o que o fator de retomada mede.
    */
@@ -246,7 +246,7 @@ export function DashboardPage() {
 
   /**
    * Título de cada etapa por id. O dia inteiro lê daqui pra dizer a que ponto
-   * do plano cada linha pertence — é o que separa "Finalizar onboarding" de
+   * do plano cada linha pertence, é o que separa "Finalizar onboarding" de
    * "Finalizar onboarding · Etapa: MVP · Objetivo: Lançar meu SaaS".
    */
   const stageTitles = useMemo(
@@ -259,7 +259,7 @@ export function DashboardPage() {
    *
    * Dispensar depois de aplicar é decisão DESTA tela: aqui aparece um insight
    * por vez, e repetir o que a pessoa acabou de resolver seria ruído. Na tela
-   * de Insights a lista se atualiza sozinha — a regra para de casar porque o
+   * de Insights a lista se atualiza sozinha, a regra para de casar porque o
    * dado mudou, que é o único motivo honesto pra um insight sumir.
    */
   const applyInsight = useCallback(
@@ -537,7 +537,7 @@ export function DashboardPage() {
       {/* ------------------------------------------------------------------
           Segundo nível: estou avançando?
 
-          Duas colunas com proporção controlada — execução à esquerda, contexto
+          Duas colunas com proporção controlada, execução à esquerda, contexto
           à direita. Nada de sticky: coluna que acompanha a rolagem compete com
           o conteúdo principal durante a tela inteira.
          ------------------------------------------------------------------ */}
@@ -597,7 +597,7 @@ export function DashboardPage() {
       ) : null}
 
       {/* ------------------------------------------------------------------
-          Terceiro nível: consulta. Vem depois e com título menor de propósito —
+          Terceiro nível: consulta. Vem depois e com título menor de propósito,
           gráfico e histórico não podem disputar com o dia.
          ------------------------------------------------------------------ */}
       <div className="flex flex-col gap-6 border-t border-line pt-8">

@@ -6,7 +6,7 @@ import { DomainError } from '@/shared/errors'
  * ## Por que comprimento, e não "um maiúsculo e um símbolo"
  *
  * A regra de composição é a que todo mundo conhece e a que produz
- * `Senha@123` — previsível pra quem ataca e irritante pra quem usa. O que
+ * `Senha@123`, previsível pra quem ataca e irritante pra quem usa. O que
  * realmente encarece o ataque é tamanho, e é isso que o NIST recomenda desde
  * 2017: mínimo generoso, nada de troca periódica obrigatória, e bloqueio das
  * senhas que aparecem em vazamento.

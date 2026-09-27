@@ -40,7 +40,7 @@ export interface PlannerState {
   readonly todayActivities: readonly Activity[]
   /**
    * Todas as áreas da conta: as quatro de fábrica mais as que ela criou. É
-   * daqui que filtro, seletor e formulário leem — nunca da constante.
+   * daqui que filtro, seletor e formulário leem, nunca da constante.
    */
   readonly axes: readonly ActivityType[]
   readonly objectives: readonly Objective[]
@@ -63,7 +63,7 @@ export interface PlannerState {
   /**
    * Os momentos da jornada já gravados: dia fechado, objetivo concluído,
    * semana revisada. É a camada que o Share Studio lê e que o feed, o perfil e
-   * a comunidade vão ler depois — nenhum deles conversa com hábito ou objetivo
+   * a comunidade vão ler depois, nenhum deles conversa com hábito ou objetivo
    * direto.
    */
   readonly journeyEvents: readonly JourneyEvent[]
@@ -100,7 +100,7 @@ export interface PlannerState {
 
   /**
    * Cria a etapa. Sem peso informado, os pesos do objetivo são reequilibrados
-   * pra continuar somando 100 — peso é propriedade do conjunto, não da linha.
+   * pra continuar somando 100, peso é propriedade do conjunto, não da linha.
    */
   createStage(input: Omit<NewPlanStageInput, 'userId'>): Promise<PlanStage | null>
   updateStage(id: string, changes: PlanStageUpdate): Promise<void>
@@ -113,7 +113,7 @@ export interface PlannerState {
   /**
    * O plano inteiro de uma vez: objetivo, ritmo semanal, hábitos e as
    * primeiras ações, pra cada objetivo da lista. É uma operação só porque
-   * plano pela metade é pior que plano nenhum — a pessoa sairia do onboarding
+   * plano pela metade é pior que plano nenhum, a pessoa sairia do onboarding
    * com meta sem ação.
    */
   applyPlan(plans: readonly PlanDraft[]): Promise<void>

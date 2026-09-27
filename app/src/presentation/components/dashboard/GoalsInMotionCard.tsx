@@ -20,7 +20,7 @@ interface GoalsInMotionCardProps {
 /**
  * Metas em movimento.
  *
- * O progresso vem do que foi feito, não do tempo que passou — e o ritmo compara
+ * O progresso vem do que foi feito, não do tempo que passou, e o ritmo compara
  * as duas coisas. É a diferença entre "faltam 3 dias" e "faltam 3 dias e você
  * está atrasada".
  */

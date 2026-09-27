@@ -104,7 +104,7 @@ export interface Container {
   /**
    * Os momentos da jornada: dia fechado, rotina cumprida, objetivo concluído.
    * É a camada que o Share Studio lê hoje e que o feed, o perfil e a comunidade
-   * vão ler depois — nenhum deles fala com hábito ou objetivo direto.
+   * vão ler depois, nenhum deles fala com hábito ou objetivo direto.
    */
   readonly journeyEvents: JourneyEventRepository
   /**
@@ -119,12 +119,12 @@ export interface Container {
    * não abre nada que já não fosse público.
    */
   readonly follows: FollowRepository
-  /** A foto de cada dia — o vínculo dia -> arquivo. O arquivo em si é `media`. */
+  /** A foto de cada dia, o vínculo dia -> arquivo. O arquivo em si é `media`. */
   readonly dayPhotos: DayPhotoRepository
   /** De onde a conta veio. Atribuição de convite, sem recompensa nenhuma. */
   readonly referrals: ReferralRepository
   /**
-   * Os clubes. Criar exige PRO — e quem confere é o servidor, não a tela.
+   * Os clubes. Criar exige PRO, e quem confere é o servidor, não a tela.
    * Perder a assinatura tira a administração, nunca o clube.
    */
   readonly clubs: ClubRepository
@@ -162,7 +162,7 @@ export interface Container {
    */
   readonly push: PushSubscriptionRepository
   /**
-   * Juntos — a dupla de accountability. Seis chamadas de função e nenhum
+   * Juntos, a dupla de accountability. Seis chamadas de função e nenhum
    * `select` em tabela de outra pessoa: o contrato de privacidade é o próprio
    * tamanho desta superfície.
    */

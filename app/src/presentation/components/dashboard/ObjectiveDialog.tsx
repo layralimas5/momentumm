@@ -26,7 +26,7 @@ interface ObjectiveDialogProps {
 /**
  * Objetivo novo fora do onboarding.
  *
- * As perguntas e o plano são exatamente os mesmos — o que muda é o formato:
+ * As perguntas e o plano são exatamente os mesmos, o que muda é o formato:
  * aqui tudo cabe numa rolagem só, porque quem já usa o app não precisa ser
  * conduzido passo a passo. Um objetivo por vez: quem quer três abre três
  * vezes, e a cada uma vê o plano inteiro antes de confirmar.
@@ -48,7 +48,7 @@ export function ObjectiveDialog({
     >
       {/*
         O formulário só existe enquanto o diálogo está aberto. Mantido montado,
-        ele guardaria o rascunho da primeira abertura — e abriria apontando pra
+        ele guardaria o rascunho da primeira abertura, e abriria apontando pra
         uma área que ganhou objetivo no meio do caminho.
       */}
       {open ? (
@@ -71,7 +71,7 @@ function ObjectiveForm({ today, takenAxes, onClose, onSubmit }: Omit<ObjectiveDi
   /*
     Sem área livre o diálogo não monta formulário nenhum, e isso só acontece no
     gratuito: o PRO não tem teto por eixo, então `takenAxes` chega vazio pra ele.
-    A saída é dita inteira aqui porque antes ela não era dita em lugar nenhum —
+    A saída é dita inteira aqui porque antes ela não era dita em lugar nenhum,
     a tela abria num eixo ocupado e ficava travada sem explicar o motivo.
   */
   if (!entry) {

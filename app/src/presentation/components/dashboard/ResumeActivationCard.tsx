@@ -11,7 +11,7 @@ import { Panel } from '@/presentation/components/ui/Surface'
  * dashboard vazio que não explica o que fazer.
  *
  * Ele só existe enquanto a conta não tem nada criado: assim que houver um
- * objetivo — pelo onboarding ou pela mão — o app para de convidar.
+ * objetivo, pelo onboarding ou pela mão, o app para de convidar.
  */
 
 interface ResumeActivationCardProps {

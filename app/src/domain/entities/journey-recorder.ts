@@ -8,7 +8,7 @@ import type { Milestone } from './milestone'
  *
  * Uma função pura, e é isso que a torna confiável: ela recebe o estado do dia
  * mais os eventos JÁ gravados e devolve só o que falta gravar. Nenhuma escrita,
- * nenhum efeito, nenhum acesso a repositório — dá pra provar em teste que "dia
+ * nenhum efeito, nenhum acesso a repositório, dá pra provar em teste que "dia
  * concluído" aparece uma vez, e não uma vez por render.
  *
  * ## As duas chaves de repetição

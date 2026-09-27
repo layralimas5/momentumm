@@ -15,7 +15,7 @@ import { Panel, Tag } from '@/presentation/components/ui/Surface'
  * - Não conta dias perdidos. "Você quebrou uma sequência de 12 dias" é verdade
  *   e é exatamente a frase que faz a pessoa não voltar.
  * - Não mostra a lista do que ficou pra trás. Ela existe no plano, e é lá que
- *   ela deve ser resolvida — com calma, num dia em que voltar já aconteceu.
+ *   ela deve ser resolvida, com calma, num dia em que voltar já aconteceu.
  * - Oferece até três passos pequenos, e o botão de cada um é a única coisa
  *   que ele pede.
  *

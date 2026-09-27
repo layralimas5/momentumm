@@ -20,7 +20,7 @@ interface TimeBudgetFieldsProps {
  *
  * É a pergunta que transforma o plano em promessa cumprível: sem ela o app
  * calcula em cima de um tempo que ele inventou. Com ela, nenhuma sessão pode
- * passar do que a pessoa acabou de dizer que tem — e quando o objetivo pede
+ * passar do que a pessoa acabou de dizer que tem, e quando o objetivo pede
  * mais, quem avisa é o app, não a frustração da terceira semana.
  */
 export function TimeBudgetFields({

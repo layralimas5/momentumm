@@ -12,7 +12,7 @@ export interface StoredMedia {
  * Fotos, áudios e anexos da pessoa, num bucket privado.
  *
  * Nada aqui devolve URL pública: o arquivo só sai por link assinado, curto,
- * pedido na hora de abrir. O dono é sempre a sessão atual — a porta não
+ * pedido na hora de abrir. O dono é sempre a sessão atual, a porta não
  * aceita id de outra pessoa, e a política do Storage recusaria de qualquer
  * jeito.
  */

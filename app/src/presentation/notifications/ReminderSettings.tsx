@@ -6,7 +6,7 @@ import { usePushReminders } from './use-push-reminders'
 
 /**
  * O lembrete em Configurações: o estado deste aparelho, o botão de ligar ou
- * desligar e — com o lembrete ligado — o que cada aviso é. Diferente do
+ * desligar e, com o lembrete ligado, o que cada aviso é. Diferente do
  * convite do Hoje, este bloco existe sempre que há chave configurada,
  * inclusive pra explicar por que não dá (permissão negada, iPhone fora da
  * tela de início).

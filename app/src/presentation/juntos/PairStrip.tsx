@@ -10,8 +10,8 @@ import { cn } from '@/shared/lib/cn'
  * Quantos dias aparecem é o plano que decide (`maxDays`): o gratuito vê um
  * pedaço, o PRO vê a semana. Os dias são pontos cheios e vazios, sem número e
  * sem porcentagem. A
- * comparação entre as duas pessoas acontece de qualquer jeito — é o motivo de
- * a dupla existir —, mas ela é sobre presença, não sobre desempenho. Um "78%
+ * comparação entre as duas pessoas acontece de qualquer jeito, é o motivo de
+ * a dupla existir, mas ela é sobre presença, não sobre desempenho. Um "78%
  * contra 54%" transformaria accountability em placar, e placar entre amigas
  * que estão tentando mudar de vida termina com uma delas saindo.
  */

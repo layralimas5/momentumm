@@ -14,8 +14,8 @@ export interface ChallengeUpdate {
 /**
  * Desafios e participações.
  *
- * A leitura traz os desafios em que a pessoa aparece de qualquer forma — dona,
- * participando ou apenas convidada — porque as três importam na tela, e porque
+ * A leitura traz os desafios em que a pessoa aparece de qualquer forma, dona,
+ * participando ou apenas convidada, porque as três importam na tela, e porque
  * é a RLS que define o alcance: nenhum desafio de estranho chega aqui pra ser
  * filtrado depois.
  */
@@ -58,7 +58,7 @@ export interface ChallengeRepository {
    * Publica os dias fechados.
    *
    * É o único número que atravessa a fronteira entre duas pessoas, e quem o
-   * escreve é sempre o dono da linha — o cliente recalcula a partir dos
+   * escreve é sempre o dono da linha, o cliente recalcula a partir dos
    * próprios hábitos e atividades, que ninguém mais consegue ler.
    */
   publishProgress(

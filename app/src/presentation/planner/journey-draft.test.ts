@@ -7,7 +7,7 @@ import { withAxisAdded, type ObjectiveEntry } from './use-journey-draft'
  *
  * O teste nasce de um bug real e visível: no diálogo de "Novo objetivo" a área
  * ficava presa em "Leitura" e clicar em qualquer outro cartão não fazia nada. O
- * diálogo usa `max: 1`, e a guarda de tamanho rodava ANTES da troca — com uma
+ * diálogo usa `max: 1`, e a guarda de tamanho rodava ANTES da troca, com uma
  * entrada já no rascunho, `current.length >= max` era verdade em todo clique.
  *
  * Trocar de área não aumenta o rascunho, então não pode passar por guarda de

@@ -41,7 +41,7 @@ const COLLAPSED_KEY = 'momentumm.sidebar.collapsed'
  *
  * A partir de `lg` a tela vira dashboard de verdade. Abaixo disso a coluna
  * única continua sendo o melhor uso do espaço, com a navegação na barra
- * inferior — o mesmo conteúdo, outra embalagem.
+ * inferior, o mesmo conteúdo, outra embalagem.
  */
 export function AppLayout() {
   return (
@@ -116,7 +116,7 @@ function LayoutShell() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/*
-          O perfil traz a própria barra de cima no celular — marca, as três
+          O perfil traz a própria barra de cima no celular, marca, as três
           seções e a engrenagem, numa faixa só. Empilhar a barra padrão em cima
           dela daria duas logos e duas linhas de controle antes do conteúdo.
         */}
@@ -126,7 +126,7 @@ function LayoutShell() {
 
         {/*
           O conteúdo ocupa a largura inteira do monitor. Quem cuida da leitura é
-          a grade de colunas e o teto de largura de cada bloco de texto — faixa
+          a grade de colunas e o teto de largura de cada bloco de texto, faixa
           central estreita em tela grande só produz margem morta dos dois lados.
         */}
         {/* pb-tabbar reserva a altura exata da barra inferior mais a área segura. */}
@@ -293,8 +293,8 @@ function SidebarContent({
           <div className={cn('flex items-center gap-3', collapsed && 'flex-col gap-2')}>
             {/*
               O bloco do perfil é a porta pro painel de evolução no desktop.
-              "Perfil" não entra na navegação principal — ela é o ciclo do
-              produto — mas a foto e o nome no rodapé são o lugar onde qualquer
+              "Perfil" não entra na navegação principal, ela é o ciclo do
+              produto, mas a foto e o nome no rodapé são o lugar onde qualquer
               pessoa procura pelo próprio perfil.
             */}
             <NavLink
@@ -373,7 +373,7 @@ function SidebarLink({ item, collapsed }: { item: AppNavItem; collapsed: boolean
  */
 /**
  * Os eventos de uso que a casca registra: a sessão começou, e qual recurso
- * a pessoa abriu. Só o nome do recurso sai — a rota com id de objetivo vira
+ * a pessoa abriu. Só o nome do recurso sai, a rota com id de objetivo vira
  * "objetivos", nunca o id. É a matéria-prima de "usuários ativos" e de
  * "recursos mais usados" no painel.
  */

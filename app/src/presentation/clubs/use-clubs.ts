@@ -28,7 +28,7 @@ export interface ClubsState {
  *
  * As duas consultas são separadas de propósito. "Meus clubes" é uma leitura de
  * participação; "descobrir" é uma leitura pública de clubes abertos. Juntar as
- * duas numa só faria a descoberta depender do que a pessoa já integra — e é
+ * duas numa só faria a descoberta depender do que a pessoa já integra, e é
  * justamente quem não integra nada que mais precisa dela.
  *
  * Quem já é membro sai da descoberta aqui, e não no servidor: a política do

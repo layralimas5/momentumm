@@ -15,7 +15,7 @@ import { PageHeader } from './PageHeader'
  * Desafios.
  *
  * A ordem da página segue a urgência, como no Círculo: convite esperando
- * resposta primeiro — é a única coisa aqui que outra pessoa está aguardando —,
+ * resposta primeiro, é a única coisa aqui que outra pessoa está aguardando,
  * depois o que está rodando, e por último o que já terminou.
  *
  * Não existe lista de desafios pra descobrir, sugestão de desafio popular nem

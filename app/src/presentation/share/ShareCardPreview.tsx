@@ -29,7 +29,7 @@ interface ShareCardPreviewProps {
  *
  * O canvas é um elemento cego pra leitor de tela, então ele recebe `role="img"`
  * e uma descrição escrita a partir dos mesmos dados. Quem não enxerga a imagem
- * precisa saber o que está prestes a publicar — principalmente por causa dos
+ * precisa saber o que está prestes a publicar, principalmente por causa dos
  * campos de privacidade.
  */
 export function ShareCardPreview({

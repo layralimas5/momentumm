@@ -27,7 +27,7 @@ import { isPending, type Task } from './task'
  *
  *   MANTER    o que mais move o objetivo, na versão cheia
  *   REDUZIR   o que é flexível, pra versão mínima
- *   REAGENDAR o resto — espalhado, respeitando o prazo do objetivo e a carga
+ *   REAGENDAR o resto, espalhado, respeitando o prazo do objetivo e a carga
  *             que cada dia seguinte já tem
  *
  * ## O que decide a ordem
@@ -43,7 +43,7 @@ import { isPending, type Task } from './task'
  *
  * - Não empurra ação atrasada pra dentro de hoje. O dia que a pessoa tem é o
  *   dia que ela tem; encher ele com a dívida de ontem é o acúmulo com outro nome.
- * - Não tira hábito do dia. Hábito não muda de data — ele encolhe pra versão
+ * - Não tira hábito do dia. Hábito não muda de data, ele encolhe pra versão
  *   mínima, que é o que preserva a sequência num dia curto.
  * - Não decide sozinho: devolve um plano pra revisão. Quem grava é a pessoa.
  */
@@ -82,7 +82,7 @@ const ESSENTIAL_STREAK = 3
 /**
  * Os pesos da decisão, num lugar só.
  *
- * Ficam juntos e nomeados porque a calibragem certa só aparece com uso real —
+ * Ficam juntos e nomeados porque a calibragem certa só aparece com uso real, 
  * e porque um score espalhado em números mágicos pelo arquivo é um score que
  * ninguém consegue explicar pra pessoa que está lendo o plano na tela.
  */
@@ -270,7 +270,7 @@ export function buildAdaptiveDay(input: AdaptiveDayInput): AdaptiveDayPlan {
     }
 
     /*
-      Protegido não sai do dia — nem quando não cabe.
+      Protegido não sai do dia, nem quando não cabe.
 
       É a regra que separa "adaptar o dia" de "esvaziar o dia": a ação que
       sustenta o objetivo encolhe, e quando ela não tem versão mínima o app diz
@@ -303,7 +303,7 @@ export function buildAdaptiveDay(input: AdaptiveDayInput): AdaptiveDayPlan {
   /*
     O dia nunca volta vazio.
 
-    Um dia inteiro reagendado é o mesmo que dizer "hoje não conta" — e é
+    Um dia inteiro reagendado é o mesmo que dizer "hoje não conta", e é
     exatamente o dia em que a pessoa para de abrir o app. Sobrando zero item,
     o de maior score volta na menor versão possível.
   */
@@ -369,7 +369,7 @@ export interface DayLoad {
  * O tamanho do dia antes de qualquer adaptação.
  *
  * Existe pra a tela poder perguntar "quanto tempo você tem?" já dizendo quanto
- * o dia pede — e pra ela sumir quando não há nada em aberto. Usa exatamente os
+ * o dia pede, e pra ela sumir quando não há nada em aberto. Usa exatamente os
  * mesmos filtros de `buildAdaptiveDay`: dois jeitos de contar o mesmo dia é
  * como o card e a revisão começam a discordar.
  */
@@ -636,7 +636,7 @@ function postpone(
  * Não é "amanhã". Amanhã é como o adiamento vira pilha: três dias assim e o
  * dia seguinte tem o triplo do que cabe nele. A ação procura o primeiro dia
  * cuja carga ainda comporta o tamanho dela, dentro do prazo do objetivo e de
- * uma semana no máximo. Se nenhum dia comporta, ela vai pro mais vazio — e o
+ * uma semana no máximo. Se nenhum dia comporta, ela vai pro mais vazio, e o
  * plano diz que foi por falta de espaço, em vez de fingir que coube.
  */
 function placeTask(
@@ -684,7 +684,7 @@ function placeTask(
 /**
  * Quanto cada dia já tem planejado, contando o que este mesmo plano acabou de
  * mandar pra lá. Sem isso, cinco ações reagendadas na mesma passada caem todas
- * no mesmo dia — que é o acúmulo que o recurso existe pra evitar.
+ * no mesmo dia, que é o acúmulo que o recurso existe pra evitar.
  */
 function loadByDay(
   input: AdaptiveDayInput,
@@ -707,7 +707,7 @@ function loadByDay(
 
 /**
  * A carga de referência de um dia: a média do que a própria pessoa costuma
- * planejar. É a régua honesta — um número fixo faria o app decidir por ela o
+ * planejar. É a régua honesta, um número fixo faria o app decidir por ela o
  * tamanho de um dia que ele não conhece.
  */
 function referenceDayMin(input: AdaptiveDayInput): number {

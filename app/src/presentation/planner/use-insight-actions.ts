@@ -18,7 +18,7 @@ import { usePlanner } from './use-planner'
  * execução dela, e é a mesma execução em qualquer tela que mostre o insight.
  *
  * Morava dentro do dashboard, e por isso o mesmo insight era acionável lá e
- * apenas texto na tela de Insights — duas leituras do mesmo dado com poderes
+ * apenas texto na tela de Insights, duas leituras do mesmo dado com poderes
  * diferentes.
  */
 
@@ -26,8 +26,8 @@ import { usePlanner } from './use-planner'
  * O mínimo que as ações precisam saber sobre o dia.
  *
  * O contrato é estreito de propósito: `DashboardView` satisfaz ele por
- * estrutura, e telas que não montam o dashboard inteiro — o progresso, por
- * exemplo — conseguem aplicar a mesma recomendação sem recalcular tudo.
+ * estrutura, e telas que não montam o dashboard inteiro, o progresso, por
+ * exemplo, conseguem aplicar a mesma recomendação sem recalcular tudo.
  */
 export interface InsightContext {
   readonly capacity: CapacityProfile

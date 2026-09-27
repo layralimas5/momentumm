@@ -19,12 +19,12 @@ import { PageHeader } from './PageHeader'
  *
  * O oposto de um feed genérico: só entra quem foi aceito dos dois lados, e só
  * aparece o que a pessoa marcou explicitamente pra mostrar. Sem seguidor, sem
- * sugestão de quem seguir, sem contagem de audiência e sem comentário — o
+ * sugestão de quem seguir, sem contagem de audiência e sem comentário, o
  * único gesto é o apoio.
  *
  * A ordem da página segue a urgência: pedido esperando resposta primeiro (é a
  * única coisa aqui que outra pessoa está aguardando), depois o que os amigos
- * compartilharam, e por último a manutenção do círculo — buscar e listar.
+ * compartilharam, e por último a manutenção do círculo, buscar e listar.
  */
 export function CirclePage() {
   const circle = useCircle()

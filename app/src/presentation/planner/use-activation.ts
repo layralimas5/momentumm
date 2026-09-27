@@ -133,7 +133,7 @@ export function useActivation(): ActivationController {
     /*
       Mudar uma resposta joga fora o ajuste aceito antes.
 
-      O ajuste foi uma decisão sobre OUTRO plano — reduzir o alvo de um plano
+      O ajuste foi uma decisão sobre OUTRO plano, reduzir o alvo de um plano
       de 30 dias não faz sentido depois que o prazo virou 90, e manter ele
       mostraria um número que ninguém escolheu.
     */
@@ -217,7 +217,7 @@ export function useActivation(): ActivationController {
         A área vira eixo AGORA, não quando ela foi escolhida.
 
         Criar a linha no passo 1 deixaria uma área órfã em `activity_types`
-        pra cada pessoa que desistisse no meio — e o filtro do histórico
+        pra cada pessoa que desistisse no meio, e o filtro do histórico
         nasceria cheio de coisa que nunca teve um registro.
       */
       const created = plan.needsAxis ? await planner.createAxis(plan.areaLabel) : null
@@ -289,7 +289,7 @@ export function areaLabelOf(draft: ActivationDraft): string {
 /**
  * Reaponta o plano pro slug que o banco devolveu.
  *
- * Na prática os dois coincidem — a mesma função gera os dois. A defesa existe
+ * Na prática os dois coincidem, a mesma função gera os dois. A defesa existe
  * porque um objetivo apontando pra um eixo inexistente só apareceria semanas
  * depois, como uma área sem nome no gráfico da semana.
  */

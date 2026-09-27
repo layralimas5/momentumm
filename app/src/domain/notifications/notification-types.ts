@@ -2,7 +2,7 @@
  * Os gatilhos de retorno.
  *
  * Cada tipo existe pra responder uma pergunta diferente de "por que abrir o
- * app agora". A lista é a mesma do enum `public.notification_type` — o banco
+ * app agora". A lista é a mesma do enum `public.notification_type`, o banco
  * recusa o que não estiver nela.
  */
 
@@ -29,7 +29,7 @@ export interface NotificationSpec {
 /**
  * `progresso` nasce desligado, e é o único.
  *
- * É a única categoria que não pede ação de quem recebe — é uma leitura, e
+ * É a única categoria que não pede ação de quem recebe, é uma leitura, e
  * leitura pode esperar a pessoa abrir o app por conta própria. Um aviso que
  * não muda o que alguém vai fazer é o primeiro a ensinar a ignorar os outros.
  */

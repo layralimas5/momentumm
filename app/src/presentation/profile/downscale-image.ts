@@ -4,7 +4,7 @@ import { DomainError } from '@/shared/errors'
  * A foto escolhida virando um avatar pequeno.
  *
  * O arquivo que sai da câmera tem 12 megapixels e alguns megabytes. O que o
- * perfil precisa é de um quadrado de 256px — o maior tamanho em que ele é
+ * perfil precisa é de um quadrado de 256px, o maior tamanho em que ele é
  * desenhado, dobrado pra tela retina. Reduzir aqui, no navegador, é o que
  * permite guardar a imagem na própria coluna `avatar_url` em vez de montar um
  * bucket de Storage inteiro pra um arquivo por conta.
@@ -61,7 +61,7 @@ export async function downscaleToBanner(file: File): Promise<string> {
  *
  * Ela é desenhada num círculo de ~44px no calendário e, aberta, ocupa a largura
  * do celular. 640px cobre os dois casos em tela retina e mantém o arquivo em
- * algumas dezenas de KB — e isso importa aqui mais do que no avatar, porque são
+ * algumas dezenas de KB, e isso importa aqui mais do que no avatar, porque são
  * até 365 por ano e cada mês aberto baixa trinta delas.
  */
 export const DAY_PHOTO_SIZE = 640

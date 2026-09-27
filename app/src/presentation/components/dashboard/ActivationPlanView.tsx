@@ -15,14 +15,14 @@ import { cn } from '@/shared/lib/cn'
 /**
  * O último passo: as respostas viradas em plano.
  *
- * A tela mostra a cadeia inteira na ordem em que ela foi construída —
- * objetivo, marcos, plano, ações, primeiro passo — porque é isso que
+ * A tela mostra a cadeia inteira na ordem em que ela foi construída,
+ * objetivo, marcos, plano, ações, primeiro passo, porque é isso que
  * transforma "o app gerou algo" em "eu entendi o caminho". Cada bloco carrega
  * o número que o produziu.
  *
  * Quando a ambição não cabe na disponibilidade, o plano NÃO é apresentado como
  * pronto: o aviso ocupa o lugar do CTA e as saídas viram botões, cada uma
- * dizendo o número que ela produz. É a regra mais importante daqui — plano
+ * dizendo o número que ela produz. É a regra mais importante daqui, plano
  * impossível não é entregue nem como rascunho.
  */
 

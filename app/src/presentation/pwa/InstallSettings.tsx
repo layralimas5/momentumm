@@ -9,7 +9,7 @@ import { useInstallApp } from './use-install-app'
  *
  * Diferente do convite do Hoje, este bloco existe mesmo depois de a pessoa
  * ter fechado o convite, e existe também pra quem JÁ instalou: ver "Instalado"
- * escrito é o que responde "será que isso aqui é o app ou o site?" — a
+ * escrito é o que responde "será que isso aqui é o app ou o site?", a
  * pergunta que aparece quando o lembrete não chega.
  */
 export function InstallSettings() {

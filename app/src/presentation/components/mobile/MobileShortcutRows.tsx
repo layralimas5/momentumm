@@ -14,19 +14,19 @@ export interface ShortcutRow {
 /**
  * O resto do produto, em uma linha cada.
  *
- * Antes, "Ver mais do meu dia" abria seis cards completos — objetivos com
+ * Antes, "Ver mais do meu dia" abria seis cards completos, objetivos com
  * parágrafo de diagnóstico, metas em carrossel, insight com dois botões,
  * seletor de foco, campo de vitórias com sugestões. Seis telas de rolagem, e
  * todas elas versões resumidas de telas que já existem no app.
  *
  * O resumo de uma tela não substitui a tela: ele compete com ela. Aqui fica só
- * o que faz alguém decidir abrir — o nome e o número —, e o toque leva pro
+ * o que faz alguém decidir abrir, o nome e o número, e o toque leva pro
  * lugar onde a coisa é feita de verdade.
  *
  * ## Por que número e não gráfico
  *
  * "3 · 1 atrasado" responde em meio segundo, de relance, sem interpretar nada.
- * É a mesma escolha dos cards de cima da tela (Momentum, Hoje, Foco) — e a
+ * É a mesma escolha dos cards de cima da tela (Momentum, Hoje, Foco), e a
  * repetição do padrão é o que faz a tela inteira parecer uma coisa só.
  */
 export function MobileShortcutRows({ rows }: { readonly rows: readonly ShortcutRow[] }) {

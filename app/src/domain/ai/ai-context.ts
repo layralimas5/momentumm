@@ -30,11 +30,11 @@ import type { Win } from '@/domain/entities/win'
  * É um recorte FECHADO e montado num lugar só: objetivos com plano e previsão,
  * hábitos com constância, o dia como está, os últimos reviews e o score aberto
  * em fatores. Duas telas montando recortes diferentes receberiam leituras que
- * se contradizem — e a IA é a única parte do produto que fala em prosa, então
+ * se contradizem, e a IA é a única parte do produto que fala em prosa, então
  * a contradição apareceria escrita.
  *
  * Nenhum id atravessa a fronteira: a IA devolve estrutura por posição
- * (`stepIndex`) e por REF — um apelido curto (`a1`, `o2`, `h1`) que o app
+ * (`stepIndex`) e por REF, um apelido curto (`a1`, `o2`, `h1`) que o app
  * atribui na hora de montar o contexto e traduz de volta pra id ao aplicar
  * (`AiRefs`). Um ref que a IA inventar não bate com nada e é descartado, em
  * vez de virar uma escrita numa linha que a pessoa nunca mostrou.

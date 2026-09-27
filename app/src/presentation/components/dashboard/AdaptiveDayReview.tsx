@@ -18,7 +18,7 @@ import { cn } from '@/shared/lib/cn'
  * A revisão do Dia Adaptável.
  *
  * A tela mostra o plano proposto, item por item, com o MOTIVO de cada escolha
- * — e só grava depois do "Confirmar". Um recurso que reorganiza o dia sozinho
+ *, e só grava depois do "Confirmar". Um recurso que reorganiza o dia sozinho
  * e avisa depois é um recurso que a pessoa desliga na segunda vez: o dia é
  * dela, e a decisão de encolher ou empurrar alguma coisa também.
  *
@@ -182,7 +182,7 @@ function ReviewBody({
  * item (ver `ItemRow`).
  *
  * Antes existia um par de botões aqui embaixo, pra UMA ação escolhida pelo
- * app — a de maior peso. Num dia com quatro ações isso escolhia por ela, e a
+ * app, a de maior peso. Num dia com quatro ações isso escolhia por ela, e a
  * pessoa que quisesse começar por outra não tinha caminho: precisava confirmar,
  * fechar a revisão e procurar a linha na tela de trás.
  */
@@ -220,7 +220,7 @@ function ReviewActions({
 /**
  * O botão de começar: um alvo grande com o que vai acontecer escrito dentro.
  *
- * Três linhas em ordem de leitura — o que é, o que vai ser feito, quanto
+ * Três linhas em ordem de leitura, o que é, o que vai ser feito, quanto
  * tempo leva. Quem lê devagar termina sabendo exatamente no que está tocando,
  * e ninguém precisa voltar na lista acima pra lembrar o nome da ação.
  */
@@ -298,7 +298,7 @@ function Figure({
  *
  * Os botões ficam AQUI, e não no rodapé: a escolha é por ação. "Completa ou
  * mínima" não diz nada solto, então cada botão carrega o nome e os minutos do
- * seu tamanho — o que decide é ver "Treinar 45 min" ao lado de "Fazer 10
+ * seu tamanho, o que decide é ver "Treinar 45 min" ao lado de "Fazer 10
  * minutos de movimento" e saber qual dos dois cabe hoje.
  *
  * Tocar num deles confirma o plano, grava a redução quando for o caso e abre o

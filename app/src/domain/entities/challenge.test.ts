@@ -57,7 +57,7 @@ function participant(patch: Partial<ChallengeParticipant> = {}): ChallengePartic
 /*
   Literal, e não `createActivity`: a janela do desafio anda pra frente a partir
   de uma segunda-feira fixa, e o construtor recusa data no futuro. O que
-  `doneDaysOf` lê é eixo, valor e dia — os três estão aqui.
+  `doneDaysOf` lê é eixo, valor e dia, os três estão aqui.
 */
 function activity(day: DayKey, value: number, type = 'treino'): Activity {
   return {

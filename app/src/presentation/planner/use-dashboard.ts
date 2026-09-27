@@ -43,7 +43,7 @@ const DISMISSED_KEY = 'momentumm.insights.dismissed.v1'
  *
  * Três é o limite da decisão, não do espaço: a partir do quarto item a pessoa
  * para de escolher e passa a varrer a lista. O que sobra continua acessível em
- * "ver tudo do dia" — o dashboard não esconde trabalho, ele ordena.
+ * "ver tudo do dia", o dashboard não esconde trabalho, ele ordena.
  */
 export const MAX_FOCUS_ITEMS = 3
 
@@ -54,7 +54,7 @@ export interface GoalInMotion {
 }
 
 /**
- * Um item do foco de hoje — ação ou hábito, na mesma lista.
+ * Um item do foco de hoje, ação ou hábito, na mesma lista.
  *
  * O dia é vivido misturado: às nove da manhã não existe "aba de hábitos" e
  * "aba de ações", existe o que precisa sair. Duas listas separadas obrigam a
@@ -110,7 +110,7 @@ export interface DashboardView {
   readonly checkIn: CheckIn | null
   /**
    * Os objetivos com plano e previsão. O dia lê daqui pra dizer a que etapa e
-   * a que objetivo cada linha pertence — é o que separa uma lista de tarefas
+   * a que objetivo cada linha pertence, é o que separa uma lista de tarefas
    * de um sistema de progresso.
    */
   readonly objectives: readonly ObjectiveView[]
@@ -132,7 +132,7 @@ export interface DashboardView {
   readonly dayProgress: DayProgress
   /**
    * O recado de retomada quando ontem ficou pra trás. Null quando não há nada
-   * a retomar — a mensagem só aparece se muda alguma decisão de hoje.
+   * a retomar, a mensagem só aparece se muda alguma decisão de hoje.
    */
   readonly resumeNote: string | null
   readonly capacity: CapacityProfile
@@ -150,7 +150,7 @@ export interface DashboardView {
   /**
    * Dias parados imediatamente antes de hoje. Zero quando ontem teve
    * movimento. É o que separa uma retomada de um dia comum, e mora aqui porque
-   * o gravador de momentos e o Share Studio precisam da MESMA contagem — duas
+   * o gravador de momentos e o Share Studio precisam da MESMA contagem, duas
    * cópias da regra dariam dois números com o mesmo nome.
    */
   readonly daysAway: number
@@ -295,7 +295,7 @@ export function useDashboard(): DashboardView {
    * O foco de hoje.
    *
    * A ordem é a da decisão, não a do banco: prioridade principal, depois o que
-   * ainda está aberto por prioridade, e por último o que já saiu — o concluído
+   * ainda está aberto por prioridade, e por último o que já saiu, o concluído
    * fica pra dar a sensação de avanço, nunca pra ocupar o topo.
    */
   const focus = useMemo<TodayFocus>(() => {
@@ -359,14 +359,14 @@ export function useDashboard(): DashboardView {
    * A próxima ação, com o motivo dela.
    *
    * A prioridade principal vem primeiro por ser uma escolha explícita da
-   * pessoa. Sem ela, o app propõe a próxima ação do objetivo mais apertado —
+   * pessoa. Sem ela, o app propõe a próxima ação do objetivo mais apertado,
    * e diz por quê, porque uma sugestão sem motivo é indistinguível de um chute.
    */
   const nextUp = useMemo<NextUp | null>(() => {
     /*
       A ação que a pessoa já escolheu pra hoje sai da disputa.
 
-      Repetir a prioridade principal aqui não acrescenta nada — ela já é o
+      Repetir a prioridade principal aqui não acrescenta nada, ela já é o
       maior elemento da tela. O valor deste bloco é justamente mostrar o que o
       plano está pedindo QUANDO isso não é o que ela escolheu fazer.
 

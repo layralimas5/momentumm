@@ -5,7 +5,7 @@ import { BANNER_PRESETS, type BannerPreset } from './profile-banner'
  * O clube.
  *
  * O produto já tinha as duas pontas do social: o círculo (gente próxima) e o
- * desafio (um combinado com prazo e meta). O clube é o meio — dura mais que um
+ * desafio (um combinado com prazo e meta). O clube é o meio, dura mais que um
  * desafio e cabe mais gente que um círculo.
  *
  * ## O que atravessa a fronteira do clube
@@ -13,7 +13,7 @@ import { BANNER_PRESETS, type BannerPreset } from './profile-banner'
  * Só o dia cumprido dentro dos desafios DELE, que é um número que cada pessoa
  * já publica ao participar. Nenhum hábito, nenhuma ação, nenhum registro: o
  * clube vê o que foi publicado pra ele, e nada além. Isso não é uma decisão de
- * tela — é o desenho da função que monta o ranking, no banco.
+ * tela, é o desenho da função que monta o ranking, no banco.
  *
  * ## Criar é do PRO; perder o PRO não apaga nada
  *
@@ -149,7 +149,7 @@ export function rankClubMembers(
 }
 
 /**
- * O dono continua dono sem assinatura — o que ele perde é a administração.
+ * O dono continua dono sem assinatura, o que ele perde é a administração.
  *
  * A tela pergunta isso pra decidir entre mostrar os controles e mostrar o
  * aviso. A garantia de verdade está na política do banco, que recusa a escrita

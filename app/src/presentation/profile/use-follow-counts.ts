@@ -10,7 +10,7 @@ import { container } from '@/infrastructure/container'
  * uma linha seriam duas esperas pra responder a mesma pergunta.
  *
  * Falha não vira erro na tela. Se a contagem não veio, o perfil mostra zero e
- * segue em frente — nada aqui muda uma decisão da pessoa, e um aviso vermelho
+ * segue em frente, nada aqui muda uma decisão da pessoa, e um aviso vermelho
  * em cima do nome dela seria alarme por uma informação de vitrine.
  */
 export function useFollowCounts(userId: string | null): {

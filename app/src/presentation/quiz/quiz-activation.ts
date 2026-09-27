@@ -49,7 +49,7 @@ export interface QuizActivation {
    * Existe porque a casca do app manda pra esta tela sempre que há plano
    * pendente: sem uma saída, um erro que "tentar de novo" não resolve prende
    * a pessoa FORA do produto, com a conta criada e nada acessível. Isso
-   * aconteceu de verdade — é o motivo deste método existir.
+   * aconteceu de verdade, é o motivo deste método existir.
    */
   skip(): void
 }

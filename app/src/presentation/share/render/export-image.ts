@@ -11,7 +11,7 @@ import { renderShareCard, type SharePhoto } from './render-share-card'
 /**
  * Exportação e compartilhamento da imagem.
  *
- * A saída é sempre PNG. JPEG seria menor, mas não tem canal alpha — e o
+ * A saída é sempre PNG. JPEG seria menor, mas não tem canal alpha, e o
  * template Transparent existe exatamente pra a pessoa colar o card por cima de
  * uma foto dela. Um formato por template significaria dois caminhos de
  * exportação e a garantia de que um deles envelheceria.
@@ -97,7 +97,7 @@ export function supportsFileShare(): boolean {
  *
  * Sem integração direta com Instagram, TikTok ou WhatsApp: cada uma exigiria
  * SDK, chave e manutenção própria pra entregar o que o share sheet nativo já
- * faz — e o sheet nativo mostra os apps que a pessoa realmente usa.
+ * faz, e o sheet nativo mostra os apps que a pessoa realmente usa.
  */
 export async function shareImage(
   blob: Blob,
@@ -118,7 +118,7 @@ export async function shareImage(
   }
 }
 
-/** Salva o arquivo. É o caminho de quem não tem share nativo — desktop, quase sempre. */
+/** Salva o arquivo. É o caminho de quem não tem share nativo, desktop, quase sempre. */
 export function downloadImage(blob: Blob, fileName: string): void {
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')

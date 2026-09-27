@@ -13,7 +13,7 @@ import { renderShareCard } from './render-share-card'
  * As quatro cores e os oito arranjos desenhando de verdade.
  *
  * O renderizador é canvas puro: um arranjo que erra o nome de um método ou
- * esquece de fechar um caminho não quebra o build nem o teste de domínio — ele
+ * esquece de fechar um caminho não quebra o build nem o teste de domínio, ele
  * quebra na mão da pessoa, no meio do Story. Este teste desenha as trinta e
  * duas combinações num contexto falso que anota tudo que foi chamado, e
  * confere que cada uma pintou fundo e escreveu texto no espaço do card.

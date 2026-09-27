@@ -26,7 +26,7 @@ import type { ChallengesState } from './use-challenges'
  * A ordem das perguntas é a ordem em que a pessoa pensa: o que a gente vai
  * fazer, com que frequência, por quanto tempo, e de onde o app vai saber que
  * saiu. A última é a que mais importa e é a que quase todo app de desafio
- * esquece — sem ela, cumprir vira uma segunda tarefa de marcar caixinha.
+ * esquece, sem ela, cumprir vira uma segunda tarefa de marcar caixinha.
  *
  * Convidar NÃO acontece aqui. O desafio nasce vazio e os convites saem da tela
  * dele, onde já dá pra ver o combinado escrito: mandar convite antes de existir
@@ -219,7 +219,7 @@ function ChallengeForm({
         O hábito vem primeiro porque é o que a pessoa já cumpre: desafio que
         obriga a registrar de novo o que ela registrou hoje de manhã é desafio
         que morre na segunda semana. Sem hábito, o app conta pelo que ela
-        registrar na área — e aí precisa saber quanto fecha um dia.
+        registrar na área, e aí precisa saber quanto fecha um dia.
       */}
       <Field
         label="Como eu vou saber que o dia saiu"

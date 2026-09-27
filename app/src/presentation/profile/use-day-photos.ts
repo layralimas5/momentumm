@@ -11,7 +11,7 @@ import { downscaleToDayPhoto, downscaleToDayPhotoDataUrl } from './downscale-ima
  *
  * Duas coisas acontecem aqui, e elas são diferentes de propósito:
  *
- *   as LINHAS   vêm do `DayPhotoRepository` — dia e caminho, nada mais.
+ *   as LINHAS   vêm do `DayPhotoRepository`, dia e caminho, nada mais.
  *   as IMAGENS  vêm do `MediaRepository`, por link assinado que expira em
  *               minutos, pedido uma vez por foto e guardado em memória
  *               enquanto a tela está aberta.
@@ -136,8 +136,8 @@ export function useDayPhotos(from: DayKey, to: DayKey): DayPhotosView {
  * Onde o arquivo fica, e é a única diferença entre os dois mundos.
  *
  * Com Supabase, a imagem sobe pro bucket privado e o que é guardado na linha é
- * o CAMINHO. No modo demo não existe bucket que sobreviva a um reload — o
- * repositório de mídia guarda os arquivos em memória —, então a imagem vira
+ * o CAMINHO. No modo demo não existe bucket que sobreviva a um reload, o
+ * repositório de mídia guarda os arquivos em memória, então a imagem vira
  * data URL e mora na própria linha, que é o que o armazenamento local
  * consegue devolver depois.
  */

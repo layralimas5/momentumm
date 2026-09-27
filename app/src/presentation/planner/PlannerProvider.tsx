@@ -98,7 +98,7 @@ const EMPTY: Snapshot = {
 /**
  * Carrega o planejamento inteiro de uma vez e mantém tudo em um estado só.
  *
- * Uma busca por tela criaria dashboards que discordam entre si — a meta diria
+ * Uma busca por tela criaria dashboards que discordam entre si, a meta diria
  * uma coisa e o progresso diria outra. Aqui a fonte é única e as escritas são
  * otimistas: a tela responde na hora e volta atrás se o servidor recusar.
  */
@@ -385,7 +385,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
    * Arquivar o objetivo leva o plano dele junto.
    *
    * Etapa não existe fora do objetivo: uma etapa órfã não significa nada e não
-   * aparece em lugar nenhum. Ação e hábito NÃO somem — eles perdem só o
+   * aparece em lugar nenhum. Ação e hábito NÃO somem, eles perdem só o
    * vínculo com a etapa, porque são trabalho registrado e histórico. É a mesma
    * regra do banco (`cascade` na etapa, `set null` na ação).
    */
@@ -425,7 +425,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
    * Concluir o objetivo e limpar o rastro dele no plano.
    *
    * As ações em aberto são canceladas, não apagadas: elas são o registro do que
-   * ficou pra trás e a review usa isso. Reabrir só devolve o objetivo — as
+   * ficou pra trás e a review usa isso. Reabrir só devolve o objetivo, as
    * ações canceladas ficam canceladas, porque ressuscitar tarefa antiga de
    * surpresa é a forma mais rápida de encher o dia de coisa que ninguém pediu.
    */
@@ -433,7 +433,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
    * Grava um momento da jornada.
    *
    * Nunca derruba a ação que o disparou: se a gravação falhar, o objetivo
-   * continua concluído e o review continua salvo. O evento é um subproduto —
+   * continua concluído e o review continua salvo. O evento é um subproduto,
    * perder um deles é aceitável, perder a conclusão do objetivo não é.
    *
    * A escrita é idempotente por (tipo, origem, dia), então repetir a mesma
@@ -463,7 +463,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
    * Muda quem vê um momento.
    *
    * É a ÚNICA porta pra um evento deixar de ser privado, e ela só é chamada
-   * onde a pessoa toca. Nenhuma regra do app promove visibilidade sozinha —
+   * onde a pessoa toca. Nenhuma regra do app promove visibilidade sozinha,
    * nem o gravador, nem o Share Studio, nem aceitar uma amizade.
    */
   const setEventVisibility = useCallback(
@@ -534,7 +534,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
    *
    * O peso é propriedade do CONJUNTO: criar a quarta etapa muda o valor das
    * outras três. Gravar só a nova deixaria o plano somando 133% até alguém
-   * abrir a tela de pesos — e uma barra de progresso passando de 100 destrói a
+   * abrir a tela de pesos, e uma barra de progresso passando de 100 destrói a
    * confiança em todos os outros números da tela junto.
    */
   const createStage = useCallback(
@@ -560,7 +560,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         input.weight === undefined ? rebalanceWeights([...siblings, created]) : [...siblings, created]
 
       /*
-        Sem peso informado, o conjunto é sempre reescrito — inclusive quando a
+        Sem peso informado, o conjunto é sempre reescrito, inclusive quando a
         etapa é a primeira. O repositório demo já rebalanceia sozinho no insert,
         o Supabase não: pular essa chamada faria a primeira etapa nascer valendo
         100% num lugar e 0% no outro, e o mesmo objetivo mostraria progressos
@@ -658,7 +658,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   /**
    * Apagar a etapa não apaga o trabalho.
    *
-   * As ações voltam pro objetivo sem etapa, onde a pessoa decide o destino —
+   * As ações voltam pro objetivo sem etapa, onde a pessoa decide o destino,
    * apagar tarefa junto com uma reorganização é a forma mais rápida de alguém
    * perder confiança no app. Os pesos das que sobraram são reequilibrados.
    */
@@ -752,7 +752,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         Do snapshot, não do render: a ação que nasce junto com a etapa (plano de
         um objetivo novo, sugestão da IA) é gravada no mesmo tick em que a etapa
         foi criada, e ler `data` aqui recusaria como inexistente uma etapa que
-        acabou de ser gravada — derrubando a criação do plano no meio.
+        acabou de ser gravada, derrubando a criação do plano no meio.
       */
       const stage = snapshot.current.planStages.find((item) => item.id === stageId)
       if (!stage) throw new DomainError('Essa etapa não existe mais.')
@@ -917,7 +917,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   /**
    * Concluir ou reabrir uma ação. É por aqui que TODA conclusão passa.
    *
-   * O domínio é quem carimba a data — `completeTask` e `reopenTask` — em vez de
+   * O domínio é quem carimba a data, `completeTask` e `reopenTask`, em vez de
    * cada tela montar o objeto na mão. Duas telas construindo o mesmo estado é
    * como nasce a ação concluída sem `completedAt`, que some da série da
    * previsão sem nenhum erro aparecer.
@@ -1045,7 +1045,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
    *
    * A ordem dentro de cada plano importa: o objetivo primeiro (é ele que pode
    * ser recusado por já existir um ativo no eixo), depois o ritmo semanal,
-   * depois os hábitos e por último as ações — que nascem já apontando pra meta
+   * depois os hábitos e por último as ações, que nascem já apontando pra meta
    * criada, senão o card de "próxima ação" da meta nasceria vazio.
    *
    * Só a primeira ação do primeiro plano fica como prioridade principal: a
@@ -1069,7 +1069,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
           As etapas vêm antes das ações porque cada ação nasce dentro de uma.
           Sem esse passo o objetivo nasceria como uma lista: a barra mediria
           volume registrado em vez de caminho percorrido, e gargalo, previsão e
-          as regras de insight que leem etapa ficariam todas de fora — no
+          as regras de insight que leem etapa ficariam todas de fora, no
           objetivo recém-criado, que é justamente onde o plano importa mais.
         */
         /*
@@ -1151,8 +1151,8 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
    * O plano de cada objetivo, calculado uma vez pro app inteiro.
    *
    * Dashboard, plano, progresso, detalhe e insight leem daqui. Foi a
-   * divergência entre essas telas — cada uma com a sua conta de "quanto está
-   * feito" — que motivou a hierarquia; recalcular por tela traria o problema
+   * divergência entre essas telas, cada uma com a sua conta de "quanto está
+   * feito", que motivou a hierarquia; recalcular por tela traria o problema
    * de volta pela porta dos fundos.
    */
   const plans = useMemo(

@@ -14,7 +14,7 @@ import type {
  * migration 0049.
  *
  * Repare no que NÃO existe: nenhum método aceita o id da outra PESSOA. Mandar
- * incentivo diz em qual dupla, nunca pra quem — dentro de uma dupla só existe
+ * incentivo diz em qual dupla, nunca pra quem, dentro de uma dupla só existe
  * uma resposta, e deixar o app escolher o destinatário seria abrir a porta pra
  * mandar reação pra quem não é do par.
  *
@@ -25,7 +25,7 @@ import type {
 export interface PairRepository {
   /** As duplas, o estado de hoje de cada uma e se ainda cabe outra. */
   load(): Promise<PairOverview>
-  /** Cria o convite e devolve o token em claro — a única vez que ele existe. */
+  /** Cria o convite e devolve o token em claro, a única vez que ele existe. */
   createInvite(): Promise<PairInvite>
   /** O que mostrar na tela de convite, antes de aceitar. Funciona sem sessão. */
   previewInvite(token: string): Promise<InvitePreview>
@@ -35,6 +35,6 @@ export interface PairRepository {
   sendEncouragement(pairId: string, kind: EncouragementKind): Promise<void>
   /** Marca como lidos os incentivos recebidos. */
   markRead(ids: readonly string[]): Promise<void>
-  /** Desfaz UMA dupla — para os dois lados dela. */
+  /** Desfaz UMA dupla, para os dois lados dela. */
   leave(pairId: string): Promise<void>
 }

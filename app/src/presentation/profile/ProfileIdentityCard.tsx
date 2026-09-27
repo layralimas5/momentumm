@@ -40,11 +40,11 @@ interface ProfileIdentityCardProps {
  *
  * É a única parte da tela que fala com quem está de fora: foto, nome, @, o que
  * a pessoa está construindo, onde encontrá-la e três números. Tudo o que é
- * medida de evolução — momentum, constância, conquistas — fica nas abas
+ * medida de evolução, momentum, constância, conquistas, fica nas abas
  * abaixo, porque isso é sobre o caminho, e o cartão é sobre quem caminha.
  *
  * Os três números são contagens reais: momentos publicados, quem segue e quem é
- * seguido. Nenhum deles é uma porta — seguir não abre perfil privado, e a
+ * seguido. Nenhum deles é uma porta, seguir não abre perfil privado, e a
  * regra mora no banco, não aqui.
  */
 export function ProfileIdentityCard({
@@ -134,7 +134,7 @@ export function ProfileIdentityCard({
         As redes numa faixa, não numa pilha.
 
         Com quebra de linha, três @ de tamanho normal viravam três linhas
-        inteiras no meio do cartão — mais alto que a bio e que os botões. Em
+        inteiras no meio do cartão, mais alto que a bio e que os botões. Em
         faixa eles ocupam uma linha só, e o corte do último diz que dá pra
         arrastar. A margem negativa deixa o primeiro chip alinhado com o resto
         do cartão mesmo com o respiro de rolagem.
@@ -170,7 +170,7 @@ export function ProfileIdentityCard({
 }
 
 /**
- * O número em cima, o rótulo embaixo — e nenhum dos dois é link.
+ * O número em cima, o rótulo embaixo, e nenhum dos dois é link.
  *
  * Tocar em "Seguidores" abriria a lista de quem segue, e essa tela não existe:
  * ela pede uma conversa inteira sobre quem pode ver quem. Enquanto não existir,

@@ -24,8 +24,8 @@ import {
  *
  * Este arquivo é a resposta pra "quanto do objetivo está feito", e existe
  * exatamente UMA resposta. Antes daqui a mesma pergunta era respondida de dois
- * jeitos em telas vizinhas — o plano dividia ações concluídas pelo total, o
- * detalhe mostrava volume sobre alvo — e duas barras diferentes pro mesmo
+ * jeitos em telas vizinhas, o plano dividia ações concluídas pelo total, o
+ * detalhe mostrava volume sobre alvo, e duas barras diferentes pro mesmo
  * objetivo é o que faz um produto parecer vários.
  *
  * A conta sobe pela hierarquia:
@@ -35,7 +35,7 @@ import {
  * ## Por que o volume continua existindo
  *
  * O progresso do objetivo NÃO mistura consistência de hábito nem minutos
- * registrados: execução é execução. Mas o volume não sumiu — ele continua
+ * registrados: execução é execução. Mas o volume não sumiu, ele continua
  * sendo lido em `ObjectiveProgress` (atividades do eixo sobre o alvo) e aparece
  * ao lado, como ritmo. São perguntas diferentes: "quanto do caminho eu andei" e
  * "quanto eu produzi". Um objetivo sem plano nenhum cai no volume, porque uma
@@ -62,7 +62,7 @@ export interface StageProgress {
   /**
    * Todas as ações obrigatórias saíram e a etapa ainda não foi fechada.
    * É SUGESTÃO: quem fecha etapa é a pessoa, porque ela pode ter critério que
-   * o app não conhece — e uma etapa fechada sozinha some da tela sem aviso.
+   * o app não conhece, e uma etapa fechada sozinha some da tela sem aviso.
    */
   readonly canSuggestCompletion: boolean
   readonly hasOptionalLeft: boolean
@@ -94,7 +94,7 @@ export interface PlanProgress {
 /**
  * Progresso de uma etapa a partir das ações dela.
  *
- * Cancelada sai da conta inteira — numerador e denominador. Largar uma ação
+ * Cancelada sai da conta inteira, numerador e denominador. Largar uma ação
  * conscientemente não pode derrubar a barra, senão a pessoa passa a deixar
  * pendente aquilo que já decidiu não fazer, e o plano vira ficção.
  */
@@ -162,7 +162,7 @@ export function planProgressOf(
     Divide pela soma real dos pesos, não pelos 100 nominais.
 
     O domínio recusa gravar um conjunto que não some 100, mas um banco vindo de
-    outra versão, ou uma etapa apagada por fora, pode chegar aqui somando 90 — e
+    outra versão, ou uma etapa apagada por fora, pode chegar aqui somando 90, e
     nesse caso é melhor mostrar a proporção correta entre as etapas existentes
     do que teimar num denominador que não bate com a tela.
   */
@@ -199,7 +199,7 @@ export function planProgressOf(
  *
  * Critério, em ordem: etapa aberta com ações atrasadas (mais atrasadas primeiro,
  * e entre iguais a mais antiga do caminho), depois etapa aberta com peso alto e
- * nenhum movimento. Sem nenhum dos dois casos não há gargalo — e é importante
+ * nenhum movimento. Sem nenhum dos dois casos não há gargalo, e é importante
  * que não haja, porque apontar um gargalo inventado ensina a pessoa a ignorar o
  * aviso quando ele for real.
  */
@@ -220,7 +220,7 @@ function bottleneckOf(stages: readonly StageProgress[]): StageProgress | null {
     Etapa parada só existe onde alguma outra andou.
 
     Num plano recém-criado todas as etapas estão em zero, e a de maior peso
-    ganharia o selo de "segurando o objetivo" no primeiro dia — antes de a
+    ganharia o selo de "segurando o objetivo" no primeiro dia, antes de a
     pessoa ter tido chance de fazer qualquer coisa. Atraso é fato e continua
     valendo acima; "parada" é comparação, e sem nada em movimento não há com o
     que comparar.
@@ -240,7 +240,7 @@ function bottleneckOf(stages: readonly StageProgress[]): StageProgress | null {
  *
  * Só olha `completedAt`: é o único carimbo que diz QUANDO a ação saiu. Serve à
  * previsão, que precisa medir velocidade, e à review, que precisa comparar
- * semanas. Ação concluída sem data não conta — o domínio não deixa criar uma,
+ * semanas. Ação concluída sem data não conta, o domínio não deixa criar uma,
  * e uma linha antiga sem carimbo seria contada como feita hoje, inflando a
  * velocidade justamente de quem está parado.
  */

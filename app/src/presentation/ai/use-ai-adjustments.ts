@@ -17,8 +17,8 @@ export interface ApplyOutcome {
  *
  * Um ajuste por vez, pelas MESMAS funções do provider que a tela usa (mover,
  * encolher, priorizar, prazo, frequência, criar): a IA não tem caminho
- * próprio pro banco. Um ajuste que falha não derruba os outros — cada um é
- * uma decisão que ela tomou — e o resultado diz exatamente o que entrou.
+ * próprio pro banco. Um ajuste que falha não derruba os outros, cada um é
+ * uma decisão que ela tomou, e o resultado diz exatamente o que entrou.
  *
  * `set_main_priority` vai por último de propósito: a prioridade é uma por
  * dia, e movê-la antes de mover as outras ações deixaria a antiga prioridade

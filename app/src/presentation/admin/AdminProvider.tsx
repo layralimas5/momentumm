@@ -16,7 +16,7 @@ const RECHECK_MS = 30_000
  * `admin_me()` responde papel, nível e o carimbo do segundo fator direto do
  * JWT. Nada é guardado em `localStorage` nem derivado do perfil: a cada
  * meio minuto o provider pergunta de novo, e quando a hora vence a tela
- * cai pra porta de verificação sozinha — sem esperar a próxima ação falhar.
+ * cai pra porta de verificação sozinha, sem esperar a próxima ação falhar.
  */
 export function AdminProvider({ children }: { children: ReactNode }) {
   const auth = useAuth()
