@@ -48,6 +48,7 @@ import {
   type Club,
   type ClubMember,
 } from '@/domain/entities/club'
+import type { ClubInvitation, ClubInvitePreview } from '@/domain/entities/club-invite'
 import { BANNER_PRESETS } from '@/domain/entities/profile-banner'
 import { normalizeStatus } from '@/domain/entities/profile-banner'
 import { REVIEW_STEPS, type WeeklyReview } from '@/domain/entities/weekly-review'
@@ -117,7 +118,7 @@ const profileRowSchema = z.object({
   /*
     Cortesia (0034/0051). `'infinity'` é um valor legítimo de `timestamptz` no
     Postgres e o `new Date('infinity')` do JavaScript é `Invalid Date`, então o
-    mapeamento trata esse caso na mão — sem isso, a conta com cortesia infinita
+    mapeamento trata esse caso na mão, sem isso, a conta com cortesia infinita
     cairia em data inválida e a comparação daria falso justamente pra quem tem
     a cortesia mais forte.
   */
@@ -554,7 +555,7 @@ export function toPlanStage(row: unknown): PlanStage {
 
 /*
   Momentos da jornada. `numeric` volta como string do Postgres em alguns
-  drivers e como número em outros, então o schema aceita os dois e converte —
+  drivers e como número em outros, então o schema aceita os dois e converte,
   um card mostrando "NaN%" em tamanho gigante seria o pior lugar pra descobrir
   isso.
 */
@@ -800,13 +801,21 @@ const clubRowSchema = z.object({
   archived_at: z.string().nullable(),
 })
 
+/**
+ * A capa, sempre uma que o app conhece.
+ *
+ * Preset removido numa versão futura cai no padrão em vez de deixar o card sem
+ * fundo. O clube e o convite leem a mesma coluna, então a queda é uma só.
+ */
+function toCover(value: string): Club['cover'] {
+  return (BANNER_PRESETS as readonly string[]).includes(value)
+    ? (value as Club['cover'])
+    : 'aurora'
+}
+
 export function toClub(row: unknown): Club {
   const parsed = parseOrThrow(clubRowSchema, row, 'clube')
-  const cover = (BANNER_PRESETS as readonly string[]).includes(parsed.cover)
-    ? (parsed.cover as Club['cover'])
-    // Capa que o app não conhece (preset removido numa versão futura) cai no
-    // padrão em vez de deixar o card sem fundo.
-    : 'aurora'
+  const cover = toCover(parsed.cover)
 
   return {
     id: parsed.id,
@@ -835,6 +844,58 @@ export function toClubMember(row: unknown): ClubMember {
     userId: parsed.user_id,
     role: parsed.role,
     joinedAt: new Date(parsed.joined_at),
+  }
+}
+
+const clubInvitationRowSchema = z.object({
+  id: z.string(),
+  club_id: z.string(),
+  club_name: z.string(),
+  club_category: z.enum(CLUB_CATEGORIES),
+  club_cover: z.string(),
+  inviter_name: z.string(),
+  inviter_avatar: z.string().nullable(),
+  created_at: z.string(),
+})
+
+export function toClubInvitation(row: unknown): ClubInvitation {
+  const parsed = parseOrThrow(clubInvitationRowSchema, row, 'convite de clube')
+  return {
+    id: parsed.id,
+    clubId: parsed.club_id,
+    clubName: parsed.club_name,
+    clubCategory: parsed.club_category,
+    clubCover: toCover(parsed.club_cover),
+    inviterName: parsed.inviter_name,
+    inviterAvatar: parsed.inviter_avatar,
+    createdAt: new Date(parsed.created_at),
+  }
+}
+
+const clubInvitePreviewSchema = z.object({
+  status: z.enum(['valido', 'arquivado', 'invalido']),
+  club_id: z.string().nullish(),
+  name: z.string().nullish(),
+  description: z.string().nullish(),
+  category: z.enum(CLUB_CATEGORIES).nullish(),
+  cover: z.string().nullish(),
+  members: z.coerce.number().int().nonnegative().nullish(),
+  already_member: z.boolean().nullish(),
+  can_join: z.boolean().nullish(),
+})
+
+export function toClubInvitePreview(row: unknown): ClubInvitePreview {
+  const parsed = parseOrThrow(clubInvitePreviewSchema, row, 'convite de clube')
+  return {
+    status: parsed.status,
+    clubId: parsed.club_id ?? null,
+    name: parsed.name ?? null,
+    description: parsed.description ?? null,
+    category: parsed.category ?? null,
+    cover: parsed.cover ? toCover(parsed.cover) : null,
+    members: parsed.members ?? 0,
+    alreadyMember: parsed.already_member ?? false,
+    canJoin: parsed.can_join ?? false,
   }
 }
 

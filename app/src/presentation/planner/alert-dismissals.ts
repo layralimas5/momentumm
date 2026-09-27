@@ -16,12 +16,12 @@ interface Stored {
  *
  * ## Por que a marca é POR DIA
  *
- * Dispensar "2 ações atrasadas" não resolve as duas ações — resolve o RECADO
+ * Dispensar "2 ações atrasadas" não resolve as duas ações, resolve o RECADO
  * sobre elas, que já foi lido. Amanhã, se elas continuarem atrasadas, o recado
  * volta: o problema não é o aviso, é o atraso, e esconder um problema para
  * sempre porque alguém o viu uma vez seria o app mentindo por educação.
  *
- * E se a pessoa resolver o que foi avisado, o recado nem chega a voltar — ele
+ * E se a pessoa resolver o que foi avisado, o recado nem chega a voltar, ele
  * nasce do estado real, não de uma fila de notificações.
  *
  * A marca fica no navegador, não no servidor: é conveniência de aparelho, não
@@ -34,7 +34,7 @@ export function dismissedAlerts(today: DayKey): ReadonlySet<string> {
     if (!raw) return new Set()
 
     const parsed = JSON.parse(raw) as Partial<Stored>
-    // Virou o dia: a lista de ontem não vale mais, e nem precisa ser apagada —
+    // Virou o dia: a lista de ontem não vale mais, e nem precisa ser apagada,
     // a próxima gravação sobrescreve.
     if (parsed.day !== today || !Array.isArray(parsed.ids)) return new Set()
 
@@ -46,9 +46,23 @@ export function dismissedAlerts(today: DayKey): ReadonlySet<string> {
 }
 
 export function dismissAlert(today: DayKey, id: string): ReadonlySet<string> {
-  const next = new Set(dismissedAlerts(today))
-  next.add(id)
+  return store(today, new Set(dismissedAlerts(today)).add(id))
+}
 
+/**
+ * Limpar tudo, de uma vez.
+ *
+ * O sino junta o que sobrou, e limpar um por um uma lista de seis é trabalho
+ * que ninguém faz: ou some tudo, ou a pessoa fecha o sino com a bolinha ainda
+ * acesa. Vale pelo dia, como cada um deles.
+ */
+export function dismissAllAlerts(today: DayKey, ids: readonly string[]): ReadonlySet<string> {
+  const next = new Set(dismissedAlerts(today))
+  for (const id of ids) next.add(id)
+  return store(today, next)
+}
+
+function store(today: DayKey, next: ReadonlySet<string>): ReadonlySet<string> {
   try {
     const payload: Stored = { day: today, ids: [...next] }
     window.localStorage.setItem(KEY, JSON.stringify(payload))

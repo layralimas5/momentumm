@@ -1,5 +1,5 @@
 /**
- * Os eventos de uso que o app registra — e SÓ eles.
+ * Os eventos de uso que o app registra, e SÓ eles.
  *
  * A lista é a mesma de `public.product_event_names()`: o banco recusa nome
  * fora dela, então mudar aqui sem mudar lá só produz evento que não grava.
@@ -45,7 +45,7 @@ export const PRODUCT_EVENTS = [
   'review_started',
   'achievement_unlocked',
 
-  /* Juntos — a dupla de accountability. */
+  /* Juntos, a dupla de accountability. */
   'pair_invite_created',
   'pair_invite_opened',
   'pair_invite_accepted',
@@ -106,6 +106,18 @@ export const PRODUCT_EVENTS = [
   'club_joined',
   'club_left',
   'club_ranking_viewed',
+
+  /*
+    Convite de clube (0063). O link e o convite nominal são contados separados
+    porque respondem coisas diferentes: o link mede alcance pra fora, o convite
+    mede o que acontece entre quem já está aqui. Juntos num evento só, uma
+    queda em qualquer um dos dois ficaria escondida pela alta do outro.
+  */
+  'club_invite_sent',
+  'club_invite_accepted',
+  'club_invite_declined',
+  'club_invite_link_created',
+  'club_invite_link_opened',
 
   'pwa_install_prompted',
   'pwa_installed',
@@ -196,7 +208,7 @@ export interface ProductEventMetadata {
 
 /**
  * Que recurso cada rota do app representa. Rota sem recurso (detalhe de
- * desafio, perfil de amigo) não gera visualização — ela é parte do recurso
+ * desafio, perfil de amigo) não gera visualização, ela é parte do recurso
  * pai, e contar duas vezes inflaria o pai.
  */
 export function featureForRoute(pathname: string): ProductFeature | null {

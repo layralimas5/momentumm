@@ -44,6 +44,9 @@ const ClubsPage = lazy(() =>
 const ClubDetailPage = lazy(() =>
   import('@/presentation/pages/ClubDetailPage').then((m) => ({ default: m.ClubDetailPage })),
 )
+const ClubInvitePage = lazy(() =>
+  import('@/presentation/pages/ClubInvitePage').then((m) => ({ default: m.ClubInvitePage })),
+)
 const FriendInvitePage = lazy(() =>
   import('@/presentation/pages/FriendInvitePage').then((m) => ({
     default: m.FriendInvitePage,
@@ -225,7 +228,7 @@ export function App() {
               A entrada do funil: quiz público, sem conta.
 
               `/plano/<codigo>` é o link curto que vai na resposta de um
-              comentário, no direct e na bio — o código carrega a origem
+              comentário, no direct e na bio, o código carrega a origem
               inteira (`domain/analytics/quiz-links`). O `/criar-meu-plano`
               continua valendo: link já enviado não pode morrer.
             */}
@@ -247,6 +250,11 @@ export function App() {
             <Route path="/juntos/:token" element={<PairInvitePage />} />
             {/* Convite de amigo: público, porque quem recebe quase nunca tem conta. */}
             <Route path="/convite/:code" element={<FriendInvitePage />} />
+            {/*
+              O link do clube. Público pelo mesmo motivo do Juntos, e com um a
+              mais: o link é mandado pra grupo, onde a maioria não tem conta.
+            */}
+            <Route path="/clube/:token" element={<ClubInvitePage />} />
             <Route path="/termos" element={<LegalPage kind="termos" />} />
             <Route path="/privacidade" element={<LegalPage kind="privacidade" />} />
 

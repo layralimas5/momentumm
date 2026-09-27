@@ -37,7 +37,7 @@ export function MobileTopBar() {
     lá em cima some daqui também. Duas verdades sobre "o que está pendente"
     seria o sino cobrando o que a tela já deu por resolvido.
   */
-  const { alerts, hasDismissed } = useDayAlerts()
+  const { alerts, hasDismissed, dismiss, dismissAll } = useDayAlerts()
 
   const firstName = profile?.name.split(' ')[0] ?? null
   const now = new Date()
@@ -144,25 +144,52 @@ export function MobileTopBar() {
               : 'Nada pendente agora. O dia está sob controle.'}
           </p>
         ) : (
-          <ul className="flex flex-col gap-1">
-            {alerts.map((alert) => (
-              <li key={alert.id}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAlertsOpen(false)
-                    // Convite atendido não volta no mesmo dia.
-                    if (alert.id === 'compartilhar') markShareNudgeSeen(planner.today)
-                    navigate(alert.to)
-                  }}
-                  className="min-h-14 w-full rounded-xl px-3 py-3 text-left transition-colors active:bg-surface-hi"
-                >
-                  <span className="block text-sm font-medium text-ink">{alert.title}</span>
-                  <span className="mt-0.5 block text-sm text-ink-faint">{alert.body}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="flex flex-col gap-1">
+              {alerts.map((alert) => (
+                /*
+                  Dois alvos por linha, como nos cartões do Hoje: o texto leva
+                  pra tela que resolve, o X diz "já li" e apaga o recado por
+                  hoje. Sem o X, a única saída era resolver o problema ou
+                  conviver com a bolinha acesa.
+                */
+                <li key={alert.id} className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAlertsOpen(false)
+                      // Convite atendido não volta no mesmo dia.
+                      if (alert.id === 'compartilhar') markShareNudgeSeen(planner.today)
+                      navigate(alert.to)
+                    }}
+                    className="min-h-14 min-w-0 flex-1 rounded-xl px-3 py-3 text-left transition-colors active:bg-surface-hi"
+                  >
+                    <span className="block text-sm font-medium text-ink">{alert.title}</span>
+                    <span className="mt-0.5 block text-sm text-pretty text-ink-faint">
+                      {alert.body}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => dismiss(alert.id)}
+                    className="grid size-11 shrink-0 place-items-center rounded-full text-ink-faint transition-colors active:bg-surface-hi active:text-ink"
+                  >
+                    <Icon name="fechar" className="size-4" />
+                    <span className="sr-only">Dispensar: {alert.title}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+
+            <button
+              type="button"
+              onClick={dismissAll}
+              className="mt-2 min-h-11 w-full rounded-xl border border-line text-sm font-medium text-ink-muted transition-colors active:bg-surface-hi"
+            >
+              Limpar tudo
+            </button>
+          </>
         )}
       </BottomSheet>
     </>

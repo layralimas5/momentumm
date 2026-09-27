@@ -5,7 +5,12 @@ import { countsAsDone, habitsScheduledOn, statusOf } from '@/domain/entities/hab
 import { isDone, isPending } from '@/domain/entities/task'
 import type { IconName } from '@/presentation/components/ui/Icon'
 import { usePlanner } from '@/presentation/planner/use-planner'
-import { dismissAlert, dismissedAlerts } from '@/presentation/planner/alert-dismissals'
+import {
+  dismissAlert,
+  dismissAllAlerts,
+  dismissedAlerts,
+} from '@/presentation/planner/alert-dismissals'
+import { useClubInvites } from '@/presentation/clubs/use-club-invites'
 import { shareNudgeSeen } from '@/presentation/share/share-nudge'
 import { useMyRequests, withAnswer } from '@/presentation/support/use-my-requests'
 
@@ -17,7 +22,7 @@ export type AlertTone = 'danger' | 'warn' | 'brand' | 'positive'
  * Duas linhas, sempre no mesmo formato: a primeira diz o tamanho do problema
  * ("2 ações atrasadas."), a segunda diz o que dá pra fazer com ele ("Dá pra
  * reorganizar."). A separação existe porque as duas são lidas em velocidades
- * diferentes — o título de relance, o corpo só quando o título interessou.
+ * diferentes, o título de relance, o corpo só quando o título interessou.
  */
 export interface DayAlert {
   readonly id: string
@@ -50,11 +55,14 @@ export interface DayAlertsView {
   readonly hasDismissed: boolean
   /** Lido, sai da tela. Volta amanhã se o motivo continuar de pé. */
   dismiss(id: string): void
+  /** Limpa a lista inteira de uma vez. Mesma regra: vale pelo dia. */
+  dismissAll(): void
 }
 
 export function useDayAlerts(): DayAlertsView {
   const planner = usePlanner()
   const { requests } = useMyRequests()
+  const { invites } = useClubInvites()
   const [dismissed, setDismissed] = useState<ReadonlySet<string>>(() =>
     dismissedAlerts(planner.today),
   )
@@ -75,6 +83,23 @@ export function useDayAlerts(): DayAlertsView {
   )
 
   const alerts: DayAlert[] = []
+
+  /*
+    Convite de clube antes de tudo: é o único recado aqui que tem alguém do
+    outro lado esperando uma resposta, e o único que não se resolve sozinho
+    com o tempo. Um por convite, com o nome de quem chamou: "você tem convites"
+    obrigaria a abrir a tela pra descobrir de quem.
+  */
+  for (const invite of invites) {
+    alerts.push({
+      id: `clube:${invite.id}`,
+      tone: 'brand',
+      icon: 'objetivo',
+      title: `${invite.inviterName} te chamou pro clube ${invite.clubName}.`,
+      body: 'Toca pra aceitar ou recusar.',
+      to: '/app/clubes',
+    })
+  }
 
   /*
     Resposta de suporte primeiro: é a única que vem de outra pessoa, e a única
@@ -113,7 +138,7 @@ export function useDayAlerts(): DayAlertsView {
 
     Não é cobrança e o texto diz isso na cara: o hábito que não saiu ontem não
     vira dívida hoje. O recado existe porque a pessoa decide melhor o dia
-    sabendo o que ficou pra trás — e porque descobrir isso só no fim da semana,
+    sabendo o que ficou pra trás, e porque descobrir isso só no fim da semana,
     no gráfico, é tarde demais pra mudar alguma coisa.
   */
   const yesterday = addDays(planner.today, -1)
@@ -191,9 +216,14 @@ export function useDayAlerts(): DayAlertsView {
     })
   }
 
+  const visible = alerts.filter((alert) => !dismissed.has(alert.id))
+
   return {
-    alerts: alerts.filter((alert) => !dismissed.has(alert.id)),
+    alerts: visible,
     hasDismissed: alerts.some((alert) => dismissed.has(alert.id)),
     dismiss,
+    dismissAll: () => {
+      setDismissed(dismissAllAlerts(planner.today, visible.map((alert) => alert.id)))
+    },
   }
 }

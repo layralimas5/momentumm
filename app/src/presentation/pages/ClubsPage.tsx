@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { track } from '@/infrastructure/analytics/track'
 import { ClubCard } from '@/presentation/clubs/ClubCard'
 import { ClubComposer } from '@/presentation/clubs/ClubComposer'
+import { ClubInviteList } from '@/presentation/clubs/ClubInviteList'
+import { useClubInvites } from '@/presentation/clubs/use-club-invites'
 import { useClubs } from '@/presentation/clubs/use-clubs'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
@@ -13,7 +15,7 @@ import { PageHeader } from './PageHeader'
  *
  * A ordem responde a pergunta na velocidade em que ela é feita. Quem já está
  * em algum abre a tela pra voltar pra lá; quem não está em nenhum precisa
- * encontrar o primeiro — e por isso a descoberta existe mesmo quando a lista
+ * encontrar o primeiro, e por isso a descoberta existe mesmo quando a lista
  * de cima está vazia, em vez de um estado vazio que só oferece criar.
  *
  * O botão de criar aparece pra todo mundo, inclusive no gratuito. Escondê-lo
@@ -22,6 +24,7 @@ import { PageHeader } from './PageHeader'
  */
 export function ClubsPage() {
   const clubs = useClubs()
+  const invites = useClubInvites()
   const [composing, setComposing] = useState(false)
 
   const open = () => {
@@ -45,6 +48,12 @@ export function ClubsPage() {
       />
 
       {clubs.error ? <ErrorNote message={clubs.error} onRetry={() => void clubs.reload()} /> : null}
+
+      {/*
+        O convite vem ANTES dos meus clubes: é a única coisa nesta tela que
+        outra pessoa está esperando, e a única que some se não for respondida.
+      */}
+      <ClubInviteList invites={invites} onAnswered={() => void clubs.reload()} />
 
       <section aria-labelledby="meus-clubes" className="flex flex-col gap-3">
         <h2 id="meus-clubes" className="text-sm font-semibold tracking-wide text-ink-muted uppercase">
@@ -70,7 +79,7 @@ export function ClubsPage() {
 
         {clubs.discover.length === 0 ? (
           <p className="text-sm text-ink-muted">
-            Nenhum clube aberto por enquanto. Os clubes por convite não aparecem aqui — e é essa a
+            Nenhum clube aberto por enquanto. Os clubes por convite não aparecem aqui, e é essa a
             diferença entre os dois.
           </p>
         ) : (
