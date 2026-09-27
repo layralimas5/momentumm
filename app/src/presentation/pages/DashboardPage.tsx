@@ -14,7 +14,6 @@ import { DayHeader } from '@/presentation/components/dashboard/DayHeader'
 import { DashboardSkeleton } from '@/presentation/components/dashboard/DashboardSkeleton'
 import { FocusCard } from '@/presentation/components/dashboard/FocusCard'
 import { GoalsInMotionCard } from '@/presentation/components/dashboard/GoalsInMotionCard'
-import { HabitsCard } from '@/presentation/components/dashboard/HabitsCard'
 import { InsightCard } from '@/presentation/components/dashboard/InsightCard'
 import { MomentumStrip } from '@/presentation/components/dashboard/MomentumStrip'
 import { NextUpCard } from '@/presentation/components/dashboard/NextUpCard'
@@ -26,6 +25,7 @@ import { PriorityCard } from '@/presentation/components/dashboard/PriorityCard'
 import { RecoveryCard } from '@/presentation/components/dashboard/RecoveryCard'
 import { WeeklyProgressCard } from '@/presentation/components/dashboard/WeeklyProgressCard'
 import { Section } from '@/presentation/components/dashboard/Section'
+import { DayAgendaCard } from '@/presentation/components/dashboard/DayAgendaCard'
 import { TodayFocusCard } from '@/presentation/components/dashboard/TodayFocusCard'
 import { WinsCard } from '@/presentation/components/dashboard/WinsCard'
 import { ErrorNote } from '@/presentation/components/ui/States'
@@ -408,12 +408,6 @@ export function DashboardPage() {
 
   const firstName = profile?.name.split(' ')[0] ?? null
 
-  // O que já apareceu no foco não se repete nos hábitos: o mesmo item em dois
-  // blocos da mesma tela faz o dia parecer maior do que ele é.
-  const focusedHabitIds = new Set(
-    view.focus.items.filter((item) => item.kind === 'habito').map((item) => item.id),
-  )
-
   return (
     /*
       Container centralizado com teto de largura. `max-w-5xl` mantém a linha de
@@ -503,12 +497,30 @@ export function DashboardPage() {
           />
         ) : null}
 
+        {/*
+          O foco recorta; a agenda logo abaixo não esconde nada.
+
+          "Ver tudo do dia" levava pra `/app/plano`, outra tela, e era a
+          fricção que este bloco existe pra acabar: agora ele rola até a
+          agenda, que está na mesma página.
+        */}
         <TodayFocusCard
           focus={view.focus}
           onStartFocus={startFocus}
-          onSeeAll={() => navigate('/app/plano')}
+          onSeeAll={() =>
+            document.getElementById('seu-dia')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }
           onPlanDay={() => composer.open('acao')}
         />
+
+        <div id="seu-dia" className="scroll-mt-24">
+          <DayAgendaCard
+            agenda={view.agenda}
+            onStartFocus={startFocus}
+            onAdd={() => composer.open('acao')}
+            onOpenRoutine={null}
+          />
+        </div>
 
         {/* Entre a lista e o que vem depois: o convite chega logo abaixo do
             item que a pessoa acabou de marcar. */}
@@ -541,45 +553,26 @@ export function DashboardPage() {
           à direita. Nada de sticky: coluna que acompanha a rolagem compete com
           o conteúdo principal durante a tela inteira.
          ------------------------------------------------------------------ */}
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-start">
-        <Section
-          title="Objetivos em andamento"
-          to="/app/objetivos"
-          toLabel="Ver todos"
-        >
-          <ObjectivesCard
-            bare
-            limit={3}
-            objectives={view.objectives.filter(
-              (item) => item.progress.state === 'em-andamento' || item.progress.state === 'nao-iniciado',
-            )}
-            onCreate={() => composer.open('objetivo')}
-            onOpenReview={() => navigate('/app/review')}
-          />
-        </Section>
+      {/*
+        "Hábitos de hoje" saiu daqui.
 
-        <Section
-          title="Hábitos de hoje"
-          hint={
-            view.habitProgress.total === 0
-              ? undefined
-              : `${view.habitProgress.done} de ${view.habitProgress.total} concluídos`
-          }
-          to="/app/habitos"
-        >
-          <HabitsCard
-            bare
-            states={view.habitStates}
-            hideIds={focusedHabitIds}
-            objectives={planner.objectives}
-            stageTitles={stageTitles}
-            progress={view.habitProgress}
-            onSetStatus={planner.setHabitStatus}
-            onSeeAll={() => navigate('/app/habitos')}
-            onCreate={() => composer.open('habito')}
-          />
-        </Section>
-      </div>
+        Todo hábito agendado pra hoje já aparece na agenda, com o check na
+        própria linha. Manter o card era mostrar a mesma lista duas vezes na
+        mesma tela, e a segunda cópia é sempre a que fica desatualizada na
+        cabeça de quem lê. A gestão dos hábitos continua em `/app/habitos`,
+        alcançável pelo rodapé da agenda e pelos atalhos.
+      */}
+      <Section title="Objetivos em andamento" to="/app/objetivos" toLabel="Ver todos">
+        <ObjectivesCard
+          bare
+          limit={3}
+          objectives={view.objectives.filter(
+            (item) => item.progress.state === 'em-andamento' || item.progress.state === 'nao-iniciado',
+          )}
+          onCreate={() => composer.open('objetivo')}
+          onOpenReview={() => navigate('/app/review')}
+        />
+      </Section>
 
       {view.insight ? (
         <Section

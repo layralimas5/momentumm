@@ -1,5 +1,4 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
 import type { DayLoad } from '@/domain/entities/adaptive-day'
 import type { Task } from '@/domain/entities/task'
 import type { DayKey } from '@/domain/entities/day'
@@ -21,12 +20,11 @@ import { ContextualFab } from './ContextualFab'
 import { MobileAlerts } from './MobileAlerts'
 import { MobileCheckIn } from './MobileCheckIn'
 import { DaySheet } from './DaySheet'
-import { MobileHabits } from './MobileHabits'
 import { AdaptiveDayCard } from '@/presentation/components/dashboard/AdaptiveDayCard'
 import { MobileTodayStats } from './MobileTodayStats'
 import { MobileWeekStrip } from './MobileWeekStrip'
 import { NextUpCard } from '@/presentation/components/dashboard/NextUpCard'
-import { TodayFocusCard } from '@/presentation/components/dashboard/TodayFocusCard'
+import { DayAgendaCard } from '@/presentation/components/dashboard/DayAgendaCard'
 import { MobileMore } from './MobileMore'
 import { MobileShortcutRows, type ShortcutRow } from './MobileShortcutRows'
 import { MobilePriority } from './MobilePriority'
@@ -71,7 +69,6 @@ export function MobileDashboard({
   const planner = usePlanner()
   const composer = useComposer()
   const focus = useFocus()
-  const navigate = useNavigate()
   const alerts = useDayAlerts()
 
   /*
@@ -113,15 +110,6 @@ export function MobileDashboard({
   const focusRef = useRef<HTMLDivElement>(null)
   const planRef = useRef<HTMLDivElement>(null)
 
-  // O mapa de contexto do dia. Montado uma vez: cada linha da lista precisa
-  // dizer a que objetivo pertence, e uma busca por linha em cada render seria
-  // trabalho repetido à toa.
-  const objectiveTitles = useMemo(
-    () => new Map(planner.objectives.map((objective) => [objective.id, objective.title])),
-    [planner.objectives],
-  )
-
-  // O que já apareceu no foco não se repete na lista de hábitos.
   /*
     As linhas do "ver mais". A ordem é a do ciclo do produto, objetivo vira
     meta, meta vira leitura do ritmo, e foco e vitórias são o registro do que
@@ -151,10 +139,6 @@ export function MobileDashboard({
     planner.wins,
     planner.today,
   ])
-
-  const focusedHabitIds = new Set(
-    view.focus.items.filter((item) => item.kind === 'habito').map((item) => item.id),
-  )
 
   /*
     A ordem do celular é uma narrativa vertical, não o desktop espremido, e a
@@ -254,15 +238,23 @@ export function MobileDashboard({
         focusMinutes={view.focusMinutesToday}
       />
 
-      {/* O resto do dia, com hierarquia menor: recolhido quando a ação
-          principal já está decidida, card inteiro quando não há uma. */}
-      <TodayFocusCard
-        focus={view.focus}
-        secondary={Boolean(view.mainPriority && view.mainPriority.status !== 'feita')}
-        onStartFocus={onStartFocus}
-        onSeeAll={() => navigate('/app/plano')}
-        onPlanDay={() => composer.open('acao')}
-      />
+      {/*
+        O dia inteiro, em ordem de relógio.
+
+        Aqui estava o "resto do dia" recolhido, que prometia N ações e abria com
+        as tres do foco, e os hábitos vinham num card separado mais abaixo. Eram
+        duas listas do mesmo dia, mais duas telas pra completar a conta. Agora é
+        uma: ação, hábito e compromisso, agrupados por trecho do dia, todos com
+        o check na própria linha.
+      */}
+      <div id="seu-dia" className="scroll-mt-20">
+        <DayAgendaCard
+          agenda={view.agenda}
+          onStartFocus={onStartFocus}
+          onAdd={() => composer.open('acao')}
+          onOpenRoutine={null}
+        />
+      </div>
 
       {/* Adaptar o dia é a saída elegante pra quem tem pouco tempo: fica logo
           abaixo da ação, em tom secundário, sem disputar com o "começar". */}
@@ -280,16 +272,6 @@ export function MobileDashboard({
       {/* Entre a lista e o que vem depois: o convite chega logo abaixo do item
           que a pessoa acabou de marcar. */}
       <ShareInvite view={view} />
-
-      <MobileHabits
-        states={view.habitStates}
-        hideIds={focusedHabitIds}
-        objectiveTitles={objectiveTitles}
-        progress={view.habitProgress}
-        onSetStatus={planner.setHabitStatus}
-        onSeeAll={() => navigate('/app/habitos')}
-        onCreate={() => composer.open('habito')}
-      />
 
       {/*
         O compartilhar fica na rolagem principal, colado no avanço da semana:

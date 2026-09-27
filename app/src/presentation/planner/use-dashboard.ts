@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { totalMinutes } from '@/domain/entities/activity'
 import { addDays, daysBetween } from '@/domain/entities/day'
+import { buildDayAgenda, type DayAgenda } from '@/domain/entities/day-agenda'
 import { capacityOf, checkInOfDay, type CapacityProfile, type CheckIn } from '@/domain/entities/checkin'
 import { paceOf, type GoalPace, type GoalProgress } from '@/domain/entities/goal'
 import {
@@ -116,6 +117,15 @@ export interface DashboardView {
   readonly objectives: readonly ObjectiveView[]
   /** O foco de hoje: ações e hábitos numa lista só, na ordem da decisão. */
   readonly focus: TodayFocus
+  /**
+   * O dia inteiro, em ordem de relógio e agrupado por trecho.
+   *
+   * Diferente do `focus`, que recorta as três coisas que decidem o dia: aqui
+   * não falta nada. Foco responde "o que agora", agenda responde "o que hoje",
+   * e eram duas perguntas com uma resposta só, o que obrigava a pessoa a sair
+   * da tela pra achar o resto.
+   */
+  readonly agenda: DayAgenda
   /** A frase de contexto abaixo da saudação. Muda com o estado real do dia. */
   readonly headline: string
   /**
@@ -489,10 +499,20 @@ export function useDashboard(): DashboardView {
     [tasks, today],
   )
 
+  /*
+    A agenda lê as MESMAS coleções que o foco, e é por isso que as duas não
+    podem discordar: o foco é um recorte dela, não uma segunda lista.
+  */
+  const agenda = useMemo(
+    () => buildDayAgenda({ tasks, habitStates }, today),
+    [tasks, habitStates, today],
+  )
+
   return {
     checkIn,
     objectives,
     focus,
+    agenda,
     headline,
     hasHistory,
     overdueCount,
