@@ -8,8 +8,8 @@ export interface AuthUser {
 /**
  * O resultado do cadastro.
  *
- * Conta criada NÃO significa sessão aberta. Com a confirmação de e-mail ligada
- * — que é a configuração sã em produção — o Supabase cria o usuário e devolve
+ * Conta criada NÃO significa sessão aberta. Com a confirmação de e-mail ligada,
+ * que é a configuração sã em produção, o Supabase cria o usuário e devolve
  * `session: null`, esperando o clique no link. Achatar os dois casos num
  * `AuthUser` faz o app achar que logou, tentar entrar e ser devolvido pro
  * formulário sem explicação nenhuma.
@@ -24,7 +24,7 @@ export interface SignUpResult {
  * Nível de garantia da sessão.
  *
  * `aal1` é senha; `aal2` é senha mais o segundo fator. O valor vem assinado
- * dentro do JWT e é o mesmo que o banco lê em `is_admin()` — não é estado de
+ * dentro do JWT e é o mesmo que o banco lê em `is_admin()`, não é estado de
  * tela, é o que o servidor acredita sobre a sessão.
  */
 export type AssuranceLevel = 'aal1' | 'aal2'
@@ -66,7 +66,7 @@ export interface MfaEnrollment {
  * Nenhuma resposta pode dizer se um e-mail existe na base. Cadastro com
  * e-mail já usado, recuperação de senha de conta inexistente e login errado
  * respondem com a MESMA forma de mensagem que responderiam no caso feliz. É
- * o que impede usar o formulário como oráculo — perguntar "fulano tem conta
+ * o que impede usar o formulário como oráculo, perguntar "fulano tem conta
  * aqui?" e receber sim ou não, um e-mail por vez.
  *
  * A consequência é uma UX ligeiramente pior de propósito: quem se cadastra
@@ -92,7 +92,7 @@ export interface AuthService {
 
   /**
    * Troca a senha da sessão atual. Exige a senha vigente e reautentica antes
-   * de gravar — sessão roubada num café não pode virar conta roubada.
+   * de gravar, sessão roubada num café não pode virar conta roubada.
    */
   updatePassword(currentPassword: string, newPassword: string): Promise<void>
 

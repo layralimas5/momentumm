@@ -18,7 +18,7 @@ import { MAX_OBJECTIVE_DAYS, MIN_OBJECTIVE_DAYS } from './objective'
  * Ativação: as quatro perguntas do primeiro acesso viradas em plano real.
  *
  * O onboarding antigo perguntava por EIXO ("leitura, estudo, treino,
- * meditação") — a linguagem do produto, não a da pessoa. Ninguém acorda
+ * meditação"), a linguagem do produto, não a da pessoa. Ninguém acorda
  * querendo "meditação": quer dormir melhor, quer sair do emprego, quer
  * terminar o curso. Aqui a primeira pergunta é a área da VIDA, e o eixo é
  * consequência dela.
@@ -35,7 +35,7 @@ import { MAX_OBJECTIVE_DAYS, MIN_OBJECTIVE_DAYS } from './objective'
  *
  * **Nunca devolver um plano impossível como pronto.** O gerador compara o que
  * o objetivo pede com o que a pessoa disse que tem e, quando não fecha, marca
- * `ready: false` e devolve saídas concretas — cada uma com o número que ela
+ * `ready: false` e devolve saídas concretas, cada uma com o número que ela
  * produziria. Plano que só funciona no papel não é otimismo, é a primeira
  * frustração já agendada.
  */
@@ -65,7 +65,7 @@ export interface LifeArea {
   readonly example: string
   /**
    * Eixo de fábrica equivalente, quando existe um com o mesmo significado.
-   * Sem isso a área vira um eixo novo com o nome que a pessoa escolheu —
+   * Sem isso a área vira um eixo novo com o nome que a pessoa escolheu,
    * que é o que a arquitetura sempre prometeu: eixo novo é uma linha, não um
    * módulo.
    */
@@ -368,7 +368,7 @@ export interface GoalQuantity {
 /**
  * O número que a pessoa escreveu no objetivo, quando ela escreveu um.
  *
- * Lê só unidades que os eixos realmente medem — horas, minutos e páginas.
+ * Lê só unidades que os eixos realmente medem, horas, minutos e páginas.
  * "Ler 6 livros" NÃO vira 1500 páginas: converter livro em página é chutar a
  * espessura do livro dela e apresentar o chute como plano. Sem número
  * reconhecível, o alvo sai do ritmo saudável do eixo, e a tela diz de onde
@@ -376,7 +376,7 @@ export interface GoalQuantity {
  *
  * O período importa tanto quanto o número. "Estudar 30 min por dia" é um
  * RITMO: tratar os 30 minutos como alvo total daria um objetivo de meia hora
- * pra três meses — e o plano nasceria ridículo em vez de errado por pouco.
+ * pra três meses, e o plano nasceria ridículo em vez de errado por pouco.
  */
 export function readGoalQuantity(text: string, axis: ActivityTypeSlug): GoalQuantity | null {
   const normalized = text.toLowerCase()
@@ -422,7 +422,7 @@ export interface ActivationAnswers {
   /** A área principal: é dela que sai o plano. */
   readonly area: LifeAreaKey
   /**
-   * As outras áreas marcadas. Não viram plano agora — viram eixo na conta,
+   * As outras áreas marcadas. Não viram plano agora, viram eixo na conta,
    * pra existirem quando a pessoa criar o segundo objetivo.
    */
   readonly extraAreas: readonly LifeAreaKey[]
@@ -631,7 +631,7 @@ function totalOf(quantity: GoalQuantity, days: number, daysPerWeek: number): num
 /**
  * O alvo quando a pessoa não escreveu número nenhum.
  *
- * Sai do ritmo que o eixo sustenta — não do tempo que ela declarou. É essa
+ * Sai do ritmo que o eixo sustenta, não do tempo que ela declarou. É essa
  * diferença que faz a comparação existir: derivar o alvo da disponibilidade
  * faria todo plano caber por construção, e o app nunca teria nada a avisar.
  */

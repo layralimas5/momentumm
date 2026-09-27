@@ -8,7 +8,7 @@ import type { Follow, FollowCounts, NewFollowInput } from '@/domain/entities/fol
  * responder a mesma pergunta.
  *
  * Nada aqui devolve a LISTA de quem segue. Enquanto não existir a tela que
- * mostra essa lista, um método que a traga é superfície aberta sem uso — e o
+ * mostra essa lista, um método que a traga é superfície aberta sem uso, e o
  * dia em que ela existir, a pergunta sobre quem pode ver o quê vai precisar ser
  * respondida de novo, com calma.
  */

@@ -29,7 +29,7 @@ export function QuizShell({ children, footer, progress, progressLabel, tallFoote
 
       {/*
         Logo no centro; o contador de perguntas fica na ponta sem tirar a logo
-        do eixo. `pt-safe` só garante o notch — a folga do topo vem da margem,
+        do eixo. `pt-safe` só garante o notch, a folga do topo vem da margem,
         senão a marca encosta na borda da janela no navegador, onde a área
         segura é zero.
       */}

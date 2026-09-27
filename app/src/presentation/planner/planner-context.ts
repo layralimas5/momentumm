@@ -6,6 +6,15 @@ import type { DayKey } from '@/domain/entities/day'
 import type { Goal, GoalProgress, NewGoalInput } from '@/domain/entities/goal'
 import type { Habit, HabitLog, HabitStatus, NewHabitInput } from '@/domain/entities/habit'
 import type {
+  NewRoutineItemInput,
+  RoutineItem,
+  RoutineOccurrence,
+} from '@/domain/entities/routine-item'
+import type {
+  RoutineItemUpdate,
+  RoutineOccurrencePatch,
+} from '@/domain/repositories/routine-repository'
+import type {
   JourneyEvent,
   JourneyVisibility,
   NewJourneyEventInput,
@@ -40,7 +49,7 @@ export interface PlannerState {
   readonly todayActivities: readonly Activity[]
   /**
    * Todas as áreas da conta: as quatro de fábrica mais as que ela criou. É
-   * daqui que filtro, seletor e formulário leem — nunca da constante.
+   * daqui que filtro, seletor e formulário leem, nunca da constante.
    */
   readonly axes: readonly ActivityType[]
   readonly objectives: readonly Objective[]
@@ -56,6 +65,15 @@ export interface PlannerState {
   readonly goalProgress: readonly GoalProgress[]
   readonly habits: readonly Habit[]
   readonly habitLogs: readonly HabitLog[]
+  /**
+   * A rotina: a regra de cada item e a execução de cada dia.
+   *
+   * Ela não guarda cópia de hábito nem de ação. Quem junta os três numa lista
+   * só é `buildDayAgenda`, e é por isso que marcar em Hoje e marcar na Rotina
+   * escrevem no mesmo lugar.
+   */
+  readonly routineItems: readonly RoutineItem[]
+  readonly routineOccurrences: readonly RoutineOccurrence[]
   readonly tasks: readonly Task[]
   readonly checkIns: readonly CheckIn[]
   readonly wins: readonly Win[]
@@ -63,7 +81,7 @@ export interface PlannerState {
   /**
    * Os momentos da jornada já gravados: dia fechado, objetivo concluído,
    * semana revisada. É a camada que o Share Studio lê e que o feed, o perfil e
-   * a comunidade vão ler depois — nenhum deles conversa com hábito ou objetivo
+   * a comunidade vão ler depois, nenhum deles conversa com hábito ou objetivo
    * direto.
    */
   readonly journeyEvents: readonly JourneyEvent[]
@@ -100,7 +118,7 @@ export interface PlannerState {
 
   /**
    * Cria a etapa. Sem peso informado, os pesos do objetivo são reequilibrados
-   * pra continuar somando 100 — peso é propriedade do conjunto, não da linha.
+   * pra continuar somando 100, peso é propriedade do conjunto, não da linha.
    */
   createStage(input: Omit<NewPlanStageInput, 'userId'>): Promise<PlanStage | null>
   updateStage(id: string, changes: PlanStageUpdate): Promise<void>
@@ -113,7 +131,7 @@ export interface PlannerState {
   /**
    * O plano inteiro de uma vez: objetivo, ritmo semanal, hábitos e as
    * primeiras ações, pra cada objetivo da lista. É uma operação só porque
-   * plano pela metade é pior que plano nenhum — a pessoa sairia do onboarding
+   * plano pela metade é pior que plano nenhum, a pessoa sairia do onboarding
    * com meta sem ação.
    */
   applyPlan(plans: readonly PlanDraft[]): Promise<void>
@@ -126,6 +144,11 @@ export interface PlannerState {
   setHabitPaused(id: string, paused: boolean): Promise<void>
   archiveHabit(id: string): Promise<void>
   setHabitStatus(habitId: string, status: HabitStatus, day?: DayKey): Promise<void>
+  createRoutineItem(input: Omit<NewRoutineItemInput, 'userId'>): Promise<RoutineItem | null>
+  updateRoutineItem(id: string, changes: RoutineItemUpdate): Promise<void>
+  archiveRoutineItem(id: string): Promise<void>
+  /** Concluir, pular e reagendar são a mesma escrita: uma linha por item e dia. */
+  setRoutineStatus(itemId: string, patch: RoutineOccurrencePatch, day?: DayKey): Promise<void>
 
   createTask(input: Omit<NewTaskInput, 'userId'>): Promise<Task | null>
   updateTask(id: string, changes: TaskUpdate): Promise<void>

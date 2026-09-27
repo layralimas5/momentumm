@@ -22,7 +22,7 @@ import { InfrastructureError } from '@/shared/errors'
  *
  * O app pede a sessão de checkout com o JWT da pessoa e recebe um link; o
  * pagamento acontece no Asaas. A assinatura é lida direto da tabela, pela
- * RLS de dono — o webhook é quem escreve nela, e o app nunca.
+ * RLS de dono, o webhook é quem escreve nela, e o app nunca.
  */
 
 const NOT_CONFIGURED = 'A assinatura ainda não está disponível nesse ambiente.'

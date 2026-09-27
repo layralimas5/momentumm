@@ -26,7 +26,7 @@ import {
  * O renderizador único do Share Studio.
  *
  * Preview e exportação chamam ESTA função. O preview desenha num canvas menor
- * com `ctx.scale`, a exportação desenha em 1080 de largura — mesmas
+ * com `ctx.scale`, a exportação desenha em 1080 de largura, mesmas
  * coordenadas, mesmo código, nenhum caminho pra divergir. É assim que a
  * promessa "o que você vê é o que sai" fica garantida por construção em vez de
  * por disciplina.
@@ -34,7 +34,7 @@ import {
  * O layout é um só pras oito composições: uma pilha vertical de blocos medida
  * antes de ser desenhada, e depois centrada no espaço que sobra entre o
  * cabeçalho e o rodapé. O que cada template muda é paleta, alinhamento e
- * densidade — nunca a estrutura.
+ * densidade, nunca a estrutura.
  */
 
 /**
@@ -68,7 +68,7 @@ interface Block {
   readonly gap: number
   /**
    * Ordem de sacrifício quando a pilha não cabe: quanto MAIOR, mais cedo o
-   * bloco sai. Zero (o padrão) é o que nunca sai — kicker, título e número são
+   * bloco sai. Zero (o padrão) é o que nunca sai, kicker, título e número são
    * o card; sem eles não sobra o que postar.
    *
    * Existe porque o conteúdo agora é escolhido pela pessoa, e uma semana com
@@ -145,11 +145,11 @@ export function renderShareCard(
     Sem foto, a pilha fica centrada no espaço livre, e a assinatura vem COLADA
     embaixo dela: o card é o conteúdo mais a marca, um bloco só. Assinatura
     presa no rodapé, a um palmo do último número, lia como marca d'água de
-    app — e o que a pessoa posta precisa parecer uma peça, não um print.
+    app, e o que a pessoa posta precisa parecer uma peça, não um print.
 
     Com foto, a pilha desce e encosta no rodapé. É a diferença entre um card
     do app e um card da pessoa: ancorando embaixo, os dois terços de cima da
-    foto ficam limpos — o rosto, o lugar, o treino — e o texto cai justamente
+    foto ficam limpos, o rosto, o lugar, o treino, e o texto cai justamente
     sobre a faixa que o véu mais escurece. Centralizado, o número aterrissaria
     no meio da foto e cobriria o que ela tem de melhor.
   */
@@ -179,7 +179,7 @@ export function renderShareCard(
 /**
  * A pilha cabendo na altura disponível.
  *
- * Enquanto não couber, sai o bloco de maior `drop` — a lista antes da linha de
+ * Enquanto não couber, sai o bloco de maior `drop`, a lista antes da linha de
  * apoio, a linha de apoio antes do momentum, o momentum antes do subtítulo.
  * Cortar é melhor que encolher: reduzir a fonte faria a densidade do card
  * variar conforme o que a pessoa ligou, e dois cards do mesmo dia sairiam com
@@ -218,7 +218,7 @@ function fitBlocks(blocks: readonly Block[], available: number): Block[] {
  * A foto preenchendo o card sem deformar.
  *
  * Recorte por cobertura, centrado: a foto do celular é 3:4 e o Story é 9:16, e
- * esticar pra encaixar deixaria a pessoa da foto mais magra ou mais gorda — o
+ * esticar pra encaixar deixaria a pessoa da foto mais magra ou mais gorda, o
  * tipo de detalhe que faz alguém desistir de postar.
  */
 function drawPhotoCover(
@@ -406,7 +406,7 @@ function buildBody(
 
     Nenhuma das duas tem função de desenho própria: a grade e a pilha
     acrescentam um bloco, e o resto é a mesma pilha de sempre. Foi assim que
-    quatro cores e os arranjos couberam num renderizador só — e é por isso que
+    quatro cores e os arranjos couberam num renderizador só, e é por isso que
     uma correção no bloco do momentum vale pra todos os cards.
   */
   switch (composition.id) {
@@ -428,7 +428,7 @@ interface Figure {
 
 /**
  * Os números do card, em ordem de importância: a estrela, a secundária e a
- * linha de apoio. É a lista que a grade, a pilha e a linha de números leem —
+ * linha de apoio. É a lista que a grade, a pilha e a linha de números leem, 
  * a mesma pra as três, pra que o card não mostre "5 hábitos" numa e "5" na
  * outra.
  */
@@ -569,7 +569,7 @@ function titleBlock(
  * O momentum: uma linha, não um selo.
  *
  * A versão anterior era um chip com caixa e borda. Sobre a foto de alguém, uma
- * caixa desenhada por cima é o elemento que denuncia "isto saiu de um app" —
+ * caixa desenhada por cima é o elemento que denuncia "isto saiu de um app", 
  * e é exatamente essa a impressão que o card não pode dar. Rótulo pequeno em
  * caixa alta e os dois números do lado resolvem a mesma informação sem
  * construir moldura nenhuma.

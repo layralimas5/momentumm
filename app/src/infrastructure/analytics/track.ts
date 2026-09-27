@@ -10,7 +10,7 @@ import { supabase } from '@/infrastructure/supabase/client'
  * Registra um evento de uso. Dispara e esquece.
  *
  * Analytics nunca pode quebrar a tela nem atrasar a ação: a chamada não é
- * aguardada e o erro é engolido de propósito — o painel mostra menos um
+ * aguardada e o erro é engolido de propósito, o painel mostra menos um
  * evento, e é só. No modo demo não existe servidor, então não existe evento.
  *
  * O payload é o tipo fechado `ProductEventMetadata`. Passar um objeto do

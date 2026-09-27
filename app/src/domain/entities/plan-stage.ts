@@ -5,7 +5,7 @@ import type { DayKey } from './day'
  * Etapa do plano: o caminho entre o objetivo e a ação.
  *
  * Sem ela o produto é um CRUD com tela bonita. "Lançar meu SaaS" não vira
- * movimento diretamente — vira Pesquisa, MVP, Landing, Beta, Lançamento, e é
+ * movimento diretamente, vira Pesquisa, MVP, Landing, Beta, Lançamento, e é
  * dentro de uma dessas que a ação de hoje faz sentido. É também a etapa que
  * responde a pergunta que nenhuma lista de tarefas responde: **o que está
  * travando o objetivo**.
@@ -22,7 +22,7 @@ import type { DayKey } from './day'
  *
  * Cinco etapas não valem 20% cada só porque são cinco. O MVP pesa mais que a
  * pesquisa, e é o peso que faz "31% do objetivo" significar alguma coisa em vez
- * de ser uma barra que anda sozinha. Os pesos somam 100 — sempre, e o domínio
+ * de ser uma barra que anda sozinha. Os pesos somam 100, sempre, e o domínio
  * recusa qualquer conjunto que não some.
  */
 
@@ -35,7 +35,7 @@ export const TOTAL_WEIGHT = 100
 /**
  * Estados que a PESSOA controla. `atrasada` não está aqui de propósito: ela é
  * derivada da data prevista, e guardar um estado que o calendário já responde
- * abriria a porta pra uma etapa marcada "atrasada" com prazo lá na frente — o
+ * abriria a porta pra uma etapa marcada "atrasada" com prazo lá na frente, o
  * tipo de contradição que o app não pode mostrar. Mesma decisão que
  * `ObjectiveState` versus `ObjectiveStatus`.
  */
@@ -208,7 +208,7 @@ export function isStageRunning(stage: PlanStage): boolean {
 
 /**
  * O estado que a tela mostra. `atrasada` entra quando a data prevista passou e
- * a etapa não fechou — e nunca por cima de pausada, porque pausar é justamente
+ * a etapa não fechou, e nunca por cima de pausada, porque pausar é justamente
  * dizer "para de me cobrar prazo".
  */
 export function viewStatusOf(stage: PlanStage, today: DayKey): StageViewStatus {
@@ -227,7 +227,7 @@ export function reopenStage(stage: PlanStage): PlanStage {
 
 /**
  * Datas previstas distribuídas ao longo do prazo do objetivo, proporcionais ao
- * peso. Uma etapa de 35% ocupa 35% do calendário — é a única distribuição que a
+ * peso. Uma etapa de 35% ocupa 35% do calendário, é a única distribuição que a
  * pessoa consegue conferir de cabeça, e ela pode mexer depois.
  */
 export function suggestDueDates(

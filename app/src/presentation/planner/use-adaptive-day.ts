@@ -88,8 +88,17 @@ export function useAdaptiveDay(view: DashboardView): AdaptiveDayController {
         tasks: planner.tasks,
         habits: planner.habits,
         habitLogs: planner.habitLogs,
+        routineItems: planner.routineItems,
+        routineOccurrences: planner.routineOccurrences,
       }),
-    [planner.today, planner.tasks, planner.habits, planner.habitLogs],
+    [
+      planner.today,
+      planner.tasks,
+      planner.habits,
+      planner.habitLogs,
+      planner.routineItems,
+      planner.routineOccurrences,
+    ],
   )
 
   const plan = useMemo<AdaptiveDayPlan | null>(() => {
@@ -97,6 +106,8 @@ export function useAdaptiveDay(view: DashboardView): AdaptiveDayController {
 
     return buildAdaptiveDay({
       today: planner.today,
+      routineItems: planner.routineItems,
+      routineOccurrences: planner.routineOccurrences,
       availableMin: request.availableMin,
       capacity: view.capacity,
       momentum: view.momentum,

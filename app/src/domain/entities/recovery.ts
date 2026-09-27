@@ -35,7 +35,7 @@ import { isPending, overdueTasks, postponedBetween, type Task } from './task'
  *
  * ## O que ele oferece
  *
- * Até três passos PEQUENOS, escolhidos pelo maior avanço por minuto — não
+ * Até três passos PEQUENOS, escolhidos pelo maior avanço por minuto, não
  * pelos mais importantes, e muito menos pelos mais atrasados. Voltar é o
  * objetivo; o tamanho certo do primeiro passo é o menor que ainda move alguma
  * coisa de verdade.
@@ -129,7 +129,7 @@ export interface RecoveryInput {
 }
 
 /**
- * O modo, quando ele deve existir. `null` na esmagadora maioria dos dias — e é
+ * O modo, quando ele deve existir. `null` na esmagadora maioria dos dias, e é
  * isso que faz o card significar alguma coisa no dia em que ele aparece.
  */
 export function detectRecovery(input: RecoveryInput): RecoveryState | null {
@@ -288,7 +288,7 @@ interface StepCandidate extends RecoveryStep {
  *
  * A ordem é por avanço POR MINUTO. A ação mais importante do plano costuma ser
  * a maior, e oferecer ela como porta de entrada é pedir pra pessoa recomeçar
- * pelo degrau mais alto — que é exatamente como ela parou.
+ * pelo degrau mais alto, que é exatamente como ela parou.
  */
 function buildSteps(input: RecoveryInput): RecoveryStep[] {
   const candidates = [...taskSteps(input), ...habitSteps(input)].sort((a, b) => b.ratio - a.ratio)
@@ -322,7 +322,7 @@ function taskSteps(input: RecoveryInput): StepCandidate[] {
   /*
     O que entra: o que está marcado pra hoje, o que venceu e a próxima ação de
     cada plano. Ação vencida aparece aqui porque escolher UMA de volta é o
-    contrário de acumular — o que o produto recusa é o app empilhar todas elas
+    contrário de acumular, o que o produto recusa é o app empilhar todas elas
     no dia sozinho.
   */
   const pool = new Map<string, Task>()
@@ -427,7 +427,7 @@ function habitSteps(input: RecoveryInput): StepCandidate[] {
 /**
  * O tamanho do dia depois de escolher o passo.
  *
- * O passo mais a folga que a capacidade de hoje comporta — nunca o dia cheio.
+ * O passo mais a folga que a capacidade de hoje comporta, nunca o dia cheio.
  * Reorganizar a volta pra caber tudo de novo seria devolver a pessoa
  * exatamente ao dia que ela não conseguiu cumprir.
  */

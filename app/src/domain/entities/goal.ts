@@ -123,7 +123,7 @@ export function describeGoal(goal: Goal): string {
 
 /**
  * Ritmo da meta. A regra é deliberada: NÃO se mede progresso só pelo tempo que
- * passou. Compara-se o que já foi feito com o que o período já consumiu — é a
+ * passou. Compara-se o que já foi feito com o que o período já consumiu, é a
  * única leitura que responde "estou no páreo?" sem mentir pra nenhum dos lados.
  */
 export const GOAL_PACES = ['atrasada', 'estavel', 'adiantada'] as const

@@ -33,7 +33,7 @@ interface ProfileEditorProps {
  * ajustes de conta, e misturá-los aqui transformaria a página da evolução
  * pessoal em mais um formulário.
  *
- * A foto é aplicada na hora do salvamento, junto do resto — trocar a imagem e
+ * A foto é aplicada na hora do salvamento, junto do resto, trocar a imagem e
  * sair sem salvar não deve deixar uma foto nova pendurada no perfil.
  */
 export function ProfileEditor({ profile, onSaved, onCancel }: ProfileEditorProps) {
@@ -215,7 +215,7 @@ export function ProfileEditor({ profile, onSaved, onCancel }: ProfileEditorProps
       {/*
         As redes, uma por linha.
 
-        O campo aceita o @ ou a URL inteira colada do navegador — é o que a
+        O campo aceita o @ ou a URL inteira colada do navegador, é o que a
         pessoa tem à mão quando está no celular. O prefixo fixo à esquerda diz
         qual dos dois formatos vai aparecer no perfil sem precisar de instrução
         escrita.

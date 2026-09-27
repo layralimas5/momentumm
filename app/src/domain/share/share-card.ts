@@ -6,7 +6,7 @@ import type { JourneyEventType } from '@/domain/entities/journey-event'
  * `ShareCardData` é a fronteira entre "o que aconteceu" e "o que aparece na
  * imagem". Nenhum template conhece hábito, objetivo, etapa ou momentum: eles
  * recebem título, métrica e lista já resolvidos. É o que permite ter cinco
- * templates sem cinco cópias da mesma regra — e trocar a origem do dado
+ * templates sem cinco cópias da mesma regra, e trocar a origem do dado
  * (evento salvo hoje, item de feed amanhã) sem tocar em desenho.
  */
 
@@ -17,7 +17,7 @@ import type { JourneyEventType } from '@/domain/entities/journey-event'
 /**
  * Um formato só: o Story.
  *
- * O card do Momentumm existe pra ser postado em Story — vertical, cheio de
+ * O card do Momentumm existe pra ser postado em Story, vertical, cheio de
  * tela, some em 24h. Feed e quadrado saíram porque nenhum dos dois é o lugar
  * de um progresso do dia: post de feed é publicação permanente, e um card
  * gerado por app no meio do perfil de alguém é o que ninguém posta duas vezes.
@@ -54,7 +54,7 @@ export const DEFAULT_SHARE_FORMAT: ShareFormat = 'stories'
  *
  * Preto, neon, branco e o PNG sem fundo. Gradiente, cartaz colorido e escala de
  * cinza saíram porque o que muda entre um card e outro não é o tom da tinta: é
- * como a informação se organiza dentro dele — e isso agora tem dimensão
+ * como a informação se organiza dentro dele, e isso agora tem dimensão
  * própria (`ShareComposition`). Cor e arranjo separados dão 4 x 6 combinações
  * com dez descrições, em vez de vinte e quatro templates pra manter.
  */
@@ -94,7 +94,7 @@ export const SHARE_TEMPLATE_SPECS: Readonly<Record<ShareTemplateId, ShareTemplat
  * conheça hábito, objetivo ou etapa.
  *
  * Eram oito, vindas da referência do Strava e do Hevy. Ficaram DUAS, e a
- * escolha não é de código: com oito, escolher virava trabalho — a pessoa
+ * escolha não é de código: com oito, escolher virava trabalho, a pessoa
  * passava mais tempo decidindo o arranjo do que postando o card, e seis deles
  * quase nunca eram escolhidos.
  *
@@ -124,7 +124,7 @@ export const DEFAULT_SHARE_COMPOSITION: ShareCompositionId = 'grade'
  * O gratuito leva os dois arranjos e todas as cores.
  *
  * Com dois arranjos, prender um atrás do plano deixaria o gratuito com um card
- * só — e um card só não deixa ninguém descobrir que existe escolha. O que
+ * só, e um card só não deixa ninguém descobrir que existe escolha. O que
  * diferencia o PRO aqui é a foto de fundo e os toggles, não o arranjo.
  */
 export const FREE_SHARE_COMPOSITIONS: readonly ShareCompositionId[] = [...SHARE_COMPOSITIONS]
@@ -181,7 +181,7 @@ export const SHARE_FIELDS = [
   'completion',
   'objective',
   'duration',
-  /** Sequência de dias — o dado mais compartilhável que o app tem. */
+  /** Sequência de dias, o dado mais compartilhável que o app tem. */
   'streak',
   /** A área do evento: Leitura, Treino, ou a que a pessoa criou. */
   'axis',
@@ -233,7 +233,7 @@ export const SHARE_FIELD_SPECS: Readonly<Record<ShareField, ShareFieldSpec>> = {
     id: 'axis',
     label: 'Área',
     // Área de fábrica é genérica, mas a que a pessoa criou tem o nome que ela
-    // deu — "Terapia" conta uma história que ela pode não querer no Stories.
+    // deu, "Terapia" conta uma história que ela pode não querer no Stories.
     warning: 'A área aparece com o nome que você deu a ela.',
   },
   progress: { id: 'progress', label: 'Avanço do objetivo', warning: null },
@@ -348,13 +348,13 @@ export function availableFieldsForEvent(event: ShareFieldSource): readonly Share
  * Duas regras se somam aqui.
  *
  * Privacidade: nome do objetivo, lista de hábitos e nome da pessoa começam
- * desligados. São os três campos que carregam conteúdo escrito por ela — "Sair
- * da terapia", "Remédio 8h", o nome completo — e nenhum deles deveria ir pro
+ * desligados. São os três campos que carregam conteúdo escrito por ela, "Sair
+ * da terapia", "Remédio 8h", o nome completo, e nenhum deles deveria ir pro
  * Instagram por omissão.
  *
  * Estética: a frase do app ("Você avançou hoje.") também começa desligada. Ela
  * é a coisa mais "de aplicativo" do card, e o card que a pessoa quer postar é o
- * que parece dela — não o print de um dashboard. Quem quiser, liga.
+ * que parece dela, não o print de um dashboard. Quem quiser, liga.
  *
  * Número e percentual começam ligados: são o motivo do card existir e não dizem
  * nada sobre a vida de ninguém.
@@ -368,7 +368,7 @@ export function defaultFieldsFor(type: JourneyEventType): ShareFieldSet {
       Tudo que é NÚMERO nasce ligado: percentual, momentum, duração, volume,
       prazo, etapas, sequência, contagens, dias ativos e a lista do que foi
       feito. O card conta a história inteira do que aconteceu, e quem quiser um
-      card mais seco desliga o que sobra — que é uma decisão mais fácil de tomar
+      card mais seco desliga o que sobra, que é uma decisão mais fácil de tomar
       olhando o preview do que imaginando o que falta.
     */
     momentum: on('momentum', true),

@@ -60,7 +60,7 @@ describe('checkThrottle', () => {
 
   it('cada ação tem a própria contagem', () => {
     // Errar a senha não pode travar o cadastro de outra pessoa no mesmo
-    // navegador — nem o pedido de recuperação de quem esqueceu a senha.
+    // navegador, nem o pedido de recuperação de quem esqueceu a senha.
     const log = afterFailures(FREE_ATTEMPTS + 3)
 
     expect(checkThrottle(log, 'login', T0).allowed).toBe(false)

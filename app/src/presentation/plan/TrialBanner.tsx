@@ -19,7 +19,7 @@ export function formatTrialEnd(date: Date): string {
  * caminho, como o resto das chamadas de PRO. Na tela de assinatura ela
  * some, porque lá a mesma informação vira o painel principal.
  *
- * Quem NÃO vê: quem paga, e quem tem cortesia que passa do teste — owner e
+ * Quem NÃO vê: quem paga, e quem tem cortesia que passa do teste, owner e
  * admin caem aí, por causa do trigger da 0051. A conta deles nasceu com os
  * sete dias como qualquer outra, então a linha aparecia anunciando o fim de um
  * teste que não decide nada pra elas, com um "Assinar o PRO" que não resolvia

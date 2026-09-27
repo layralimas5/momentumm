@@ -13,7 +13,7 @@ import { toUserMessage } from '@/shared/errors'
  * O que você quer receber, e quando.
  *
  * Existe porque a alternativa é a pessoa desligar TUDO no primeiro aviso que
- * não fez sentido pra ela — e aí o app perde também os avisos que fariam
+ * não fez sentido pra ela, e aí o app perde também os avisos que fariam
  * diferença. Cada linha diz o que aquele tipo faz, não o nome técnico dele.
  *
  * As mudanças salvam sozinhas: um botão "salvar" numa tela de preferência é

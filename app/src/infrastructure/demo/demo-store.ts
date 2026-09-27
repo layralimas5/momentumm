@@ -22,6 +22,12 @@ import {
 } from '@/domain/entities/habit'
 import { createGoal, type Goal, type NewGoalInput } from '@/domain/entities/goal'
 import {
+  createRoutineItem,
+  type NewRoutineItemInput,
+  type RoutineItem,
+  type RoutineOccurrence,
+} from '@/domain/entities/routine-item'
+import {
   createChallenge,
   createParticipant,
   type Challenge,
@@ -78,10 +84,10 @@ import { DomainError } from '@/shared/errors'
 
 /**
  * Modo demo: o app inteiro funciona sem configurar nada, com os dados no
- * `localStorage`. A versão do storage sobe junto com o formato — dado antigo
+ * `localStorage`. A versão do storage sobe junto com o formato, dado antigo
  * é descartado em silêncio em vez de quebrar a tela.
  */
-const STORAGE_KEY = 'momentumm.demo.v9'
+const STORAGE_KEY = 'momentumm.demo.v10'
 
 export const DEMO_USER = {
   id: 'demo-user',
@@ -93,7 +99,7 @@ export const DEMO_USER = {
  *
  * O Círculo só existe se houver com quem tê-lo, e o modo demo não tem banco pra
  * consultar. São três: dois amigos já aceitos e uma pessoa que mandou pedido e
- * está esperando resposta — o que deixa os três estados da tela visíveis sem
+ * está esperando resposta, o que deixa os três estados da tela visíveis sem
  * ninguém precisar criar uma segunda conta.
  */
 export const DEMO_PEOPLE: readonly CircleAuthor[] = [
@@ -101,6 +107,20 @@ export const DEMO_PEOPLE: readonly CircleAuthor[] = [
   { id: 'demo-amigo-2', name: 'Rafa Nunes', handle: 'rafa', avatarUrl: null },
   { id: 'demo-pedido-3', name: 'Bia Costa', handle: 'biacosta', avatarUrl: null },
 ]
+
+/**
+ * O convite de clube, como o banco guarda: com quem chamou, quem foi chamado e
+ * o estado da resposta. O que a tela lê é a versão resolvida (`ClubInvitation`,
+ * com nome do clube e de quem convidou), montada na leitura.
+ */
+export interface DemoClubInvitation {
+  id: string
+  clubId: string
+  inviteeId: string
+  inviterId: string
+  status: 'pendente' | 'aceito' | 'recusado'
+  createdAt: Date
+}
 
 interface DemoState {
   profile: Profile
@@ -111,6 +131,9 @@ interface DemoState {
   goals: Goal[]
   habits: Habit[]
   habitLogs: HabitLog[]
+  /** A rotina: a regra de cada item e a execução de cada dia. */
+  routineItems: RoutineItem[]
+  routineOccurrences: RoutineOccurrence[]
   tasks: Task[]
   checkIns: CheckIn[]
   wins: Win[]
@@ -123,6 +146,10 @@ interface DemoState {
   dayPhotos: DayPhoto[]
   clubs: Club[]
   clubMembers: ClubMember[]
+  /** Convites nominais. Ninguém entra por eles: entra quem aceita. */
+  clubInvitations: DemoClubInvitation[]
+  /** Um link vivo por clube, como na 0063: `clubId::token`. */
+  clubInviteLinks: string[]
   challenges: Challenge[]
   challengeParticipants: ChallengeParticipant[]
   /** Apoios dados e recebidos, no formato `eventId::userId`. */
@@ -189,7 +216,7 @@ function seed(): DemoState {
 
   // Três objetivos em estados diferentes de propósito: um em andamento, um
   // recém-criado sem progresso e um pausado. É o que mostra na demo que pausar
-  // não é apagar — que é justamente a decisão de produto mais fácil de perder
+  // não é apagar, que é justamente a decisão de produto mais fácil de perder
   // de vista quando a tela só tem exemplos que deram certo.
   const objectives = [
     createObjective(
@@ -405,7 +432,7 @@ function seed(): DemoState {
       Duas ações já concluídas, com data.
 
       Existem pra a demo mostrar o ciclo INTEIRO: sem conclusão carimbada não
-      há velocidade, e sem velocidade a previsão responde "sem dados" — que é o
+      há velocidade, e sem velocidade a previsão responde "sem dados", que é o
       comportamento correto, mas deixa metade do produto invisível na primeira
       visita.
     */
@@ -533,6 +560,7 @@ function seed(): DemoState {
     goals,
     habits,
     habitLogs,
+    ...seedRoutine(),
     tasks,
     checkIns,
     wins,
@@ -542,7 +570,7 @@ function seed(): DemoState {
       fez, e um "objetivo concluído" plantado no seed seria a primeira coisa
       que ela veria pronta pra compartilhar sem ter feito nada.
 
-      Os momentos dos amigos são outra história — eles existem pra o feed do
+      Os momentos dos amigos são outra história, eles existem pra o feed do
       Círculo ter o que mostrar sem exigir uma segunda conta.
     */
     journeyEvents: friendMoments(today),
@@ -565,7 +593,7 @@ function seed(): DemoState {
 /**
  * Um desafio em andamento, com as duas amigas dentro.
  *
- * Diferente dos momentos, o desafio SEU vem de fábrica aqui — e por um motivo
+ * Diferente dos momentos, o desafio SEU vem de fábrica aqui, e por um motivo
  * que não vale pros outros: desafio é a única parte do produto que não dá pra
  * conferir sozinho. Um desafio vazio na demo mostraria a tela de criação e nada
  * mais; com gente dentro, dá pra ver o progresso do grupo, o ranking interno e
@@ -643,17 +671,65 @@ function seedChallenge(
 /**
  * Um clube já rodando, no modo demo.
  *
- * Ele é da Marina, não da conta demo: assim a tela mostra o caso que importa —
+ * Ele é da Marina, não da conta demo: assim a tela mostra o caso que importa,
  * um clube ABERTO, de outra pessoa, que dá pra descobrir e entrar. Com o clube
  * sendo da própria conta, a descoberta abriria vazia e o botão de entrar nunca
  * apareceria.
  *
  * A conta demo nasce no gratuito, então tentar criar um clube aqui cai no
- * convite ao PRO — que é exatamente o que precisa ser visto.
+ * convite ao PRO, que é exatamente o que precisa ser visto.
  */
-function seedClub(): { clubs: Club[]; clubMembers: ClubMember[] } {
+/**
+ * Uma rotina de fábrica, pequena.
+ *
+ * Diferente dos momentos (que nascem vazios de propósito), aqui a rotina vem
+ * montada, e pelo mesmo motivo do desafio: "Seu dia" é uma tela que só faz
+ * sentido cheia. Uma agenda vazia na primeira abertura não mostra o recurso,
+ * mostra um card de empty state, e quem está avaliando o app fecha antes de
+ * cadastrar onze linhas pra ver como fica.
+ *
+ * São cinco itens e nenhuma ocorrência: o dia começa todo em aberto, porque
+ * marcar check por conta da pessoa seria mentir sobre o que ela fez.
+ */
+function seedRoutine(): {
+  routineItems: RoutineItem[]
+  routineOccurrences: RoutineOccurrence[]
+} {
+  const nascimento = new Date(Date.now() - 30 * 86_400_000)
+
+  const items: NewRoutineItemInput[] = [
+    { userId: DEMO_USER.id, title: 'Acordar', timeOfDay: '07:00', order: 0 },
+    { userId: DEMO_USER.id, title: 'Café da manhã', timeOfDay: '07:30', durationMin: 20, order: 1 },
+    {
+      userId: DEMO_USER.id,
+      title: 'Trabalho',
+      timeOfDay: '09:00',
+      recurrence: 'uteis',
+      category: 'Trabalho',
+      order: 2,
+    },
+    { userId: DEMO_USER.id, title: 'Almoço', timeOfDay: '12:00', durationMin: 60, order: 3 },
+    { userId: DEMO_USER.id, title: 'Preparar o dia seguinte', timeOfDay: '22:30', order: 4 },
+  ]
+
+  return {
+    routineItems: items.map((item, index) =>
+      createRoutineItem(item, `rotina-demo-${index}`, nascimento),
+    ),
+    routineOccurrences: [],
+  }
+}
+
+function seedClub(): {
+  clubs: Club[]
+  clubMembers: ClubMember[]
+  clubInvitations: DemoClubInvitation[]
+  clubInviteLinks: string[]
+} {
   const [marina, rafa] = DEMO_PEOPLE as readonly CircleAuthor[]
-  if (!marina || !rafa) return { clubs: [], clubMembers: [] }
+  if (!marina || !rafa) {
+    return { clubs: [], clubMembers: [], clubInvitations: [], clubInviteLinks: [] }
+  }
 
   const club: Club = {
     id: 'demo-clube-1',
@@ -667,12 +743,43 @@ function seedClub(): { clubs: Club[]; clubMembers: ClubMember[] } {
     archivedAt: null,
   }
 
+  /*
+    O segundo clube é POR CONVITE, e existe pra o convite existir.
+
+    Clube fechado não aparece em busca nem em descoberta: sem um convite
+    pendente na caixa da conta demo, o recurso inteiro (o aviso no sino, o
+    aceitar e o recusar) só poderia ser visto com duas contas reais.
+  */
+  const fechado: Club = {
+    id: 'demo-clube-2',
+    ownerId: marina.id,
+    name: 'Leitura de manhã',
+    description: 'Vinte minutos antes do dia começar. Só isso, todo dia útil.',
+    category: 'leitura',
+    cover: 'aurora',
+    privacy: 'convite',
+    createdAt: new Date(),
+    archivedAt: null,
+  }
+
   return {
-    clubs: [club],
+    clubs: [club, fechado],
     clubMembers: [
       { clubId: club.id, userId: marina.id, role: 'dono', joinedAt: new Date() },
       { clubId: club.id, userId: rafa.id, role: 'membro', joinedAt: new Date() },
+      { clubId: fechado.id, userId: marina.id, role: 'dono', joinedAt: new Date() },
     ],
+    clubInvitations: [
+      {
+        id: 'demo-convite-clube-1',
+        clubId: fechado.id,
+        inviteeId: DEMO_USER.id,
+        inviterId: marina.id,
+        status: 'pendente',
+        createdAt: new Date(),
+      },
+    ],
+    clubInviteLinks: [`${club.id}::demoaberto0001`, `${fechado.id}::demofechado001`],
   }
 }
 
@@ -683,7 +790,7 @@ function seedClub(): { clubs: Club[]; clubMembers: ClubMember[] } {
  * As três pessoas da demo seguem a conta, e a conta segue duas delas. Não é
  * enfeite: sem nenhuma linha, o perfil abriria com três zeros e a tela pareceria
  * quebrada em vez de vazia. Com números pequenos e assimétricos, ela mostra o
- * que a tela faz — seguidores e seguindo são contagens diferentes — sem fingir
+ * que a tela faz, seguidores e seguindo são contagens diferentes, sem fingir
  * uma audiência que ninguém construiu.
  */
 function seedFollows(): Follow[] {
@@ -737,7 +844,7 @@ function seedFriendships(): Friendship[] {
 /**
  * O que os amigos compartilharam.
  *
- * Só tipos que o feed aceita e todos com `visibility: 'amigos'` — é
+ * Só tipos que o feed aceita e todos com `visibility: 'amigos'`, é
  * exatamente o que uma conta real produziria depois de a pessoa marcar cada
  * momento. Nenhum deles carrega objetivo com nome comprido nem nota privada:
  * o seed serve de exemplo do que o produto considera compartilhável.
@@ -844,6 +951,19 @@ interface StoredState {
   goals: Array<Omit<Goal, 'createdAt' | 'archivedAt'> & { createdAt: string; archivedAt: string | null }>
   habits: Array<Omit<Habit, 'createdAt' | 'archivedAt'> & { createdAt: string; archivedAt: string | null }>
   habitLogs: Array<Omit<HabitLog, 'createdAt'> & { createdAt: string }>
+  routineItems?: Array<
+    Omit<RoutineItem, 'createdAt' | 'pausedAt' | 'archivedAt'> & {
+      createdAt: string
+      pausedAt: string | null
+      archivedAt: string | null
+    }
+  >
+  routineOccurrences?: Array<
+    Omit<RoutineOccurrence, 'createdAt' | 'completedAt'> & {
+      createdAt: string
+      completedAt: string | null
+    }
+  >
   tasks: Array<Omit<Task, 'createdAt' | 'completedAt'> & { createdAt: string; completedAt: string | null }>
   checkIns: Array<Omit<CheckIn, 'createdAt'> & { createdAt: string }>
   wins: Array<Omit<Win, 'createdAt'> & { createdAt: string }>
@@ -871,6 +991,8 @@ interface StoredState {
     Omit<Club, 'createdAt' | 'archivedAt'> & { createdAt: string; archivedAt: string | null }
   >
   clubMembers?: Array<Omit<ClubMember, 'joinedAt'> & { joinedAt: string }>
+  clubInvitations?: Array<Omit<DemoClubInvitation, 'createdAt'> & { createdAt: string }>
+  clubInviteLinks?: string[]
   dayPhotos?: Array<Omit<DayPhoto, 'createdAt'> & { createdAt: string }>
   challenges?: Array<
     Omit<Challenge, 'createdAt' | 'completedAt' | 'archivedAt'> & {
@@ -940,6 +1062,17 @@ function revive(raw: string): DemoState {
       ...item,
       createdAt: new Date(item.createdAt),
     })),
+    routineItems: (parsed.routineItems ?? []).map((item) => ({
+      ...item,
+      createdAt: new Date(item.createdAt),
+      pausedAt: item.pausedAt ? new Date(item.pausedAt) : null,
+      archivedAt: item.archivedAt ? new Date(item.archivedAt) : null,
+    })),
+    routineOccurrences: (parsed.routineOccurrences ?? []).map((item) => ({
+      ...item,
+      createdAt: new Date(item.createdAt),
+      completedAt: item.completedAt ? new Date(item.completedAt) : null,
+    })),
     tasks: (parsed.tasks ?? []).map((item) => ({
       ...item,
       createdAt: new Date(item.createdAt),
@@ -983,6 +1116,11 @@ function revive(raw: string): DemoState {
       ...item,
       joinedAt: new Date(item.joinedAt),
     })),
+    clubInvitations: (parsed.clubInvitations ?? seedClub().clubInvitations).map((item) => ({
+      ...item,
+      createdAt: new Date(item.createdAt),
+    })),
+    clubInviteLinks: parsed.clubInviteLinks ?? seedClub().clubInviteLinks,
     challenges: (parsed.challenges ?? []).map((item) => ({
       ...item,
       createdAt: new Date(item.createdAt),
@@ -1113,7 +1251,7 @@ export const demoStore = {
   },
 
   /*
-    Arquivado não volta na listagem — é o mesmo contrato do repositório do
+    Arquivado não volta na listagem, é o mesmo contrato do repositório do
     Supabase, que filtra `archived_at is null` na consulta. Devolver aqui o que
     lá não vem faria o modo demo mostrar objetivo arquivado na tela e o modo
     real não: dois produtos diferentes saindo do mesmo código.
@@ -1128,7 +1266,7 @@ export const demoStore = {
       O teto por área sai do PLANO da conta demo, não de um `some()` fixo.
 
       Com o número escrito aqui, o modo demo de uma conta PRO recusaria o que o
-      Supabase aceita — e é justamente no demo que a regra é vista primeiro. O
+      Supabase aceita, e é justamente no demo que a regra é vista primeiro. O
       erro tipado continua o mesmo, porque a saída que a tela oferece é a mesma.
     */
     const limits = limitsOf(current.profile.plan ?? 'free')
@@ -1203,7 +1341,7 @@ export const demoStore = {
 
       É o comportamento que mantém a promessa do domínio: os pesos somam 100 o
       tempo todo, sem obrigar quem só quer escrever "MVP" a fazer conta. Quem
-      quiser mexer, mexe depois — e aí o peso informado é respeitado.
+      quiser mexer, mexe depois, e aí o peso informado é respeitado.
     */
     if (input.weight === undefined) {
       const balanced = rebalanceWeights([...siblings, stage])
@@ -1253,7 +1391,7 @@ export const demoStore = {
     /*
       O peso é propriedade do conjunto: tirar a etapa que valia 50% deixaria o
       objetivo somando 50 e uma barra que nunca chega a 100. Criar já
-      redistribuía — apagar não, e a regra ficava dependendo de quem chama
+      redistribuía, apagar não, e a regra ficava dependendo de quem chama
       lembrar de reequilibrar depois.
     */
     if (removed) {
@@ -1380,6 +1518,118 @@ export const demoStore = {
 
     persist()
     return log
+  },
+
+  // ------------------------------------------------------------------ rotina
+
+  routineItems(): RoutineItem[] {
+    /*
+      Arquivado fica FORA da lista, como no `habits()` e como no Supabase, que
+      filtra por `archived_at is null`. Divergência entre os dois repositórios
+      do mesmo contrato é o começo de dois produtos saindo do mesmo código: sem
+      este filtro, tirar um item da rotina o escondia até o próximo
+      carregamento e ele voltava sozinho.
+    */
+    return load().routineItems.filter((item) => item.archivedAt === null)
+  },
+
+  addRoutineItem(input: NewRoutineItemInput): RoutineItem {
+    const current = load()
+    const item = createRoutineItem(input, newId())
+    current.routineItems = [...current.routineItems, item]
+    persist()
+    return item
+  },
+
+  updateRoutineItem(id: string, changes: Partial<RoutineItem>): RoutineItem {
+    const current = load()
+    const found = current.routineItems.find((item) => item.id === id)
+    if (!found) throw new DomainError('Esse item da rotina não existe mais.')
+
+    const updated: RoutineItem = { ...found, ...changes }
+    current.routineItems = current.routineItems.map((item) => (item.id === id ? updated : item))
+    persist()
+    return updated
+  },
+
+  archiveRoutineItem(id: string): void {
+    const current = load()
+    current.routineItems = current.routineItems.map((item) =>
+      item.id === id ? { ...item, archivedAt: new Date() } : item,
+    )
+    persist()
+  },
+
+  routineOccurrences(): RoutineOccurrence[] {
+    return [...load().routineOccurrences]
+  },
+
+  /**
+   * O estado de um item num dia.
+   *
+   * Voltar pra pendente SEM reagendamento apaga a linha: ausência é o estado
+   * padrão, e guardar um "pendente" explícito faria a tabela crescer com
+   * linhas que não dizem nada. Com reagendamento a linha fica, porque ali o
+   * pendente carrega informação: o horário trocado ou o dia de destino.
+   */
+  setRoutineOccurrence(
+    itemId: string,
+    day: DayKey,
+    patch: {
+      status: RoutineOccurrence['status']
+      plannedTime?: string | null
+      timeOverride?: string | null
+      movedToDay?: DayKey | null
+    },
+  ): RoutineOccurrence {
+    const current = load()
+    const existing = current.routineOccurrences.find(
+      (item) => item.itemId === itemId && item.day === day,
+    )
+
+    const timeOverride = patch.timeOverride ?? existing?.timeOverride ?? null
+    const movedToDay = patch.movedToDay ?? existing?.movedToDay ?? null
+    const vazia = patch.status === 'pendente' && timeOverride === null && movedToDay === null
+
+    if (vazia) {
+      current.routineOccurrences = current.routineOccurrences.filter((item) => item !== existing)
+      persist()
+      return (
+        existing ?? {
+          id: newId(),
+          userId: DEMO_USER.id,
+          itemId,
+          day,
+          status: 'pendente',
+          plannedTime: patch.plannedTime ?? null,
+          timeOverride: null,
+          movedToDay: null,
+          completedAt: null,
+          createdAt: new Date(),
+        }
+      )
+    }
+
+    const occurrence: RoutineOccurrence = {
+      id: existing?.id ?? newId(),
+      userId: DEMO_USER.id,
+      itemId,
+      day,
+      status: patch.status,
+      plannedTime: patch.plannedTime ?? existing?.plannedTime ?? null,
+      timeOverride,
+      movedToDay,
+      // O mesmo carimbo do trigger da 0064: estado e hora não podem discordar.
+      completedAt: patch.status === 'feito' ? (existing?.completedAt ?? new Date()) : null,
+      createdAt: existing?.createdAt ?? new Date(),
+    }
+
+    current.routineOccurrences = existing
+      ? current.routineOccurrences.map((item) => (item === existing ? occurrence : item))
+      : [...current.routineOccurrences, occurrence]
+
+    persist()
+    return occurrence
   },
 
   tasks(): Task[] {
@@ -1668,6 +1918,112 @@ export const demoStore = {
     persist()
   },
 
+  clubInvitations(): DemoClubInvitation[] {
+    return [...load().clubInvitations]
+  },
+
+  /**
+   * Chama alguém, sem colocar dentro.
+   *
+   * Reconvidar reaproveita a linha, como o `on conflict` da 0063: duas linhas
+   * pro mesmo par seriam dois avisos do mesmo clube na mesma caixa.
+   */
+  inviteToClub(clubId: string, personId: string, inviterId: string): void {
+    const current = load()
+
+    const club = current.clubs.find((item) => item.id === clubId)
+    if (!club || club.archivedAt) throw new DomainError('Esse clube não está mais no ar.')
+
+    const dentro = current.clubMembers.some(
+      (item) => item.clubId === clubId && item.userId === personId,
+    )
+    if (dentro) throw new DomainError('Essa pessoa já está no clube.')
+
+    const existente = current.clubInvitations.find(
+      (item) => item.clubId === clubId && item.inviteeId === personId,
+    )
+
+    if (existente) {
+      current.clubInvitations = current.clubInvitations.map((item) =>
+        item === existente
+          ? { ...item, status: 'pendente' as const, inviterId, createdAt: new Date() }
+          : item,
+      )
+    } else {
+      current.clubInvitations = [
+        {
+          id: newId(),
+          clubId,
+          inviteeId: personId,
+          inviterId,
+          status: 'pendente',
+          createdAt: new Date(),
+        },
+        ...current.clubInvitations,
+      ]
+    }
+
+    persist()
+  },
+
+  respondClubInvitation(invitationId: string, userId: string, accept: boolean): void {
+    const current = load()
+    const convite = current.clubInvitations.find((item) => item.id === invitationId)
+
+    if (!convite || convite.inviteeId !== userId) {
+      throw new DomainError('Esse convite não é seu.')
+    }
+    if (convite.status !== 'pendente') return
+
+    if (accept) {
+      const club = current.clubs.find((item) => item.id === convite.clubId)
+      if (!club || club.archivedAt) throw new DomainError('Esse clube não está mais no ar.')
+
+      const dentro = current.clubMembers.some(
+        (item) => item.clubId === convite.clubId && item.userId === userId,
+      )
+      if (!dentro) {
+        current.clubMembers = [
+          ...current.clubMembers,
+          { clubId: convite.clubId, userId, role: 'membro', joinedAt: new Date() },
+        ]
+      }
+    }
+
+    current.clubInvitations = current.clubInvitations.map((item) =>
+      item.id === invitationId
+        ? { ...item, status: accept ? ('aceito' as const) : ('recusado' as const) }
+        : item,
+    )
+    persist()
+  },
+
+  /** O token do link. Cria na primeira vez, e `rotate` mata o anterior. */
+  clubInviteToken(clubId: string, rotate: boolean): string {
+    const current = load()
+    const prefixo = `${clubId}::`
+    const atual = current.clubInviteLinks.find((item) => item.startsWith(prefixo))
+
+    if (atual && !rotate) return atual.slice(prefixo.length)
+
+    const token = newId().replace(/-/g, '').slice(0, 24)
+    current.clubInviteLinks = [
+      ...current.clubInviteLinks.filter((item) => !item.startsWith(prefixo)),
+      `${prefixo}${token}`,
+    ]
+    persist()
+    return token
+  },
+
+  clubByInviteToken(token: string): Club | null {
+    const current = load()
+    const linha = current.clubInviteLinks.find((item) => item.endsWith(`::${token}`))
+    if (!linha) return null
+
+    const clubId = linha.slice(0, linha.indexOf('::'))
+    return current.clubs.find((item) => item.id === clubId) ?? null
+  },
+
   follows(): Follow[] {
     return [...load().follows]
   },
@@ -1872,6 +2228,11 @@ export const demoStore = {
       goals: [],
       habits: [],
       habitLogs: [],
+      // A rotina é progresso: recomeçar do zero apaga o dia montado junto com
+      // o resto, senão a conta zerada abriria com onze linhas de um dia que
+      // ela não escreveu.
+      routineItems: [],
+      routineOccurrences: [],
       tasks: [],
       checkIns: [],
       wins: [],
@@ -1883,7 +2244,7 @@ export const demoStore = {
       // Quem te segue continua te seguindo: recomeçar zera o teu progresso,
       // não a tua audiência.
       follows: seedFollows(),
-      // O álbum some junto com o resto do registro — e no demo os arquivos
+      // O álbum some junto com o resto do registro, e no demo os arquivos
       // moram dentro da própria linha, então apagar a linha apaga a foto.
       dayPhotos: [],
       // O clube é de gente, não é progresso: recomeçar não expulsa ninguém de

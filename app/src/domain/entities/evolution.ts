@@ -434,7 +434,7 @@ export interface UnlockSpec {
  * Foi por essa regra que os três arranjos de compartilhamento saíram daqui: o
  * estúdio ficou com dois arranjos, os dois abertos a todo mundo, e prometer
  * "Lista" no nível 2 passaria a ser promessa de uma coisa que não existe mais.
- * Os níveis 2, 3 e 8 ficaram sem recompensa própria — é melhor um nível mudo
+ * Os níveis 2, 3 e 8 ficaram sem recompensa própria, é melhor um nível mudo
  * do que um presente que não chega.
  */
 export const UNLOCKS: readonly UnlockSpec[] = [

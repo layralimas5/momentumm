@@ -12,7 +12,7 @@ import { cn } from '@/shared/lib/cn'
 /**
  * O destino do link de recuperação.
  *
- * O Supabase abre uma sessão temporária ao processar o link — é ela que
+ * O Supabase abre uma sessão temporária ao processar o link, é ela que
  * autoriza a troca. Por isso aqui não se pede a senha antiga: quem chegou
  * provou ser dono da caixa de e-mail, que é a prova disponível quando a senha
  * foi esquecida.

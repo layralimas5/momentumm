@@ -1,7 +1,7 @@
 /**
  * Atalho de desenvolvimento: abre o app já autenticado com a sessão demo, sem
  * passar pela tela de login. Serve pra trabalhar nas telas internas sem
- * autenticar a cada reload. Só vale em `vite dev` — num build de produção a
+ * autenticar a cada reload. Só vale em `vite dev`, num build de produção a
  * flag é ignorada, então não existe porta aberta em prod.
  */
 export const isAuthBypass =
@@ -28,7 +28,7 @@ export const devAutoLogin =
  * O que está errado com o atalho de login, quando está.
  *
  * Isto existe porque a falha era MUDA: senha velha no `.env.local` derrubava a
- * entrada automática e o app abria na tela de criar conta, sem dizer por quê —
+ * entrada automática e o app abria na tela de criar conta, sem dizer por quê, 
  * e o palpite mais natural ("quebrei alguma coisa no código") é justamente o
  * errado.
  *
@@ -45,7 +45,7 @@ export function devAutoLoginProblem(): string | null {
   if (!devEmail.includes('@')) return 'VITE_DEV_LOGIN_EMAIL não parece um e-mail.'
 
   // 12 é o mínimo que o cadastro aceita (`MIN_PASSWORD_LENGTH`): uma senha
-  // menor que isso no arquivo é senha velha, de antes da regra — ela nunca vai
+  // menor que isso no arquivo é senha velha, de antes da regra, ela nunca vai
   // entrar, e o servidor só vai responder "credenciais inválidas".
   if (devPassword.length < 12) {
     return `A senha em VITE_DEV_LOGIN_PASSWORD tem ${devPassword.length} caracteres, e o mínimo da conta é 12. É provável que seja uma senha antiga.`

@@ -2,7 +2,7 @@
  * Marcos: os números redondos que a jornada atravessa.
  *
  * Tudo aqui é determinístico e sem estado. A função recebe os totais de hoje e
- * devolve TODOS os marcos já alcançados — quem decide quais são novidade é
+ * devolve TODOS os marcos já alcançados, quem decide quais são novidade é
  * quem tem o histórico na mão, não este módulo. Isso mantém a regra testável
  * sem banco e evita o pior defeito possível num marco: "100 treinos" aparecer
  * duas vezes porque a conta foi refeita.
@@ -28,7 +28,7 @@ export interface MilestoneTotals {
  * Existe pra a tela poder dar um ícone a cada um sem ler o id por dentro:
  * "100 hábitos" merece um símbolo diferente de "30 dias seguidos", e uma lista
  * de conquistas com o mesmo troféu repetido seis vezes não é uma lista de
- * conquistas — é uma lista.
+ * conquistas, é uma lista.
  */
 export const MILESTONE_KINDS = ['habitos', 'dias', 'sequencia', 'objetivos', 'foco'] as const
 export type MilestoneKind = (typeof MILESTONE_KINDS)[number]
@@ -89,7 +89,7 @@ const RULES: readonly MilestoneRule[] = [
 /**
  * A espécie a partir do id do marco ("sequencia:30").
  *
- * O evento gravado guarda o id, não o objeto — então a tela que lê o histórico
+ * O evento gravado guarda o id, não o objeto, então a tela que lê o histórico
  * precisa deste caminho de volta. Id de uma versão futura, com espécie que não
  * existe mais, cai em `habitos`: um ícone genérico é melhor que uma conquista
  * que some da lista.
@@ -126,7 +126,7 @@ export function reachedMilestones(totals: MilestoneTotals): Milestone[] {
  * O próximo marco de cada trilha, com o quanto falta.
  *
  * O perfil mostra isso porque conquista sem próximo passo vira galeria de
- * troféu empoeirado. Trilha já esgotada não devolve nada — inventar um marco
+ * troféu empoeirado. Trilha já esgotada não devolve nada, inventar um marco
  * de 2000 hábitos pra ter o que mostrar seria pendurar uma meta impossível na
  * frente de quem acabou de fazer mil.
  */

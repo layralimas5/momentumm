@@ -15,14 +15,14 @@ interface VisibilityControlsProps {
 }
 
 /**
- * "Mostrar no card" — o controle de privacidade.
+ * "Mostrar no card", o controle de privacidade.
  *
  * A regra do produto é menor exposição: nome do objetivo, lista de hábitos e
  * nome da pessoa começam DESLIGADOS, porque são os três campos que carregam
  * texto escrito por ela. Aqui cada um desses vem com o aviso do que aparece se
- * ligar — a decisão é dela, mas informada.
+ * ligar, a decisão é dela, mas informada.
  *
- * Só aparecem os campos que ESTE evento consegue mostrar — não os que o tipo
+ * Só aparecem os campos que ESTE evento consegue mostrar, não os que o tipo
  * dele suporta em tese. Hábito marcado sem cronômetro não oferece "Duração", e
  * dia sem sequência não oferece "Sequência de dias": um toggle que não muda
  * nada ensina a pessoa a desconfiar dos outros.
@@ -56,7 +56,7 @@ export function ShareStudioVisibilityControls({
 
                     Ele já foi um cadeado laranja, e errava duas vezes. Cadeado
                     é o símbolo de trancado, e aqui ele aparecia justamente
-                    quando o campo estava aberto — gente lia como bloqueio e
+                    quando o campo estava aberto, gente lia como bloqueio e
                     procurava onde liberar. E o laranja é o token do streak,
                     reservado a ele; usá-lo como alerta transformava uma escolha
                     legítima da pessoa em risco, num painel em que ela acabou de

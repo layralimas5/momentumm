@@ -23,7 +23,7 @@ import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 import { cn } from '@/shared/lib/cn'
 
 /**
- * Criar um clube — ou conhecer o PRO.
+ * Criar um clube, ou conhecer o PRO.
  *
  * As duas coisas moram na mesma folha de propósito. Quem não assina abre o
  * mesmo caminho de quem assina e vê o que o recurso é antes de ver o preço:

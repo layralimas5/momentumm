@@ -14,6 +14,13 @@ import type { MomentumScore } from './momentum'
 import { impactPointsOf, taskImpact } from './momentum-impact'
 import { isRunning, type ObjectiveProgress } from './objective'
 import type { PlanProgress } from './plan-progress'
+import {
+  isRoutineRunning,
+  isRoutineScheduledOn,
+  routineStatusOf,
+  type RoutineItem,
+  type RoutineOccurrence,
+} from './routine-item'
 import { isPending, type Task } from './task'
 
 /**
@@ -27,7 +34,7 @@ import { isPending, type Task } from './task'
  *
  *   MANTER    o que mais move o objetivo, na versão cheia
  *   REDUZIR   o que é flexível, pra versão mínima
- *   REAGENDAR o resto — espalhado, respeitando o prazo do objetivo e a carga
+ *   REAGENDAR o resto, espalhado, respeitando o prazo do objetivo e a carga
  *             que cada dia seguinte já tem
  *
  * ## O que decide a ordem
@@ -43,7 +50,7 @@ import { isPending, type Task } from './task'
  *
  * - Não empurra ação atrasada pra dentro de hoje. O dia que a pessoa tem é o
  *   dia que ela tem; encher ele com a dívida de ontem é o acúmulo com outro nome.
- * - Não tira hábito do dia. Hábito não muda de data — ele encolhe pra versão
+ * - Não tira hábito do dia. Hábito não muda de data, ele encolhe pra versão
  *   mínima, que é o que preserva a sequência num dia curto.
  * - Não decide sozinho: devolve um plano pra revisão. Quem grava é a pessoa.
  */
@@ -82,7 +89,7 @@ const ESSENTIAL_STREAK = 3
 /**
  * Os pesos da decisão, num lugar só.
  *
- * Ficam juntos e nomeados porque a calibragem certa só aparece com uso real —
+ * Ficam juntos e nomeados porque a calibragem certa só aparece com uso real, 
  * e porque um score espalhado em números mágicos pelo arquivo é um score que
  * ninguém consegue explicar pra pessoa que está lendo o plano na tela.
  */
@@ -116,6 +123,9 @@ export interface AdaptiveObjective {
 }
 
 export interface AdaptiveDayInput {
+  /** A rotina do dia. Só a ligada a objetivo reserva tempo (`routineReservedMin`). */
+  readonly routineItems?: readonly RoutineItem[]
+  readonly routineOccurrences?: readonly RoutineOccurrence[]
   readonly today: DayKey
   /** Quanto tempo a pessoa disse que tem, em minutos. */
   readonly availableMin: number
@@ -251,7 +261,16 @@ export function buildAdaptiveDay(input: AdaptiveDayInput): AdaptiveDayPlan {
     volta pra versão cheia.
   */
   const habits = candidates.filter((item) => item.kind === 'habito')
-  const reserved = habits.reduce((sum, item) => sum + item.minimalMin, 0)
+
+  /*
+    A rotina do objetivo reserva junto com o hábito, e pelo mesmo motivo: ela
+    não muda de data. A diferença é que ela não tem versão mínima nem recebe
+    veredito, ela é um compromisso já marcado. O que ela faz é ocupar o tempo
+    ANTES da disputa, pra o plano não prometer uma hora que já tem dono.
+  */
+  const reserved =
+    habits.reduce((sum, item) => sum + item.minimalMin, 0) +
+    routineReservedMin(input.routineItems ?? [], input.routineOccurrences ?? [], input.today)
 
   const decisions = new Map<string, AdaptiveItem>()
   let remaining = Math.max(0, available - reserved)
@@ -270,7 +289,7 @@ export function buildAdaptiveDay(input: AdaptiveDayInput): AdaptiveDayPlan {
     }
 
     /*
-      Protegido não sai do dia — nem quando não cabe.
+      Protegido não sai do dia, nem quando não cabe.
 
       É a regra que separa "adaptar o dia" de "esvaziar o dia": a ação que
       sustenta o objetivo encolhe, e quando ela não tem versão mínima o app diz
@@ -303,7 +322,7 @@ export function buildAdaptiveDay(input: AdaptiveDayInput): AdaptiveDayPlan {
   /*
     O dia nunca volta vazio.
 
-    Um dia inteiro reagendado é o mesmo que dizer "hoje não conta" — e é
+    Um dia inteiro reagendado é o mesmo que dizer "hoje não conta", e é
     exatamente o dia em que a pessoa para de abrir o app. Sobrando zero item,
     o de maior score volta na menor versão possível.
   */
@@ -361,15 +380,44 @@ export function buildAdaptiveDay(input: AdaptiveDayInput): AdaptiveDayPlan {
 export interface DayLoad {
   /** Minutos que o dia pede como ele está montado agora. */
   readonly minutes: number
-  /** Itens em aberto: ações e hábitos que ainda esperam movimento. */
+  /** Itens em aberto: ações, hábitos e rotina de objetivo que ainda esperam movimento. */
   readonly items: number
+}
+
+/**
+ * O tempo que a rotina LIGADA A OBJETIVO reserva no dia.
+ *
+ * Só ela, e essa linha é a decisão inteira. "Treino, segunda, quarta e sexta",
+ * pendurado em "correr 5km", é execução: ele compete por tempo com as ações do
+ * plano e precisa entrar na conta, senão o app promete um dia que não cabe.
+ *
+ * "Almoço", "trabalho" e "acordar" NÃO entram. Quando a pessoa responde "tenho
+ * duas horas", ela está dizendo quanto tempo tem PRA ISSO, não quantas horas
+ * restam no relógio depois do expediente. Descontar a vida dela desse número
+ * devolveria meia hora de plano pra quem tem duas, e o recurso inteiro pararia
+ * de fazer sentido no primeiro uso.
+ */
+export function routineReservedMin(
+  items: readonly RoutineItem[],
+  occurrences: readonly RoutineOccurrence[],
+  today: DayKey,
+): number {
+  return items
+    .filter(
+      (item) =>
+        item.objectiveId !== null &&
+        isRoutineRunning(item) &&
+        isRoutineScheduledOn(item, today) &&
+        routineStatusOf(occurrences, item.id, today) === 'pendente',
+    )
+    .reduce((sum, item) => sum + (item.durationMin ?? 0), 0)
 }
 
 /**
  * O tamanho do dia antes de qualquer adaptação.
  *
  * Existe pra a tela poder perguntar "quanto tempo você tem?" já dizendo quanto
- * o dia pede — e pra ela sumir quando não há nada em aberto. Usa exatamente os
+ * o dia pede, e pra ela sumir quando não há nada em aberto. Usa exatamente os
  * mesmos filtros de `buildAdaptiveDay`: dois jeitos de contar o mesmo dia é
  * como o card e a revisão começam a discordar.
  */
@@ -378,6 +426,8 @@ export function dayLoadOf(input: {
   readonly tasks: readonly Task[]
   readonly habits: readonly Habit[]
   readonly habitLogs: readonly HabitLog[]
+  readonly routineItems?: readonly RoutineItem[]
+  readonly routineOccurrences?: readonly RoutineOccurrence[]
 }): DayLoad {
   const tasks = input.tasks.filter((task) => task.day === input.today && isPending(task))
 
@@ -385,14 +435,23 @@ export function dayLoadOf(input: {
     (habit) => !countsAsDone(statusOf(input.habitLogs, habit.id, input.today)),
   )
 
+  const routine = (input.routineItems ?? []).filter(
+    (item) =>
+      item.objectiveId !== null &&
+      isRoutineRunning(item) &&
+      isRoutineScheduledOn(item, input.today) &&
+      routineStatusOf(input.routineOccurrences ?? [], item.id, input.today) === 'pendente',
+  )
+
   const minutes =
     tasks.reduce((sum, task) => sum + task.estimatedMin, 0) +
     habits.reduce(
       (sum, habit) => sum + (activityType(habit.axis).unit === 'minutos' ? habit.target : 0),
       0,
-    )
+    ) +
+    routine.reduce((sum, item) => sum + (item.durationMin ?? 0), 0)
 
-  return { minutes, items: tasks.length + habits.length }
+  return { minutes, items: tasks.length + habits.length + routine.length }
 }
 
 export function clampAvailable(value: number): number {
@@ -636,7 +695,7 @@ function postpone(
  * Não é "amanhã". Amanhã é como o adiamento vira pilha: três dias assim e o
  * dia seguinte tem o triplo do que cabe nele. A ação procura o primeiro dia
  * cuja carga ainda comporta o tamanho dela, dentro do prazo do objetivo e de
- * uma semana no máximo. Se nenhum dia comporta, ela vai pro mais vazio — e o
+ * uma semana no máximo. Se nenhum dia comporta, ela vai pro mais vazio, e o
  * plano diz que foi por falta de espaço, em vez de fingir que coube.
  */
 function placeTask(
@@ -684,7 +743,7 @@ function placeTask(
 /**
  * Quanto cada dia já tem planejado, contando o que este mesmo plano acabou de
  * mandar pra lá. Sem isso, cinco ações reagendadas na mesma passada caem todas
- * no mesmo dia — que é o acúmulo que o recurso existe pra evitar.
+ * no mesmo dia, que é o acúmulo que o recurso existe pra evitar.
  */
 function loadByDay(
   input: AdaptiveDayInput,
@@ -707,7 +766,7 @@ function loadByDay(
 
 /**
  * A carga de referência de um dia: a média do que a própria pessoa costuma
- * planejar. É a régua honesta — um número fixo faria o app decidir por ela o
+ * planejar. É a régua honesta, um número fixo faria o app decidir por ela o
  * tamanho de um dia que ele não conhece.
  */
 function referenceDayMin(input: AdaptiveDayInput): number {

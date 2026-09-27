@@ -59,7 +59,7 @@ export function SupportPanel() {
         <PanelHeader
           title="Ajuda e solicitações"
           icon="sino"
-          hint="Exportação, exclusão, pagamento, acesso, segurança, denúncia ou privacidade — em qualquer plano. Ajuda com o app faz parte do PRO. Cada pedido ganha um protocolo e um prazo."
+          hint="Exportação, exclusão, pagamento, acesso, segurança, denúncia ou privacidade, em qualquer plano. Ajuda com o app faz parte do PRO. Cada pedido ganha um protocolo e um prazo."
         />
         {error ? <p className="mt-3 text-sm text-danger">{error}</p> : null}
         <NewRequestForm onCreated={load} />

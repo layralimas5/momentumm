@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /*
     O freio de tentativas vive em ref, não em estado.
 
-    Ele não desenha nada — quem mostra a espera é a exceção que sobe — e
+    Ele não desenha nada, quem mostra a espera é a exceção que sobe, e
     guardá-lo em `useState` faria cada tentativa falha rerenderizar a árvore
     inteira embaixo do provider. Em ref ele sobrevive aos renders e morre com
     a aba, que é exatamente o alcance de um freio de navegador.
@@ -84,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!current && devAutoLogin && !container.demo) {
         /*
           A falha aqui era muda: o app caía na tela de criar conta sem dizer por
-          quê, e o palpite mais natural — "quebrei alguma coisa" — é o errado.
+          quê, e o palpite mais natural, "quebrei alguma coisa", é o errado.
           Continua caindo na tela normal, como deve: o que mudou é que agora ela
           diz o motivo no console, e só em `vite dev`.
         */
@@ -125,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /**
    * Roda a tentativa com o freio na frente e a contagem atrás.
    *
-   * Só o FRACASSO conta. Acertar a senha na quarta tentativa zera a escada —
+   * Só o FRACASSO conta. Acertar a senha na quarta tentativa zera a escada, 
    * punir quem entrou é transformar uma proteção contra robô em castigo pra
    * quem tem duas senhas na cabeça.
    */

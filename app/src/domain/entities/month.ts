@@ -6,7 +6,7 @@ import { addDays, dayKeyOf, dayKeyToDate, type DayKey } from './day'
  * O resto do app conta a semana a partir de domingo (`startOfWeek`), porque é
  * assim que o calendário brasileiro imprime e é assim que a faixa dos sete dias
  * do Hoje é lida. Aqui a semana começa na SEGUNDA, e não é inconsistência: a
- * grade do mês existe pra olhar pra trás — "que semanas eu sustentei" —, e numa
+ * grade do mês existe pra olhar pra trás, "que semanas eu sustentei", e numa
  * grade de retrospecto o fim de semana fazer bloco no fim da linha é o que
  * deixa o padrão visível de relance.
  */
@@ -69,7 +69,7 @@ export function formatMonthLabel(day: DayKey): string {
  * O mês começa numa quinta? A linha de cima é completada com os dias do mês
  * anterior, que a tela desenha apagados. Sem isso o dia 1 apareceria na
  * primeira coluna e a grade mentiria sobre em que dia da semana as coisas
- * aconteceram — que é exatamente o que ela existe pra mostrar.
+ * aconteceram, que é exatamente o que ela existe pra mostrar.
  */
 export function monthGridDays(day: DayKey): DayKey[] {
   const first = startOfMonthKey(day)

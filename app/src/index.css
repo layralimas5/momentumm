@@ -297,7 +297,7 @@
    A regra visual do app é "profundidade por camada, não por sombra". Em fundo
    preto, sombra vira mancha cinza; então o que separa um card do fundo é a
    diferença de grafite mais uma borda de 1px. O violeta entra só onde há
-   decisão a tomar — prioridade principal, foco em andamento, insight.
+   decisão a tomar, prioridade principal, foco em andamento, insight.
 --------------------------------------------------------------------------- */
 
 @layer components {

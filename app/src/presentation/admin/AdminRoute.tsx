@@ -15,7 +15,7 @@ import { useAdmin } from './admin-context'
  *
  * Tudo isso é leitura do servidor (`admin_me`); nada aqui é decidido por
  * flag de cliente. E mesmo que fosse contornado, cada função do banco
- * repete a checagem — a porta é cortesia, não barreira.
+ * repete a checagem, a porta é cortesia, não barreira.
  */
 export function AdminRoute() {
   const { user, loading } = useAuth()

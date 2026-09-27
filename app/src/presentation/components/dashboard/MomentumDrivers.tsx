@@ -7,7 +7,7 @@ import { cn } from '@/shared/lib/cn'
  *
  * É o elo que falta entre a variação e a decisão: "−6" não diz o que fazer,
  * "execução das prioridades: −6" diz. Os valores são pontos DO SCORE, já
- * multiplicados pelo peso do fator — mostrar a variação bruta faria um fator de
+ * multiplicados pelo peso do fator, mostrar a variação bruta faria um fator de
  * 15% parecer tão decisivo quanto um de 35%.
  */
 export function MomentumDrivers({

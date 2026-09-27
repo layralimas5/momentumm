@@ -6,7 +6,7 @@ import { DomainError } from '@/shared/errors'
  * ## O que ele é, e principalmente o que ele NÃO é
  *
  * Isto **não** é a proteção contra força bruta. A proteção de verdade é do
- * servidor — o GoTrue tem limite por IP e por e-mail, configurado no painel —
+ * servidor, o GoTrue tem limite por IP e por e-mail, configurado no painel,
  * e ela continua valendo mesmo pra quem nunca abre o app. Um atacante bate
  * direto no endpoint e não executa uma linha deste arquivo.
  *
@@ -20,7 +20,7 @@ import { DomainError } from '@/shared/errors'
  *
  * ## A escada
  *
- * As primeiras tentativas passam livres — errar a senha duas vezes é humano.
+ * As primeiras tentativas passam livres, errar a senha duas vezes é humano.
  * A partir da terceira o intervalo cresce, e a espera tem teto: bloquear por
  * uma hora não protege mais do que bloquear por um minuto contra quem está
  * automatizando, e destrói a noite de quem só esqueceu a senha.
@@ -59,7 +59,7 @@ export interface ThrottleVerdict {
 /**
  * A tentativa pode acontecer agora?
  *
- * `now` entra por parâmetro pra a regra ser testável sem relógio falso — a
+ * `now` entra por parâmetro pra a regra ser testável sem relógio falso, a
  * mesma decisão que o resto do domínio toma com `today`.
  */
 export function checkThrottle(
@@ -88,7 +88,7 @@ export function checkThrottle(
   }
 }
 
-/** Falhou: a contagem sobe. Só o fracasso conta — acertar não pune ninguém. */
+/** Falhou: a contagem sobe. Só o fracasso conta, acertar não pune ninguém. */
 export function registerFailure(
   log: AttemptLog,
   action: ThrottledAction,

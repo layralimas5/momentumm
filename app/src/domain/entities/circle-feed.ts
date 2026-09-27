@@ -5,14 +5,14 @@ import type { JourneyEvent, JourneyEventType } from './journey-event'
  *
  * A regra que define o produto está nesta lista: nem todo momento da jornada
  * vira assunto entre amigos. Hábito concluído e dia fechado ficam de fora de
- * propósito — cinco hábitos por dia vezes dez amigos são cinquenta linhas
+ * propósito, cinco hábitos por dia vezes dez amigos são cinquenta linhas
  * diárias, e um feed que enche vira um feed que ninguém lê. O que entra é o que
  * uma pessoa contaria pra outra: fechei a rotina, avancei o objetivo, cheguei
  * num marco, revisei a semana, voltei depois de sumir.
  *
  * A mesma lista decide o que PODE ser compartilhado. Um momento que não
  * apareceria no feed também não deve oferecer o botão de compartilhar com o
- * círculo — senão a pessoa marca, não vê aparecer e conclui que quebrou.
+ * círculo, senão a pessoa marca, não vê aparecer e conclui que quebrou.
  */
 
 export const CIRCLE_FEED_TYPES: readonly JourneyEventType[] = [
@@ -29,7 +29,7 @@ export const CIRCLE_FEED_TYPES: readonly JourneyEventType[] = [
 ]
 
 /*
-  Os quatro de desafio entram inteiros, inclusive o avanço — que é a exceção
+  Os quatro de desafio entram inteiros, inclusive o avanço, que é a exceção
   aparente à regra de cima.
  
   Ela não vale aqui pelo mesmo motivo que valia lá: hábito e dia são
@@ -43,7 +43,7 @@ export function belongsInCircle(type: JourneyEventType): boolean {
   return CIRCLE_FEED_TYPES.includes(type)
 }
 
-/** Quem publicou. É só o cartão de visita — nada do planejamento da pessoa. */
+/** Quem publicou. É só o cartão de visita, nada do planejamento da pessoa. */
 export interface CircleAuthor {
   readonly id: string
   readonly name: string

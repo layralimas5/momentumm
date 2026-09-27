@@ -2,7 +2,7 @@
  * Estrutura do menu: 2 grupos + os links diretos.
  *
  * As âncoras seguem os ids reais da LandingPage. Quando uma seção sair ou
- * mudar de id, é aqui que o link precisa acompanhar — link de menu apontando
+ * mudar de id, é aqui que o link precisa acompanhar, link de menu apontando
  * pra âncora morta não dá erro, só não rola pra lugar nenhum.
  */
 

@@ -9,14 +9,14 @@ import type { Priority } from './priority'
  *
  * A diferença pra `Goal` é de natureza, não de tamanho. A meta é um ritmo que
  * se repete ("20 páginas por dia") e não termina. O objetivo TERMINA: tem um
- * alvo acumulado e uma data em que fecha, e é dele que sai o plano — hábitos e
+ * alvo acumulado e uma data em que fecha, e é dele que sai o plano, hábitos e
  * ações existem pra empurrar um objetivo, não o contrário.
  *
  * Quantos objetivos cabem no MESMO eixo é o plano que diz
  * (`plan.objectivesPerAxis`, servidor na 0057). No gratuito é um, e o motivo é o
  * de sempre: dois objetivos disputando o mesmo eixo somam das mesmas atividades,
  * então o progresso dos dois mede o mesmo volume. No PRO não tem teto, porque
- * "Projeto" é uma área e não um projeto — lançar o app e criar o curso são duas
+ * "Projeto" é uma área e não um projeto, lançar o app e criar o curso são duas
  * frentes com alvo e prazo próprios, e a ambiguidade da soma é um preço que
  * quem paga escolhe pagar.
  */
@@ -35,12 +35,12 @@ export const MIN_OBJECTIVE_DAYS = 7
  * É uma regra do banco (trigger `objectives_plan_room`, 0057, que substituiu o
  * índice único de 0003) e não uma falha: no gratuito cada área guarda um
  * objetivo ativo, porque dois objetivos no mesmo eixo somam das mesmas
- * atividades. No PRO esse erro não acontece — o plano dele não tem teto por
+ * atividades. No PRO esse erro não acontece, o plano dele não tem teto por
  * eixo, e é por isso que o nome do erro fala de EIXO e não de plano.
  *
  * O erro carrega o EIXO porque quem for mostrar isso precisa dizer qual
  * objetivo está ocupando o lugar. Uma mensagem sem o eixo obriga a tela a
- * adivinhar — ou a não oferecer saída nenhuma, que foi o que aconteceu na
+ * adivinhar, ou a não oferecer saída nenhuma, que foi o que aconteceu na
  * ativação do plano do quiz: a pessoa ficava presa fora do app, com um
  * "tentar de novo" que falhava sempre pelo mesmo motivo.
  */
@@ -73,7 +73,7 @@ export interface Objective {
   /**
    * Pausa explícita. Diferente de arquivar: o objetivo continua na lista, só
    * para de cobrar prazo e de aparecer no dia. É a saída pra quem precisa
-   * suspender sem apagar — e apagar é justamente o que faz a pessoa desistir.
+   * suspender sem apagar, e apagar é justamente o que faz a pessoa desistir.
    */
   readonly pausedAt: Date | null
   readonly archivedAt: Date | null
@@ -158,7 +158,7 @@ export function isActiveObjective(objective: Objective): boolean {
  * Ciclo de vida do objetivo. Não confundir com `ObjectiveStatus`, que é a
  * leitura de RITMO (no prazo, atrasado). Aqui é o estado que a pessoa controla:
  * ela pausa, retoma, conclui e arquiva. Os dois convivem porque respondem
- * perguntas diferentes — "como está indo" e "ainda está valendo".
+ * perguntas diferentes, "como está indo" e "ainda está valendo".
  *
  * O estado é derivado, não guardado. Guardar abriria a porta pra um objetivo
  * com `completedAt` preenchido e estado "em andamento", que é exatamente o tipo
@@ -314,7 +314,7 @@ function summarize(
 
   // Pausado NÃO cobra ritmo. O objetivo continua com prazo no banco, mas
   // enquanto está pausado dizer "atrasado, faça 29 por dia" é exatamente o
-  // oposto do que pausar significa — e é o tipo de recado que faz a pessoa
+  // oposto do que pausar significa, e é o tipo de recado que faz a pessoa
   // arquivar em vez de pausar da próxima vez.
   if (objective.pausedAt && input.status !== 'concluido') {
     return `Pausado com ${formatUnit(type, input.done)} de ${objective.target}. Retomar devolve ele pro teu dia.`

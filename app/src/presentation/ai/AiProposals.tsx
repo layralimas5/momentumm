@@ -38,7 +38,7 @@ interface Row {
  * Toda linha traz o que muda, em quem, e o motivo que a IA deu. A pessoa
  * aceita, edita (data ou duração) ou rejeita; nada é escrito até o botão de
  * aplicar, e ele diz quantos ajustes vão entrar. Depois de aplicar, a lista
- * mostra o que entrou e o que não entrou, com o porquê — um "pronto" genérico
+ * mostra o que entrou e o que não entrou, com o porquê, um "pronto" genérico
  * esconderia justamente o item que falhou.
  *
  * Linha bloqueada (item que sumiu, data no passado) nasce desmarcada e diz o

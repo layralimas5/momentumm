@@ -114,7 +114,7 @@ export function FriendSearch({ circle }: { readonly circle: CircleState }) {
  * O botão muda com a relação.
  *
  * Oferecer "adicionar" pra quem já é amigo, ou pra quem já recebeu um pedido,
- * garante um erro do servidor no clique. A relação já está calculada — a tela
+ * garante um erro do servidor no clique. A relação já está calculada, a tela
  * só precisa respeitá-la.
  */
 function SearchAction({

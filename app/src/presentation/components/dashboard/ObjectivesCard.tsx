@@ -30,7 +30,7 @@ interface ObjectivesCardProps {
  * destino. Quando os dois competem por atenção, é o destino que precisa ganhar,
  * senão a pessoa cumpre a rotina e nunca chega em lugar nenhum.
  *
- * O card mostra sempre as duas leituras juntas — o quanto já foi feito e o
+ * O card mostra sempre as duas leituras juntas, o quanto já foi feito e o
  * quanto do prazo já passou. Progresso sem prazo consola; prazo sem progresso
  * assusta. Só os dois juntos fazem decidir.
  */
@@ -141,7 +141,7 @@ export function ObjectiveRow({ view }: { readonly view: ObjectiveView }) {
 
       {/*
         A próxima ação fecha a linha. Uma barra de progresso sozinha informa que
-        falta, nunca o que fazer — e é o "o que fazer" que traz a pessoa de volta.
+        falta, nunca o que fazer, e é o "o que fazer" que traz a pessoa de volta.
       */}
       {plan.nextTask ? (
         <p className="mt-2 truncate text-xs text-ink-muted">

@@ -59,7 +59,7 @@ export function MobileWeekStrip({
             <li key={day.day} className="flex-1">
               {/*
                 A célula inteira é o alvo do toque. Num quadrado desse tamanho,
-                meio botão é pior que botão nenhum — e o dia só diz se houve
+                meio botão é pior que botão nenhum, e o dia só diz se houve
                 movimento; o que houve está do outro lado deste toque.
               */}
               <button

@@ -4,7 +4,7 @@ import { Icon } from '@/presentation/components/ui/Icon'
 /**
  * A abertura do dia: quem, quando e em que pé o dia está.
  *
- * A frase abaixo da saudação descreve o estado REAL — "continue de onde você
+ * A frase abaixo da saudação descreve o estado REAL, "continue de onde você
  * parou", "você concluiu tudo que planejou". Nada de motivação genérica: uma
  * frase que serviria pra qualquer pessoa em qualquer dia gasta a linha mais
  * lida da tela sem dizer nada.
@@ -15,7 +15,7 @@ import { Icon } from '@/presentation/components/ui/Icon'
  *
  * A data também saiu: o cabeçalho do app já a mostra no monitor, e a barra de
  * cima no celular. A mesma terça-feira escrita duas vezes a 150px de distância
- * não é redundância inofensiva — é uma linha a mais entre a saudação e a ação
+ * não é redundância inofensiva, é uma linha a mais entre a saudação e a ação
  * do dia.
  */
 export function DayHeader({
@@ -42,7 +42,7 @@ export function DayHeader({
     <header className="flex flex-col gap-3">
       {/*
         No celular a barra de cima já dá saudação e data, mas não a frase de
-        contexto — e é ela que diz em que pé o dia está. Some o cabeçalho,
+        contexto, e é ela que diz em que pé o dia está. Some o cabeçalho,
         fica a frase.
       */}
       {/*
@@ -63,7 +63,7 @@ export function DayHeader({
       {/*
         Atraso em uma linha, com a saída ao lado.
 
-        Vermelho ocupando a tela não faz ninguém reorganizar nada — faz fechar o
+        Vermelho ocupando a tela não faz ninguém reorganizar nada, faz fechar o
         app. O aviso diz o tamanho do problema e oferece o caminho, e só.
       */}
       {overdue > 0 ? (

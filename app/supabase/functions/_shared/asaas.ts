@@ -1,4 +1,4 @@
-// Momentumm — o cliente do Asaas que as duas funções de cobrança usam.
+// Momentumm, o cliente do Asaas que as duas funções de cobrança usam.
 //
 // Chave e ambiente vêm dos segredos da função:
 //   ASAAS_API_KEY   a chave da conta (sandbox ou produção, a chave decide)

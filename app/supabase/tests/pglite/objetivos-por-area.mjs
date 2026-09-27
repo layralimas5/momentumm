@@ -4,7 +4,7 @@
   O teste existe por causa de um beco sem saída real: "um objetivo ativo por
   eixo" era um índice único (`objectives_one_active_per_axis`, 0003) e valia pra
   todo mundo, inclusive pra quem paga. Numa conta com objetivo em todas as áreas
-  de fábrica, o diálogo de objetivo novo abria preso em "Leitura" — cartão
+  de fábrica, o diálogo de objetivo novo abria preso em "Leitura", cartão
   desabilitado, botão desabilitado, nenhuma saída oferecida.
 
   Tirar um índice único e pôr trigger no lugar é a parte arriscada da 0057, e é
@@ -61,7 +61,7 @@ const ativos = async (user, axis) =>
 
 /*
   Conta nova nasce PRO pelo teste de 7 dias (0034). Pra ter uma conta gratuita de
-  verdade o teste precisa ser encerrado — sem isso "o gratuito" deste arquivo
+  verdade o teste precisa ser encerrado, sem isso "o gratuito" deste arquivo
   seria um PRO disfarçado, e todas as recusas esperadas passariam a não vir.
 */
 async function tornarGratuito(user) {
@@ -154,7 +154,7 @@ console.log('\n## As duas janelas de contagem, que são diferentes de propósito
 /*
   Pausar libera a vaga do PLANO e não libera a vaga do EIXO.
 
-  `activeObjectives` sempre contou só o que está em andamento — pausar é como a
+  `activeObjectives` sempre contou só o que está em andamento, pausar é como a
   pessoa abre espaço sem apagar. A vaga do eixo é outra pergunta: o objetivo
   pausado continua somando das mesmas atividades, então o progresso de dois no
   mesmo eixo continuaria ambíguo. Um servidor com uma janela só recusaria o que a
@@ -175,7 +175,7 @@ check('e a recusa da área pausada também é 23505',
   Arquivar libera as duas vagas: é o que a tela oferece quando a área está cheia.
 
   Vai numa conta nova de propósito. Na da Ana o terceiro objetivo esbarraria no
-  teto de DOIS em andamento, e o teste passaria a provar o limite errado — foi o
+  teto de DOIS em andamento, e o teste passaria a provar o limite errado, foi o
   que aconteceu na primeira versão deste arquivo.
 */
 const cris = await novaConta('cris-free@momentumm.com.br')
@@ -207,7 +207,7 @@ const bia = await novaConta('bia-free@momentumm.com.br')
 await tornarGratuito(bia)
 /*
   A linha arquivada entra ANTES da ativa. Objetivo que já nasce arquivado não
-  consome vaga — se consumisse, nem este cenário conseguiria ser montado, e um
+  consome vaga, se consumisse, nem este cenário conseguiria ser montado, e um
   restore de histórico seria recusado em produção pelo mesmo motivo.
 */
 await db.query(

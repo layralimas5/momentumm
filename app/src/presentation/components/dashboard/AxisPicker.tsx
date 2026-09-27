@@ -32,12 +32,12 @@ interface AxisPickerProps {
  *
  * Dá pra escolher mais de uma, e a tela mostra isso sem precisar de instrução:
  * o cartão marcado tem um check. O que ela NÃO deixa fazer é escolher a mesma
- * área duas vezes NO MESMO rascunho — um rascunho é um objetivo por área, e o
+ * área duas vezes NO MESMO rascunho, um rascunho é um objetivo por área, e o
  * seletor não tem como dizer qual dos dois cartões iguais é qual.
  *
  * Área CHEIA é outra coisa e chega em `taken`: quantos objetivos cabem no mesmo
  * eixo é o plano que decide, então no PRO essa lista vem vazia. Ela nunca é
- * calculada aqui — um seletor que decide teto de plano é um seletor que vai
+ * calculada aqui, um seletor que decide teto de plano é um seletor que vai
  * divergir do servidor.
  *
  * A quinta opção é escrever a própria área. Ela vira um eixo de verdade: tem

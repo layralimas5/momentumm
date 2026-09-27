@@ -74,7 +74,7 @@ interface Options {
  * O rascunho da jornada: um ou mais objetivos e o plano que sai deles.
  *
  * Mora aqui porque o onboarding e a criação de um objetivo novo fazem a mesma
- * coisa com layouts diferentes — o onboarding em passos e com várias áreas, o
+ * coisa com layouts diferentes, o onboarding em passos e com várias áreas, o
  * diálogo numa tela só e com uma. Duplicar esse estado seria duplicar a regra
  * de qual plano nasce de quais respostas, e é exatamente aí que dois caminhos
  * começam a divergir.
@@ -89,7 +89,7 @@ export function useJourneyDraft(today: DayKey, options: Options): JourneyDraftSt
 
   /*
     A área inicial é a primeira LIVRE, e quando não existe nenhuma o rascunho
-    nasce VAZIO — nunca num eixo qualquer.
+    nasce VAZIO, nunca num eixo qualquer.
 
     Aqui morava um `?? 'leitura'`. Numa conta com objetivo em todas as áreas de
     fábrica, ele abria o diálogo apontando pra Leitura, que é justamente uma das
@@ -201,7 +201,7 @@ function newEntry(axis: ActivityTypeSlug): ObjectiveEntry {
  * O que acontece com o rascunho quando a pessoa escolhe uma área.
  *
  * Está fora do hook pra poder ser testada: aqui morava o bug de "a área fica
- * presa em Leitura". Com `max` em 1 — que é o caso do diálogo de objetivo novo —
+ * presa em Leitura". Com `max` em 1, que é o caso do diálogo de objetivo novo,
  * a guarda `current.length >= max` era verdade em TODO clique, então a função
  * devolvia o estado intocado e o cartão da área nova não fazia nada. Trocar de
  * área precisa vir antes de qualquer guarda de tamanho, porque trocar não

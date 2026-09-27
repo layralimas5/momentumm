@@ -1,17 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { activityType } from '@/domain/entities/activity-type'
-import { countsAsDone, habitsScheduledOn, statusOf } from '@/domain/entities/habit'
 import { AccountMenu } from '@/presentation/components/account/AccountMenu'
 import { ThemeToggle } from '@/presentation/theme/ThemeToggle'
-import { isDone, isPending } from '@/domain/entities/task'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
 import { useFeature } from '@/presentation/plan/use-feature'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
+import { useDayAlerts } from '@/presentation/planner/use-day-alerts'
 import { usePlanner } from '@/presentation/planner/use-planner'
-import { markShareNudgeSeen, shareNudgeSeen } from '@/presentation/share/share-nudge'
-import { useMyRequests, withAnswer } from '@/presentation/support/use-my-requests'
+import { markShareNudgeSeen } from '@/presentation/share/share-nudge'
 import { cn } from '@/shared/lib/cn'
 import { CommandPalette } from './CommandPalette'
 import { navItemFor } from './nav-items'
@@ -23,7 +20,7 @@ function titleOf(pathname: string): string {
 
 /**
  * Header do app: onde você está, a data e as três ações que a pessoa realmente
- * usa — buscar, ver o que precisa de atenção e adicionar. Nada de métrica
+ * usa, buscar, ver o que precisa de atenção e adicionar. Nada de métrica
  * aqui: número no topo compete com a prioridade do dia e sempre perde.
  */
 export function AppHeader() {
@@ -53,7 +50,7 @@ export function AppHeader() {
 
             A saudação vive no topo do dashboard, com o nome e a frase de
             contexto do dia. Ter as duas na mesma dobra era literalmente a mesma
-            frase duas vezes antes de qualquer conteúdo — e num header que
+            frase duas vezes antes de qualquer conteúdo, e num header que
             acompanha todas as telas, "bom dia" não orienta ninguém.
           */}
           <div className="min-w-0 flex-1">
@@ -174,13 +171,24 @@ function AddMenu() {
 }
 
 /**
- * Notificações que existem de verdade: resposta de suporte, sequência em
- * risco, hábito pendente, ação atrasada. Sino com bolinha sem conteúdo é
- * ruído.
+ * O sino: o que precisa da sua atenção, e o botão de dizer "já li".
+ *
+ * A conta é a MESMA da tela Hoje (`useDayAlerts`). Existia uma cópia dela aqui
+ * dentro, servindo só ao sino, e duas contas com o mesmo nome dão dois números
+ * diferentes na primeira mudança de regra.
+ *
+ * ## Apagar depois de ver
+ *
+ * Cada linha tem um X, e o rodapé limpa a lista inteira. Um aviso que não some
+ * depois de lido vira mobília: no segundo dia o olho pula, no terceiro a tela
+ * perde autoridade. A marca vale pelo DIA, se o motivo continuar de pé amanhã,
+ * o recado volta, porque esconder um problema para sempre porque alguém o viu
+ * uma vez seria o app mentindo por educação. Resolvido, ele nem volta: a lista
+ * nasce do estado real, não de uma fila guardada.
  */
 function Notifications() {
+  const { alerts, hasDismissed, dismiss, dismissAll } = useDayAlerts()
   const planner = usePlanner()
-  const { requests } = useMyRequests()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -194,76 +202,6 @@ function Notifications() {
     return () => document.removeEventListener('mousedown', onClickAway)
   }, [open])
 
-  const items: { id: string; text: string; to: string }[] = []
-
-  // A resposta da equipe abre a lista: é a única que vem de fora.
-  const answered = withAnswer(requests)
-  if (answered.length > 0) {
-    const first = answered[0]
-    items.push({
-      id: 'suporte',
-      text:
-        answered.length === 1 && first
-          ? `A equipe respondeu o chamado ${first.protocol}.`
-          : `${answered.length} chamados com resposta da equipe.`,
-      to: '/app/suporte',
-    })
-  }
-
-
-  if (planner.streak.atRisk) {
-    items.push({
-      id: 'streak',
-      text: `Sua sequência de ${planner.streak.current} dias depende de um registro hoje.`,
-      to: '/app',
-    })
-  }
-
-  const pendingHabits = habitsScheduledOn(planner.habits, planner.today).filter(
-    (habit) => !countsAsDone(statusOf(planner.habitLogs, habit.id, planner.today)),
-  )
-  if (pendingHabits.length > 0) {
-    items.push({
-      id: 'habitos',
-      text: `${pendingHabits.length} ${pendingHabits.length === 1 ? 'hábito pendente' : 'hábitos pendentes'} hoje.`,
-      to: '/app/habitos',
-    })
-  }
-
-  const overdue = planner.tasks.filter((task) => isPending(task) && task.day < planner.today)
-  if (overdue.length > 0) {
-    items.push({
-      id: 'atrasadas',
-      text: `${overdue.length} ${overdue.length === 1 ? 'ação atrasada' : 'ações atrasadas'}. Dá pra adiar sem culpa.`,
-      to: '/app',
-    })
-  }
-
-  // O mesmo convite do celular: dia com movimento, uma vez por dia.
-  const movedToday =
-    planner.tasks.some((task) => isDone(task) && task.day === planner.today) ||
-    habitsScheduledOn(planner.habits, planner.today).some((habit) =>
-      countsAsDone(statusOf(planner.habitLogs, habit.id, planner.today)),
-    )
-  if (movedToday && !shareNudgeSeen(planner.today)) {
-    items.push({
-      id: 'compartilhar',
-      text: 'Teu dia rendeu. Mostra o teu Momentumm nos stories.',
-      to: '/app#compartilhar',
-    })
-  }
-
-  const behindGoal = planner.goalProgress.find(
-    (progress) => !progress.achieved && progress.daysLeft === 0,
-  )
-  if (behindGoal) {
-    items.push({
-      id: 'meta',
-      text: `Último dia da meta de ${activityType(behindGoal.goal.type).label}.`,
-      to: '/app/metas',
-    })
-  }
-
   return (
     <div ref={ref} className="relative shrink-0">
       <button
@@ -273,14 +211,14 @@ function Notifications() {
         className="relative grid size-10 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface hover:text-ink"
       >
         <Icon name="sino" />
-        {items.length > 0 ? (
+        {alerts.length > 0 ? (
           <span
             aria-hidden="true"
             className="absolute right-2 top-2 size-2 rounded-full bg-brand ring-2 ring-canvas"
           />
         ) : null}
         <span className="sr-only">
-          Notificações{items.length > 0 ? `: ${items.length} pendentes` : ''}
+          Notificações{alerts.length > 0 ? `: ${alerts.length} pendentes` : ''}
         </span>
       </button>
 
@@ -289,35 +227,66 @@ function Notifications() {
           <p className="border-b border-line px-4 py-2.5 text-xs font-medium tracking-wide text-ink-faint uppercase">
             Precisa da sua atenção
           </p>
-          {items.length === 0 ? (
+
+          {alerts.length === 0 ? (
             <p className="px-4 py-5 text-sm text-ink-muted">
-              Nada pendente agora. O dia está sob controle.
+              {hasDismissed
+                ? 'Tudo dispensado por hoje. O que continuar pendente volta amanhã.'
+                : 'Nada pendente agora. O dia está sob controle.'}
             </p>
           ) : (
-            <ul>
-              {items.map((item) => (
-                <li key={item.id}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOpen(false)
-                      // Convite atendido não volta no mesmo dia.
-                      if (item.id === 'compartilhar') markShareNudgeSeen(planner.today)
-                      navigate(item.to)
-                    }}
-                    className="w-full px-4 py-3 text-left text-sm text-ink-muted transition-colors hover:bg-surface-hi hover:text-ink"
-                  >
-                    {item.text}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul>
+                {alerts.map((alert) => (
+                  /*
+                    Dois alvos na mesma linha, como nos cartões do celular: o
+                    texto leva pra tela que resolve, o X diz "já li". Um botão
+                    dentro de outro seria um alvo dentro de outro.
+                  */
+                  <li key={alert.id} className="flex items-start gap-1 border-b border-line last:border-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpen(false)
+                        // Convite atendido não volta no mesmo dia.
+                        if (alert.id === 'compartilhar') markShareNudgeSeen(planner.today)
+                        navigate(alert.to)
+                      }}
+                      className="min-w-0 flex-1 px-4 py-3 text-left transition-colors hover:bg-surface-hi"
+                    >
+                      <span className="block text-sm text-ink">{alert.title}</span>
+                      <span className="mt-0.5 block text-sm text-pretty text-ink-faint">
+                        {alert.body}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => dismiss(alert.id)}
+                      className="mt-2 mr-1.5 grid size-8 shrink-0 place-items-center rounded-lg text-ink-faint transition-colors hover:bg-surface-hi hover:text-ink"
+                    >
+                      <Icon name="fechar" className="size-3.5" />
+                      <span className="sr-only">Dispensar: {alert.title}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+
+              <button
+                type="button"
+                onClick={dismissAll}
+                className="w-full border-t border-line px-4 py-2.5 text-left text-xs font-medium text-ink-faint transition-colors hover:bg-surface-hi hover:text-ink"
+              >
+                Limpar tudo
+              </button>
+            </>
           )}
         </div>
       ) : null}
     </div>
   )
 }
+
 
 function MenuItem({
   icon,

@@ -172,7 +172,7 @@ export function useCircle(): CircleState {
     aceitaria, e passaria do limite sem nunca ter enviado nada. E só no aceite
     também não: a pessoa gastaria convites que nunca poderiam virar amizade.
 
-    Recusar continua livre em qualquer situação — nenhum limite comercial deve
+    Recusar continua livre em qualquer situação, nenhum limite comercial deve
     impedir alguém de dizer não.
   */
   const assertRoom = useCallback(() => {

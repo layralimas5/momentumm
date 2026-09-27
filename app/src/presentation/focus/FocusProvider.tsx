@@ -106,7 +106,7 @@ export function FocusProvider({ children }: { children: ReactNode }) {
 
   /*
     Concluir e encerrar gravam a MESMA sessão; o que muda é o destino da ação de
-    origem. Quem para no meio do caminho continua tendo o tempo registrado — o
+    origem. Quem para no meio do caminho continua tendo o tempo registrado, o
     contrário ensina a pessoa que sair da sessão custa o trabalho já feito.
   */
   const save = useCallback(

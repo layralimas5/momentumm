@@ -14,14 +14,14 @@ import { toUserMessage } from '@/shared/errors'
 /**
  * As duplas na tela.
  *
- * Uma chamada ao abrir e uma a cada ação — sem polling. Um app que pergunta ao
+ * Uma chamada ao abrir e uma a cada ação, sem polling. Um app que pergunta ao
  * servidor de dez em dez segundos se a outra pessoa avançou gasta bateria e
  * dados de quem está no celular pra mudar um ícone que ninguém está olhando.
  * Quem volta pra aba recarrega; quem fica parado vê o estado de quando abriu,
  * e isso basta pra uma tela que muda no máximo duas vezes por dia.
  *
  * Desde a 0053 são VÁRIAS duplas: o gratuito tem uma, o PRO tem quantas
- * quiser. O hook devolve uma lista e recebe o id da dupla em toda ação — sem
+ * quiser. O hook devolve uma lista e recebe o id da dupla em toda ação, sem
  * isso, mandar incentivo com três duplas abertas acertaria uma por sorteio.
  */
 

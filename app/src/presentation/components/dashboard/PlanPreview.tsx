@@ -24,7 +24,7 @@ interface PlanPreviewProps {
   readonly today: DayKey
   /**
    * Falso quando outro plano já ficou com a prioridade do dia. A regra é uma
-   * por dia, e o preview não pode prometer duas — o que a tela mostra aqui é
+   * por dia, e o preview não pode prometer duas, o que a tela mostra aqui é
    * exatamente o que vai ser gravado.
    */
   readonly ownsMainPriority?: boolean
@@ -39,7 +39,7 @@ interface PlanPreviewProps {
  *
  * Mostra a conta antes do resultado: quem entende de onde saiu o número do
  * hábito cumpre o hábito; quem recebe número pronto, abandona. É o mesmo bloco
- * no onboarding e na criação de um objetivo novo — o plano precisa ter sempre
+ * no onboarding e na criação de um objetivo novo, o plano precisa ter sempre
  * a mesma cara, senão ele parece dois produtos diferentes.
  */
 export function PlanPreview({

@@ -9,7 +9,7 @@ import type { DashboardView } from './use-dashboard'
 /**
  * Grava os momentos da jornada que o dia de hoje produziu.
  *
- * Roda no dashboard, que é a tela que a pessoa abre todo dia — é ali que o
+ * Roda no dashboard, que é a tela que a pessoa abre todo dia, é ali que o
  * registro acontece sem depender de ela visitar nenhum lugar específico. A
  * decisão de O QUE gravar não mora aqui: mora em `eventsToRecord`, que é pura.
  * Este hook só junta o estado, chama a regra e escreve o que voltou.

@@ -23,7 +23,7 @@ import type { JourneyEvent, NewJourneyEventInput } from './journey-event'
  * ## As duas chaves, de novo
  *
  * Entrada, marco e conclusão acontecem uma vez na vida do desafio: a chave
- * ignora a data. Avanço é do DIA — a chave inclui a data, e por isso ele sai no
+ * ignora a data. Avanço é do DIA, a chave inclui a data, e por isso ele sai no
  * máximo uma vez por dia por desafio.
  */
 

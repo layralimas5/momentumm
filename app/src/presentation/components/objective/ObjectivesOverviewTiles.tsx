@@ -5,7 +5,7 @@ import { cn } from '@/shared/lib/cn'
 /**
  * A aba de Objetivos em três números.
  *
- * A lista responde "como está cada um". Ela nunca respondeu "como estou" — e
+ * A lista responde "como está cada um". Ela nunca respondeu "como estou", e
  * é essa a pergunta que faz alguém abrir a aba. Antes só dava pra responder
  * lendo três cards inteiros e somando de cabeça.
  *

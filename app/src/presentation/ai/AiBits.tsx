@@ -55,7 +55,7 @@ export function AiSource({ children }: { readonly children?: ReactNode }) {
  * O botão de uma porta da IA, ou o convite ao PRO no lugar dele.
  *
  * O botão só existe pra quem tem a IA no plano. Pra quem não tem, a mesma
- * posição mostra o que a porta faria e como liberar — nunca um botão que
+ * posição mostra o que a porta faria e como liberar, nunca um botão que
  * abre pra dizer "não".
  */
 export function AiEntry({

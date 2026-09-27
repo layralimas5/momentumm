@@ -55,7 +55,7 @@ export function ObjectiveDetailPage() {
   /*
     Os números que esta tela já mostra, indo junto pro card.
 
-    Volume, etapas e prazo são o que responde "o que foi feito" — a
+    Volume, etapas e prazo são o que responde "o que foi feito", a
     porcentagem sozinha diz que o objetivo andou, e não o quanto. Eles saem da
     MESMA leitura que a página usa, então card e tela nunca discordam.
   */
@@ -156,7 +156,7 @@ export function ObjectiveDetailPage() {
               O número grande é a EXECUÇÃO do plano, não o volume registrado.
               São perguntas diferentes: "quanto do caminho eu andei" e "quanto
               eu produzi", e a segunda vem logo abaixo, com nome. Sem plano, o
-              volume assume — uma barra em zero pra quem leu 400 páginas seria
+              volume assume, uma barra em zero pra quem leu 400 páginas seria
               simplesmente falsa.
             */}
             <div className="mt-4 flex items-end justify-between gap-4">

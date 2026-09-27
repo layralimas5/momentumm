@@ -63,6 +63,10 @@ const context: AiUserContext = {
       habitCount: 1,
     },
   ],
+  routine: [
+    { title: 'Almoço', time: '12:00', durationMin: 60, done: false, ofObjective: false },
+    { title: 'Treino', time: '18:30', durationMin: 45, done: false, ofObjective: true },
+  ],
   habits: [
     {
       ref: 'h1',

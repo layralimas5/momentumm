@@ -22,7 +22,7 @@ export function ClubCard({
   /** Quantas pessoas estão dentro. Omitido quando a lista não tem esse dado. */
   readonly members?: number
   readonly to: string
-  /** Botão à direita — "Entrar", quando a lista é de descoberta. */
+  /** Botão à direita, "Entrar", quando a lista é de descoberta. */
   readonly action?: React.ReactNode
 }) {
   return (

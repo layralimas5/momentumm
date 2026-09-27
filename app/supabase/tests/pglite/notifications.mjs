@@ -75,7 +75,7 @@ await db.exec(`insert into public.tasks (user_id, title, day, status)
 /*
   A janela sai da TABELA de regras, não de números escritos aqui.
 
-  Estava fixo em 8h..22h, que era a regra antes da 0056 — de lá pra cá o fim é
+  Estava fixo em 8h..22h, que era a regra antes da 0056, de lá pra cá o fim é
   21h30. Entre 21h30 e 22h o teste esperava aviso e o banco, corretamente, não
   mandava nada: três checagens ficavam vermelhas só por causa da hora em que o
   comando rodou. Comparar em MINUTOS é o que faz a meia hora contar.

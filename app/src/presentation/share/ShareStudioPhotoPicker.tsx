@@ -11,7 +11,7 @@ import type { SharePhotoState } from './use-share-photo'
  * espera e o que nenhuma implementação própria faria melhor.
  *
  * Sem foto, o card usa o fundo do template. Com foto, ela vira o fundo e o
- * texto passa a branco com sombra — não existe segunda decisão a tomar aqui.
+ * texto passa a branco com sombra, não existe segunda decisão a tomar aqui.
  */
 export function ShareStudioPhotoPicker({ state }: { readonly state: SharePhotoState }) {
   const inputRef = useRef<HTMLInputElement>(null)

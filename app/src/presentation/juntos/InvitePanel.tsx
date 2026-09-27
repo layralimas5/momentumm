@@ -17,7 +17,7 @@ export const INVITE_PATH = '/juntos'
  * O domínio vem de `SITE.url` e NÃO de `window.location.origin`. Com a origem
  * da janela, um convite criado em `localhost:5176` saía
  * `http://localhost:5176/juntos/...`, que é um link que só abre na máquina de
- * quem gerou — e é justamente em desenvolvimento que a gente testa mandar o
+ * quem gerou, e é justamente em desenvolvimento que a gente testa mandar o
  * convite pra outra pessoa. O mesmo valeria pra qualquer deploy de branch: o
  * link tem que apontar pra casa do produto, não pra onde a aba estava aberta.
  *
@@ -39,7 +39,7 @@ export function inviteUrl(token: string): string {
  *
  * O convite é um LINK, não uma busca por nome: sem descoberta, ninguém entra
  * numa dupla sem ter recebido o endereço de quem convidou. É o que dispensa
- * bloqueio, denúncia e "quem pode me convidar" — o MVP não tem nada disso
+ * bloqueio, denúncia e "quem pode me convidar", o MVP não tem nada disso
  * porque não precisa ter.
  *
  * O token aparece uma vez, e o texto diz isso. Gerar outro NÃO cancela o

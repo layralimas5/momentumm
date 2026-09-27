@@ -4,9 +4,9 @@ import { roundRect, withAlpha, type TextAlign } from './canvas-kit'
 /**
  * Cor e arranjo, separados.
  *
- * `ShareTheme` responde COM QUE COR o card é pintado — fundo, tinta, linha,
+ * `ShareTheme` responde COM QUE COR o card é pintado, fundo, tinta, linha,
  * moldura. `ShareComposition` responde COMO a informação se organiza dentro
- * dele — ordem dos blocos, alinhamento, âncora, tamanho do número.
+ * dele, ordem dos blocos, alinhamento, âncora, tamanho do número.
  *
  * Antes as duas coisas moravam na mesma descrição, e a consequência era um
  * template novo por combinação: "cartaz claro" e "cartaz escuro" seriam duas
@@ -61,7 +61,7 @@ function paintFlat(color: string) {
 }
 
 /**
- * Preto — a identidade do app.
+ * Preto, a identidade do app.
  *
  * Fundo quase preto com um brilho do eixo no canto superior. O brilho é fraco
  * de propósito: em preto, qualquer luz forte vira mancha cinza, e o objetivo é
@@ -98,7 +98,7 @@ export const SHARE_TEMPLATE_DARK: ShareTheme = {
 }
 
 /**
- * Neon — moldura acesa no escuro.
+ * Neon, moldura acesa no escuro.
  *
  * A única cor com moldura, e ela é fina e por dentro da margem: é a borda que
  * dá forma de peça ao card sem virar a caixa que denuncia captura de app.
@@ -145,7 +145,7 @@ export const SHARE_TEMPLATE_NEON: ShareTheme = {
   },
 }
 
-/** Branco — fundo claro e muito espaço em branco. */
+/** Branco, fundo claro e muito espaço em branco. */
 export const SHARE_TEMPLATE_LIGHT: ShareTheme = {
   id: 'light',
   transparent: false,
@@ -160,7 +160,7 @@ export const SHARE_TEMPLATE_LIGHT: ShareTheme = {
 }
 
 /**
- * PNG — sem fundo, pra ir por cima da foto da pessoa.
+ * PNG, sem fundo, pra ir por cima da foto da pessoa.
  *
  * Texto branco com sombra suave: é a única forma de garantir leitura sem saber
  * o que vai atrás. Pintar uma caixa escura por baixo resolveria o contraste e
@@ -193,7 +193,7 @@ export const SHARE_THEMES: Readonly<Record<ShareTemplateId, ShareTheme>> = {
  *
  * Com a foto da pessoa atrás, a paleta perde o sentido: o branco ficaria com
  * texto preto sobre uma foto noturna e sumiria. Sobre foto existe uma resposta
- * certa só — branco com sombra —, então a cor deixa de decidir e o arranjo
+ * certa só, branco com sombra, então a cor deixa de decidir e o arranjo
  * continua valendo inteiro.
  *
  * O fundo não é pintado aqui: quem desenha a foto e o véu é o renderizador,
@@ -222,7 +222,7 @@ export function overPhoto(theme: ShareTheme): ShareTheme {
 // composições
 // ---------------------------------------------------------------------------
 
-/** Grade — quatro números grandes, um em cada canto. */
+/** Grade, quatro números grandes, um em cada canto. */
 export const SHARE_COMPOSITION_GRADE: ShareComposition = {
   id: 'grade',
   align: 'left',
@@ -231,7 +231,7 @@ export const SHARE_COMPOSITION_GRADE: ShareComposition = {
   metricScale: 0.5,
 }
 
-/** Pilha — tudo centrado, um número embaixo do outro, assinatura no meio. */
+/** Pilha, tudo centrado, um número embaixo do outro, assinatura no meio. */
 export const SHARE_COMPOSITION_PILHA: ShareComposition = {
   id: 'pilha',
   align: 'center',

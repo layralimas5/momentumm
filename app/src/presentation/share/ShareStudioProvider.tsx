@@ -22,7 +22,7 @@ const DESCRIPTION = 'Transforme sua evolução em algo que vale a pena lembrar.'
  * O Share Studio mora acima das páginas.
  *
  * Os botões de compartilhar aparecem no dia, na rotina, no objetivo, na review
- * e no momentum — cinco telas diferentes abrindo o MESMO estúdio. Um modal por
+ * e no momentum, cinco telas diferentes abrindo o MESMO estúdio. Um modal por
  * tela seria o começo da divergência: em dois meses o card do objetivo teria um
  * template que o card da semana não tem.
  *

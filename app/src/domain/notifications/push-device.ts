@@ -23,7 +23,7 @@ export type PushPermission = 'unsupported' | 'default' | 'granted' | 'denied'
  * têm hora marcada (retomada, continuidade, progresso, dupla).
  *
  * O lembrete do próximo passo NÃO usa esta hora: ele chega quando faz
- * sentido — ação de hoje ainda em aberto e algumas horas sem atividade —,
+ * sentido, ação de hoje ainda em aberto e algumas horas sem atividade,
  * dentro da janela abaixo. A regra mora no banco (`decide_notification`);
  * estas constantes existem pra tela conseguir dizer a mesma coisa.
  */

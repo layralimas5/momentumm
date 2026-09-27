@@ -22,7 +22,7 @@ import type { AiContextTask, AiUserContext } from '@/domain/ai/ai-context'
 import { addDays, daysBetween, type DayKey } from '@/domain/entities/day'
 
 /**
- * Momentumm AI — implementação SIMULADA.
+ * Momentumm AI, implementação SIMULADA.
  *
  * Isto NÃO é IA. É aritmética determinística vestida com a mesma interface, e
  * existe por dois motivos: a tela precisa de algo pra desenhar antes de existir
@@ -34,7 +34,7 @@ import { addDays, daysBetween, type DayKey } from '@/domain/entities/day'
  *
  * Quando a integração real entrar, ela vai ser outro arquivo implementando a
  * mesma porta e falando com um endpoint no servidor. Chave de LLM não passa
- * pelo frontend — qualquer `VITE_` é público no bundle.
+ * pelo frontend, qualquer `VITE_` é público no bundle.
  */
 
 /** Atraso artificial: sem ele a tela nunca exercita o estado de carregando. */

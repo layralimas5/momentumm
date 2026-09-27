@@ -1,5 +1,5 @@
 /*
-  Juntos — a dupla, contra um Postgres de verdade e com RLS ligada.
+  Juntos, a dupla, contra um Postgres de verdade e com RLS ligada.
 
   Este é o teste que decide se a camada social pode existir. Ele não verifica
   se a tela funciona: verifica se, com uma sessão autenticada de verdade, uma
@@ -14,7 +14,7 @@
 
   A sessão é simulada como o Supabase faz: `role = authenticated` mais o
   `request.jwt.claims` com o `sub`. É assim que `auth.uid()` responde, e é o
-  que faz a RLS valer no teste — sem isso o teste rodaria como superusuário e
+  que faz a RLS valer no teste, sem isso o teste rodaria como superusuário e
   aprovaria um banco aberto.
 */
 import { boot, migrate } from './harness.mjs'
@@ -58,7 +58,7 @@ for (const [id, nome] of [[LAY, 'Layra Lima'], [CAROL, 'Carol Souza'], [ESTRANHA
   await db.exec(`update public.profiles set name = '${nome}' where id = '${id}'`)
 }
 
-console.log('\n## Cenário 4 — convite e dupla')
+console.log('\n## Cenário 4, convite e dupla')
 
 await asUser(LAY)
 const convite = (await one(`select public.pair_create_invite() as j`)).j
@@ -91,7 +91,7 @@ await asUser(LAY)
 check('quem convidou também vê a dupla',
   (await one(`select public.pair_overview() as j`)).j.pairs[0].id === pairId)
 
-console.log('\n## Cenário 5 — privacidade')
+console.log('\n## Cenário 5, privacidade')
 
 // A Lay tem um objetivo, uma ação e um momento da jornada. Nada disso pode
 // vazar pra dupla dela.
@@ -132,7 +132,7 @@ check('o que a dupla vê não tem a nota do check-in',
 check('a Carol ainda não avançou hoje',
   depoisDaAcao.pairs[0].members.find((m) => m.is_me).advanced_today === false)
 
-console.log('\n## Cenário 6 — incentivo')
+console.log('\n## Cenário 6, incentivo')
 
 await asUser(CAROL)
 const reacao = (await one(`select public.pair_send_encouragement('${pairId}', 'bora') as id`)).id
@@ -156,7 +156,7 @@ check('quem recebeu vê o incentivo', recebidos.length === 1 && recebidos[0].kin
 console.log('\n## O teto de incentivos por plano (0052)')
 
 /*
-  A conta nova nasce com sete dias de teste (0034), e teste é PRO — é por isso
+  A conta nova nasce com sete dias de teste (0034), e teste é PRO, é por isso
   que o cenário 6 passou mandando gesto sem encostar em limite nenhum. Aqui o
   teste da Carol é encerrado, e ela cai pro gratuito de verdade.
 
@@ -197,7 +197,7 @@ check('quem não tem dupla recebe lista vazia', semDupla.pairs.length === 0)
 const semPar = await erro(`select public.pair_send_encouragement('${pairId}', 'bora')`)
 check('quem não tem dupla não consegue mandar incentivo', semPar !== null)
 
-console.log('\n## Cenário 7 — convite inválido, reutilizado e expirado')
+console.log('\n## Cenário 7, convite inválido, reutilizado e expirado')
 
 const reuso = await erro(`select public.pair_accept_invite('${convite.token}')`)
 check('o mesmo convite não pode ser aceito duas vezes', reuso !== null, `veio ${reuso}`)

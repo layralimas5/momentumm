@@ -18,7 +18,7 @@ import { rpc, rpcVoid, translateRpcError } from './rpc'
 /**
  * O Juntos contra o Supabase.
  *
- * Seis chamadas de função e UM update — nenhum `select` em tabela. Não é
+ * Seis chamadas de função e UM update, nenhum `select` em tabela. Não é
  * estilo: `pair_overview()` é a única porta pro estado da dupla, e é ela que
  * garante que o app não consegue pedir mais do que booleanos sobre a outra
  * pessoa nem que quisesse.
@@ -55,7 +55,7 @@ const pairRow = z.object({
 /*
   A resposta da 0053: uma lista, o teto do plano e se ainda cabe outra.
 
-  `max` é nulo no PRO (sem teto), e `room` já vem decidido pelo servidor — a
+  `max` é nulo no PRO (sem teto), e `room` já vem decidido pelo servidor, a
   tela não recalcula teto de plano nenhum.
 */
 const overviewSchema = z.object({
@@ -153,7 +153,7 @@ export class SupabasePairRepository implements PairRepository {
    * Marcar como lido é o único `update` direto do Juntos.
    *
    * Ele cabe numa política (`auth.uid() = recipient_id`) sem ambiguidade
-   * nenhuma, e uma função só pra isso seria cerimônia — a RLS já diz tudo que
+   * nenhuma, e uma função só pra isso seria cerimônia, a RLS já diz tudo que
    * precisa ser dito.
    */
   async markRead(ids: readonly string[]): Promise<void> {

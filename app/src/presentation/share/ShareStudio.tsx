@@ -54,7 +54,7 @@ type Status = 'idle' | 'generating' | 'shared' | 'saved' | 'cancelled'
  * Share Studio.
  *
  * A tela é curta de propósito: escolher formato, escolher template, decidir o
- * que aparece, compartilhar. Não é editor — a hora que ele virar um Canva
+ * que aparece, compartilhar. Não é editor, a hora que ele virar um Canva
  * dentro do app, o caminho de "concluí minha rotina" até "postei" deixa de
  * caber em poucos segundos, que é a única métrica que importa aqui.
  *
@@ -275,7 +275,7 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
 
     Botões grandes porque é um app de celular: `lg` dá 52px de altura, que é o
     alvo confortável pro polegar. O retorno ("Imagem salva") fica ABAIXO dos
-    botões de propósito — acima, ele empurraria os dois pra baixo bem no
+    botões de propósito, acima, ele empurraria os dois pra baixo bem no
     instante em que a pessoa acabou de mirar neles.
   */
   const actions = (
@@ -286,7 +286,7 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
         Empilhados, o container é uma COLUNA, e ali o eixo principal do flex é o
         vertical: `flex-1` traz `flex-basis: 0%`, que atropela a altura da classe
         e faz o botão encolher até o tamanho do texto. Era esse o motivo de eles
-        parecerem espremidos — 24px em vez dos 52px do tamanho `lg`. Lado a lado,
+        parecerem espremidos, 24px em vez dos 52px do tamanho `lg`. Lado a lado,
         a partir do `sm`, o eixo vira horizontal e aí `flex-1` faz o que se
         espera: divide a largura em partes iguais.
       */}

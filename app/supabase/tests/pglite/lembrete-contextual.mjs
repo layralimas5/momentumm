@@ -16,7 +16,7 @@
   O TEMPO é controlado pelo fuso, não pelo relógio de quem roda o teste: pra
   simular "são 10h pra essa pessoa", a conta ganha um fuso `Etc/GMT±N` em que
   a hora local é 10. Sem isso o resultado mudaria conforme a hora do dia em
-  que a suíte roda, que é a pior espécie de teste — o que passa de manhã e
+  que a suíte roda, que é a pior espécie de teste, o que passa de manhã e
   quebra de madrugada.
 */
 import { boot, migrate } from './harness.mjs'
@@ -133,7 +133,7 @@ console.log('\n## Fim de tarde vira dia difícil, não cobrança')
   criadas lá em cima, sob o fuso das 10h. Mudar a hora muda o FUSO, e mudar o
   fuso pode mudar o dia local: a ação de "hoje" virava a de ontem, a conta ficava
   sem nada em aberto e a decisão vinha nula. Como o fuso é calculado a partir da
-  hora UTC real, isso dependia da hora em que o teste rodava — passava de manhã e
+  hora UTC real, isso dependia da hora em que o teste rodava, passava de manhã e
   falhava à noite, que é o pior tipo de teste vermelho.
 */
 await limpar()
@@ -240,7 +240,7 @@ check('log_notification_event fechada pra authenticated',
   (await comoUsuario(`select public.log_notification_event('${CAROL}', 'notification_sent', '{}'::jsonb)`)) !== null)
 /*
   A tabela de regras tem RLS sem política nenhuma: pra `authenticated` ela não
-  dá erro, ela some. O teste é esse — zero linhas pra quem entra pela API, e a
+  dá erro, ela some. O teste é esse, zero linhas pra quem entra pela API, e a
   linha continuando lá pra quem lê como servidor.
 */
 await db.exec(`select set_config('role','authenticated',false); select set_config('request.jwt.claims','${JSON.stringify({ sub: LAY, role: 'authenticated' })}',false)`)

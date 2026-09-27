@@ -8,14 +8,14 @@
  * layout do navegador por conta própria e erram em três coisas que este app
  * usa em todo lugar: cor em `oklch` (o padrão do Tailwind v4), `dvh` e fonte
  * de sistema. E `foreignObject` dentro de SVG, o outro caminho, é justamente o
- * que quebra no Safari do iPhone — o aparelho onde o Stories acontece.
+ * que quebra no Safari do iPhone, o aparelho onde o Stories acontece.
  *
  * Desenhando no canvas existe UM renderizador. O preview é o mesmo desenho em
  * escala menor, então divergir é impossível por construção: não há dois
  * caminhos pra divergir.
  *
  * Todo desenho acontece num espaço de coordenadas fixo de 1080 de largura. Quem
- * escala é o `ctx.scale` de quem chama — nenhum template conhece o tamanho real
+ * escala é o `ctx.scale` de quem chama, nenhum template conhece o tamanho real
  * do canvas, e por isso o mesmo código serve pro preview de 300px e pro PNG de
  * 1080.
  */
@@ -241,7 +241,7 @@ export function drawCheckDot(
  * Sombra suave, usada só pelo template transparente.
  *
  * Sem fundo, o texto pode cair sobre uma foto clara e sumir. A sombra é o que
- * garante contraste sem inventar uma caixa preta por trás — que anularia a
+ * garante contraste sem inventar uma caixa preta por trás, que anularia a
  * razão de o template existir.
  */
 export function withSoftShadow(ctx: CanvasRenderingContext2D, draw: () => void): void {

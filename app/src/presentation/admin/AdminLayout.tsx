@@ -129,7 +129,7 @@ function SidebarLink({ item }: { item: AdminNavItem }) {
 
 /**
  * Quanto tempo falta pra sessão administrativa vencer. Recalculado a cada
- * meio minuto — é informação, não relógio: quem decide é o servidor.
+ * meio minuto, é informação, não relógio: quem decide é o servidor.
  */
 function SessionBadge({ compact = false }: { compact?: boolean }) {
   const admin = useAdmin()

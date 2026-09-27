@@ -27,7 +27,7 @@ import { cn } from '@/shared/lib/cn'
 /**
  * O clube por dentro: capa, quem está e o ranking.
  *
- * O ranking soma os dias cumpridos nos desafios DESTE clube — e só isso
+ * O ranking soma os dias cumpridos nos desafios DESTE clube, e só isso
  * atravessa a fronteira. Nenhum hábito, nenhuma ação, nenhum registro de
  * ninguém: o número que cada pessoa publica ao entrar num desafio é tudo o que
  * o clube enxerga dela.
@@ -35,7 +35,7 @@ import { cn } from '@/shared/lib/cn'
  * ## O dono sem assinatura
  *
  * Se o PRO cair, o clube continua inteiro pra todo mundo. O dono deixa de
- * administrar — não edita, não arquiva, não convida — e é avisado disso no
+ * administrar, não edita, não arquiva, não convida, e é avisado disso no
  * topo, com o caminho de volta. Nada é apagado e ninguém é expulso: destruir a
  * comunidade de um grupo por causa de um boleto seria cobrar de terceiros uma
  * dívida que não é deles.
@@ -109,21 +109,6 @@ export function ClubDetailPage() {
     }
   }
 
-  /*
-    Adicionar alguém é a mesma escrita de "entrar", com o id do outro: a
-    política do banco é que sabe a diferença — o dono com assinatura pode, e
-    mais ninguém.
-  */
-  const adicionar = async (userId: string) => {
-    try {
-      await container.clubs.join(club.id, userId)
-      track('club_joined', 'desafios', { result: 'convidado' })
-      await load()
-    } catch (cause) {
-      setError(toUserMessage(cause))
-    }
-  }
-
   const entrar = async () => {
     if (!user) return
     try {
@@ -174,7 +159,7 @@ export function ClubDetailPage() {
           {dono && !administra && isClubRunning(club) ? (
             <div className="mt-4 rounded-xl border border-brand/30 bg-brand-dim/30 px-3.5 py-3">
               <p className="text-sm font-medium text-ink">
-                Seu clube continua no ar — a administração é que está pausada.
+                Seu clube continua no ar, a administração é que está pausada.
               </p>
               <p className="mt-1 text-sm text-pretty text-ink-muted">
                 Ninguém foi removido e nada foi apagado. Com o PRO de volta, você edita, convida e
@@ -196,7 +181,7 @@ export function ClubDetailPage() {
           <div className="mt-4 flex flex-wrap gap-2">
             {/*
               Chamar gente vem antes de sair: é a ação que faz o clube existir,
-              e ela é do dono. Quem perdeu a assinatura não vê o botão — a
+              e ela é do dono. Quem perdeu a assinatura não vê o botão, a
               política recusaria a escrita de qualquer forma.
             */}
             {administra ? (
@@ -224,7 +209,7 @@ export function ClubDetailPage() {
         <PanelHeader
           title="Ranking do clube"
           icon="trofeu"
-          hint="Dias cumpridos nos desafios daqui. Ninguém vê o que o outro fez — só que fez."
+          hint="Dias cumpridos nos desafios daqui. Ninguém vê o que o outro fez, só que fez."
         />
 
         {ranking.length === 0 ? (
@@ -265,8 +250,12 @@ export function ClubDetailPage() {
         open={inviting}
         club={club}
         members={members}
-        onClose={() => setInviting(false)}
-        onInvite={adicionar}
+        onClose={() => {
+          setInviting(false)
+          // Convite não coloca ninguém dentro, mas quem entrou pelo link
+          // enquanto a folha estava aberta entra nesta lista.
+          void load()
+        }}
       />
 
       <ConfirmDialog

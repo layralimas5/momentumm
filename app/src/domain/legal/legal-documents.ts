@@ -4,7 +4,7 @@
  * A versão é a data de publicação, e ela mora AQUI, não no texto da página:
  * é este número que o aceite grava (`legal_acceptances`) e é contra ele que
  * o app decide se precisa pedir o aceite de novo. Mudar o texto sem subir a
- * versão é mudar o combinado sem avisar — então o texto e a data andam
+ * versão é mudar o combinado sem avisar, então o texto e a data andam
  * juntos, no mesmo commit.
  */
 export const LEGAL_DOCUMENTS = ['termos', 'privacidade'] as const
@@ -36,7 +36,7 @@ export type LegalVersions = Readonly<Record<LegalDocument, string>>
 /**
  * As versões que valem AGORA: a do código, ou a que o owner publicou no
  * painel (`legal.versions`) quando for mais nova. A mais nova ganha porque
- * a data só anda pra frente — um painel apontando pra uma versão anterior
+ * a data só anda pra frente, um painel apontando pra uma versão anterior
  * ao texto publicado seria um erro de digitação, não uma decisão.
  */
 export function effectiveLegalVersions(published: Partial<LegalVersions> | null | undefined): LegalVersions {

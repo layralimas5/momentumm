@@ -11,20 +11,29 @@ import { usePlanner } from './use-planner'
  *
  * Existia uma cópia dessa montagem no dashboard e outra no progresso, e elas
  * não eram iguais: só o dashboard somava o avanço do plano. O resultado era
- * o mesmo score aparecendo com dois valores em duas telas vizinhas — e um
+ * o mesmo score aparecendo com dois valores em duas telas vizinhas, e um
  * número que discorda de si mesmo deixa de servir pra decidir qualquer coisa,
  * que é a única razão de ele existir.
  *
  * Aqui não há regra de pontuação: `calculateMomentum` continua sendo a única
- * fórmula. O que este arquivo garante é que ela recebe sempre os mesmos dados
- * — no dashboard, no progresso, no perfil, na review e na Momentumm AI.
+ * fórmula. O que este arquivo garante é que ela recebe sempre os mesmos dados,
+ * no dashboard, no progresso, no perfil, na review e na Momentumm AI.
  */
 export function useMomentumInput(): MomentumInput {
   const planner = usePlanner()
   const objectives = useObjectives()
   const { profile } = useAuth()
 
-  const { activities, habits, habitLogs, tasks, today, weeklyReviews } = planner
+  const {
+    activities,
+    habits,
+    habitLogs,
+    tasks,
+    routineItems,
+    routineOccurrences,
+    today,
+    weeklyReviews,
+  } = planner
   const restWeekdays = profile?.restWeekdays
 
   /**
@@ -65,11 +74,24 @@ export function useMomentumInput(): MomentumInput {
       habits,
       habitLogs,
       tasks,
+      routineItems,
+      routineOccurrences,
       today,
       weeklyReviews,
       restWeekdays,
       planGainAt,
     }),
-    [activities, habits, habitLogs, tasks, today, weeklyReviews, restWeekdays, planGainAt],
+    [
+      activities,
+      habits,
+      habitLogs,
+      tasks,
+      routineItems,
+      routineOccurrences,
+      today,
+      weeklyReviews,
+      restWeekdays,
+      planGainAt,
+    ],
   )
 }

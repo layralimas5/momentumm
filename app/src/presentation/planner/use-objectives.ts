@@ -24,7 +24,7 @@ export interface ObjectiveView {
   /**
    * A porcentagem que a tela mostra.
    *
-   * Com plano, é a execução ponderada — é ela que responde "quanto do caminho
+   * Com plano, é a execução ponderada, é ela que responde "quanto do caminho
    * eu andei". Sem plano, cai no volume: uma barra em zero pra quem leu 400
    * páginas seria simplesmente falsa, e o produto perderia a promessa de que
    * registrar empurra o objetivo.
@@ -47,7 +47,7 @@ export interface ObjectiveView {
  * Os objetivos com tudo que está pendurado neles.
  *
  * A conta acontece aqui e não em componente porque a mesma leitura aparece na
- * lista, no detalhe, no dia e no progresso — e é a divergência entre essas
+ * lista, no detalhe, no dia e no progresso, e é a divergência entre essas
  * quatro que faz um app parecer quatro apps.
  */
 export function useObjectives(): readonly ObjectiveView[] {

@@ -11,7 +11,7 @@ import { trackFunnel } from '@/infrastructure/analytics/funnel'
  * A landing dentro do funil que já existe.
  *
  * Não é uma segunda instrumentação: é o mesmo `trackFunnel`, a mesma sessão
- * no navegador e a mesma tabela do quiz. O ganho é o vínculo — a visita, o
+ * no navegador e a mesma tabela do quiz. O ganho é o vínculo, a visita, o
  * clique no botão e o quiz caem na MESMA linha, então o painel consegue dizer
  * qual origem trouxe alguém que de fato começou, e não só quem clicou.
  *

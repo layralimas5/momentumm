@@ -13,13 +13,13 @@ import { usePlanner } from '@/presentation/planner/use-planner'
  * O que o botão central adiciona.
  *
  * Ação, hábito e meta reaproveitam o mesmo formulário do desktop, e o objetivo
- * abre a mesma entrevista curta do onboarding. A vitória do dia é uma linha só —
+ * abre a mesma entrevista curta do onboarding. A vitória do dia é uma linha só,
  * abrir um formulário inteiro pra ela seria fricção sem motivo, então ela é
  * resolvida aqui mesmo.
  *
  * A dupla também entra aqui, e não é desvio de tema: o que se adiciona é uma
  * PESSOA. Foi por não existir nessa folha que o Juntos ficava alcançável só
- * pela barra lateral e pelos atalhos do perfil — dois lugares onde ninguém vai
+ * pela barra lateral e pelos atalhos do perfil, dois lugares onde ninguém vai
  * procurar por alguém pra combinar.
  */
 export function AddSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -48,6 +48,20 @@ export function AddSheet({ open, onClose }: { open: boolean; onClose: () => void
             hint="Uma coisa concreta pra hoje ou amanhã"
             tone="brand"
             onClick={() => pick('acao')}
+          />
+          {/*
+            A rotina entra logo depois da ação, e antes do hábito, porque é o
+            que a pessoa mais adiciona depois que a rotina dela existe: o
+            compromisso da semana, a coisa que acontece e não vira meta.
+          */}
+          <SheetAction
+            icon={<Icon name="calendario" className="size-5" />}
+            label="Item da rotina"
+            hint="O que se repete no seu dia, ou um compromisso"
+            onClick={() => {
+              onClose()
+              navigate('/app/rotina?novo=1')
+            }}
           />
           <SheetAction
             icon={<Icon name="habitos" className="size-5" />}

@@ -293,6 +293,16 @@ export function renderContext(context: AiUserContext): string {
     }
   }
 
+  if (context.routine.length > 0) {
+    push('')
+    push('ROTINA DE HOJE (o dia já tem estas coisas dentro; não proponha nada por cima)')
+    for (const item of context.routine) {
+      push(
+        `- ${item.time ? `${item.time} ` : ''}"${item.title}"${item.durationMin ? ` (${item.durationMin} min)` : ''}${item.ofObjective ? ', de um objetivo' : ''}${item.done ? ' · feito' : ''}`,
+      )
+    }
+  }
+
   if (context.todayTasks.length > 0) {
     push('')
     push('AÇÕES DE HOJE')

@@ -6,7 +6,7 @@ import type { TaskEffort } from '@/domain/entities/task'
 import type { AiUserContext } from './ai-context'
 
 /**
- * Momentumm AI — a porta.
+ * Momentumm AI, a porta.
  *
  * O domínio descreve o que a IA precisa devolver, não como ela é chamada.
  * Nenhuma chave, nenhum modelo e nenhum endpoint aparecem aqui: a implementação
@@ -15,15 +15,15 @@ import type { AiUserContext } from './ai-context'
  *
  * As funções do V1 são deliberadamente estreitas, uma por porta de entrada:
  *
- *   1. `buildPlan`      — objetivo vira etapas, hábitos e ações (Objetivos)
- *   2. `reorganizeDay`  — o dia contra a capacidade real (Hoje)
- *   3. `readProgress`   — os dados viram diagnóstico e ajustes (Progresso)
- *   4. `draftReview`    — a review semanal pré-escrita pelos dados (Review)
- *   5. `planRecovery`   — o plano de volta, sem culpa (Modo Retomada)
- *   6. `summarizeReview` — a síntese da semana já respondida
+ *   1. `buildPlan`, objetivo vira etapas, hábitos e ações (Objetivos)
+ *   2. `reorganizeDay`, o dia contra a capacidade real (Hoje)
+ *   3. `readProgress`, os dados viram diagnóstico e ajustes (Progresso)
+ *   4. `draftReview`, a review semanal pré-escrita pelos dados (Review)
+ *   5. `planRecovery`, o plano de volta, sem culpa (Modo Retomada)
+ *   6. `summarizeReview`, a síntese da semana já respondida
  *
  * Nenhuma delas é chat. Todas devolvem estrutura, não texto solto: é isso que
- * permite a prévia editável antes de salvar — a pessoa aceita, edita ou
+ * permite a prévia editável antes de salvar, a pessoa aceita, edita ou
  * rejeita cada item, e o app grava com as mesmas regras de domínio de um
  * plano feito na mão. Nada é escrito sem confirmação.
  *
@@ -75,7 +75,7 @@ export interface AiTaskSuggestion {
    * A etapa a que a ação pertence, pela posição em `steps`. Null é ação sem
    * etapa: legítima, mas ela não empurra progresso nenhum até ganhar destino.
    *
-   * É esse índice que faz a etapa da prévia virar etapa de verdade no banco —
+   * É esse índice que faz a etapa da prévia virar etapa de verdade no banco,
    * sem ele o plano da IA nasceria como lista de tarefas, que é exatamente o
    * que a hierarquia existe pra evitar.
    */

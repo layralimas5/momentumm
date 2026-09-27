@@ -14,7 +14,6 @@ import { DayHeader } from '@/presentation/components/dashboard/DayHeader'
 import { DashboardSkeleton } from '@/presentation/components/dashboard/DashboardSkeleton'
 import { FocusCard } from '@/presentation/components/dashboard/FocusCard'
 import { GoalsInMotionCard } from '@/presentation/components/dashboard/GoalsInMotionCard'
-import { HabitsCard } from '@/presentation/components/dashboard/HabitsCard'
 import { InsightCard } from '@/presentation/components/dashboard/InsightCard'
 import { MomentumStrip } from '@/presentation/components/dashboard/MomentumStrip'
 import { NextUpCard } from '@/presentation/components/dashboard/NextUpCard'
@@ -26,6 +25,7 @@ import { PriorityCard } from '@/presentation/components/dashboard/PriorityCard'
 import { RecoveryCard } from '@/presentation/components/dashboard/RecoveryCard'
 import { WeeklyProgressCard } from '@/presentation/components/dashboard/WeeklyProgressCard'
 import { Section } from '@/presentation/components/dashboard/Section'
+import { DayAgendaCard } from '@/presentation/components/dashboard/DayAgendaCard'
 import { TodayFocusCard } from '@/presentation/components/dashboard/TodayFocusCard'
 import { WinsCard } from '@/presentation/components/dashboard/WinsCard'
 import { ErrorNote } from '@/presentation/components/ui/States'
@@ -53,7 +53,7 @@ import { AiEntry } from '@/presentation/ai/AiBits'
 import { useAi } from '@/presentation/ai/use-ai'
 
 /**
- * "Hoje" — o dashboard.
+ * "Hoje", o dashboard.
  *
  * A tela tem TRÊS níveis de atenção, e a diferença entre eles é deliberada:
  *
@@ -71,13 +71,13 @@ import { useAi } from '@/presentation/ai/use-ai'
  *      serve o mesmo dia pra quem chegou sem energia e pra quem chegou em
  *      alta, e perguntar isso DEPOIS de mostrar o dia inverteria a única
  *      pergunta que muda o que a tela oferece.
- *   2. Objetivos, hábitos e insight — responde "estou avançando".
- *   3. Semana, check-in, foco cronometrado, metas e vitórias — consulta.
+ *   2. Objetivos, hábitos e insight, responde "estou avançando".
+ *   3. Semana, check-in, foco cronometrado, metas e vitórias, consulta.
  *
  * O que mudou em relação à versão anterior, e por quê: eram doze cards com o
  * mesmo peso visual, e uma tela onde tudo grita é uma tela onde nada é lido. Só
  * o foco de hoje continua sendo card de destaque, porque é o único bloco em que
- * a pessoa ATUA. O resto virou seção — título, espaçamento e uma saída pra tela
+ * a pessoa ATUA. O resto virou seção, título, espaçamento e uma saída pra tela
  * completa do assunto.
  *
  * A largura é limitada mesmo sobrando tela. Em 1920px o conteúdo chegava a
@@ -96,7 +96,7 @@ export function DashboardPage() {
     Os dois recursos que reagem ao estado do dia em vez de esperarem um clique
     no lugar certo. O Dia Adaptável responde "tenho pouco tempo"; o Modo
     Retomada responde "sumi por uns dias". Os dois desembocam na MESMA revisão
-    — reorganizar o dia é uma operação só, e duas telas fazendo isso seriam
+, reorganizar o dia é uma operação só, e duas telas fazendo isso seriam
     duas contas discordando na primeira mudança de regra.
   */
   const adaptive = useAdaptiveDay(view)
@@ -106,7 +106,7 @@ export function DashboardPage() {
     As duas portas da IA no Hoje: "Reorganizar meu dia" ao lado do Dia
     Adaptável e "Criar plano de retorno" dentro do Modo Retomada. A IA lê o
     mesmo estado que a aritmética, e devolve propostas que a pessoa confirma
-    uma a uma — nunca uma gravação direta.
+    uma a uma, nunca uma gravação direta.
   */
   const ai = useAi()
   const [aiDayOpen, setAiDayOpen] = useState(false)
@@ -135,7 +135,7 @@ export function DashboardPage() {
     marco alcançado.
 
     Mora no dashboard porque é a tela que a pessoa abre todo dia. A decisão do
-    QUE gravar é uma função pura (`eventsToRecord`) — aqui não há regra, só a
+    QUE gravar é uma função pura (`eventsToRecord`), aqui não há regra, só a
     chamada.
   */
   useJourneyRecorder(view)
@@ -188,7 +188,7 @@ export function DashboardPage() {
    * O passo de retomada escolhido.
    *
    * Ele é protegido, entra no dia mesmo vindo de outra data e vira a
-   * prioridade principal — e é aí que mora a recompensa: prioridade concluída
+   * prioridade principal, e é aí que mora a recompensa: prioridade concluída
    * vale o triplo de uma tarefa comum no Momentumm, e fechar a pausa de hoje é
    * o que o fator de retomada mede.
    */
@@ -246,7 +246,7 @@ export function DashboardPage() {
 
   /**
    * Título de cada etapa por id. O dia inteiro lê daqui pra dizer a que ponto
-   * do plano cada linha pertence — é o que separa "Finalizar onboarding" de
+   * do plano cada linha pertence, é o que separa "Finalizar onboarding" de
    * "Finalizar onboarding · Etapa: MVP · Objetivo: Lançar meu SaaS".
    */
   const stageTitles = useMemo(
@@ -259,7 +259,7 @@ export function DashboardPage() {
    *
    * Dispensar depois de aplicar é decisão DESTA tela: aqui aparece um insight
    * por vez, e repetir o que a pessoa acabou de resolver seria ruído. Na tela
-   * de Insights a lista se atualiza sozinha — a regra para de casar porque o
+   * de Insights a lista se atualiza sozinha, a regra para de casar porque o
    * dado mudou, que é o único motivo honesto pra um insight sumir.
    */
   const applyInsight = useCallback(
@@ -408,12 +408,6 @@ export function DashboardPage() {
 
   const firstName = profile?.name.split(' ')[0] ?? null
 
-  // O que já apareceu no foco não se repete nos hábitos: o mesmo item em dois
-  // blocos da mesma tela faz o dia parecer maior do que ele é.
-  const focusedHabitIds = new Set(
-    view.focus.items.filter((item) => item.kind === 'habito').map((item) => item.id),
-  )
-
   return (
     /*
       Container centralizado com teto de largura. `max-w-5xl` mantém a linha de
@@ -503,12 +497,36 @@ export function DashboardPage() {
           />
         ) : null}
 
+        {/*
+          O foco recorta; a agenda logo abaixo não esconde nada.
+
+          "Ver tudo do dia" levava pra `/app/plano`, outra tela, e era a
+          fricção que este bloco existe pra acabar: agora ele rola até a
+          agenda, que está na mesma página.
+        */}
         <TodayFocusCard
           focus={view.focus}
           onStartFocus={startFocus}
-          onSeeAll={() => navigate('/app/plano')}
+          onSeeAll={() =>
+            document.getElementById('seu-dia')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }
           onPlanDay={() => composer.open('acao')}
         />
+
+        <div id="seu-dia" className="scroll-mt-24">
+          <DayAgendaCard
+            agenda={view.agenda}
+            onStartFocus={startFocus}
+            onAdd={() => composer.open('acao')}
+            onOpenRoutine={() => navigate('/app/rotina')}
+            onEditTask={(task) => composer.open('acao', { editing: task })}
+            onEditRoutine={(itemId) => navigate(`/app/rotina?editar=${itemId}`)}
+            onEditHabit={(habitId) => {
+              const habit = planner.habits.find((entry) => entry.id === habitId)
+              if (habit) composer.open('habito', { editingHabit: habit })
+            }}
+          />
+        </div>
 
         {/* Entre a lista e o que vem depois: o convite chega logo abaixo do
             item que a pessoa acabou de marcar. */}
@@ -537,49 +555,30 @@ export function DashboardPage() {
       {/* ------------------------------------------------------------------
           Segundo nível: estou avançando?
 
-          Duas colunas com proporção controlada — execução à esquerda, contexto
+          Duas colunas com proporção controlada, execução à esquerda, contexto
           à direita. Nada de sticky: coluna que acompanha a rolagem compete com
           o conteúdo principal durante a tela inteira.
          ------------------------------------------------------------------ */}
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-start">
-        <Section
-          title="Objetivos em andamento"
-          to="/app/objetivos"
-          toLabel="Ver todos"
-        >
-          <ObjectivesCard
-            bare
-            limit={3}
-            objectives={view.objectives.filter(
-              (item) => item.progress.state === 'em-andamento' || item.progress.state === 'nao-iniciado',
-            )}
-            onCreate={() => composer.open('objetivo')}
-            onOpenReview={() => navigate('/app/review')}
-          />
-        </Section>
+      {/*
+        "Hábitos de hoje" saiu daqui.
 
-        <Section
-          title="Hábitos de hoje"
-          hint={
-            view.habitProgress.total === 0
-              ? undefined
-              : `${view.habitProgress.done} de ${view.habitProgress.total} concluídos`
-          }
-          to="/app/habitos"
-        >
-          <HabitsCard
-            bare
-            states={view.habitStates}
-            hideIds={focusedHabitIds}
-            objectives={planner.objectives}
-            stageTitles={stageTitles}
-            progress={view.habitProgress}
-            onSetStatus={planner.setHabitStatus}
-            onSeeAll={() => navigate('/app/habitos')}
-            onCreate={() => composer.open('habito')}
-          />
-        </Section>
-      </div>
+        Todo hábito agendado pra hoje já aparece na agenda, com o check na
+        própria linha. Manter o card era mostrar a mesma lista duas vezes na
+        mesma tela, e a segunda cópia é sempre a que fica desatualizada na
+        cabeça de quem lê. A gestão dos hábitos continua em `/app/habitos`,
+        alcançável pelo rodapé da agenda e pelos atalhos.
+      */}
+      <Section title="Objetivos em andamento" to="/app/objetivos" toLabel="Ver todos">
+        <ObjectivesCard
+          bare
+          limit={3}
+          objectives={view.objectives.filter(
+            (item) => item.progress.state === 'em-andamento' || item.progress.state === 'nao-iniciado',
+          )}
+          onCreate={() => composer.open('objetivo')}
+          onOpenReview={() => navigate('/app/review')}
+        />
+      </Section>
 
       {view.insight ? (
         <Section
@@ -597,7 +596,7 @@ export function DashboardPage() {
       ) : null}
 
       {/* ------------------------------------------------------------------
-          Terceiro nível: consulta. Vem depois e com título menor de propósito —
+          Terceiro nível: consulta. Vem depois e com título menor de propósito,
           gráfico e histórico não podem disputar com o dia.
          ------------------------------------------------------------------ */}
       <div className="flex flex-col gap-6 border-t border-line pt-8">

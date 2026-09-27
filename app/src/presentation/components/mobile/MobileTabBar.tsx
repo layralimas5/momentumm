@@ -45,7 +45,7 @@ const PROFILE: TabItem = { to: '/app/perfil', label: 'Perfil', icon: 'pessoa', e
  *
  * Uma faixa de largura cheia, ancorada na borda de baixo, com uma linha
  * separando do conteúdo. Ela era uma pílula flutuante com margem dos dois
- * lados — bonita parada, e estreita justo onde o polegar erra: cada alvo
+ * lados, bonita parada, e estreita justo onde o polegar erra: cada alvo
  * perdia 32px de largura pra margem, e o botão de adicionar ficava a meio
  * caminho do meio da tela.
  *
@@ -55,7 +55,7 @@ const PROFILE: TabItem = { to: '/app/perfil', label: 'Perfil', icon: 'pessoa', e
  * ## O nome embaixo do ícone
  *
  * Os ícones eram mudos, com o nome só pro leitor de tela. Funciona pra quem já
- * decorou a barra e falha exatamente com quem acabou de chegar — que é quem
+ * decorou a barra e falha exatamente com quem acabou de chegar, que é quem
  * mais precisa dela. Ícone sozinho é adivinhação: alvo, troféu e gráfico não
  * dizem "objetivos", "perfil" e "progresso" pra ninguém na primeira semana.
  *

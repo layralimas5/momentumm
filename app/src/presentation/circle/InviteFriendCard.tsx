@@ -16,7 +16,7 @@ import { cn } from '@/shared/lib/cn'
  *
  * É a peça que faz o produto crescer, e ela existe por uma razão anterior à
  * aquisição: quem está sozinho no app não tem como saber que acompanhar o
- * progresso com alguém muda alguma coisa. Três lugares — você e mais dois —
+ * progresso com alguém muda alguma coisa. Três lugares, você e mais dois,
  * é o tamanho em que companhia ainda é companhia, e é o que o gratuito
  * oferece.
  *
@@ -24,7 +24,7 @@ import { cn } from '@/shared/lib/cn'
  * pontilhado com "Convide alguém" convida; uma tela dizendo "você não tem
  * amigos" acusa.
  *
- * Quando o círculo enche, o convite dá lugar ao PRO — e essa é a única
+ * Quando o círculo enche, o convite dá lugar ao PRO, e essa é a única
  * cobrança da tela. Sem pop-up, sem interromper nada: a pessoa chegou no teto
  * usando o recurso, que é o momento em que a conversa sobre plano faz sentido.
  */
@@ -104,7 +104,7 @@ export function InviteFriendCard({
         <div className="mt-5 rounded-2xl border border-brand/30 bg-brand-dim/30 px-4 py-3.5">
           <p className="text-sm font-semibold text-ink">Seu círculo está completo</p>
           <p className="mt-1 text-sm text-pretty text-ink-muted">
-            Continue com quem já está aqui — ou desbloqueie círculos maiores e desafios em grupo
+            Continue com quem já está aqui, ou desbloqueie círculos maiores e desafios em grupo
             com o PRO.
           </p>
           <Link

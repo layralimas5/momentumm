@@ -14,7 +14,7 @@ import { DomainError } from '@/shared/errors'
  * O Juntos no modo demo.
  *
  * Existe uma dupla montada: a pessoa que está olhando e a "Carol". É o único
- * jeito de a tela poder ser vista e trabalhada sem Supabase — e a alternativa
+ * jeito de a tela poder ser vista e trabalhada sem Supabase, e a alternativa
  * (tela vazia com "convide alguém" e um convite que não vai a lugar nenhum)
  * não mostra nada do que o recurso é.
  *

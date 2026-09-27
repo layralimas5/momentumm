@@ -22,7 +22,7 @@ import { useAsyncAction } from '@/presentation/hooks/use-async-action'
  * O aceite dos Termos e da Política, registrado por versão.
  *
  * O cadastro já pede o "li e aceito", mas o registro só pode existir com
- * sessão — e no cadastro por e-mail a sessão nasce depois da confirmação. Por
+ * sessão, e no cadastro por e-mail a sessão nasce depois da confirmação. Por
  * isso o aceite é gravado AQUI, na primeira entrada no app, e de novo sempre
  * que a versão vigente mudar: a linha que falta em `legal_acceptances` é o
  * que abre o diálogo. Não dá pra fechar sem aceitar; dá pra ler antes.

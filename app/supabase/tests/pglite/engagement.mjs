@@ -7,7 +7,7 @@
   Lay em produção.
 
   O teste também verifica a decisão que dá sentido ao resto: retenção por
-  ABERTURA e por AVANÇO precisam dar números diferentes pra mesma coorte —
+  ABERTURA e por AVANÇO precisam dar números diferentes pra mesma coorte,
   se derem o mesmo, a separação não está funcionando.
 */
 import { boot, migrate } from './harness.mjs'

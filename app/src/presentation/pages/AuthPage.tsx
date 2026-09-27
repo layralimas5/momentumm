@@ -22,7 +22,7 @@ export function AuthPage() {
   /*
     Veio do painel administrativo: a tela vira SÓ entrada.
 
-    Quem chega aqui pelo `/admin` já tem conta com papel — papel se concede
+    Quem chega aqui pelo `/admin` já tem conta com papel, papel se concede
     no painel, nunca se cria sozinho. Oferecer "criar conta" nesse caminho
     só convida quem tropeçou na URL a deixar uma conta pra trás.
   */
@@ -66,7 +66,7 @@ export function AuthPage() {
 
   /*
     Conta criada, sessão ainda não. Antes disso a tela tentava entrar e voltava
-    pro formulário em branco, sem dizer nada — e a pessoa ficava tentando o
+    pro formulário em branco, sem dizer nada, e a pessoa ficava tentando o
     mesmo cadastro de novo achando que tinha falhado.
   */
   if (awaitingConfirmation) {

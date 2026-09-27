@@ -7,7 +7,7 @@ import { featureForRoute, PRODUCT_EVENTS, PRODUCT_FEATURES } from './product-eve
  * A lista de eventos e recursos existe em dois lugares: aqui e no banco
  * (`product_event_names()`, `product_feature_names()`, criadas na 0024 e
  * redefinidas por migrations posteriores quando um recurso novo entra). Se
- * elas divergem, o app grava eventos que o servidor recusa — sem erro na
+ * elas divergem, o app grava eventos que o servidor recusa, sem erro na
  * tela, porque analytics não sobe erro. Este teste lê a ÚLTIMA definição
  * nas migrations e compara.
  */

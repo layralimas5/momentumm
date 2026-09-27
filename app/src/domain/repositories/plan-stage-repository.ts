@@ -26,7 +26,7 @@ export interface PlanStageRepository {
    *
    * É uma operação só porque peso é uma propriedade do CONJUNTO: os pesos
    * precisam somar 100 o tempo todo, e salvar etapa por etapa deixaria o plano
-   * somando 80 no meio do caminho — visível na tela de quem estiver com o app
+   * somando 80 no meio do caminho, visível na tela de quem estiver com o app
    * aberto em outro dispositivo.
    */
   reweight(userId: string, items: readonly PlanStageReweight[]): Promise<void>

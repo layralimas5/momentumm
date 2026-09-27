@@ -5,11 +5,11 @@ import { DomainError } from '@/shared/errors'
  *
  * Uma relação de UMA VIA: A segue B sem que B precise fazer nada. É o oposto
  * da amizade (`friendship.ts`), que é combinada dos dois lados, e as duas
- * convivem de propósito — elas respondem perguntas diferentes:
+ * convivem de propósito, elas respondem perguntas diferentes:
  *
- *   amizade   "a gente combinou de se acompanhar" — dá acesso ao perfil de
+ *   amizade   "a gente combinou de se acompanhar", dá acesso ao perfil de
  *             quem escolheu `amigos` como visibilidade.
- *   seguir    "eu quero ver o que essa pessoa publica" — não pede licença, não
+ *   seguir    "eu quero ver o que essa pessoa publica", não pede licença, não
  *             dá acesso a nada que já não fosse público.
  *
  * A segunda frase é a regra inteira de privacidade daqui: seguir alguém NÃO

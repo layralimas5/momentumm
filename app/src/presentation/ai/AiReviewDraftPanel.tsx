@@ -38,7 +38,7 @@ type FieldKey = (typeof FIELDS)[number]['key']
  * "Preparar minha revisão", a porta da IA no Review semanal.
  *
  * A IA escreve o rascunho das quatro respostas e das prioridades a partir da
- * execução, das pendências e dos hábitos da semana — na primeira pessoa,
+ * execução, das pendências e dos hábitos da semana, na primeira pessoa,
  * como se fosse a pessoa contando. Ela lê, corrige campo a campo e só então
  * grava. O que ela já tinha escrito é preservado no pedido e continua
  * editável aqui; nada sobrescreve sem passar pelos olhos dela.

@@ -11,7 +11,7 @@ import { assertValidHandle, normalizeHandle } from './profile'
  *
  * Uma tabela de tokens acrescentaria expiração, uso único e limpeza de órfão
  * pra resolver um problema que aqui não existe: este link NÃO é credencial. Ele
- * não dá acesso a nada — diz de onde a pessoa veio, e só.
+ * não dá acesso a nada, diz de onde a pessoa veio, e só.
  *
  * O que o link faz do outro lado é convidar, não conectar. Entrar por ele não
  * torna ninguém amigo de ninguém: a amizade continua sendo pedido e aceite, dos
@@ -42,7 +42,7 @@ export function inviteUrl(origin: string, handle: string): string {
  * O que veio na URL vira um @ válido, ou nada.
  *
  * Link torto, com espaço, com maiúscula ou com @ na frente é coisa de quem
- * copiou errado — e nada disso deveria virar erro na cara de alguém que está
+ * copiou errado, e nada disso deveria virar erro na cara de alguém que está
  * abrindo o produto pela primeira vez. Inválido vira `null`, e a tela de
  * convite simplesmente se comporta como se não houvesse convite.
  */

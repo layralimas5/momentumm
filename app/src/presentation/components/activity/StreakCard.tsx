@@ -30,7 +30,7 @@ export function StreakCard({ streak, today, activeDays }: StreakCardProps) {
 
       {/*
         O fogo anda colado no número. Empurrado pra borda oposta do card ele
-        vira enfeite solto na tela larga do celular — e o que ele representa é
+        vira enfeite solto na tela larga do celular, e o que ele representa é
         exatamente aquele número, não a seção inteira.
       */}
       <div className="mt-2 flex items-center gap-3">

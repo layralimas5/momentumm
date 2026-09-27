@@ -16,7 +16,7 @@ export interface AdminState {
    *
    * Se o carimbo do segundo fator tem menos de cinco minutos, resolve na
    * hora. Senão abre o diálogo de código e só resolve quando o servidor
-   * confirmar — ou devolve `false` se a pessoa desistir. O banco checa de
+   * confirmar, ou devolve `false` se a pessoa desistir. O banco checa de
    * novo (`assert_admin_step_up`); isto aqui é pra a pessoa não descobrir a
    * exigência pela mensagem de erro.
    */

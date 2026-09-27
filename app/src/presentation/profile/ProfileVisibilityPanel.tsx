@@ -21,14 +21,14 @@ interface ProfileVisibilityPanelProps {
 /**
  * Quem vê o teu perfil.
  *
- * Três degraus, e o padrão é o mais fechado. A escolha vale pro PERFIL — os
- * números, as conquistas, os objetivos ativos —, nunca pros momentos: um perfil
+ * Três degraus, e o padrão é o mais fechado. A escolha vale pro PERFIL, os
+ * números, as conquistas, os objetivos ativos, nunca pros momentos: um perfil
  * público não torna público nada que a pessoa não marcou, e é por isso que o
  * texto de "Público" diz isso em voz alta em vez de deixar a dedução por conta
  * de quem clica.
  *
  * Salva no toque, sem botão de confirmar. É uma escolha reversível de uma
- * propriedade só — um "Salvar" aqui criaria o estado intermediário em que a
+ * propriedade só, um "Salvar" aqui criaria o estado intermediário em que a
  * tela mostra uma coisa e o banco guarda outra.
  */
 export function ProfileVisibilityPanel({ profile, onSaved }: ProfileVisibilityPanelProps) {
@@ -129,7 +129,7 @@ export function ProfileVisibilityPanel({ profile, onSaved }: ProfileVisibilityPa
       {/*
         A frase que fecha o painel existe pra não deixar a promessa implícita.
         Enquanto não houver feed nem comunidade, "público" significa uma coisa
-        pequena — e dizer isso agora é o que evita a sensação de que o app
+        pequena, e dizer isso agora é o que evita a sensação de que o app
         mudou de ideia quando o feed chegar.
       */}
       <p className="mt-3 text-xs text-ink-faint">

@@ -236,7 +236,7 @@ describe('execução move o progresso', () => {
       ],
     })
 
-    // Nem todo dia tem padrão — o que não pode é o insight apontar pra lugar
+    // Nem todo dia tem padrão, o que não pode é o insight apontar pra lugar
     // nenhum quando ele existe.
     for (const insight of insights) {
       expect(insight.actionLabel.length > 0 || insight.action === 'nenhuma').toBe(true)
@@ -278,7 +278,7 @@ describe('ajuste do plano', () => {
 
 /**
  * O caminho que a tela "Novo objetivo" percorre: o plano gerado é gravado como
- * objetivo, etapas e ações ligadas a elas — a mesma sequência do `applyPlan`.
+ * objetivo, etapas e ações ligadas a elas, a mesma sequência do `applyPlan`.
  *
  * Existe porque o elo entre gerar e gravar já esteve quebrado uma vez: a prévia
  * mostrava um plano e o app salvava três ações soltas, e o objetivo nascia sem

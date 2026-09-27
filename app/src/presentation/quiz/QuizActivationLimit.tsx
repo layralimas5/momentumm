@@ -18,7 +18,7 @@ interface QuizActivationLimitViewProps {
  *
  * Quem cai aqui é a conta antiga: já tem os dois objetivos do plano gratuito
  * em andamento e o teste do PRO encerrado. "Tentar de novo" falharia igual,
- * então a tela faz o que resolve no mesmo toque — pausar um objetivo libera
+ * então a tela faz o que resolve no mesmo toque, pausar um objetivo libera
  * a vaga e ativa o plano na hora. Pausar não apaga nada: o objetivo sai da
  * fila do dia e volta quando a pessoa quiser.
  */

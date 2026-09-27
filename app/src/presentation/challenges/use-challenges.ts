@@ -39,7 +39,7 @@ import { toUserMessage } from '@/shared/errors'
  * ## O progresso é calculado aqui e publicado daqui
  *
  * Os dias que VOCÊ fechou saem dos seus hábitos e das suas atividades, que só
- * este aparelho consegue ler — nem o servidor nem os outros participantes têm
+ * este aparelho consegue ler, nem o servidor nem os outros participantes têm
  * acesso a eles. O hook recalcula, compara com o número publicado e só escreve
  * quando eles divergem. Os dias dos OUTROS chegam publicados: `doneDays`, e
  * nada além.
@@ -91,7 +91,7 @@ export function useChallenges(): ChallengesState {
   const { user } = useAuth()
   const planner = usePlanner()
   // Desestruturado de propósito: o efeito que grava momentos depende do que
-  // ele realmente lê, e não do objeto inteiro do planner — que muda a cada
+  // ele realmente lê, e não do objeto inteiro do planner, que muda a cada
   // hábito marcado e faria o gravador rodar por qualquer motivo.
   const { today, journeyEvents, recordJourneyEvent } = planner
   const [challenges, setChallenges] = useState<readonly Challenge[]>([])
@@ -279,8 +279,8 @@ export function useChallenges(): ChallengesState {
    * Os momentos que os desafios geraram.
    *
    * Sem momentum de propósito. O card do desafio fala dos dias que duas pessoas
-   * combinaram cumprir, e pendurar o score pessoal nele — ainda mais ao lado de
-   * uma lista de participantes — monta exatamente a comparação entre pessoas
+   * combinaram cumprir, e pendurar o score pessoal nele, ainda mais ao lado de
+   * uma lista de participantes, monta exatamente a comparação entre pessoas
    * que o produto recusa em todo o resto.
    */
   useEffect(() => {

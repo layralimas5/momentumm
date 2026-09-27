@@ -29,12 +29,12 @@ import { ActivationPlanView } from './ActivationPlanView'
  * O primeiro acesso, orientado a ativação.
  *
  * Quatro perguntas curtas e um plano. A ordem não é negociável: área da vida,
- * objetivo em palavras, prazo, tempo real. O tempo vem por último de propósito
- * — perguntado antes, ele vira uma promessa abstrata; perguntado depois do
+ * objetivo em palavras, prazo, tempo real. O tempo vem por último de propósito,
+ * perguntado antes, ele vira uma promessa abstrata; perguntado depois do
  * objetivo, ele vira o filtro de realidade que decide o tamanho do plano.
  *
  * Dá pra sair no meio. "Deixar pra depois" guarda tudo e o dashboard oferece
- * retomar — um onboarding que prende a pessoa na primeira tela é um onboarding
+ * retomar, um onboarding que prende a pessoa na primeira tela é um onboarding
  * que ela abandona antes de ver o produto.
  *
  * Uma coluna só, do celular ao monitor grande: o formulário tem um foco por
@@ -50,7 +50,7 @@ interface ActivationProps {
 /**
  * O ícone de cada área da vida.
  *
- * Vive aqui e não no domínio porque o domínio não conhece SVG — ele carrega a
+ * Vive aqui e não no domínio porque o domínio não conhece SVG, ele carrega a
  * chave, a apresentação resolve o desenho. Laranja não aparece em nenhum: essa
  * cor é da sequência, e só dela.
  */

@@ -1,4 +1,4 @@
-// Momentumm — a porta da cobrança, pelo lado da pessoa.
+// Momentumm, a porta da cobrança, pelo lado da pessoa.
 //
 // Três ações, sempre com o JWT de quem pede:
 //
@@ -94,7 +94,7 @@ function fail(status: number, code: BillingErrorCode, message: string): Response
 /**
  * Pra onde o Asaas devolve a pessoa. Em produção é o endereço do app
  * (`MOMENTUMM_APP_URL`); sem ele, só `localhost` do dev é aceito do header
- * `Origin` — qualquer outro valor seria um redirecionamento pra fora do
+ * `Origin`, qualquer outro valor seria um redirecionamento pra fora do
  * produto assinado por nós.
  */
 function appOrigin(request: Request): string {

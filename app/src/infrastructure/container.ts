@@ -11,6 +11,7 @@ import type { DayPhotoRepository } from '@/domain/repositories/day-photo-reposit
 import type { ReferralRepository } from '@/domain/repositories/referral-repository'
 import type { ClubRepository } from '@/domain/repositories/club-repository'
 import type { HabitRepository } from '@/domain/repositories/habit-repository'
+import type { RoutineRepository } from '@/domain/repositories/routine-repository'
 import type { JourneyEventRepository } from '@/domain/repositories/journey-event-repository'
 import type { ObjectiveRepository } from '@/domain/repositories/objective-repository'
 import type { PlanStageRepository } from '@/domain/repositories/plan-stage-repository'
@@ -54,6 +55,7 @@ import {
   DemoReferralRepository,
   DemoClubRepository,
   DemoHabitRepository,
+  DemoRoutineRepository,
   DemoEvolutionRepository,
   DemoJourneyEventRepository,
   DemoObjectiveRepository,
@@ -78,6 +80,7 @@ import {
   SupabaseReferralRepository,
   SupabaseClubRepository,
   SupabaseHabitRepository,
+  SupabaseRoutineRepository,
   SupabaseJourneyEventRepository,
   SupabaseObjectiveRepository,
   SupabasePlanStageRepository,
@@ -97,6 +100,7 @@ export interface Container {
   readonly planStages: PlanStageRepository
   readonly profiles: ProfileRepository
   readonly habits: HabitRepository
+  readonly routine: RoutineRepository
   readonly tasks: TaskRepository
   readonly checkIns: CheckInRepository
   readonly wins: WinRepository
@@ -104,7 +108,7 @@ export interface Container {
   /**
    * Os momentos da jornada: dia fechado, rotina cumprida, objetivo concluído.
    * É a camada que o Share Studio lê hoje e que o feed, o perfil e a comunidade
-   * vão ler depois — nenhum deles fala com hábito ou objetivo direto.
+   * vão ler depois, nenhum deles fala com hábito ou objetivo direto.
    */
   readonly journeyEvents: JourneyEventRepository
   /**
@@ -119,12 +123,12 @@ export interface Container {
    * não abre nada que já não fosse público.
    */
   readonly follows: FollowRepository
-  /** A foto de cada dia — o vínculo dia -> arquivo. O arquivo em si é `media`. */
+  /** A foto de cada dia, o vínculo dia -> arquivo. O arquivo em si é `media`. */
   readonly dayPhotos: DayPhotoRepository
   /** De onde a conta veio. Atribuição de convite, sem recompensa nenhuma. */
   readonly referrals: ReferralRepository
   /**
-   * Os clubes. Criar exige PRO — e quem confere é o servidor, não a tela.
+   * Os clubes. Criar exige PRO, e quem confere é o servidor, não a tela.
    * Perder a assinatura tira a administração, nunca o clube.
    */
   readonly clubs: ClubRepository
@@ -162,7 +166,7 @@ export interface Container {
    */
   readonly push: PushSubscriptionRepository
   /**
-   * Juntos — a dupla de accountability. Seis chamadas de função e nenhum
+   * Juntos, a dupla de accountability. Seis chamadas de função e nenhum
    * `select` em tabela de outra pessoa: o contrato de privacidade é o próprio
    * tamanho desta superfície.
    */
@@ -181,6 +185,7 @@ export const container: Container = isDemoMode
       planStages: new DemoPlanStageRepository(),
       profiles: new DemoProfileRepository(),
       habits: new DemoHabitRepository(),
+      routine: new DemoRoutineRepository(),
       tasks: new DemoTaskRepository(),
       checkIns: new DemoCheckInRepository(),
       wins: new DemoWinRepository(),
@@ -212,6 +217,7 @@ export const container: Container = isDemoMode
       planStages: new SupabasePlanStageRepository(),
       profiles: new SupabaseProfileRepository(),
       habits: new SupabaseHabitRepository(),
+      routine: new SupabaseRoutineRepository(),
       tasks: new SupabaseTaskRepository(),
       checkIns: new SupabaseCheckInRepository(),
       wins: new SupabaseWinRepository(),

@@ -8,7 +8,7 @@ interface ContextualFabProps {
   readonly onClick: () => void
   /**
    * O card que já oferece essa mesma ação. Enquanto ele estiver visível o botão
-   * some — repetir na tela uma ação que a pessoa está vendo só compete com a
+   * some, repetir na tela uma ação que a pessoa está vendo só compete com a
    * navegação de baixo.
    */
   readonly anchor: RefObject<HTMLElement | null>

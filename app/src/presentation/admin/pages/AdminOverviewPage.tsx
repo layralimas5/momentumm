@@ -68,7 +68,7 @@ export function AdminOverviewPage() {
 
           <Section
             title="Dinheiro"
-            hint={`Cobranças que o Asaas confirmou entre ${period.from} e ${period.to}. Caixa do período, não projeção — MRR e ARR são a projeção, e ficam à parte.`}
+            hint={`Cobranças que o Asaas confirmou entre ${period.from} e ${period.to}. Caixa do período, não projeção, MRR e ARR são a projeção, e ficam à parte.`}
           >
             <QueryState loading={revenue.loading && !revenue.data} error={revenue.error} onRetry={() => void revenue.reload()} />
             {revenue.data ? (

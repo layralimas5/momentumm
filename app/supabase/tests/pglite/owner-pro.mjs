@@ -2,7 +2,7 @@
   Quem opera o produto nunca vê "isso faz parte do PRO".
 
   O teste existe por causa de um caso real: a 0034 deu cortesia infinita a
-  owner e admin num backfill, e quem recebeu o papel DEPOIS ficou de fora —
+  owner e admin num backfill, e quem recebeu o papel DEPOIS ficou de fora,
   a dona do produto abrindo o próprio app e sendo convidada a assinar.
 
   Backfill resolve o passado. Aqui a pergunta é sobre o futuro: conceder o
@@ -28,7 +28,7 @@ const one = async (sql, params = []) => (await q(sql, params))[0]
   A cortesia é lida como TEXTO, sempre.
 
   O driver do PGlite devolve `infinity` de um timestamptz como `null` em
-  JavaScript — o valor está gravado certo no banco (`::text` prova), mas a
+  JavaScript, o valor está gravado certo no banco (`::text` prova), mas a
   conversão pro tipo Date não tem como representar infinito. Ler como número
   ou data aqui faria o teste acusar um bug que não existe, que foi exatamente
   o que aconteceu na primeira versão deste arquivo.

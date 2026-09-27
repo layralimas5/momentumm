@@ -35,7 +35,7 @@ app/src/
 
 **A decisão que manda em tudo:** existe uma unidade só, a atividade. Leitura,
 estudo, treino e meditação são a mesma entidade com `type` diferente. Eixo novo é
-uma entrada em `activity_types`, nunca um módulo novo — e é por isso que a área
+uma entrada em `activity_types`, nunca um módulo novo, e é por isso que a área
 que você escreve no onboarding funciona igual às de fábrica em toda parte. Streak, meta, histórico e (na
 fase 2) feed e ranking funcionam pra qualquer eixo sem código adicional.
 
@@ -45,12 +45,12 @@ Visibilidade de atividade é regra de RLS no banco, não filtro no front.
 
 Fase 1 funcionando. A jornada principal é um ciclo de três telas:
 
-1. **Onboarding** — áreas (uma ou várias, e dá pra escrever a sua), quanto
+1. **Onboarding**, áreas (uma ou várias, e dá pra escrever a sua), quanto
    tempo por dia, objetivos com prazo, e um plano gerado que já vira hábito e
    ação, com o primeiro dia começando ali mesmo.
-2. **Hoje** — momentum, progresso dos objetivos, prioridade do dia, hábitos,
+2. **Hoje**, momentum, progresso dos objetivos, prioridade do dia, hábitos,
    ações e check-in.
-3. **Review** — a semana em números: quanto do planejado saiu, onde o ritmo
+3. **Review**, a semana em números: quanto do planejado saiu, onde o ritmo
    caiu, onde evoluiu e o que mudar na semana seguinte.
 
 Além disso: sessão de foco, insights, metas com progresso, histórico e perfil.
@@ -58,7 +58,7 @@ Fase 2 (feed, follows, kudos, recap mensal) ainda não começou.
 
 O plano nunca finge que cabe. O tempo que você diz ter por dia é teto: nenhuma
 sessão pede mais que isso, e quando o alvo não entra no prazo, o app avisa e
-oferece as duas saídas — a data que funcionaria ou o alvo que cabe. Com vários
+oferece as duas saídas, a data que funcionaria ou o alvo que cabe. Com vários
 objetivos, ele soma o que todos pedem e diz na cara quando o dia não estica.
 
 O dashboard trata o dia como variável: o check-in define a capacidade e, num dia

@@ -79,8 +79,8 @@ export function AdminLeadDetailPage() {
               />
             ) : (
               <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
-                <Campo rotulo="Nome" valor={lead.name ?? '—'} />
-                <Campo rotulo="Idade" valor={lead.age === null ? '—' : `${lead.age} anos`} />
+                <Campo rotulo="Nome" valor={lead.name ?? 'sem dado'} />
+                <Campo rotulo="Idade" valor={lead.age === null ? 'sem dado' : `${lead.age} anos`} />
                 <Campo
                   rotulo="E-mail"
                   valor={
@@ -93,7 +93,7 @@ export function AdminLeadDetailPage() {
                   rotulo="WhatsApp"
                   valor={
                     lead.phone === null ? (
-                      '—'
+                      'sem dado'
                     ) : (
                       <a
                         href={`https://wa.me/55${lead.phone}`}
@@ -139,9 +139,9 @@ export function AdminLeadDetailPage() {
             <Section title="De onde veio" hint="Parâmetros da URL na entrada.">
               <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
                 <Campo rotulo="Origem" valor={lead.source.utm_source ?? 'direto'} />
-                <Campo rotulo="Mídia" valor={lead.source.utm_medium ?? '—'} />
-                <Campo rotulo="Campanha" valor={lead.source.utm_campaign ?? '—'} />
-                <Campo rotulo="Conteúdo" valor={lead.source.utm_content ?? '—'} />
+                <Campo rotulo="Mídia" valor={lead.source.utm_medium ?? 'sem dado'} />
+                <Campo rotulo="Campanha" valor={lead.source.utm_campaign ?? 'sem dado'} />
+                <Campo rotulo="Conteúdo" valor={lead.source.utm_content ?? 'sem dado'} />
                 <Campo rotulo="Tema" valor={lead.theme ?? 'padrão'} />
                 <Campo rotulo="Parou no passo" valor={String(lead.step)} />
               </dl>
@@ -233,5 +233,5 @@ function comoTexto(valor: unknown): string {
       .map(([chave, item]) => `${chave}: ${comoTexto(item)}`)
       .join(' · ')
   }
-  return '—'
+  return 'sem dado'
 }

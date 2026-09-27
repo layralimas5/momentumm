@@ -33,7 +33,7 @@ import { PageHeader } from './PageHeader'
  *
  * Quatro blocos, nessa ordem: o combinado, o teu avanço, quem está junto e a
  * manutenção (convidar, sair, encerrar). O teu avanço vem antes do dos outros
- * de propósito — a tela existe pra te dizer o que falta, e só depois quem mais
+ * de propósito, a tela existe pra te dizer o que falta, e só depois quem mais
  * está caminhando.
  */
 export function ChallengeDetailPage() {

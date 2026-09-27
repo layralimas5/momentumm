@@ -18,7 +18,7 @@ import { cn } from '@/shared/lib/cn'
  * O ranking do desafio, em tela cheia.
  *
  * Ele existia como uma lista dentro da página do desafio, abaixo das regras e
- * do progresso — e é a parte que as pessoas abrem o app pra ver. Aqui ele tem a
+ * do progresso, e é a parte que as pessoas abrem o app pra ver. Aqui ele tem a
  * tela inteira: pódio em cima, classificação completa embaixo.
  *
  * ## O que é comparado, e o que nunca será
@@ -27,7 +27,7 @@ import { cn } from '@/shared/lib/cn'
  * Momentumm, constância, volume ou XP: score é a comparação de alguém com ela
  * mesma, e transportá-lo pra uma tabela entre amigos é exatamente o ranking que
  * este produto recusa. Pela mesma razão, ninguém vê aqui o que a outra pessoa
- * faz — o dia cumprido chega publicado, e o que há por trás dele continua sendo
+ * faz, o dia cumprido chega publicado, e o que há por trás dele continua sendo
  * assunto de quem cumpriu.
  *
  * A sua linha é destacada e o pódio só aparece com três pessoas ou mais. Um
@@ -46,7 +46,7 @@ export function ChallengeRankingPage() {
 
   /*
     Uma marcação por abertura, com quantas pessoas estavam na tabela. É o que
-    responde se o ranking é olhado de verdade — e se ele é olhado mais quando
+    responde se o ranking é olhado de verdade, e se ele é olhado mais quando
     há mais gente dentro, que é a pergunta por trás de crescer o grupo.
   */
   useEffect(() => {
@@ -67,8 +67,8 @@ export function ChallengeRankingPage() {
       const person = challenges.personOf(ranked.progress.participant.userId)
       /*
         O seu nome é o SEU nome, e o "(Você)" vem depois dele na lista. A busca
-        por pessoa não devolve a própria conta — ela serve pra dar nome aos
-        outros —, e sem este cuidado a linha saía como "Você (Você)".
+        por pessoa não devolve a própria conta, ela serve pra dar nome aos
+        outros, e sem este cuidado a linha saía como "Você (Você)".
       */
       return {
         ranked,
@@ -190,7 +190,7 @@ export function ChallengeRankingPage() {
         */}
         <p className="mt-3 px-1 text-sm text-ink-faint">
           Dias cumpridos de {requiredDays(view.challenge)} combinados. Ninguém vê o que o outro
-          fez — só que fez.
+          fez, só que fez.
         </p>
       </section>
     </div>

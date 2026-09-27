@@ -8,7 +8,7 @@ import { usePeriod } from '../use-period'
 /**
  * As peças que todas as telas do painel repetem: cabeçalho, seletor de
  * período, cartão de métrica com comparação, tabela, etiqueta de estado,
- * vazio honesto. Nada aqui conhece o domínio — recebe número e rótulo.
+ * vazio honesto. Nada aqui conhece o domínio, recebe número e rótulo.
  */
 
 export function AdminPage({

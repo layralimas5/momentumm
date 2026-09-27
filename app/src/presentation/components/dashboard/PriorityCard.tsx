@@ -206,7 +206,7 @@ export function PriorityCard({
 
 /**
  * A saída pro dia ruim, sempre visível. Quando a energia está baixa ela ganha
- * destaque; no resto do tempo fica como lembrete de que existe um plano B — é
+ * destaque; no resto do tempo fica como lembrete de que existe um plano B, é
  * o que separa "não consegui hoje" de "abandonei".
  */
 function MinimalNote({

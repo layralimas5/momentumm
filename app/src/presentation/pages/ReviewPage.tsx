@@ -57,7 +57,7 @@ import { PageHeader } from './PageHeader'
  * uma pergunta por vez e salva cada resposta na hora, então parar no meio é um
  * caso previsto e não uma perda.
  *
- * Os passos que o app escreve sozinho vêm intercalados de propósito — a pessoa
+ * Os passos que o app escreve sozinho vêm intercalados de propósito, a pessoa
  * lê o dado antes de responder a pergunta que depende dele.
  */
 export function ReviewPage() {
@@ -80,7 +80,7 @@ export function ReviewPage() {
    *
    * `reviewWeek` mede sete dias terminando no `today` que recebe. Passar o
    * domingo da semana revisada faz a janela cair exatamente sobre a semana de
-   * calendário — com `weeksAgo: 1` ela viraria uma janela móvel e o cabeçalho
+   * calendário, com `weeksAgo: 1` ela viraria uma janela móvel e o cabeçalho
    * diria "24 a 30" enquanto os números seriam de "23 a 29".
    */
   const computed = useMemo<WeekReview>(() => {
@@ -98,7 +98,7 @@ export function ReviewPage() {
   /*
     O gratuito faz o check-in de quatro perguntas; o PRO faz o review que
     cruza os dados. As duas listas guardam nos mesmos campos, e o passo
-    retomado precisa existir na lista atual — quem muda de plano no meio de
+    retomado precisa existir na lista atual, quem muda de plano no meio de
     um review volta pro começo, nunca pra um passo que a tela não mostra.
   */
   const full = planner.limits.fullReview
@@ -115,7 +115,7 @@ export function ReviewPage() {
 
   /*
     "Abriu o review" é o denominador de `review_completed`: sem ele, dá pra
-    saber quantas pessoas terminaram, mas não quantas desistiram no meio — que
+    saber quantas pessoas terminaram, mas não quantas desistiram no meio, que
     é a informação que diz se o review está longo demais.
   */
   useEffect(() => {
@@ -462,7 +462,7 @@ function SummaryStep({ review }: { readonly review: WeekReview }) {
  * As ações que não saíram, com a saída na mesma linha.
  *
  * Listar pendência sem oferecer o que fazer com ela transforma o review em
- * cobrança. Aqui cada linha remarca pra hoje ou cancela — as duas decisões
+ * cobrança. Aqui cada linha remarca pra hoje ou cancela, as duas decisões
  * honestas.
  */
 function PendingStep() {

@@ -63,7 +63,7 @@ export interface ProgressView {
    * O próximo ajuste, com a ação que o executa.
    *
    * A tela promete responder "qual é o próximo ajuste" desde o primeiro dia, e
-   * respondia com a frase do fator mais fraco — que diz onde há espaço, não o
+   * respondia com a frase do fator mais fraco, que diz onde há espaço, não o
    * que fazer. O insight sai das MESMAS regras do dashboard, agora com os
    * objetivos na entrada, então ele enxerga etapa travada e prazo escapando.
    */
@@ -184,7 +184,7 @@ export function useProgress(): ProgressView {
     for (const view of objectives) {
       /*
         O gargalo antes do atraso genérico. "Está atrasado" a pessoa já sabe; o
-        que ela não sabe é QUAL pedaço está segurando — e é essa a informação
+        que ela não sabe é QUAL pedaço está segurando, e é essa a informação
         que muda o que ela faz amanhã de manhã.
       */
       if (view.plan.bottleneck && view.plan.bottleneck.overdueTasks.length > 0) {

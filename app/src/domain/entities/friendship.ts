@@ -5,7 +5,7 @@ import { DomainError } from '@/shared/errors'
  *
  * Uma linha por par, com lado de quem pediu e lado de quem recebeu. Não são
  * duas linhas espelhadas: com duas, aceitar teria que escrever nas duas e
- * qualquer falha no meio deixaria o par em desacordo consigo mesmo — A achando
+ * qualquer falha no meio deixaria o par em desacordo consigo mesmo, A achando
  * que são amigos e B não.
  *
  * Por isso "quem é meu amigo" é sempre uma pergunta sobre o OUTRO LADO da
