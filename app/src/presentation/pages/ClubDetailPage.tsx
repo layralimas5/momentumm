@@ -19,6 +19,7 @@ import { ConfirmDialog } from '@/presentation/components/ui/ConfirmDialog'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { Panel, PanelHeader, Tag } from '@/presentation/components/ui/Surface'
+import { ClubInviteSheet } from '@/presentation/clubs/ClubInviteSheet'
 import { ProfileBanner } from '@/presentation/profile/ProfileBanner'
 import { toUserMessage } from '@/shared/errors'
 import { cn } from '@/shared/lib/cn'
@@ -50,6 +51,7 @@ export function ClubDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [leaving, setLeaving] = useState(false)
+  const [inviting, setInviting] = useState(false)
 
   const load = useCallback(async () => {
     if (!id) return
@@ -102,6 +104,21 @@ export function ClubDetailPage() {
       await container.clubs.leave(club.id, user.id)
       track('club_left', 'desafios')
       navigate('/app/clubes')
+    } catch (cause) {
+      setError(toUserMessage(cause))
+    }
+  }
+
+  /*
+    Adicionar alguém é a mesma escrita de "entrar", com o id do outro: a
+    política do banco é que sabe a diferença — o dono com assinatura pode, e
+    mais ninguém.
+  */
+  const adicionar = async (userId: string) => {
+    try {
+      await container.clubs.join(club.id, userId)
+      track('club_joined', 'desafios', { result: 'convidado' })
+      await load()
     } catch (cause) {
       setError(toUserMessage(cause))
     }
@@ -177,6 +194,18 @@ export function ClubDetailPage() {
           ) : null}
 
           <div className="mt-4 flex flex-wrap gap-2">
+            {/*
+              Chamar gente vem antes de sair: é a ação que faz o clube existir,
+              e ela é do dono. Quem perdeu a assinatura não vê o botão — a
+              política recusaria a escrita de qualquer forma.
+            */}
+            {administra ? (
+              <Button size="sm" onClick={() => setInviting(true)}>
+                <Icon name="mais" className="size-4" />
+                Chamar gente
+              </Button>
+            ) : null}
+
             {sou ? (
               <Button variant="secondary" size="sm" onClick={() => setLeaving(true)}>
                 <Icon name="saida" className="size-4" />
@@ -231,6 +260,14 @@ export function ClubDetailPage() {
           </ol>
         )}
       </Panel>
+
+      <ClubInviteSheet
+        open={inviting}
+        club={club}
+        members={members}
+        onClose={() => setInviting(false)}
+        onInvite={adicionar}
+      />
 
       <ConfirmDialog
         open={leaving}

@@ -24,6 +24,15 @@ export interface ClubRepository {
   create(input: NewClubInput): Promise<Club>
   update(id: string, changes: Partial<NewClubInput>): Promise<Club>
   archive(id: string): Promise<void>
+  /**
+   * Coloca alguém dentro do clube.
+   *
+   * Serve às duas portas, e quem decide qual vale é a política do banco: a
+   * pessoa entrando sozinha passa o PRÓPRIO id (e isso só é aceito em clube
+   * aberto), e o dono passa o id de quem ele chamou (e isso exige assinatura).
+   * Um método por porta daria dois caminhos escrevendo na mesma tabela com a
+   * mesma regra — e a regra mora no banco, não aqui.
+   */
   join(clubId: string, userId: string): Promise<void>
   leave(clubId: string, userId: string): Promise<void>
 }
