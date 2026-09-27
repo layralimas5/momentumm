@@ -8,6 +8,11 @@ import {
   type HabitStatus,
 } from './habit'
 import { comparePriority, type Priority } from './priority'
+import {
+  isRoutineDone,
+  isRoutineResolved,
+  type RoutineDayState,
+} from './routine-item'
 import type { Task } from './task'
 
 /**
@@ -33,7 +38,7 @@ import type { Task } from './task'
  * construção, e não por sincronização.
  */
 
-export type AgendaItemKind = 'acao' | 'habito'
+export type AgendaItemKind = 'acao' | 'habito' | 'rotina'
 
 /**
  * Os quatro trechos do dia.
@@ -105,6 +110,7 @@ export interface AgendaItem {
   readonly axisColor: string | null
   readonly task: Task | null
   readonly habitState: HabitDayState | null
+  readonly routineState: RoutineDayState | null
 }
 
 export interface AgendaGroup {
@@ -132,6 +138,13 @@ export interface DayAgenda {
 export interface DayAgendaInput {
   readonly tasks: readonly Task[]
   readonly habitStates: readonly HabitDayState[]
+  /**
+   * O que a rotina põe neste dia. Já vem resolvido (`routineDayStates`), com o
+   * horário do dia e o estado da ocorrência: a agenda não conhece regra de
+   * recorrência, e é esse corte que a impede de virar um segundo motor de
+   * repetição divergindo do primeiro.
+   */
+  readonly routineStates: readonly RoutineDayState[]
 }
 
 /** Estados de hábito que saíram da fila sem ter sido cumpridos. */
@@ -154,8 +167,9 @@ export function buildDayAgenda(input: DayAgendaInput, day: DayKey): DayAgenda {
     .map(taskToItem)
 
   const fromHabits = input.habitStates.map(habitToItem)
+  const fromRoutine = input.routineStates.map(routineToItem)
 
-  const items = [...fromTasks, ...fromHabits].sort(byClock)
+  const items = [...fromTasks, ...fromHabits, ...fromRoutine].sort(byClock)
 
   const groups = AGENDA_PARTS.map((part) => {
     const ofPart = items.filter((item) => item.part === part)
@@ -202,6 +216,7 @@ function taskToItem(task: Task): AgendaItem {
     axisColor: axis?.colorToken ?? null,
     task,
     habitState: null,
+    routineState: null,
   }
 }
 
@@ -231,6 +246,42 @@ function habitToItem(state: HabitDayState): AgendaItem {
     axisColor: axis.colorToken,
     task: null,
     habitState: state,
+    routineState: null,
+  }
+}
+
+/**
+ * O item de rotina dentro do dia.
+ *
+ * Ele não tem eixo, não tem prioridade e não tem etapa, e é isso que ele é: o
+ * que acontece na sua vida e não serve a objetivo nenhum. Quando serve, o
+ * objetivo aparece na linha como aparece nos outros.
+ */
+function routineToItem(state: RoutineDayState): AgendaItem {
+  const { item } = state
+
+  return {
+    kind: 'rotina',
+    key: `rotina:${item.id}`,
+    sourceId: item.id,
+    title: item.title,
+    time: state.time,
+    part: state.time ? partOfTime(state.time) : item.dayPart,
+    done: isRoutineDone(state.status),
+    skipped: isRoutineResolved(state.status) && !isRoutineDone(state.status),
+    minutes: item.durationMin,
+    objectiveId: item.objectiveId,
+    stageId: null,
+    // Rotina não disputa prioridade com ação: ela é o contorno do dia, não a
+    // decisão dele. Entrar como 'media' a deixaria na frente de meia lista de
+    // ações num empate de horário.
+    priority: 'baixa',
+    isMainPriority: false,
+    role: item.category ?? 'Rotina',
+    axisColor: null,
+    task: null,
+    habitState: null,
+    routineState: state,
   }
 }
 

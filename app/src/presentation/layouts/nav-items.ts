@@ -50,6 +50,13 @@ const ALL_NAV: readonly AppNavItem[] = [
     description: 'Onde você quer chegar, com prazo e o quanto já andou de verdade',
   },
   {
+    to: '/app/rotina',
+    label: 'Rotina',
+    end: false,
+    icon: 'calendario',
+    description: 'Como os seus dias normalmente funcionam, e o que se repete em cada um',
+  },
+  {
     to: '/app/habitos',
     label: 'Hábitos',
     end: false,

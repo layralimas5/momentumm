@@ -134,6 +134,9 @@ const ObjectiveDetailPage = lazy(() =>
 const PlanPage = lazy(() =>
   import('@/presentation/pages/PlanPage').then((m) => ({ default: m.PlanPage })),
 )
+const RoutinePage = lazy(() =>
+  import('@/presentation/pages/RoutinePage').then((m) => ({ default: m.RoutinePage })),
+)
 const ProgressPage = lazy(() =>
   import('@/presentation/pages/ProgressPage').then((m) => ({ default: m.ProgressPage })),
 )
@@ -275,6 +278,7 @@ export function App() {
               <Route path="objetivos/:id" element={<ObjectiveDetailPage />} />
               <Route path="habitos" element={<HabitsPage />} />
               <Route path="plano" element={<PlanPage />} />
+              <Route path="rotina" element={<RoutinePage />} />
               <Route path="progresso" element={<ProgressPage />} />
               <Route path="review" element={<ReviewPage />} />
               <Route path="ia" element={<AiPage />} />

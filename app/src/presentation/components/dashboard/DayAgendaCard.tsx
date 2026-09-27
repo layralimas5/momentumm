@@ -258,6 +258,19 @@ function AgendaRow({
         await planner.setTaskDone(item.task.id, !item.done)
       } else if (item.habitState) {
         await planner.setHabitStatus(item.habitState.habit.id, item.done ? 'pendente' : 'feito')
+      } else if (item.routineState) {
+        /*
+          A MESMA ocorrência que a tela de Rotina escreve.
+
+          Não existe estado paralelo: marcar aqui e marcar lá são a mesma linha
+          (item, dia), e é por isso que as duas telas nunca discordam. Se isto
+          aqui gravasse um registro próprio do dashboard, a sincronia viraria
+          trabalho de alguém lembrar de fazer nos dois lados.
+        */
+        await planner.setRoutineStatus(item.routineState.item.id, {
+          status: item.done ? 'pendente' : 'feito',
+          plannedTime: item.time,
+        })
       }
     } finally {
       setBusy(false)
@@ -271,7 +284,18 @@ function AgendaRow({
       })
       return
     }
-    if (item.habitState) void planner.setHabitStatus(item.habitState.habit.id, 'adiado')
+    if (item.habitState) {
+      void planner.setHabitStatus(item.habitState.habit.id, 'adiado')
+      return
+    }
+    // Adiar um item de rotina é pular o dia de HOJE: a regra continua valendo
+    // amanhã, e é essa a diferença entre pular e apagar.
+    if (item.routineState) {
+      void planner.setRoutineStatus(item.routineState.item.id, {
+        status: 'pulado',
+        plannedTime: item.time,
+      })
+    }
   }
 
   return (
@@ -390,7 +414,11 @@ function AgendaRow({
         ) : null}
 
         {resolved ? null : (
-          <IconButton icon="adiar" label={`Adiar ${item.title}`} onClick={postpone} />
+          <IconButton
+            icon="adiar"
+            label={item.routineState ? `Pular ${item.title} hoje` : `Adiar ${item.title}`}
+            onClick={postpone}
+          />
         )}
       </div>
     </li>

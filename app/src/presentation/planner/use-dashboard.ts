@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { totalMinutes } from '@/domain/entities/activity'
 import { addDays, daysBetween } from '@/domain/entities/day'
 import { buildDayAgenda, type DayAgenda } from '@/domain/entities/day-agenda'
+import { routineDayStates } from '@/domain/entities/routine-item'
 import { capacityOf, checkInOfDay, type CapacityProfile, type CheckIn } from '@/domain/entities/checkin'
 import { paceOf, type GoalPace, type GoalProgress } from '@/domain/entities/goal'
 import {
@@ -503,9 +504,14 @@ export function useDashboard(): DashboardView {
     A agenda lê as MESMAS coleções que o foco, e é por isso que as duas não
     podem discordar: o foco é um recorte dela, não uma segunda lista.
   */
+  const routineStates = useMemo(
+    () => routineDayStates(planner.routineItems, planner.routineOccurrences, today),
+    [planner.routineItems, planner.routineOccurrences, today],
+  )
+
   const agenda = useMemo(
-    () => buildDayAgenda({ tasks, habitStates }, today),
-    [tasks, habitStates, today],
+    () => buildDayAgenda({ tasks, habitStates, routineStates }, today),
+    [tasks, habitStates, routineStates, today],
   )
 
   return {

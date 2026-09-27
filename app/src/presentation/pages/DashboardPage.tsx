@@ -518,7 +518,7 @@ export function DashboardPage() {
             agenda={view.agenda}
             onStartFocus={startFocus}
             onAdd={() => composer.open('acao')}
-            onOpenRoutine={null}
+            onOpenRoutine={() => navigate('/app/rotina')}
           />
         </div>
 

@@ -49,6 +49,20 @@ export function AddSheet({ open, onClose }: { open: boolean; onClose: () => void
             tone="brand"
             onClick={() => pick('acao')}
           />
+          {/*
+            A rotina entra logo depois da ação, e antes do hábito, porque é o
+            que a pessoa mais adiciona depois que a rotina dela existe: o
+            compromisso da semana, a coisa que acontece e não vira meta.
+          */}
+          <SheetAction
+            icon={<Icon name="calendario" className="size-5" />}
+            label="Item da rotina"
+            hint="O que se repete no seu dia, ou um compromisso"
+            onClick={() => {
+              onClose()
+              navigate('/app/rotina?novo=1')
+            }}
+          />
           <SheetAction
             icon={<Icon name="habitos" className="size-5" />}
             label="Hábito"

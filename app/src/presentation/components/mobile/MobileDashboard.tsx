@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { DayLoad } from '@/domain/entities/adaptive-day'
 import type { Task } from '@/domain/entities/task'
 import type { DayKey } from '@/domain/entities/day'
@@ -70,6 +71,7 @@ export function MobileDashboard({
   const composer = useComposer()
   const focus = useFocus()
   const alerts = useDayAlerts()
+  const navigate = useNavigate()
 
   /*
     O dia aberto pela faixa da semana. Só o dia é guardado, e não o resumo: o
@@ -252,7 +254,7 @@ export function MobileDashboard({
           agenda={view.agenda}
           onStartFocus={onStartFocus}
           onAdd={() => composer.open('acao')}
-          onOpenRoutine={null}
+          onOpenRoutine={() => navigate('/app/rotina')}
         />
       </div>
 
