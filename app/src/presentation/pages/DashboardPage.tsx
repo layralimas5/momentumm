@@ -519,6 +519,12 @@ export function DashboardPage() {
             onStartFocus={startFocus}
             onAdd={() => composer.open('acao')}
             onOpenRoutine={() => navigate('/app/rotina')}
+            onEditTask={(task) => composer.open('acao', { editing: task })}
+            onEditRoutine={(itemId) => navigate(`/app/rotina?editar=${itemId}`)}
+            onEditHabit={(habitId) => {
+              const habit = planner.habits.find((entry) => entry.id === habitId)
+              if (habit) composer.open('habito', { editingHabit: habit })
+            }}
           />
         </div>
 

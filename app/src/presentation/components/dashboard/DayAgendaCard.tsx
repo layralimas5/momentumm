@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { addDays } from '@/domain/entities/day'
 import {
   isPastPlannedTime,
   openAgendaMinutes,
@@ -9,10 +8,11 @@ import {
   type DayAgenda,
 } from '@/domain/entities/day-agenda'
 import type { Task } from '@/domain/entities/task'
+import { AgendaItemSheet } from './AgendaItemSheet'
 import { ObjectiveLink } from '@/presentation/components/shared/Meta'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
-import { IconButton, Panel, ProgressBar } from '@/presentation/components/ui/Surface'
+import { Panel, ProgressBar } from '@/presentation/components/ui/Surface'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 
@@ -48,13 +48,20 @@ export function DayAgendaCard({
   onStartFocus,
   onAdd,
   onOpenRoutine,
+  onEditTask,
+  onEditRoutine,
+  onEditHabit,
 }: {
   readonly agenda: DayAgenda
   readonly onStartFocus: (task: Task) => void
   readonly onAdd: () => void
   /** Null esconde o atalho: a Rotina pode não estar disponível na tela. */
   readonly onOpenRoutine: (() => void) | null
+  readonly onEditTask: (task: Task) => void
+  readonly onEditRoutine: (itemId: string) => void
+  readonly onEditHabit: (habitId: string) => void
 }) {
+  const [picked, setPicked] = useState<AgendaItem | null>(null)
   const minutes = openAgendaMinutes(agenda)
 
   return (
@@ -99,11 +106,21 @@ export function DayAgendaCard({
               <AgendaSection
                 key={group.part}
                 group={group}
-                onStartFocus={onStartFocus}
+                onOpenMenu={setPicked}
                 collapsible={agenda.total > 8}
               />
             ))}
           </div>
+
+          <AgendaItemSheet
+            item={picked}
+            today={agenda.day}
+            onClose={() => setPicked(null)}
+            onStartFocus={onStartFocus}
+            onEditTask={onEditTask}
+            onEditRoutine={onEditRoutine}
+            onEditHabit={onEditHabit}
+          />
 
           <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-line pt-4">
             <Button size="sm" variant="secondary" onClick={onAdd}>
@@ -168,11 +185,11 @@ function EmptyDay({
  */
 function AgendaSection({
   group,
-  onStartFocus,
+  onOpenMenu,
   collapsible,
 }: {
   readonly group: AgendaGroup
-  readonly onStartFocus: (task: Task) => void
+  readonly onOpenMenu: (item: AgendaItem) => void
   readonly collapsible: boolean
 }) {
   // Trecho já cumprido nasce fechado num dia grande: ele é histórico do dia, e
@@ -221,7 +238,7 @@ function AgendaSection({
       {open ? (
         <ul id={`${titleId}-lista`} className="mt-1.5 flex flex-col">
           {group.items.map((item) => (
-            <AgendaRow key={item.key} item={item} onStartFocus={onStartFocus} />
+            <AgendaRow key={item.key} item={item} onOpenMenu={onOpenMenu} />
           ))}
         </ul>
       ) : null}
@@ -238,10 +255,10 @@ function AgendaSection({
  */
 function AgendaRow({
   item,
-  onStartFocus,
+  onOpenMenu,
 }: {
   readonly item: AgendaItem
-  readonly onStartFocus: (task: Task) => void
+  readonly onOpenMenu: (item: AgendaItem) => void
 }) {
   const planner = usePlanner()
   const reduceMotion = useReducedMotion()
@@ -274,27 +291,6 @@ function AgendaRow({
       }
     } finally {
       setBusy(false)
-    }
-  }
-
-  const postpone = () => {
-    if (item.task) {
-      void planner.updateTask(item.task.id, {
-        day: addDays(item.task.day < planner.today ? planner.today : item.task.day, 1),
-      })
-      return
-    }
-    if (item.habitState) {
-      void planner.setHabitStatus(item.habitState.habit.id, 'adiado')
-      return
-    }
-    // Adiar um item de rotina é pular o dia de HOJE: a regra continua valendo
-    // amanhã, e é essa a diferença entre pular e apagar.
-    if (item.routineState) {
-      void planner.setRoutineStatus(item.routineState.item.id, {
-        status: 'pulado',
-        plannedTime: item.time,
-      })
     }
   }
 
@@ -388,39 +384,25 @@ function AgendaRow({
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1">
-        {item.task && !resolved ? (
-          <IconButton
-            icon="play"
-            label={`Começar ${item.title}`}
-            onClick={() => item.task && onStartFocus(item.task)}
-          />
-        ) : null}
-        {/*
-          A versão mínima do hábito continua a um toque aqui.
+      {/*
+        Um alvo só no fim da linha, e não três.
 
-          Ela morava no card de hábitos do dashboard, que saiu porque mostrava a
-          mesma lista duas vezes. Tirar o card sem trazer esta ação faria a saída
-          pro dia ruim, que é o coração do produto, virar coisa de outra tela.
-        */}
-        {item.habitState && !resolved ? (
-          <IconButton
-            icon="minimo"
-            label={`Fazer a versão mínima de ${item.title}`}
-            onClick={() =>
-              item.habitState && void planner.setHabitStatus(item.habitState.habit.id, 'minimo')
-            }
-          />
-        ) : null}
-
-        {resolved ? null : (
-          <IconButton
-            icon="adiar"
-            label={item.routineState ? `Pular ${item.title} hoje` : `Adiar ${item.title}`}
-            onClick={postpone}
-          />
-        )}
-      </div>
+        Começar, versão mínima e adiar eram três ícones de 44px numa tela de
+        390px: 132px que saíam do título, e ainda assim faltava lugar pra
+        reagendar, pular e editar. O menu devolve a largura ao texto e cabe o
+        resto, com o mesmo toque.
+      */}
+      <button
+        type="button"
+        onClick={() => onOpenMenu(item)}
+        aria-haspopup="dialog"
+        className="-mr-1 grid size-11 shrink-0 place-items-center rounded-full text-ink-faint transition-colors hover:text-ink active:bg-surface-hi active:text-ink"
+      >
+        <span aria-hidden="true" className="text-xl leading-none">
+          ⋯
+        </span>
+        <span className="sr-only">Opções de {item.title}</span>
+      </button>
     </li>
   )
 }

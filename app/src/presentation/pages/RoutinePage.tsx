@@ -54,11 +54,23 @@ export function RoutinePage() {
     pra cá pelo histórico do navegador reabriria o diálogo do nada.
   */
   useEffect(() => {
-    if (params.get('novo') !== '1') return
-    setEditing(null)
-    setDialogOpen(true)
+    if (params.get('novo') === '1') {
+      setEditing(null)
+      setDialogOpen(true)
+      setParams({}, { replace: true })
+      return
+    }
+
+    // "Editar" no menu de uma linha do Hoje: a tela abre já no item certo.
+    const alvo = params.get('editar')
+    if (!alvo) return
+    const item = planner.routineItems.find((entry) => entry.id === alvo)
+    if (item) {
+      setEditing(item)
+      setDialogOpen(true)
+    }
     setParams({}, { replace: true })
-  }, [params, setParams])
+  }, [params, setParams, planner.routineItems])
 
   const week = useMemo(() => {
     const first = startOfWeek(planner.today)

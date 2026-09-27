@@ -22,7 +22,12 @@ import {
   recommendationFor,
   type MomentumInput,
 } from './momentum'
-import { habitImpact, taskImpact } from './momentum-impact'
+import { habitImpact, routineImpact, taskImpact } from './momentum-impact'
+import {
+  createRoutineItem,
+  type RoutineItem,
+  type RoutineOccurrence,
+} from './routine-item'
 import { createTask, type Task } from './task'
 
 const TODAY = parseDayKey('2026-09-03')
@@ -642,5 +647,101 @@ describe('o número não pula', () => {
     const score = calculateMomentum(data)
     const history = momentumHistory(data, 8)
     expect(score.delta).toBe((history[7]?.value ?? 0) - (history[0]?.value ?? 0))
+  })
+})
+
+describe('a rotina dentro do score', () => {
+  function rotina(objectiveId: string | null): RoutineItem {
+    return createRoutineItem(
+      { userId: 'u1', title: 'Treino', objectiveId },
+      `r-${objectiveId ?? 'solto'}`,
+      dayKeyToDate(addDays(TODAY, -60)),
+    )
+  }
+
+  function occurrence(itemId: string, day: DayKey): RoutineOccurrence {
+    return {
+      id: `o-${itemId}-${day}`,
+      userId: 'u1',
+      itemId,
+      day,
+      status: 'feito',
+      plannedTime: null,
+      timeOverride: null,
+      movedToDay: null,
+      completedAt: dayKeyToDate(day),
+      createdAt: dayKeyToDate(day),
+    }
+  }
+
+  it('a régua é explícita: sem objetivo não pontua, com objetivo é médio', () => {
+    expect(routineImpact(rotina(null))).toBeNull()
+    expect(routineImpact(rotina('o1'))).toBe('medio')
+  })
+
+  it('item sem objetivo não muda o número', () => {
+    const solto = rotina(null)
+    const semRotina = calculateMomentum(week())
+    const comRotina = calculateMomentum({
+      ...week(),
+      routineItems: [solto],
+      routineOccurrences: Array.from({ length: 7 }, (_, index) =>
+        occurrence(solto.id, addDays(TODAY, -index)),
+      ),
+    })
+
+    expect(comRotina.value).toBe(semRotina.value)
+  })
+
+  it('item ligado a objetivo conta, e o teto da repetição continua valendo', () => {
+    const doObjetivo = rotina('o1')
+    const dia = TODAY
+
+    const semRotina = calculateMomentum(input({ activities: [activityOn(dia, 30)] }))
+    const comUm = calculateMomentum(
+      input({
+        activities: [activityOn(dia, 30)],
+        routineItems: [doObjetivo],
+        routineOccurrences: [occurrence(doObjetivo.id, dia)],
+      }),
+    )
+
+    expect(comUm.value).toBeGreaterThan(semRotina.value)
+
+    // Cinco itens ligados ao objetivo no mesmo dia não valem cinco vezes: eles
+    // dividem com o hábito o mesmo teto de repetição.
+    const cinco = Array.from({ length: 5 }, (_, index) =>
+      createRoutineItem({ userId: 'u1', title: `Item ${index}`, objectiveId: 'o1' }, `r${index}`,
+        dayKeyToDate(addDays(TODAY, -60))),
+    )
+    const comCinco = calculateMomentum(
+      input({
+        activities: [activityOn(dia, 30)],
+        routineItems: cinco,
+        routineOccurrences: cinco.map((item) => occurrence(item.id, dia)),
+      }),
+    )
+
+    expect(comCinco.value).toBe(comUm.value)
+  })
+
+  it('pulado não conta como feito', () => {
+    const doObjetivo = rotina('o1')
+    const pulado: RoutineOccurrence = {
+      ...occurrence(doObjetivo.id, TODAY),
+      status: 'pulado',
+      completedAt: null,
+    }
+
+    const comPulado = calculateMomentum(
+      input({
+        activities: [activityOn(TODAY, 30)],
+        routineItems: [doObjetivo],
+        routineOccurrences: [pulado],
+      }),
+    )
+    const semNada = calculateMomentum(input({ activities: [activityOn(TODAY, 30)] }))
+
+    expect(comPulado.value).toBe(semNada.value)
   })
 })

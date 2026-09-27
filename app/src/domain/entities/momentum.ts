@@ -3,7 +3,14 @@ import { totalMinutes } from './activity'
 import type { CapacityProfile } from './checkin'
 import { addDays, dayKeyToDate, dayRange, daysBetween, type DayKey } from './day'
 import { countsAsDone, type Habit, type HabitLog } from './habit'
-import { habitImpact, impactPointsOf, taskImpact, type ImpactLevel } from './momentum-impact'
+import {
+  habitImpact,
+  impactPointsOf,
+  routineImpact,
+  taskImpact,
+  type ImpactLevel,
+} from './momentum-impact'
+import type { RoutineItem, RoutineOccurrence } from './routine-item'
 import { type Task } from './task'
 import type { WeeklyReview } from './weekly-review'
 
@@ -274,6 +281,12 @@ export interface MomentumInput {
   readonly habits: readonly Habit[]
   readonly habitLogs: readonly HabitLog[]
   readonly tasks: readonly Task[]
+  /**
+   * A rotina. Opcional porque o score existia antes dela, e porque só uma
+   * parte dela conta: item SEM objetivo não entra (ver `routineImpact`).
+   */
+  readonly routineItems?: readonly RoutineItem[]
+  readonly routineOccurrences?: readonly RoutineOccurrence[]
   readonly today: DayKey
   /** Reviews escritos. Não entram no score; ficam pro resto do app. */
   readonly weeklyReviews?: readonly WeeklyReview[]
@@ -562,11 +575,26 @@ function consistencyFactor(
  * dia é o que impede um sábado heroico valer por uma semana.
  */
 function dayCredit(input: MomentumInput, day: DayKey): number {
+  /*
+    Hábito e rotina dividem o MESMO teto.
+
+    Os dois são repetição, e o teto existe pra repetição não competir com a
+    ação que destrava a etapa. Dar um balde próprio à rotina seria dobrar o
+    espaço da repetição no número, que é o contrário do que ele defende.
+  */
   let habits = 0
   for (const log of input.habitLogs) {
     if (log.day !== day || !countsAsDone(log.status)) continue
     const habit = input.habits.find((item) => item.id === log.habitId)
     habits += habit ? impactPointsOf(habitImpact(habit)) : impactPointsOf('baixo')
+  }
+
+  for (const occurrence of input.routineOccurrences ?? []) {
+    if (occurrence.day !== day || occurrence.status !== 'feito') continue
+    const item = (input.routineItems ?? []).find((entry) => entry.id === occurrence.itemId)
+    if (!item) continue
+    const level = routineImpact(item)
+    if (level !== null) habits += impactPointsOf(level)
   }
 
   let low = 0

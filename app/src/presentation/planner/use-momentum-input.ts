@@ -24,7 +24,16 @@ export function useMomentumInput(): MomentumInput {
   const objectives = useObjectives()
   const { profile } = useAuth()
 
-  const { activities, habits, habitLogs, tasks, today, weeklyReviews } = planner
+  const {
+    activities,
+    habits,
+    habitLogs,
+    tasks,
+    routineItems,
+    routineOccurrences,
+    today,
+    weeklyReviews,
+  } = planner
   const restWeekdays = profile?.restWeekdays
 
   /**
@@ -65,11 +74,24 @@ export function useMomentumInput(): MomentumInput {
       habits,
       habitLogs,
       tasks,
+      routineItems,
+      routineOccurrences,
       today,
       weeklyReviews,
       restWeekdays,
       planGainAt,
     }),
-    [activities, habits, habitLogs, tasks, today, weeklyReviews, restWeekdays, planGainAt],
+    [
+      activities,
+      habits,
+      habitLogs,
+      tasks,
+      routineItems,
+      routineOccurrences,
+      today,
+      weeklyReviews,
+      restWeekdays,
+      planGainAt,
+    ],
   )
 }

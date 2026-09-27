@@ -1,4 +1,5 @@
 import type { Habit } from './habit'
+import type { RoutineItem } from './routine-item'
 import type { Task } from './task'
 
 /**
@@ -60,6 +61,23 @@ export function taskImpact(task: Task): ImpactLevel {
  */
 export function habitImpact(habit: Habit): ImpactLevel {
   return habit.objectiveId !== null ? 'medio' : 'baixo'
+}
+
+/**
+ * O impacto de um item de rotina, e o `null` é a parte importante.
+ *
+ * Item de rotina SEM objetivo não entra no score. "Acordar", "café", "almoço"
+ * são o contorno do dia, não execução: contá-los faria o número subir por
+ * marcar a vida acontecendo, e é exatamente contra isso que o resto das regras
+ * daqui foi escrito.
+ *
+ * COM objetivo ele conta como MÉDIO, o mesmo do hábito ligado a objetivo, e
+ * pelo mesmo motivo: "correr segunda, quarta e sexta" pendurado em "correr 5km"
+ * é execução de verdade, e é repetição, então divide o mesmo teto diário que o
+ * hábito. Repetição não pode competir com a ação que destrava a etapa.
+ */
+export function routineImpact(item: RoutineItem): ImpactLevel | null {
+  return item.objectiveId !== null ? 'medio' : null
 }
 
 export function impactPointsOf(level: ImpactLevel): number {
