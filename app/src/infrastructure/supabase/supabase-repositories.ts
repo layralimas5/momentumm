@@ -11,6 +11,12 @@ import {
   type NewHabitInput,
 } from '@/domain/entities/habit'
 import {
+  createRoutineItem,
+  type NewRoutineItemInput,
+  type RoutineItem,
+  type RoutineOccurrence,
+} from '@/domain/entities/routine-item'
+import {
   createPlanStage,
   type NewPlanStageInput,
   type PlanStage,
@@ -65,6 +71,11 @@ import type {
 } from '@/domain/repositories/objective-repository'
 import type { CheckInRepository } from '@/domain/repositories/checkin-repository'
 import type { HabitRepository, HabitUpdate } from '@/domain/repositories/habit-repository'
+import type {
+  RoutineItemUpdate,
+  RoutineOccurrencePatch,
+  RoutineRepository,
+} from '@/domain/repositories/routine-repository'
 import type {
   AccountExport,
   ProfileRepository,
@@ -126,6 +137,8 @@ import {
   toHabit,
   toObjective,
   toHabitLog,
+  toRoutineItem,
+  toRoutineOccurrence,
   toProfile,
   toFollow,
   toFollowCounts,
@@ -718,6 +731,162 @@ export class SupabaseHabitRepository implements HabitRepository {
 
     if (error) fail(error, 'registrar o hábito')
     return toHabitLog(data)
+  }
+}
+
+export class SupabaseRoutineRepository implements RoutineRepository {
+  async listItems(userId: string): Promise<RoutineItem[]> {
+    const { data, error } = await supabase()
+      .from('routine_items')
+      .select('*')
+      .eq('user_id', userId)
+      .is('archived_at', null)
+      .order('order', { ascending: true })
+
+    if (error) fail(error, 'carregar a rotina')
+    return (data ?? []).map(toRoutineItem)
+  }
+
+  async createItem(input: NewRoutineItemInput): Promise<RoutineItem> {
+    // O domínio valida ANTES do banco: nome curto, horário torto e "dias
+    // específicos sem dia" viram mensagem em português, não erro de constraint.
+    const draft = createRoutineItem(input, crypto.randomUUID())
+
+    const { data, error } = await supabase()
+      .from('routine_items')
+      .insert({
+        user_id: draft.userId,
+        title: draft.title,
+        note: draft.note,
+        category: draft.category,
+        time_of_day: draft.timeOfDay,
+        day_part: draft.dayPart,
+        duration_min: draft.durationMin,
+        recurrence: draft.recurrence,
+        weekdays: draft.weekdays,
+        day: draft.day,
+        objective_id: draft.objectiveId,
+        reminder_min: draft.reminderMin,
+        order: draft.order,
+      })
+      .select('*')
+      .single()
+
+    if (error) fail(error, 'criar o item da rotina')
+    return toRoutineItem(data)
+  }
+
+  async updateItem(id: string, userId: string, changes: RoutineItemUpdate): Promise<RoutineItem> {
+    const { data, error } = await supabase()
+      .from('routine_items')
+      .update({
+        ...(changes.title !== undefined ? { title: changes.title } : {}),
+        ...(changes.note !== undefined ? { note: changes.note } : {}),
+        ...(changes.category !== undefined ? { category: changes.category } : {}),
+        ...(changes.timeOfDay !== undefined ? { time_of_day: changes.timeOfDay } : {}),
+        ...(changes.dayPart !== undefined ? { day_part: changes.dayPart } : {}),
+        ...(changes.durationMin !== undefined ? { duration_min: changes.durationMin } : {}),
+        ...(changes.recurrence !== undefined ? { recurrence: changes.recurrence } : {}),
+        ...(changes.weekdays !== undefined ? { weekdays: changes.weekdays } : {}),
+        ...(changes.day !== undefined ? { day: changes.day } : {}),
+        ...(changes.objectiveId !== undefined ? { objective_id: changes.objectiveId } : {}),
+        ...(changes.reminderMin !== undefined ? { reminder_min: changes.reminderMin } : {}),
+        ...(changes.order !== undefined ? { order: changes.order } : {}),
+        ...(changes.pausedAt !== undefined
+          ? { paused_at: changes.pausedAt?.toISOString() ?? null }
+          : {}),
+      })
+      .eq('id', id)
+      .eq('user_id', userId)
+      .select('*')
+      .single()
+
+    if (error) fail(error, 'atualizar o item da rotina')
+    return toRoutineItem(data)
+  }
+
+  async archiveItem(id: string, userId: string): Promise<void> {
+    const { error } = await supabase()
+      .from('routine_items')
+      .update({ archived_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('user_id', userId)
+
+    if (error) fail(error, 'arquivar o item da rotina')
+  }
+
+  async listOccurrences(userId: string): Promise<RoutineOccurrence[]> {
+    const { data, error } = await supabase()
+      .from('routine_occurrences')
+      .select('*')
+      .eq('user_id', userId)
+      .order('day', { ascending: false })
+      .limit(1000)
+
+    if (error) fail(error, 'carregar os dias da rotina')
+    return (data ?? []).map(toRoutineOccurrence)
+  }
+
+  async setOccurrence(
+    userId: string,
+    itemId: string,
+    day: DayKey,
+    patch: RoutineOccurrencePatch,
+  ): Promise<RoutineOccurrence> {
+    /*
+      Pendente e sem nada guardado é a ausência de linha.
+
+      Desmarcar apaga em vez de gravar um "pendente", pelo mesmo motivo do
+      hábito: linha que não diz nada só faz a tabela crescer. Mas pendente COM
+      horário trocado ou dia de destino fica, porque ali ela carrega a decisão
+      de reagendar.
+    */
+    const guardaDecisao = patch.timeOverride != null || patch.movedToDay != null
+
+    if (patch.status === 'pendente' && !guardaDecisao) {
+      const { error } = await supabase()
+        .from('routine_occurrences')
+        .delete()
+        .eq('user_id', userId)
+        .eq('item_id', itemId)
+        .eq('day', day)
+
+      if (error) fail(error, 'desfazer o registro da rotina')
+      return {
+        id: crypto.randomUUID(),
+        userId,
+        itemId,
+        day,
+        status: 'pendente',
+        plannedTime: patch.plannedTime ?? null,
+        timeOverride: null,
+        movedToDay: null,
+        completedAt: null,
+        createdAt: new Date(),
+      }
+    }
+
+    const { data, error } = await supabase()
+      .from('routine_occurrences')
+      .upsert(
+        {
+          // O `user_id` é reescrito pelo trigger a partir do dono do item: o
+          // que vai daqui é conveniência, nunca a fonte da autorização.
+          user_id: userId,
+          item_id: itemId,
+          day,
+          status: patch.status,
+          ...(patch.plannedTime !== undefined ? { planned_time: patch.plannedTime } : {}),
+          ...(patch.timeOverride !== undefined ? { time_override: patch.timeOverride } : {}),
+          ...(patch.movedToDay !== undefined ? { moved_to_day: patch.movedToDay } : {}),
+        },
+        { onConflict: 'item_id,day' },
+      )
+      .select('*')
+      .single()
+
+    if (error) fail(error, 'registrar a rotina')
+    return toRoutineOccurrence(data)
   }
 }
 

@@ -16,6 +16,15 @@ import {
   type HabitStatus,
   type NewHabitInput,
 } from '@/domain/entities/habit'
+import type {
+  NewRoutineItemInput,
+  RoutineItem,
+  RoutineOccurrence,
+} from '@/domain/entities/routine-item'
+import type {
+  RoutineItemUpdate,
+  RoutineOccurrencePatch,
+} from '@/domain/repositories/routine-repository'
 import {
   isActiveObjective,
   progressOfObjective,
@@ -70,6 +79,8 @@ interface Snapshot {
   readonly goals: Goal[]
   readonly habits: Habit[]
   readonly habitLogs: HabitLog[]
+  readonly routineItems: RoutineItem[]
+  readonly routineOccurrences: RoutineOccurrence[]
   readonly tasks: Task[]
   readonly checkIns: CheckIn[]
   readonly wins: Win[]
@@ -88,6 +99,8 @@ const EMPTY: Snapshot = {
   goals: [],
   habits: [],
   habitLogs: [],
+  routineItems: [],
+  routineOccurrences: [],
   tasks: [],
   checkIns: [],
   wins: [],
@@ -169,6 +182,8 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         goals,
         habits,
         habitLogs,
+        routineItems,
+        routineOccurrences,
         tasks,
         checkIns,
         wins,
@@ -182,6 +197,8 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         container.goals.listByUser(user.id),
         container.habits.listByUser(user.id),
         container.habits.listLogs(user.id),
+        container.routine.listItems(user.id),
+        container.routine.listOccurrences(user.id),
         container.tasks.listByUser(user.id),
         container.checkIns.listByUser(user.id),
         container.wins.listByUser(user.id),
@@ -210,6 +227,8 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         goals: goals.filter(isActive),
         habits,
         habitLogs,
+        routineItems,
+        routineOccurrences,
         tasks,
         checkIns,
         wins,
@@ -852,6 +871,112 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     [user, today, mutate],
   )
 
+  // ------------------------------------------------------------------ rotina
+
+  const createRoutineItem = useCallback(
+    async (input: Omit<NewRoutineItemInput, 'userId'>): Promise<RoutineItem | null> => {
+      if (!user) return null
+      const item = await container.routine.createItem({ userId: user.id, ...input })
+      setData((current) => ({ ...current, routineItems: [...current.routineItems, item] }))
+      return item
+    },
+    [user],
+  )
+
+  const updateRoutineItem = useCallback(
+    async (id: string, changes: RoutineItemUpdate) => {
+      if (!user) return
+      await mutate(
+        (current) => ({
+          ...current,
+          routineItems: current.routineItems.map((item) =>
+            item.id === id ? { ...item, ...changes } : item,
+          ),
+        }),
+        async () => {
+          await container.routine.updateItem(id, user.id, changes)
+        },
+      )
+    },
+    [user, mutate],
+  )
+
+  const archiveRoutineItem = useCallback(
+    async (id: string) => {
+      if (!user) return
+      await mutate(
+        (current) => ({
+          ...current,
+          routineItems: current.routineItems.filter((item) => item.id !== id),
+        }),
+        () => container.routine.archiveItem(id, user.id),
+      )
+    },
+    [user, mutate],
+  )
+
+  /**
+   * O estado de um item da rotina num dia.
+   *
+   * É a MESMA operação pra concluir, pular e reagendar: uma linha por item e
+   * dia. Ter três funções aqui seria ter três caminhos pro mesmo registro, e é
+   * assim que dois deles deixam de carimbar o que o terceiro carimba.
+   */
+  const setRoutineStatus = useCallback(
+    async (
+      itemId: string,
+      patch: RoutineOccurrencePatch,
+      day: DayKey = today,
+    ) => {
+      if (!user) return
+
+      const existing = snapshot.current.routineOccurrences.find(
+        (item) => item.itemId === itemId && item.day === day,
+      )
+      const timeOverride = patch.timeOverride ?? existing?.timeOverride ?? null
+      const movedToDay = patch.movedToDay ?? existing?.movedToDay ?? null
+      const vazia = patch.status === 'pendente' && timeOverride === null && movedToDay === null
+
+      const optimistic: RoutineOccurrence = {
+        id: existing?.id ?? `optimistic-${itemId}-${day}`,
+        userId: user.id,
+        itemId,
+        day,
+        status: patch.status,
+        plannedTime: patch.plannedTime ?? existing?.plannedTime ?? null,
+        timeOverride,
+        movedToDay,
+        completedAt: patch.status === 'feito' ? new Date() : null,
+        createdAt: existing?.createdAt ?? new Date(),
+      }
+
+      await mutate(
+        (current) => {
+          const withoutDay = current.routineOccurrences.filter(
+            (item) => !(item.itemId === itemId && item.day === day),
+          )
+          // Pendente e sem decisão guardada é a ausência de linha, como no
+          // hábito: o registro some em vez de virar histórico de nada.
+          return {
+            ...current,
+            routineOccurrences: vazia ? withoutDay : [...withoutDay, optimistic],
+          }
+        },
+        async () => {
+          const saved = await container.routine.setOccurrence(user.id, itemId, day, patch)
+          if (vazia) return
+          setData((current) => ({
+            ...current,
+            routineOccurrences: current.routineOccurrences.map((item) =>
+              item.id === optimistic.id ? saved : item,
+            ),
+          }))
+        },
+      )
+    },
+    [user, today, mutate],
+  )
+
   const createTask = useCallback(
     async (input: Omit<NewTaskInput, 'userId'>): Promise<Task | null> => {
       if (!user) return null
@@ -1192,6 +1317,8 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       goals: data.goals,
       goalProgress,
       habits: data.habits,
+      routineItems: data.routineItems,
+      routineOccurrences: data.routineOccurrences,
       habitLogs: data.habitLogs,
       tasks: data.tasks,
       checkIns: data.checkIns,
@@ -1229,6 +1356,10 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       setHabitPaused,
       archiveHabit,
       setHabitStatus,
+      createRoutineItem,
+      updateRoutineItem,
+      archiveRoutineItem,
+      setRoutineStatus,
       createTask,
       updateTask,
       setTaskDone,
@@ -1278,6 +1409,10 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       setHabitPaused,
       archiveHabit,
       setHabitStatus,
+      createRoutineItem,
+      updateRoutineItem,
+      archiveRoutineItem,
+      setRoutineStatus,
       createTask,
       updateTask,
       setTaskDone,

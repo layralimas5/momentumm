@@ -17,6 +17,12 @@ import {
   type HabitLog,
 } from '@/domain/entities/habit'
 import {
+  ROUTINE_RECURRENCES,
+  ROUTINE_STATUSES,
+  type RoutineItem,
+  type RoutineOccurrence,
+} from '@/domain/entities/routine-item'
+import {
   CHALLENGE_MODES,
   PARTICIPANT_STATUSES,
   type Challenge,
@@ -456,6 +462,78 @@ export function toHabitLog(row: unknown): HabitLog {
     habitId: parsed.habit_id,
     day: parseDayKey(parsed.day.slice(0, 10)),
     status: parsed.status,
+    createdAt: new Date(parsed.created_at),
+  }
+}
+
+const routineItemRowSchema = z.object({
+  id: z.string(),
+  user_id: z.string(),
+  title: z.string(),
+  note: z.string().nullish(),
+  category: z.string().nullish(),
+  time_of_day: z.string().nullish(),
+  day_part: z.enum(DAY_PARTS).nullish(),
+  duration_min: z.number().int().nullish(),
+  recurrence: z.enum(ROUTINE_RECURRENCES),
+  weekdays: z.array(z.number().int().min(0).max(6)).nullable(),
+  day: z.string().nullish(),
+  objective_id: z.string().nullish(),
+  reminder_min: z.number().int().nullish(),
+  order: z.number().int().nullish(),
+  paused_at: z.string().nullish(),
+  archived_at: z.string().nullish(),
+  created_at: z.string(),
+})
+
+const routineOccurrenceRowSchema = z.object({
+  id: z.string(),
+  user_id: z.string(),
+  item_id: z.string(),
+  day: z.string(),
+  status: z.enum(ROUTINE_STATUSES),
+  planned_time: z.string().nullish(),
+  time_override: z.string().nullish(),
+  moved_to_day: z.string().nullish(),
+  completed_at: z.string().nullish(),
+  created_at: z.string(),
+})
+
+export function toRoutineItem(row: unknown): RoutineItem {
+  const parsed = parseOrThrow(routineItemRowSchema, row, 'item da rotina')
+  return {
+    id: parsed.id,
+    userId: parsed.user_id,
+    title: parsed.title,
+    note: parsed.note ?? null,
+    category: parsed.category ?? null,
+    timeOfDay: parsed.time_of_day ?? null,
+    dayPart: parsed.day_part ?? 'qualquer',
+    durationMin: parsed.duration_min ?? null,
+    recurrence: parsed.recurrence,
+    weekdays: parsed.weekdays ?? [],
+    day: parsed.day ? parseDayKey(parsed.day.slice(0, 10)) : null,
+    objectiveId: parsed.objective_id ?? null,
+    reminderMin: parsed.reminder_min ?? null,
+    order: parsed.order ?? 0,
+    pausedAt: parsed.paused_at ? new Date(parsed.paused_at) : null,
+    archivedAt: parsed.archived_at ? new Date(parsed.archived_at) : null,
+    createdAt: new Date(parsed.created_at),
+  }
+}
+
+export function toRoutineOccurrence(row: unknown): RoutineOccurrence {
+  const parsed = parseOrThrow(routineOccurrenceRowSchema, row, 'dia da rotina')
+  return {
+    id: parsed.id,
+    userId: parsed.user_id,
+    itemId: parsed.item_id,
+    day: parseDayKey(parsed.day.slice(0, 10)),
+    status: parsed.status,
+    plannedTime: parsed.planned_time ?? null,
+    timeOverride: parsed.time_override ?? null,
+    movedToDay: parsed.moved_to_day ? parseDayKey(parsed.moved_to_day.slice(0, 10)) : null,
+    completedAt: parsed.completed_at ? new Date(parsed.completed_at) : null,
     createdAt: new Date(parsed.created_at),
   }
 }

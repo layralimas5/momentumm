@@ -22,6 +22,12 @@ import {
 } from '@/domain/entities/habit'
 import { createGoal, type Goal, type NewGoalInput } from '@/domain/entities/goal'
 import {
+  createRoutineItem,
+  type NewRoutineItemInput,
+  type RoutineItem,
+  type RoutineOccurrence,
+} from '@/domain/entities/routine-item'
+import {
   createChallenge,
   createParticipant,
   type Challenge,
@@ -125,6 +131,9 @@ interface DemoState {
   goals: Goal[]
   habits: Habit[]
   habitLogs: HabitLog[]
+  /** A rotina: a regra de cada item e a execução de cada dia. */
+  routineItems: RoutineItem[]
+  routineOccurrences: RoutineOccurrence[]
   tasks: Task[]
   checkIns: CheckIn[]
   wins: Win[]
@@ -551,6 +560,7 @@ function seed(): DemoState {
     goals,
     habits,
     habitLogs,
+    ...seedRoutine(),
     tasks,
     checkIns,
     wins,
@@ -669,6 +679,47 @@ function seedChallenge(
  * A conta demo nasce no gratuito, então tentar criar um clube aqui cai no
  * convite ao PRO, que é exatamente o que precisa ser visto.
  */
+/**
+ * Uma rotina de fábrica, pequena.
+ *
+ * Diferente dos momentos (que nascem vazios de propósito), aqui a rotina vem
+ * montada, e pelo mesmo motivo do desafio: "Seu dia" é uma tela que só faz
+ * sentido cheia. Uma agenda vazia na primeira abertura não mostra o recurso,
+ * mostra um card de empty state, e quem está avaliando o app fecha antes de
+ * cadastrar onze linhas pra ver como fica.
+ *
+ * São cinco itens e nenhuma ocorrência: o dia começa todo em aberto, porque
+ * marcar check por conta da pessoa seria mentir sobre o que ela fez.
+ */
+function seedRoutine(): {
+  routineItems: RoutineItem[]
+  routineOccurrences: RoutineOccurrence[]
+} {
+  const nascimento = new Date(Date.now() - 30 * 86_400_000)
+
+  const items: NewRoutineItemInput[] = [
+    { userId: DEMO_USER.id, title: 'Acordar', timeOfDay: '07:00', order: 0 },
+    { userId: DEMO_USER.id, title: 'Café da manhã', timeOfDay: '07:30', durationMin: 20, order: 1 },
+    {
+      userId: DEMO_USER.id,
+      title: 'Trabalho',
+      timeOfDay: '09:00',
+      recurrence: 'uteis',
+      category: 'Trabalho',
+      order: 2,
+    },
+    { userId: DEMO_USER.id, title: 'Almoço', timeOfDay: '12:00', durationMin: 60, order: 3 },
+    { userId: DEMO_USER.id, title: 'Preparar o dia seguinte', timeOfDay: '22:30', order: 4 },
+  ]
+
+  return {
+    routineItems: items.map((item, index) =>
+      createRoutineItem(item, `rotina-demo-${index}`, nascimento),
+    ),
+    routineOccurrences: [],
+  }
+}
+
 function seedClub(): {
   clubs: Club[]
   clubMembers: ClubMember[]
@@ -900,6 +951,19 @@ interface StoredState {
   goals: Array<Omit<Goal, 'createdAt' | 'archivedAt'> & { createdAt: string; archivedAt: string | null }>
   habits: Array<Omit<Habit, 'createdAt' | 'archivedAt'> & { createdAt: string; archivedAt: string | null }>
   habitLogs: Array<Omit<HabitLog, 'createdAt'> & { createdAt: string }>
+  routineItems?: Array<
+    Omit<RoutineItem, 'createdAt' | 'pausedAt' | 'archivedAt'> & {
+      createdAt: string
+      pausedAt: string | null
+      archivedAt: string | null
+    }
+  >
+  routineOccurrences?: Array<
+    Omit<RoutineOccurrence, 'createdAt' | 'completedAt'> & {
+      createdAt: string
+      completedAt: string | null
+    }
+  >
   tasks: Array<Omit<Task, 'createdAt' | 'completedAt'> & { createdAt: string; completedAt: string | null }>
   checkIns: Array<Omit<CheckIn, 'createdAt'> & { createdAt: string }>
   wins: Array<Omit<Win, 'createdAt'> & { createdAt: string }>
@@ -997,6 +1061,17 @@ function revive(raw: string): DemoState {
     habitLogs: (parsed.habitLogs ?? []).map((item) => ({
       ...item,
       createdAt: new Date(item.createdAt),
+    })),
+    routineItems: (parsed.routineItems ?? []).map((item) => ({
+      ...item,
+      createdAt: new Date(item.createdAt),
+      pausedAt: item.pausedAt ? new Date(item.pausedAt) : null,
+      archivedAt: item.archivedAt ? new Date(item.archivedAt) : null,
+    })),
+    routineOccurrences: (parsed.routineOccurrences ?? []).map((item) => ({
+      ...item,
+      createdAt: new Date(item.createdAt),
+      completedAt: item.completedAt ? new Date(item.completedAt) : null,
     })),
     tasks: (parsed.tasks ?? []).map((item) => ({
       ...item,
@@ -1443,6 +1518,111 @@ export const demoStore = {
 
     persist()
     return log
+  },
+
+  // ------------------------------------------------------------------ rotina
+
+  routineItems(): RoutineItem[] {
+    return [...load().routineItems]
+  },
+
+  addRoutineItem(input: NewRoutineItemInput): RoutineItem {
+    const current = load()
+    const item = createRoutineItem(input, newId())
+    current.routineItems = [...current.routineItems, item]
+    persist()
+    return item
+  },
+
+  updateRoutineItem(id: string, changes: Partial<RoutineItem>): RoutineItem {
+    const current = load()
+    const found = current.routineItems.find((item) => item.id === id)
+    if (!found) throw new DomainError('Esse item da rotina não existe mais.')
+
+    const updated: RoutineItem = { ...found, ...changes }
+    current.routineItems = current.routineItems.map((item) => (item.id === id ? updated : item))
+    persist()
+    return updated
+  },
+
+  archiveRoutineItem(id: string): void {
+    const current = load()
+    current.routineItems = current.routineItems.map((item) =>
+      item.id === id ? { ...item, archivedAt: new Date() } : item,
+    )
+    persist()
+  },
+
+  routineOccurrences(): RoutineOccurrence[] {
+    return [...load().routineOccurrences]
+  },
+
+  /**
+   * O estado de um item num dia.
+   *
+   * Voltar pra pendente SEM reagendamento apaga a linha: ausência é o estado
+   * padrão, e guardar um "pendente" explícito faria a tabela crescer com
+   * linhas que não dizem nada. Com reagendamento a linha fica, porque ali o
+   * pendente carrega informação: o horário trocado ou o dia de destino.
+   */
+  setRoutineOccurrence(
+    itemId: string,
+    day: DayKey,
+    patch: {
+      status: RoutineOccurrence['status']
+      plannedTime?: string | null
+      timeOverride?: string | null
+      movedToDay?: DayKey | null
+    },
+  ): RoutineOccurrence {
+    const current = load()
+    const existing = current.routineOccurrences.find(
+      (item) => item.itemId === itemId && item.day === day,
+    )
+
+    const timeOverride = patch.timeOverride ?? existing?.timeOverride ?? null
+    const movedToDay = patch.movedToDay ?? existing?.movedToDay ?? null
+    const vazia = patch.status === 'pendente' && timeOverride === null && movedToDay === null
+
+    if (vazia) {
+      current.routineOccurrences = current.routineOccurrences.filter((item) => item !== existing)
+      persist()
+      return (
+        existing ?? {
+          id: newId(),
+          userId: DEMO_USER.id,
+          itemId,
+          day,
+          status: 'pendente',
+          plannedTime: patch.plannedTime ?? null,
+          timeOverride: null,
+          movedToDay: null,
+          completedAt: null,
+          createdAt: new Date(),
+        }
+      )
+    }
+
+    const occurrence: RoutineOccurrence = {
+      id: existing?.id ?? newId(),
+      userId: DEMO_USER.id,
+      itemId,
+      day,
+      status: patch.status,
+      plannedTime: patch.plannedTime ?? existing?.plannedTime ?? null,
+      timeOverride,
+      movedToDay,
+      // O mesmo carimbo do trigger da 0064: estado e hora não podem discordar.
+      completedAt: patch.status === 'feito' ? (existing?.completedAt ?? new Date()) : null,
+      createdAt: existing?.createdAt ?? new Date(),
+    }
+
+    current.routineOccurrences = existing
+      ? current.routineOccurrences.map((item) => (item === existing ? occurrence : item))
+      : [...current.routineOccurrences, occurrence]
+
+    persist()
+    return occurrence
   },
 
   tasks(): Task[] {
@@ -2041,6 +2221,11 @@ export const demoStore = {
       goals: [],
       habits: [],
       habitLogs: [],
+      // A rotina é progresso: recomeçar do zero apaga o dia montado junto com
+      // o resto, senão a conta zerada abriria com onze linhas de um dia que
+      // ela não escreveu.
+      routineItems: [],
+      routineOccurrences: [],
       tasks: [],
       checkIns: [],
       wins: [],

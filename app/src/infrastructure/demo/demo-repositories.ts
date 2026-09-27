@@ -13,6 +13,11 @@ import type { CheckIn, NewCheckInInput } from '@/domain/entities/checkin'
 import type { DayKey } from '@/domain/entities/day'
 import type { Habit, HabitLog, HabitStatus, NewHabitInput } from '@/domain/entities/habit'
 import type {
+  NewRoutineItemInput,
+  RoutineItem,
+  RoutineOccurrence,
+} from '@/domain/entities/routine-item'
+import type {
   Challenge,
   ChallengeParticipant,
   NewChallengeInput,
@@ -54,6 +59,11 @@ import type {
 } from '@/domain/repositories/objective-repository'
 import type { CheckInRepository } from '@/domain/repositories/checkin-repository'
 import type { HabitRepository, HabitUpdate } from '@/domain/repositories/habit-repository'
+import type {
+  RoutineItemUpdate,
+  RoutineOccurrencePatch,
+  RoutineRepository,
+} from '@/domain/repositories/routine-repository'
 import type {
   AccountExport,
   ProfileRepository,
@@ -374,6 +384,37 @@ export class DemoHabitRepository implements HabitRepository {
     status: HabitStatus,
   ): Promise<HabitLog> {
     return demoStore.setHabitStatus(habitId, day, status)
+  }
+}
+
+export class DemoRoutineRepository implements RoutineRepository {
+  async listItems(): Promise<RoutineItem[]> {
+    return demoStore.routineItems()
+  }
+
+  async createItem(input: NewRoutineItemInput): Promise<RoutineItem> {
+    return demoStore.addRoutineItem(input)
+  }
+
+  async updateItem(id: string, _userId: string, changes: RoutineItemUpdate): Promise<RoutineItem> {
+    return demoStore.updateRoutineItem(id, changes)
+  }
+
+  async archiveItem(id: string): Promise<void> {
+    demoStore.archiveRoutineItem(id)
+  }
+
+  async listOccurrences(): Promise<RoutineOccurrence[]> {
+    return demoStore.routineOccurrences()
+  }
+
+  async setOccurrence(
+    _userId: string,
+    itemId: string,
+    day: DayKey,
+    patch: RoutineOccurrencePatch,
+  ): Promise<RoutineOccurrence> {
+    return demoStore.setRoutineOccurrence(itemId, day, patch)
   }
 }
 

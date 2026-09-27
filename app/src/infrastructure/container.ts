@@ -11,6 +11,7 @@ import type { DayPhotoRepository } from '@/domain/repositories/day-photo-reposit
 import type { ReferralRepository } from '@/domain/repositories/referral-repository'
 import type { ClubRepository } from '@/domain/repositories/club-repository'
 import type { HabitRepository } from '@/domain/repositories/habit-repository'
+import type { RoutineRepository } from '@/domain/repositories/routine-repository'
 import type { JourneyEventRepository } from '@/domain/repositories/journey-event-repository'
 import type { ObjectiveRepository } from '@/domain/repositories/objective-repository'
 import type { PlanStageRepository } from '@/domain/repositories/plan-stage-repository'
@@ -54,6 +55,7 @@ import {
   DemoReferralRepository,
   DemoClubRepository,
   DemoHabitRepository,
+  DemoRoutineRepository,
   DemoEvolutionRepository,
   DemoJourneyEventRepository,
   DemoObjectiveRepository,
@@ -78,6 +80,7 @@ import {
   SupabaseReferralRepository,
   SupabaseClubRepository,
   SupabaseHabitRepository,
+  SupabaseRoutineRepository,
   SupabaseJourneyEventRepository,
   SupabaseObjectiveRepository,
   SupabasePlanStageRepository,
@@ -97,6 +100,7 @@ export interface Container {
   readonly planStages: PlanStageRepository
   readonly profiles: ProfileRepository
   readonly habits: HabitRepository
+  readonly routine: RoutineRepository
   readonly tasks: TaskRepository
   readonly checkIns: CheckInRepository
   readonly wins: WinRepository
@@ -181,6 +185,7 @@ export const container: Container = isDemoMode
       planStages: new DemoPlanStageRepository(),
       profiles: new DemoProfileRepository(),
       habits: new DemoHabitRepository(),
+      routine: new DemoRoutineRepository(),
       tasks: new DemoTaskRepository(),
       checkIns: new DemoCheckInRepository(),
       wins: new DemoWinRepository(),
@@ -212,6 +217,7 @@ export const container: Container = isDemoMode
       planStages: new SupabasePlanStageRepository(),
       profiles: new SupabaseProfileRepository(),
       habits: new SupabaseHabitRepository(),
+      routine: new SupabaseRoutineRepository(),
       tasks: new SupabaseTaskRepository(),
       checkIns: new SupabaseCheckInRepository(),
       wins: new SupabaseWinRepository(),
