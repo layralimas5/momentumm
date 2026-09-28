@@ -24,11 +24,17 @@ export function MobileTodayStats({
   momentum,
   done,
   total,
+  dayDone,
+  dayTotal,
   focusMinutes,
 }: {
   readonly momentum: MomentumScore
+  /** Ações e hábitos do dia: o que move objetivo. É o número grande. */
   readonly done: number
   readonly total: number
+  /** O dia inteiro, rotina junto. É a linha de baixo. */
+  readonly dayDone: number
+  readonly dayTotal: number
   readonly focusMinutes: number
 }) {
   const tone =
@@ -49,13 +55,29 @@ export function MobileTodayStats({
         </p>
       </Tile>
 
-      <Tile to="/app/plano" label="Hoje" icon="check" tone="positive">
+      {/*
+        Dois números, e eles medem coisas diferentes de propósito.
+
+        O grande é o que move objetivo: ação e hábito. É ele que alimenta os
+        momentos da jornada e o card de compartilhar, e por isso ele NÃO conta
+        rotina, senão "fechei 10 de 10 hoje" passaria a incluir acordar e
+        almoçar, e o número deixaria de querer dizer alguma coisa.
+
+        O pequeno é o dia inteiro, e bate com "Seu dia" logo abaixo. Eram os
+        dois o mesmo rótulo em telas diferentes: o topo dizia 0/4, a lista
+        dizia 0 de 8, e nada na tela explicava a diferença.
+      */}
+      <Tile to="/app/plano" label="Planejado" icon="check" tone="positive">
         <p className="tabular mt-3 text-[1.75rem] leading-none font-semibold tracking-tight text-ink">
           {done}
           <span className="text-base text-ink-faint">/{total}</span>
         </p>
         <p className="mt-1.5 truncate text-[0.6875rem] text-ink-faint">
-          {total === 0 ? 'nada planejado' : done >= total ? 'dia cumprido' : 'concluídas'}
+          {dayTotal === 0
+            ? 'nada planejado'
+            : dayDone >= dayTotal
+              ? 'dia cumprido'
+              : `dia: ${dayDone} de ${dayTotal}`}
         </p>
       </Tile>
 

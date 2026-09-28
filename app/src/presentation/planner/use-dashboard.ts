@@ -85,12 +85,21 @@ export interface FocusItem {
 export interface TodayFocus {
   /** Até três itens: é o que cabe numa decisão. */
   readonly items: readonly FocusItem[]
-  /** Tudo do dia, pra tela dizer quantos ficaram de fora. */
+  /** Todas as prioridades do dia, pra tela dizer quantas ficaram de fora. */
   readonly all: readonly FocusItem[]
   readonly done: number
   readonly total: number
   /** Soma estimada dos itens em aberto, em minutos. Null sem nenhuma estimativa. */
   readonly minutes: number | null
+  /**
+   * O dia tem trabalho, mesmo que nenhuma prioridade marcada.
+   *
+   * É o que separa "hoje não tem nada" de "hoje tem oito coisas e você não
+   * escolheu nenhuma". A primeira pede pra planejar o dia; a segunda pede pra
+   * escolher entre o que já existe, e oferecer "planejar" ali seria mandar a
+   * pessoa criar mais trabalho em cima do trabalho que ela já tem.
+   */
+  readonly dayHasWork: boolean
 }
 
 /** Uma ação com o caminho dela: objetivo, etapa e por que ela importa hoje. */
@@ -348,10 +357,28 @@ export function useDashboard(): DashboardView {
     const rank = (item: FocusItem) => {
       if (item.done) return 3
       if (item.role === 'Prioridade principal') return 0
-      return item.priority === 'alta' ? 1 : 2
+      return 1
     }
 
-    const all = [...fromTasks, ...fromHabits].sort((a, b) => rank(a) - rank(b))
+    const doDia = [...fromTasks, ...fromHabits]
+
+    /*
+      O foco é o que a PESSOA marcou, e nada além disso.
+
+      Ele era "os três primeiros do dia depois de ordenar", o que fazia o bloco
+      de maior peso da tela mostrar um recorte que ninguém escolheu, e o
+      contador dele ("4 atividades") discordar do contador do dia ("8 itens")
+      na mesma tela, sem nenhuma pista de por quê.
+
+      Agora entram dois casos, e só eles: a prioridade principal, que é uma
+      escolha explícita de hoje, e o que a pessoa marcou como prioridade alta.
+      Rotina não entra porque ela não tem prioridade pra marcar: ela é o
+      contorno do dia, não a decisão dele. Tudo continua em "Seu dia".
+    */
+    const all = doDia
+      .filter((item) => item.role === 'Prioridade principal' || item.priority === 'alta')
+      .sort((a, b) => rank(a) - rank(b))
+
     const items = all.slice(0, MAX_FOCUS_ITEMS)
 
     const open = items.filter((item) => !item.done)
@@ -363,6 +390,7 @@ export function useDashboard(): DashboardView {
       done: all.filter((item) => item.done).length,
       total: all.length,
       minutes: open.some((item) => item.minutes !== null) ? estimated : null,
+      dayHasWork: doDia.length > 0,
     }
   }, [tasks, today, habitStates, objectiveOf, stageTitleOf])
 

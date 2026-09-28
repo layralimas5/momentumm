@@ -237,6 +237,8 @@ export function MobileDashboard({
         momentum={view.momentum}
         done={view.dayProgress.done}
         total={view.dayProgress.total}
+        dayDone={view.agenda.done}
+        dayTotal={view.agenda.total}
         focusMinutes={view.focusMinutesToday}
       />
 
