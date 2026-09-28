@@ -1,5 +1,5 @@
-import type { FollowCounts } from '@/domain/entities/follow'
 import type { Profile } from '@/domain/entities/profile'
+import type { SocialCounts } from '@/domain/entities/social-graph'
 import { isPro } from '@/domain/entities/plan'
 import { filledSocials, socialDisplay, socialUrl, SOCIAL_LABELS } from '@/domain/entities/social-link'
 import { Avatar } from '@/presentation/components/ui/Avatar'
@@ -15,16 +15,16 @@ const SOCIAL_ICONS: Readonly<Record<'instagram' | 'tiktok' | 'linkedin', IconNam
 
 interface ProfileIdentityCardProps {
   readonly profile: Profile
-  readonly counts: FollowCounts
   /**
-   * Quantos momentos a jornada registrou.
+   * Publicações, seguidores e seguindo, os três do servidor.
    *
-   * O rótulo é "Momentos" e não "Posts" porque é isso que eles são: marcos que
-   * o app grava quando um dia fecha, um objetivo avança ou um recorde cai.
-   * Chamar de post daria a entender que existe um lugar onde eles foram
-   * publicados, e esse lugar é escolha de cada momento, um a um.
+   * "Momentos" saiu daqui. Ele contava o que o APP grava sozinho (dia fechado,
+   * objetivo avançado, recorde), e esse número não tinha como bater com o que
+   * a grade logo abaixo mostra — o que a pessoa PUBLICOU. Dois números
+   * parecidos e diferentes na mesma tela é como um app começa a discordar de
+   * si mesmo. Os momentos continuam inteiros, na aba de atividades.
    */
-  readonly moments: number
+  readonly counts: SocialCounts
   /**
    * A moldura Aurora, desbloqueada no PRO a partir do nível 7. Um anel com
    * brilho, não um enfeite a mais: o anel comum já existe pra todo mundo, e o
@@ -33,6 +33,9 @@ interface ProfileIdentityCardProps {
   readonly aurora?: boolean
   readonly onEdit: () => void
   readonly onShare: () => void
+  /** Abre a lista. Sem callback, o número é só informação. */
+  readonly onOpenFollowers?: (() => void) | undefined
+  readonly onOpenFollowing?: (() => void) | undefined
 }
 
 /**
@@ -43,17 +46,18 @@ interface ProfileIdentityCardProps {
  * medida de evolução, momentum, constância, conquistas, fica nas abas
  * abaixo, porque isso é sobre o caminho, e o cartão é sobre quem caminha.
  *
- * Os três números são contagens reais: momentos publicados, quem segue e quem é
- * seguido. Nenhum deles é uma porta, seguir não abre perfil privado, e a
- * regra mora no banco, não aqui.
+ * Os três números são contagens reais, vindas do servidor: publicações que o
+ * visitante pode ver, quem segue e quem é seguido. Nenhum deles é uma porta —
+ * quem decide o que se vê é a RLS, e contagem é vitrine.
  */
 export function ProfileIdentityCard({
   profile,
   counts,
-  moments,
   aurora = false,
   onEdit,
   onShare,
+  onOpenFollowers,
+  onOpenFollowing,
 }: ProfileIdentityCardProps) {
   const socials = filledSocials(profile.socials)
   // O selo diz PRO, não "verificado": este produto não verifica identidade de
@@ -117,11 +121,15 @@ export function ProfileIdentityCard({
           <p className="mt-0.5 truncate text-sm text-ink-faint">@{profile.handle}</p>
 
           <dl className="mt-4 flex items-center">
-            <Count label="Momentos" value={moments} />
+            <Count label="Publicações" value={counts.posts} />
             <Divider />
-            <Count label="Seguidores" value={counts.followers} />
+            <Count
+              label={counts.followers === 1 ? 'Seguidor' : 'Seguidores'}
+              value={counts.followers}
+              onOpen={onOpenFollowers}
+            />
             <Divider />
-            <Count label="Seguindo" value={counts.following} />
+            <Count label="Seguindo" value={counts.following} onOpen={onOpenFollowing} />
           </dl>
         </div>
       </div>
@@ -170,18 +178,47 @@ export function ProfileIdentityCard({
 }
 
 /**
- * O número em cima, o rótulo embaixo, e nenhum dos dois é link.
+ * O número em cima, o rótulo embaixo.
  *
- * Tocar em "Seguidores" abriria a lista de quem segue, e essa tela não existe:
- * ela pede uma conversa inteira sobre quem pode ver quem. Enquanto não existir,
- * o número é informação, não promessa.
+ * Seguidores e Seguindo agora ABREM a lista, porque a tela passou a existir e
+ * a pergunta "quem pode ver quem" foi respondida no servidor: quem enxerga o
+ * perfil enxerga as listas dele. Publicações não abre nada — a grade já está
+ * logo abaixo, e um toque que rola a página dois centímetros é um toque que
+ * não valia a pena.
  */
-function Count({ label, value }: { readonly label: string; readonly value: number }) {
-  return (
-    <div className="flex-1 text-left">
-      <dt className="text-xs text-ink-faint">{label}</dt>
+function Count({
+  label,
+  value,
+  onOpen,
+}: {
+  readonly label: string
+  readonly value: number
+  readonly onOpen?: (() => void) | undefined
+}) {
+  /*
+    `min-w-0` e `truncate`: sem os dois, um item `flex-1` não encolhe abaixo da
+    largura do próprio texto (o `min-width: auto` do flexbox), e "Seguidores"
+    empurrava a linha inteira dois pixels pra fora num aparelho de 320px — o
+    bastante pra a página ganhar rolagem horizontal.
+  */
+  const body = (
+    <>
+      <dt className="truncate text-xs text-ink-faint">{label}</dt>
       <dd className="tabular mt-0.5 text-lg leading-none font-semibold text-ink">{value}</dd>
-    </div>
+    </>
+  )
+
+  if (!onOpen) return <div className="min-w-0 flex-1 text-left">{body}</div>
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="min-h-11 min-w-0 flex-1 rounded-lg text-left transition-colors active:bg-surface-hi"
+    >
+      {body}
+      <span className="sr-only">. Ver a lista</span>
+    </button>
   )
 }
 

@@ -20,6 +20,7 @@ import { ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 import { MobileShortcuts } from '@/presentation/components/mobile/MobileShortcuts'
 import { SecurityPanel } from '@/presentation/profile/SecurityPanel'
+import { BlockedPanel } from '@/presentation/social/BlockedPanel'
 import { SupportPanel } from '@/presentation/profile/SupportPanel'
 import { ReminderSettings } from '@/presentation/notifications/ReminderSettings'
 import { InstallSettings } from '@/presentation/pwa/InstallSettings'
@@ -344,6 +345,13 @@ export function ProfilePage() {
         de nome e @, e espremê-las na coluna lateral as faria parecer
         preferências.
       */}
+      {/*
+        Quem foi bloqueado fica aqui, e não no perfil: é uma lista da CONTA, e
+        bloquear sem um lugar pra desbloquear seria uma decisão sem volta
+        escondida num menu de três pontos.
+      */}
+      <BlockedPanel />
+
       <SecurityPanel />
 
       {/*
