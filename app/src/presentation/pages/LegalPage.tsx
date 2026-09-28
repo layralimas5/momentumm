@@ -1,8 +1,6 @@
-import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { SiteFooter } from '@/presentation/components/landing/SiteFooter'
 import { SiteHeader } from '@/presentation/components/landing/SiteHeader'
-import { SITE } from '@/presentation/components/landing/site'
 import { formatLegalVersion, LEGAL_VERSIONS } from '@/domain/legal/legal-documents'
 
 /**
@@ -162,14 +160,6 @@ const DOCUMENTS: Readonly<Record<LegalKind, LegalDocument>> = {
 
 export function LegalPage({ kind }: { readonly kind: LegalKind }) {
   const document = DOCUMENTS[kind]
-
-  useEffect(() => {
-    const previous = window.document.title
-    window.document.title = `${document.title} · ${SITE.name}`
-    return () => {
-      window.document.title = previous
-    }
-  }, [document.title])
 
   return (
     <div className="min-h-dvh bg-canvas">

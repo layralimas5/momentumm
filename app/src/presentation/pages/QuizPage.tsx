@@ -35,10 +35,6 @@ export function QuizPage() {
     previousStep.current = quiz.step
   }, [quiz.step])
 
-  useEffect(() => {
-    document.title = 'Criar meu plano · Momentumm'
-  }, [])
-
   const activate = () => {
     quiz.activate()
     // Quem já tem conta aberta não passa pelo cadastro: o plano ativa direto.
