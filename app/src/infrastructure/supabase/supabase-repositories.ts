@@ -97,7 +97,6 @@ import type {
   ChallengeUpdate,
 } from '@/domain/repositories/challenge-repository'
 import type { FriendshipRepository } from '@/domain/repositories/friendship-repository'
-import type { FollowRepository } from '@/domain/repositories/follow-repository'
 import type { ReferralRepository } from '@/domain/repositories/referral-repository'
 import type { ClubRepository } from '@/domain/repositories/club-repository'
 import type { ClubInvitation, ClubInvitePreview } from '@/domain/entities/club-invite'
@@ -111,13 +110,6 @@ import {
   type NewClubInput,
 } from '@/domain/entities/club'
 import type { DayPhotoRepository } from '@/domain/repositories/day-photo-repository'
-import {
-  createFollow,
-  EMPTY_FOLLOW_COUNTS,
-  type Follow,
-  type FollowCounts,
-  type NewFollowInput,
-} from '@/domain/entities/follow'
 import { createDayPhoto, type DayPhoto, type NewDayPhotoInput } from '@/domain/entities/day-photo'
 import type { JourneyEventRepository } from '@/domain/repositories/journey-event-repository'
 import type { WeeklyReviewRepository } from '@/domain/repositories/weekly-review-repository'
@@ -140,8 +132,6 @@ import {
   toRoutineItem,
   toRoutineOccurrence,
   toProfile,
-  toFollow,
-  toFollowCounts,
   toDayPhoto,
   toClub,
   toClubInvitation,
@@ -1717,58 +1707,6 @@ export class SupabaseChallengeRepository implements ChallengeRepository {
  * seguidor" em qualquer perfil que você mesma segue. Elas vêm da função
  * `follow_counts` (0060), que devolve dois números e nada mais.
  */
-export class SupabaseFollowRepository implements FollowRepository {
-  async counts(userId: string): Promise<FollowCounts> {
-    const { data, error } = await supabase().rpc('follow_counts', { target: userId })
-    if (error) fail(error, 'carregar seguidores')
-
-    // A função devolve UMA linha; o PostgREST entrega como lista.
-    const row = Array.isArray(data) ? data[0] : data
-    return row ? toFollowCounts(row) : EMPTY_FOLLOW_COUNTS
-  }
-
-  async isFollowing(followerId: string, followingId: string): Promise<boolean> {
-    const { count, error } = await supabase()
-      .from('follows')
-      .select('*', { count: 'exact', head: true })
-      .eq('follower_id', followerId)
-      .eq('following_id', followingId)
-
-    if (error) fail(error, 'conferir se você já segue')
-    return (count ?? 0) > 0
-  }
-
-  async follow(input: NewFollowInput): Promise<Follow> {
-    const draft = createFollow(input)
-
-    const { data, error } = await supabase()
-      .from('follows')
-      .upsert(
-        {
-          follower_id: draft.followerId,
-          following_id: draft.followingId,
-        },
-        // Seguir de novo é a mesma linha, não um erro pra tela resolver.
-        { onConflict: 'follower_id,following_id', ignoreDuplicates: false },
-      )
-      .select('*')
-      .single()
-
-    if (error) fail(error, 'seguir')
-    return toFollow(data)
-  }
-
-  async unfollow(followerId: string, followingId: string): Promise<void> {
-    const { error } = await supabase()
-      .from('follows')
-      .delete()
-      .eq('follower_id', followerId)
-      .eq('following_id', followingId)
-
-    if (error) fail(error, 'deixar de seguir')
-  }
-}
-
 /**
  * A foto do dia, contra o Supabase.
  *
