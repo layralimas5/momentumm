@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { useRouteSeo } from '@/presentation/seo/use-route-seo'
 import { QUIZ_SHORT_PATH } from '@/domain/analytics/quiz-links'
 import { circleOpen, isAuthBypass } from '@/infrastructure/config/env'
 import { AuthProvider } from '@/presentation/auth/AuthProvider'
@@ -210,10 +211,23 @@ const AdminSettingsPage = lazy(() =>
   import('@/presentation/admin/pages/AdminSettingsPage').then((m) => ({ default: m.AdminSettingsPage })),
 )
 
+/** Só existe pra o hook rodar dentro do roteador. */
+function RouteSeo() {
+  useRouteSeo()
+  return null
+}
+
 export function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        {/*
+          A metadata da rota, num lugar só e acima das telas: title,
+          description, canônico e robots são consequência do endereço, e
+          espalhá-los pelas páginas cria uma fonte de verdade por tela e uma
+          sexta página nascendo sem nenhuma.
+        */}
+        <RouteSeo />
         <ScrollToHash />
         <Suspense fallback={<RouteFallback />}>
           <Routes>
