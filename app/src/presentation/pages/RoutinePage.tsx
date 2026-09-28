@@ -384,7 +384,11 @@ function RoutineRow({
         onClick={toggle}
         aria-label={done ? `Desfazer ${item.title}` : `Concluir ${item.title}`}
         className={cn(
-          'mt-0.5 grid size-6 shrink-0 place-items-center rounded-md border transition-colors',
+          'relative mt-0.5 grid size-6 shrink-0 place-items-center rounded-md border transition-colors',
+          // 44px de alvo real sem mexer no desenho: o quadrado continua com 24px
+          // e a área de toque cresce por fora dele, que é onde o polegar erra numa
+          // lista de doze linhas.
+          "before:absolute before:-inset-2.5 before:content-['']",
           done
             ? 'border-positive bg-positive/20 text-positive'
             : 'border-line-hi text-transparent hover:border-brand',
