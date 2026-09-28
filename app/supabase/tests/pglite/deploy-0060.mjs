@@ -60,6 +60,24 @@ console.log('seguir a si mesmo é recusado:', recusouEuMesma ? 'ok' : 'FALHOU')
 /* O outro sentido: A e B se seguindo são duas linhas, e uma não é a outra. */
 await db.query(`insert into public.follows (follower_id, following_id) values ($1, $2)`, [lay, bia])
 
+/*
+  A partir da 0067, `follow_counts` conta só o que foi ACEITO, e quem decide o
+  aceite é o perfil de destino: público entra na hora, fechado vira pedido.
+  Perfil nasce `privado`, então as duas linhas acima nascem pendentes e as
+  contagens são zero — o que está certo, pedido esperando resposta não é
+  seguidor, e contá-lo daria pra inflar o número de qualquer perfil fechado só
+  pedindo pra segui-lo.
+
+  Este ensaio passa a abrir os dois perfis antes de cobrar a contagem. É a
+  única mudança que a camada social trouxe pra o comportamento da 0060.
+*/
+const pendentes = await q(`select status from public.follows`)
+console.log('perfil fechado: seguir vira pedido:',
+  pendentes.every((r) => r.status === 'pendente') ? 'ok' : `FALHOU: ${JSON.stringify(pendentes)}`)
+
+await db.query(`update public.profiles set profile_visibility = 'publico' where id in ($1, $2)`, [lay, bia])
+await db.query(`update public.follows set status = 'aceito'`)
+
 const daLay = await one(`select * from public.follow_counts($1)`, [lay])
 const daBia = await one(`select * from public.follow_counts($1)`, [bia])
 const contouCerto =
