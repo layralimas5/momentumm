@@ -257,7 +257,6 @@ export function MobileDashboard({
           onStartFocus={onStartFocus}
           onAdd={() => composer.open('acao')}
           onOpenRoutine={() => navigate('/app/rotina')}
-          onAddRoutine={() => navigate('/app/rotina?novo=1')}
           onEditTask={(task) => composer.open('acao', { editing: task })}
           onEditRoutine={(itemId) => navigate(`/app/rotina?editar=${itemId}`)}
           onEditHabit={(habitId) => {
