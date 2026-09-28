@@ -314,13 +314,28 @@ export function App() {
               <Route path="insights" element={<InsightsPage />} />
               <Route path="perfil" element={<PersonalProfilePage />} />
               {/*
-                O perfil de outra pessoa. Fica embaixo de `/app/perfil` de
+                O perfil de outra pessoa e a publicação avulsa seguem a MESMA
+                flag do Círculo, e não uma própria: com a comunidade fechada e
+                estas duas abertas, o Feed diria "ainda não" enquanto o link
+                compartilhado de uma publicação abriria normalmente. Uma porta
+                fechada e outra aberta pro mesmo cômodo é pior que as duas
+                fechadas.
+
+                O perfil de outra pessoa fica embaixo de `/app/perfil` de
                 propósito: é a mesma coisa vista de fora, e um endereço
                 separado ("/app/pessoa/:id") daria dois nomes pra um conceito.
               */}
-              <Route path="perfil/:id" element={<PublicProfilePage />} />
-              {/* O destino do botão Compartilhar de uma publicação. */}
-              <Route path="publicacao/:id" element={<PostPage />} />
+              {circleOpen ? (
+                <>
+                  <Route path="perfil/:id" element={<PublicProfilePage />} />
+                  <Route path="publicacao/:id" element={<PostPage />} />
+                </>
+              ) : (
+                <>
+                  <Route path="perfil/:id" element={<CircleLockedPage />} />
+                  <Route path="publicacao/:id" element={<CircleLockedPage />} />
+                </>
+              )}
               <Route path="evolucao" element={<EvolutionPage />} />
               {/* A dupla. A própria tela consulta a flag `features.juntos`. */}
               <Route path="juntos" element={<JuntosPage />} />
