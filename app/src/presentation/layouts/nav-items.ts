@@ -85,12 +85,25 @@ const ALL_NAV: readonly AppNavItem[] = [
     description: 'O que a semana mostrou e o que muda na próxima',
   },
   /*
-    Círculo fecha a navegação principal, e não entra no meio do ciclo, porque
-    ele não faz parte dele: o ciclo é objetivo → plano → dia → progresso →
-    review. O Círculo é o que existe DEPOIS de o ciclo estar rodando, e vem
-    por último de propósito, a pessoa abre o app pra cuidar da própria
-    rotina, não pra ver a dos outros.
+    A camada social fecha a navegação principal, e não entra no meio do ciclo,
+    porque ela não faz parte dele: o ciclo é objetivo → plano → rotina → dia →
+    progresso → review. O que existe aqui é o que vem DEPOIS de o ciclo estar
+    rodando, e vem por último de propósito, a pessoa abre o app pra cuidar da
+    própria rotina, não pra ver a dos outros.
+
+    Feed e Círculo são duas perguntas, e por isso são duas telas. O Feed
+    responde "o que as pessoas estão vivendo"; o Círculo responde "quem são
+    essas pessoas". Juntar as duas fazia a lista de amigos e os pedidos
+    dividirem a rolagem com o conteúdo, e nenhum dos dois ficava em casa.
   */
+  {
+    to: '/app/feed',
+    label: 'Feed',
+    end: false,
+    icon: 'globo',
+    description: 'O que as pessoas do teu círculo estão vivendo e construindo',
+    requiresCircle: true,
+  },
   {
     to: '/app/circulo',
     label: 'Círculo',

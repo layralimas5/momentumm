@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { parseDayKey } from './day'
 import {
+  agendaLenses,
+  agendaOfKind,
   buildDayAgenda,
   isPastPlannedTime,
   openAgendaItems,
@@ -410,5 +412,112 @@ describe('isPastPlannedTime', () => {
   it('item sem horário nunca passa da hora', () => {
     const semHora = buildDayAgenda({ tasks: [task('t3')], habitStates: [], routineStates: []  }, HOJE).items[0]
     expect(isPastPlannedTime(semHora as AgendaItem, new Date('2026-09-27T23:00:00'))).toBe(false)
+  })
+})
+
+describe('agendaLenses', () => {
+  it('oferece uma lente por espécie presente, com a conta de cada uma', () => {
+    const agenda = buildDayAgenda(
+      {
+        tasks: [task('t1', { time: '09:00' }), task('t2', { time: '14:00', status: 'feita' })],
+        habitStates: [],
+        routineStates: [
+          routineState('r1', { time: '07:00', status: 'feito' }),
+          routineState('r2', { time: '12:00' }),
+          routineState('r3', { time: '22:00' }),
+        ],
+      },
+      HOJE,
+    )
+
+    expect(agendaLenses(agenda)).toEqual([
+      { kind: 'acao', label: 'Ações', total: 2, done: 1 },
+      { kind: 'rotina', label: 'Rotina', total: 3, done: 1 },
+    ])
+  })
+
+  it('não oferece lente de espécie que não está no dia', () => {
+    const agenda = buildDayAgenda(
+      { tasks: [], habitStates: [], routineStates: [routineState('r1')] },
+      HOJE,
+    )
+
+    expect(agendaLenses(agenda).map((lens) => lens.kind)).toEqual(['rotina'])
+  })
+
+  it('num dia vazio não oferece lente nenhuma', () => {
+    const agenda = buildDayAgenda({ tasks: [], habitStates: [], routineStates: [] }, HOJE)
+
+    expect(agendaLenses(agenda)).toEqual([])
+  })
+})
+
+describe('agendaOfKind', () => {
+  it('recorta a mesma lista, mantendo a ordem do relógio', () => {
+    const agenda = buildDayAgenda(
+      {
+        tasks: [task('t1', { time: '08:00' })],
+        habitStates: [habitState('h1', { time: '18:30' })],
+        routineStates: [
+          routineState('r1', { title: 'Almoço', time: '12:00' }),
+          routineState('r2', { title: 'Acordar', time: '07:00' }),
+        ],
+      },
+      HOJE,
+    )
+
+    const rotina = agendaOfKind(agenda, 'rotina')
+
+    expect(titles(rotina.items)).toEqual(['Acordar', 'Almoço'])
+    expect(rotina.total).toBe(2)
+    expect(rotina.groups.map((group) => group.part)).toEqual(['manha', 'tarde'])
+  })
+
+  it('reconta o concluído dentro do recorte, e não o do dia inteiro', () => {
+    const agenda = buildDayAgenda(
+      {
+        tasks: [task('t1', { time: '08:00', status: 'feita' })],
+        habitStates: [],
+        routineStates: [
+          routineState('r1', { time: '07:00', status: 'feito' }),
+          routineState('r2', { time: '12:00' }),
+        ],
+      },
+      HOJE,
+    )
+
+    expect(agenda.done).toBe(2)
+    expect(agenda.total).toBe(3)
+
+    const rotina = agendaOfKind(agenda, 'rotina')
+    expect(rotina.done).toBe(1)
+    expect(rotina.total).toBe(2)
+    expect(rotina.ratio).toBe(0.5)
+  })
+
+  it('aponta pro MESMO item do dia, e não pra uma cópia', () => {
+    const agenda = buildDayAgenda(
+      { tasks: [], habitStates: [], routineStates: [routineState('r1', { time: '07:00' })] },
+      HOJE,
+    )
+
+    const doDia = agenda.items[0]
+    const daLente = agendaOfKind(agenda, 'rotina').items[0]
+
+    expect(daLente).toBe(doDia)
+    expect(daLente?.routineState?.item.id).toBe('r1')
+  })
+
+  it('devolve o dia vazio quando a espécie não está nele', () => {
+    const agenda = buildDayAgenda(
+      { tasks: [task('t1')], habitStates: [], routineStates: [] },
+      HOJE,
+    )
+
+    const rotina = agendaOfKind(agenda, 'rotina')
+
+    expect(rotina.empty).toBe(true)
+    expect(rotina.ratio).toBe(0)
+    expect(rotina.groups).toEqual([])
   })
 })

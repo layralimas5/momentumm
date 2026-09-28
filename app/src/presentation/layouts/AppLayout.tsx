@@ -6,6 +6,7 @@ import { Avatar } from '@/presentation/components/ui/Avatar'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { LogoMark, Wordmark } from '@/presentation/components/brand/Logo'
+import { AddFab } from '@/presentation/components/mobile/AddFab'
 import { MobileTabBar } from '@/presentation/components/mobile/MobileTabBar'
 import { TrialBanner } from '@/presentation/plan/TrialBanner'
 import { SUBSCRIPTION_PATH } from '@/presentation/plan/subscription-path'
@@ -147,6 +148,12 @@ function LayoutShell() {
         </main>
       </div>
 
+      {/*
+        O "+" contextual vem antes da barra na árvore e fica acima dela na
+        tela. Ele mora aqui, e não dentro de cada página, porque é a rota que
+        decide se ele existe: página nenhuma precisa saber que ele existe.
+      */}
+      {isDesktop ? null : <AddFab />}
       {isDesktop ? null : <MobileTabBar />}
     </div>
   )

@@ -47,8 +47,10 @@ export function TodayFocusCard({
           </h2>
           <p className="mt-1 text-sm text-ink-muted">
             {focus.total === 0
-              ? 'Nada planejado ainda.'
-              : `${focus.total} ${focus.total === 1 ? 'atividade' : 'atividades'}${
+              ? focus.dayHasWork
+                ? 'Nada marcado como prioridade.'
+                : 'Nada planejado ainda.'
+              : `${focus.total} ${focus.total === 1 ? 'prioridade' : 'prioridades'}${
                   focus.minutes ? ` · cerca de ${formatMinutes(focus.minutes)}` : ''
                 }`}
           </p>
@@ -65,26 +67,49 @@ export function TodayFocusCard({
             <ProgressBar
               className="mt-1.5"
               value={focus.total === 0 ? 0 : focus.done / focus.total}
-              label={`Progresso do dia: ${focus.done} de ${focus.total}`}
+              label={`Prioridades de hoje: ${focus.done} de ${focus.total}`}
             />
           </div>
         ) : null}
       </div>
 
+      {/*
+        Dois vazios diferentes, e a diferença importa.
+
+        "O dia está vazio" pede pra planejar. "O dia tem oito coisas e você não
+        escolheu nenhuma" pede pra escolher entre o que já existe, e oferecer
+        "planejar o dia" ali seria mandar criar mais trabalho em cima do
+        trabalho que a pessoa já tem.
+      */}
       {focus.total === 0 ? (
         <div className="mt-5 rounded-xl border border-dashed border-line-hi px-4 py-6 text-center">
-          <p className="text-sm text-ink">Seu dia ainda não tem atividades planejadas.</p>
-          <p className="mx-auto mt-1 max-w-md text-sm text-ink-muted">
-            Escolhe uma ação do teu plano ou cria uma pequena pra hoje. Uma só já tira da inércia.
+          <p className="text-sm text-ink">
+            {focus.dayHasWork
+              ? 'Você ainda não disse o que decide o dia de hoje.'
+              : 'Seu dia ainda não tem atividades planejadas.'}
+          </p>
+          <p className="mx-auto mt-1 max-w-md text-sm text-pretty text-ink-muted">
+            {focus.dayHasWork
+              ? 'Marca uma ação como prioridade e ela aparece aqui. O resto do dia continua logo abaixo.'
+              : 'Escolhe uma ação do teu plano ou cria uma pequena pra hoje. Uma só já tira da inércia.'}
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
-            <Button size="sm" onClick={onPlanDay}>
-              <Icon name="mais" className="size-4" />
-              Planejar o dia
-            </Button>
-            <Button size="sm" variant="secondary" onClick={onSeeAll}>
-              Escolher do plano
-            </Button>
+            {focus.dayHasWork ? (
+              <Button size="sm" onClick={onSeeAll}>
+                Ver o dia e escolher
+                <Icon name="seta" className="size-3.5" />
+              </Button>
+            ) : (
+              <>
+                <Button size="sm" onClick={onPlanDay}>
+                  <Icon name="mais" className="size-4" />
+                  Planejar o dia
+                </Button>
+                <Button size="sm" variant="secondary" onClick={onSeeAll}>
+                  Escolher do plano
+                </Button>
+              </>
+            )}
           </div>
         </div>
       ) : (
@@ -98,8 +123,8 @@ export function TodayFocusCard({
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
             <p className="text-xs text-ink-faint">
               {remaining > 0
-                ? `Mais ${remaining} ${remaining === 1 ? 'atividade' : 'atividades'} no dia.`
-                : 'Isso é tudo que você planejou pra hoje.'}
+                ? `Mais ${remaining} ${remaining === 1 ? 'prioridade' : 'prioridades'} hoje.`
+                : 'É isso que decide o teu dia. O resto vem abaixo.'}
             </p>
             <Button variant="ghost" size="sm" onClick={onSeeAll}>
               Ver tudo do dia

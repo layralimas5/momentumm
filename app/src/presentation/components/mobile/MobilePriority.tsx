@@ -323,7 +323,7 @@ function DayRing({ progress }: { progress: DayProgress }) {
           concluídas
         </span>
         <span className="sr-only">
-          {progress.done} de {progress.total} atividades de hoje concluídas
+          {progress.done} de {progress.total} do que você planejou pra hoje, concluído
         </span>
       </span>
     </MomentumRing>
@@ -331,10 +331,18 @@ function DayRing({ progress }: { progress: DayProgress }) {
 }
 
 /** A leitura do dia em uma linha: é o que responde "vale começar mais uma?". */
+/**
+ * A frase embaixo da prioridade.
+ *
+ * Ela fala do que o anel mede: ação e hábito, o que move objetivo. Dizia
+ * "faltam 4 atividades pra fechar o dia" num dia de oito itens, porque tratava
+ * a conta do plano como se fosse a conta do dia. O dia inteiro tem a própria
+ * linha, nos números logo abaixo e em "Seu dia".
+ */
 function dayLine(progress: DayProgress): string {
   if (progress.total === 0) return 'Uma decisão tomada já muda o tamanho do dia.'
   const left = progress.total - progress.done
-  if (left <= 0) return 'O dia já saiu inteiro. Essa aqui é lucro.'
+  if (left <= 0) return 'Você fechou tudo que planejou. Essa aqui é lucro.'
   if (left === 1) return 'Falta pouco pra encerrar o dia com progresso real.'
-  return `Faltam ${left} atividades pra fechar o dia.`
+  return `Faltam ${left} do que você planejou pra hoje.`
 }

@@ -97,6 +97,9 @@ const CircleLockedPage = lazy(() =>
 const CirclePage = lazy(() =>
   import('@/presentation/pages/CirclePage').then((m) => ({ default: m.CirclePage })),
 )
+const FeedPage = lazy(() =>
+  import('@/presentation/pages/FeedPage').then((m) => ({ default: m.FeedPage })),
+)
 const ChallengesPage = lazy(() =>
   import('@/presentation/pages/ChallengesPage').then((m) => ({ default: m.ChallengesPage })),
 )
@@ -293,6 +296,7 @@ export function App() {
               <Route path="juntos" element={<JuntosPage />} />
               {circleOpen ? (
                 <>
+                  <Route path="feed" element={<FeedPage />} />
                   <Route path="circulo" element={<CirclePage />} />
                   <Route path="desafios" element={<ChallengesPage />} />
                   <Route path="desafios/:id" element={<ChallengeDetailPage />} />
@@ -304,6 +308,7 @@ export function App() {
               ) : (
                 <>
                   {/* Fechado até os primeiros assinantes: a rota fica, a comunidade não. */}
+                  <Route path="feed" element={<CircleLockedPage />} />
                   <Route path="circulo/*" element={<CircleLockedPage />} />
                   <Route path="desafios/*" element={<CircleLockedPage />} />
                 </>
