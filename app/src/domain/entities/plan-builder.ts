@@ -1,8 +1,11 @@
 import { activityType, formatUnit, type ActivityType, type ActivityTypeSlug } from './activity-type'
+import type { HabitIcon } from './habit'
+import { detectBlueprint, type BlueprintWhen, type PlanBlueprint } from './plan-blueprint'
 import { addDays, daysBetween, type DayKey } from './day'
 import type { NewGoalInput } from './goal'
 import { MAX_OBJECTIVE_DAYS, type NewObjectiveInput } from './objective'
 import { TOTAL_WEIGHT } from './plan-stage'
+import type { NewHabitInput } from './habit'
 import type { NewTaskInput } from './task'
 
 /**
@@ -24,6 +27,11 @@ import type { NewTaskInput } from './task'
  *    dar, e nenhum plano pode pedir mais que isso. Quando pede, o plano diz em
  *    voz alta que não cabe, e mostra o prazo em que caberia.
  * 4. **Sai daqui com uma ação pra hoje.** Plano que começa amanhã não começa.
+ * 5. **O assunto manda no conteúdo.** Quando o objetivo casa com um roteiro de
+ *    `plan-blueprint`, as etapas, os hábitos e as ações saem de lá, com nome e
+ *    sentido próprios. Sem casamento, valem os três degraus genéricos, que não
+ *    são ruins, são só genéricos. A aritmética é a mesma nos dois casos: o
+ *    roteiro diz O QUE, este arquivo diz QUANTO e QUANDO.
  */
 
 export type PlannedObjective = Omit<NewObjectiveInput, 'userId'>
@@ -50,6 +58,22 @@ export interface PlannedTask extends Omit<NewTaskInput, 'userId'> {
  * as regras de insight que leem etapa ficam de fora, inclusive a que cobra
  * justamente o objetivo sem plano.
  */
+/**
+ * Hábito do plano, já sabendo a que etapa ele pertence.
+ *
+ * O construtor NÃO criava hábito, e o comentário dizia o motivo: um
+ * "Trabalhar pra <objetivo>" gerado aqui só duplicava o objetivo com outro
+ * nome na tela de Hábitos. A razão continua de pé pro plano genérico, e é por
+ * isso que ele segue sem hábito nenhum.
+ *
+ * O que mudou é que o roteiro por assunto traz hábitos que NÃO são o objetivo
+ * com outro nome: "Registrar o que comi" e "Anotar as cargas do treino" são
+ * comportamentos distintos, que o assunto exige e que ninguém deduz sozinho.
+ */
+export interface PlannedHabit extends Omit<NewHabitInput, 'userId'> {
+  readonly stageIndex: number | null
+}
+
 export interface PlannedStage {
   readonly title: string
   readonly description: string | null
@@ -66,6 +90,8 @@ export interface PlanDraft {
   readonly goal: PlannedGoal
   /** O caminho até o objetivo. As ações nascem dentro de uma dessas etapas. */
   readonly stages: readonly PlannedStage[]
+  /** A repetição que sustenta o objetivo. Vazia no plano genérico. */
+  readonly habits: readonly PlannedHabit[]
   /** A primeira sempre cai hoje e sempre nasce como prioridade principal. */
   readonly tasks: readonly PlannedTask[]
   readonly feasibility: Feasibility
@@ -79,6 +105,14 @@ export interface PlanDraft {
   readonly totalSessions: number
   /** A explicação da conta, em uma frase. */
   readonly rationale: string
+  /**
+   * O roteiro que montou este plano, quando houve um.
+   *
+   * A prévia usa pra dizer em voz alta que o plano é DE alguma coisa ("Plano
+   * de emagrecimento") em vez de deixar a pessoa descobrir pelas etapas, e pra
+   * mostrar o limite do que o app faz quando o assunto pede (`caution`).
+   */
+  readonly blueprint: PlanBlueprint | null
   /** Preenchido só quando o plano não cabe: o que fazer a respeito. */
   readonly warning: string | null
   /**
@@ -287,6 +321,7 @@ export function buildPlan(input: PlanInput): PlanDraft {
   const type = activityType(input.axis)
   const template = templateFor(input.axis, input.axisLabel, input.title, input.template)
   const limits = limitsOfAxis(input.axis)
+  const blueprint = detectBlueprint(input.title, input.axis, input.motive)
 
   const daysPerWeek = clamp(Math.round(input.daysPerWeek), MIN_DAYS_PER_WEEK, MAX_DAYS_PER_WEEK)
   const totalDays = Math.max(1, daysBetween(input.today, input.deadline) + 1)
@@ -326,7 +361,9 @@ export function buildPlan(input: PlanInput): PlanDraft {
 
   const checkpointDay = addDays(input.today, Math.max(3, Math.floor(totalDays / 2)))
 
-  const stages = stagesFor(input, totalDays, type, { totalSessions, perSession, daysPerWeek })
+  const stages = blueprint
+    ? blueprintStages(blueprint, input, totalDays)
+    : stagesFor(input, totalDays, type, { totalSessions, perSession, daysPerWeek })
 
   /*
     Cada ação já nasce dentro de uma etapa. As duas primeiras constroem a
@@ -335,7 +372,7 @@ export function buildPlan(input: PlanInput): PlanDraft {
     de propósito: o que fecha o objetivo ainda não se sabe hoje, e inventar uma
     ação pra ela seria encher o plano de trabalho que ninguém pediu.
   */
-  const tasks: readonly PlannedTask[] = [
+  const generic: readonly PlannedTask[] = [
     {
       title: template.firstStep,
       axis: input.axis,
@@ -368,6 +405,11 @@ export function buildPlan(input: PlanInput): PlanDraft {
     },
   ]
 
+  const tasks = blueprint
+    ? blueprintTasks(blueprint, input, totalDays)
+    : generic
+  const habits = blueprint ? blueprintHabits(blueprint, input) : []
+
   return {
     objective: {
       title: input.title.trim(),
@@ -379,7 +421,9 @@ export function buildPlan(input: PlanInput): PlanDraft {
     },
     goal: { type: input.axis, target: weeklyTarget, period: 'semana' },
     stages,
+    habits,
     tasks,
+    blueprint,
     feasibility,
     perSession,
     minutesPerSession: estimatedMinutes(input.axis, perSession),
@@ -392,13 +436,164 @@ export function buildPlan(input: PlanInput): PlanDraft {
       de 30 minutos", que é o app repetindo o mesmo número e parecendo que
       não entendeu a própria conta.
     */
-    rationale: `${formatUnit(type, Math.round(input.target))} em ${totalDays} dias, em ${daysPerWeek} ${daysPerWeek === 1 ? 'dia' : 'dias'} por semana, dá ${formatUnit(type, perSession)} por sessão${
-      type.unit === 'minutos' ? '' : ` (cerca de ${estimatedMinutes(input.axis, perSession)} minutos)`
-    }.`,
+    rationale: blueprint
+      ? blueprint.rationale
+      : `${formatUnit(type, Math.round(input.target))} em ${totalDays} dias, em ${daysPerWeek} ${daysPerWeek === 1 ? 'dia' : 'dias'} por semana, dá ${formatUnit(type, perSession)} por sessão${
+          type.unit === 'minutos' ? '' : ` (cerca de ${estimatedMinutes(input.axis, perSession)} minutos)`
+        }.`,
     warning: warningFor(feasibility, input, perSession, capacity, suggestedDeadline, fittingTarget),
     suggestedDeadline,
     fittingTarget,
   }
+}
+
+/**
+ * As etapas do roteiro, com data proporcional ao peso.
+ *
+ * O peso vem do roteiro (o assunto sabe onde está o trabalho) e a data sai
+ * dele, exatamente como no plano genérico: uma etapa que vale 40% do objetivo
+ * ocupa 40% do calendário. É a única distribuição que a pessoa confere de
+ * cabeça, e ela mexe depois.
+ */
+function blueprintStages(
+  blueprint: PlanBlueprint,
+  input: PlanInput,
+  totalDays: number,
+): PlannedStage[] {
+  let consumed = 0
+  return blueprint.stages.map((stage, index) => {
+    consumed += stage.weight
+    const isLast = index === blueprint.stages.length - 1
+    return {
+      title: stage.title,
+      description: stage.description,
+      weight: stage.weight,
+      dueOn: isLast
+        ? input.deadline
+        : addDays(input.today, Math.max(1, Math.round((consumed / TOTAL_WEIGHT) * totalDays) - 1)),
+    }
+  })
+}
+
+/**
+ * Os hábitos do roteiro, dimensionados pelo tempo que a pessoa declarou.
+ *
+ * `share` é fração, não minutos: quem tem 20 minutos por dia e quem tem 90
+ * recebem o mesmo roteiro, cada um no tamanho dele. O piso de 5 minutos existe
+ * porque hábito de 2 minutos não é hábito, é lembrete, e o app tem lembrete.
+ *
+ * Todos nascem no eixo do OBJETIVO. O hábito podia ter eixo próprio, mas um
+ * "Registrar o que comi" criando uma área nova no primeiro plano da pessoa
+ * encheria a tela de Jornada de eixos que ela não pediu.
+ */
+function blueprintHabits(blueprint: PlanBlueprint, input: PlanInput): PlannedHabit[] {
+  const budget = clamp(Math.round(input.minutesPerDay), MIN_MINUTES_PER_DAY, MAX_MINUTES_PER_DAY)
+
+  /*
+    Os GESTOS levam minutos fixos e pequenos, e saem do orçamento antes de
+    tudo. "Beber água ao acordar" não dura mais porque a pessoa tem mais tempo
+    livre: ele é feito ou não é. Escalá-lo pelo orçamento produzia números sem
+    sentido e roubava do hábito que de fato ocupa o dia.
+
+    O que sobra é dividido entre os hábitos de DURAÇÃO, cujas frações somam 1.
+    O piso de 10 minutos existe porque sessão de 3 minutos não é sessão, e o
+    plano prefere avisar que não cabe a entregar um hábito decorativo.
+  */
+  const spent = blueprint.habits.reduce((total, habit) => total + (habit.fixedMinutes ?? 0), 0)
+  const left = Math.max(10, budget - spent)
+
+  return blueprint.habits.map((habit) => {
+    const fixed = habit.fixedMinutes
+    const target = fixed ?? Math.max(5, Math.round(left * (habit.share ?? 1)))
+    const minimal = fixed
+      ? (habit.minimalMinutes ?? fixed)
+      : Math.max(3, Math.round(target * (habit.minimalShare ?? 0.3)))
+
+    return {
+      name: habit.name,
+      icon: habit.icon as HabitIcon,
+      axis: input.axis,
+      dayPart: habit.dayPart,
+      frequency: habit.frequency,
+      timesPerWeek: habit.timesPerWeek,
+      target,
+      minimalTarget: Math.min(minimal, target),
+      description: habit.rationale,
+      stageIndex: null,
+    }
+  })
+}
+
+/**
+ * As ações do roteiro, espalhadas pelo calendário.
+ *
+ * `when` é posição no caminho, não data: o mesmo roteiro serve pra um prazo de
+ * três semanas e pra um de seis meses. "hoje" é sempre hoje, porque plano que
+ * começa amanhã não começa, e a primeira ação de hoje é a prioridade principal.
+ *
+ * `estimatedMin` do roteiro é um pedido, não uma ordem: ele é cortado pelo
+ * tempo que a pessoa declarou ter. Uma ação de 60 minutos pra quem reservou 20
+ * é uma ação que não vai acontecer, e o app já sabe disso antes de gravar.
+ */
+function blueprintTasks(
+  blueprint: PlanBlueprint,
+  input: PlanInput,
+  totalDays: number,
+): PlannedTask[] {
+  const fractions: Readonly<Record<BlueprintWhen, number>> = {
+    hoje: 0,
+    'primeira-semana': 0.1,
+    meio: 0.5,
+    'reta-final': 0.85,
+  }
+
+  /*
+    Duas ações do mesmo momento não caem no mesmo dia.
+
+    Sem isto, "refazer os erros" e "fazer o simulado final" nasciam os dois na
+    mesma data, somando quatro horas num dia só. Cada ação seguinte do mesmo
+    momento anda alguns dias pra frente, proporcional ao prazo: num plano de
+    três meses o passo é maior que num de três semanas.
+  */
+  const step = Math.max(1, Math.round(totalDays / 20))
+  const used = new Map<BlueprintWhen, number>()
+
+  let mainTaken = false
+
+  return blueprint.tasks.map((task) => {
+    const seen = used.get(task.when) ?? 0
+    used.set(task.when, seen + 1)
+
+    const base = Math.round(totalDays * fractions[task.when])
+    const day =
+      task.when === 'hoje'
+        ? input.today
+        : addDays(input.today, clamp(base + seen * step, 1, totalDays - 1))
+
+    const isMain = !mainTaken && day === input.today
+    if (isMain) mainTaken = true
+
+    /*
+      A estimativa é do ROTEIRO, e não é cortada pelo tempo diário.
+
+      Um simulado cronometrado leva duas horas, tenha a pessoa 15 minutos por
+      dia ou três. Encolher o número pra caber no orçamento deixaria a conta do
+      dia errada em todo lugar que a lê (o `Hoje`, o aviso de sobrecarga, a
+      reorganização), e a pessoa descobriria a mentira na primeira vez que
+      tentasse fazer. O que existe pro dia apertado é a versão mínima, e ela
+      vem escrita em cada ação.
+    */
+    return {
+      title: task.title,
+      axis: input.axis,
+      estimatedMin: clamp(task.estimatedMin, 5, 8 * 60),
+      effort: task.effort,
+      minimalVersion: task.minimalVersion,
+      day,
+      isMainPriority: isMain,
+      stageIndex: Math.min(task.stageIndex, blueprint.stages.length - 1),
+    }
+  })
 }
 
 /**

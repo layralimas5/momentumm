@@ -1221,6 +1221,25 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         }
 
 
+        /*
+          Os hábitos vêm depois das etapas e antes das ações, e só existem
+          quando o plano saiu de um roteiro por assunto: o plano genérico não
+          cria hábito de propósito (um "Trabalhar pra <objetivo>" gerado seria o
+          objetivo com outro nome na tela de Hábitos).
+
+          Falhar aqui não derruba o plano. Hábito recusado por limite de plano é
+          um hábito a menos, e a pessoa cria na mão; perder o objetivo inteiro
+          por causa dele seria trocar o principal pelo acessório.
+        */
+        for (const habit of plan.habits) {
+          const { stageIndex, ...fields } = habit
+          await createHabit({
+            ...fields,
+            objectiveId: objective?.id ?? null,
+            stageId: stageIndex === null ? null : (stageIds[stageIndex] ?? null),
+          }).catch(() => null)
+        }
+
         let order = 0
         for (const task of plan.tasks) {
           const { stageIndex, ...fields } = task
