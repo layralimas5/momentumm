@@ -18,22 +18,36 @@ Branch de trabalho: `feat/nova-navegacao-e-rotina`, já mergeada na `main`
 | 4. Rotina | **Feito, não validado** contra o design de timeline das §10 e §57 |
 | 5. Integração | **Parcial.** Fonte única existe; o caminho da §16 nunca foi testado ponta a ponta |
 | 6. Reagendamento | **Parcial.** Falta mover só a ocorrência pra uma data escolhida |
-| 7. Modelo social + RLS | **Não feito.** Só `profiles` e `follows` existem |
-| 8. Perfis e follows | **Parcial.** Falta perfil privado com solicitação |
-| 9. Feed e publicações | **Parcial.** A tela existe com momentos automáticos; publicação não existe |
-| 10. Calendário visual | **Parcial.** Falta ligar a publicações, indicador de vários no dia e a aba de grid |
-| 11. Stories | **Não feito** |
-| 12. Segurança e moderação | **Parcial.** Falta bloqueio e denúncia |
-| 13. Refinamento | **Parcial.** Falta virada de dia e uploads |
+| 7. Modelo social + RLS | **Escrito e provado, NÃO aplicado em produção.** Migrations 0067 e 0068 |
+| 8. Perfis e follows | **Escrito.** Perfil público/fechado, pedido com aprovação, listas |
+| 9. Feed e publicações | **Escrito.** Publicação com foto, carrossel, legenda, objetivo e privacidade |
+| 10. Calendário visual | **Escrito.** Ligado a publicações, com sinal de vários no dia e aba de grade |
+| 11. Stories | **Escrito.** Foto e vídeo curto, 24h pela política, visualizador em tela cheia |
+| 12. Segurança e moderação | **Escrito.** Bloqueio, denúncia e painel de desbloqueio |
+| 13. Refinamento | **Parcial.** Falta virada de dia; uploads entraram com a camada social |
+
+**As fases 7 a 12 estão prontas no código e provadas contra um Postgres de
+verdade (`npm run db:test`, 55 asserções em `supabase/tests/pglite/social.mjs`),
+mas NÃO foram aplicadas no banco de produção.** Enquanto a 0067 e a 0068 não
+subirem, o Feed, o perfil público e o calendário respondem "esse recurso ainda
+não chegou ao servidor", que é o texto que `fail()` dá pra função inexistente.
 
 Dos testes das §78 a §87, só o **§80** (compromisso) e o **§87** (regressão em
 17 rotas) foram executados de verdade.
 
 ---
 
-## O próximo passo, e é só um
+## O próximo passo
 
-**Fase 6, fechar o reagendamento.** É o único item que não depende do banco.
+**Aplicar a 0067 e a 0068 em produção.** É o que separa a camada social escrita
+da camada social funcionando, e é o único passo que a sessão não pôde dar:
+`npx supabase migration list` responde 401 (o CLI não está autenticado nesta
+máquina). O procedimento está em "O que trava as fases 7 em diante", logo
+abaixo, e continua valendo inteiro.
+
+Depois disso, o teste com duas contas reais (§ "Critérios de conclusão").
+
+**Fase 6, fechar o reagendamento.** É o item que não depende do banco.
 
 No `AgendaItemSheet`, o submenu Reagendar tem "Hoje, mais tarde" e "Amanhã",
 que mexem só na ocorrência, e "Escolher dia e horário", que abre o editor da
@@ -53,7 +67,13 @@ está em dia (conferido tabela por tabela e função por função pela API REST)
 `supabase_migrations.schema_migrations` não tem as linhas da 0057 à 0066, porque
 elas foram aplicadas pelo SQL Editor em vez de `supabase db push`.
 
-**Antes de escrever a migration da camada social**, rodar em `app/`:
+**Antes de aplicar a 0067 e a 0068**, autenticar e conferir o registro, em `app/`:
+
+```
+npx supabase login
+```
+
+e então:
 
 ```
 npx supabase migration list
@@ -68,12 +88,51 @@ npx supabase migration repair --status applied 0057 0058 0059 0060 0061 0062 006
 Esse comando **só insere dez linhas no registro**. Não executa SQL nas tabelas.
 Sem ele, um `db push` tentaria reaplicar dez migrations antigas em produção.
 
+Só depois disso:
+
+```
+npx supabase db push
+```
+
+### O que a 0067 muda no que já existe
+
+Ela é aditiva em quase tudo (dez tabelas novas, um bucket novo), com três
+exceções que valem ser lidas antes de rodar:
+
+1. **`follows` ganha `status`.** As linhas que existem viram `aceito` quando o
+   perfil de destino é `publico`, e `pendente` nas outras — a leitura
+   conservadora, porque elas foram criadas quando seguir não dava acesso a
+   nada. Quem seguia um perfil fechado vira um pedido esperando resposta.
+2. **A política de SELECT de `profiles` é substituída.** Ela ganha duas
+   cláusulas (quem tem pedido aceito, e quem pediu pra me seguir) e mantém as
+   quatro da 0012. Nada é afrouxado.
+3. **`follow_counts` passa a contar só o aceito.** Perfil fechado que tinha
+   seguidores pendentes vê o número cair, e é o número certo.
+
+Nada é apagado, nada é destrutivo, e a migration é re-executável.
+
 ---
 
 ## Decisões já tomadas, não reabrir
 
-- **Alcance social do primeiro corte:** só entre amigos aceitos. Sem comunidade,
-  sem público.
+- **Alcance social:** ~~só entre amigos aceitos~~. **Mudou em 28/09/2026**, com a
+  camada social: o alcance agora é decidido pelo PERFIL (`profile_visibility`).
+  Perfil `publico` é visível a qualquer conta autenticada; `privado` e `amigos`
+  exigem pedido aceito. Perfil nasce `privado`, então nada ficou aberto por
+  padrão. O Círculo (amizade) continua existindo ao lado, com a regra dele.
+- **Seguir passou a abrir conteúdo.** A 0060 dizia com todas as letras que
+  seguir não abria nada. Sem feed isso estava certo; com feed, seguir É a porta,
+  e o que entrou junto foi o pedido de aprovação pro perfil fechado.
+- **Uma pergunta de autorização, uma função.** `can_view_content_of(dono)` é
+  lida pela RLS de publicação, mídia, story, comentário, curtida e salvo, e
+  também pelo Storage. Espalhar a regra por sete políticas seria garantir que
+  uma afrouxasse sozinha.
+- **Bucket separado (`social-media`).** O `user-media` (0014) é "só o dono lê", e
+  está certo pro que mora lá. A leitura do bucket social é liberada pela LINHA
+  que aponta pro arquivo, nunca pela pasta: listar pasta de perfil público
+  entregaria a foto de publicação privada e a de story vencido.
+- **Nada de ranking.** O card do feed não mostra seguidores do autor, score nem
+  posição. O que aparece é o avanço da pessoa contra ela mesma.
 - **Foco de hoje:** só o que a pessoa marcou (prioridade principal e prioridade
   alta). Rotina não entra, porque item de rotina não tem prioridade pra marcar.
 - **O anel do topo:** continua medindo ação e hábito, que é o que alimenta os
@@ -82,6 +141,23 @@ Sem ele, um `db push` tentaria reaplicar dez migrations antigas em produção.
 - **Rotina fora do card "Seu dia":** com a aba própria na barra, a lente e o
   atalho "Organizar rotina" saíram. Os itens de rotina continuam na lista.
 - **Compromisso não é entidade nova:** é item de rotina com recorrência `unica`.
+
+---
+
+## Critérios de conclusão que ainda faltam
+
+Só dá pra marcar com duas contas reais, depois do `db push`:
+
+1. Conta A segue Conta B; B aparece no feed de A.
+2. B publica uma foto; ela aparece no feed de A.
+3. A curte e comenta; B vê as duas coisas.
+4. A foto cai no dia certo do calendário de B, e o dia abre a publicação.
+5. A não consegue editar nem apagar nada de B (a suíte já prova isso no PGlite;
+   falta provar pela API REST com dois JWT de verdade).
+
+O que JÁ foi provado sem duas contas: as 55 asserções de
+`supabase/tests/pglite/social.mjs` cobrem os cinco itens acima contra a RLS de
+verdade, com três sessões autenticadas simuladas.
 
 ---
 
