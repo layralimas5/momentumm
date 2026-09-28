@@ -12,7 +12,16 @@ import type { CirclePerson } from '@/presentation/circle/use-circle'
 import { cn } from '@/shared/lib/cn'
 
 /**
- * O círculo em três lugares, e o convite no lugar vazio.
+ * Quantas bolinhas a fileira mostra, você inclusa.
+ *
+ * Quatro é o que cabe numa linha de 390px sem apertar (4 × 64px mais os
+ * respiros), e uma fileira que quebra em três linhas deixa de ser um retrato
+ * do círculo pra virar uma grade.
+ */
+const VISIVEIS = 4
+
+/**
+ * O círculo em poucos lugares, e o convite no lugar vazio.
  *
  * É a peça que faz o produto crescer, e ela existe por uma razão anterior à
  * aquisição: quem está sozinho no app não tem como saber que acompanhar o
@@ -41,7 +50,25 @@ export function InviteFriendCard({
   if (!profile) return null
 
   const url = inviteUrl(window.location.origin, profile.handle)
-  const empty = Math.max(0, limit.max - friends.length)
+
+  /*
+    A fileira é um RESUMO, e o teto dela é de tela, não de plano.
+
+    Ela desenhava um lugar vazio por vaga do plano. No gratuito são duas vagas
+    e a conta fechava; no PRO são trinta, e a tela virava trinta e um círculos
+    de 64px numa linha que não quebra: 1295px de largura num aparelho de 390,
+    com a página inteira rolando pro lado. O número do plano continua dito em
+    palavras no cabeçalho, que é onde ele informa sem precisar ser desenhado.
+
+    Quem passa do que cabe vira um "+N", e a lista completa de amigos já existe
+    logo abaixo nesta mesma tela.
+  */
+  const cabem = VISIVEIS - 1
+  const excedeu = friends.length > cabem
+  const mostrados = friends.slice(0, excedeu ? cabem - 1 : cabem)
+  const escondidos = friends.length - mostrados.length
+  const vagas = Math.max(0, limit.max - friends.length)
+  const vagasVisiveis = excedeu ? 0 : Math.min(vagas, cabem - mostrados.length)
 
   const share = async () => {
     track('friend_invite_started', 'circulo', { count: friends.length })
@@ -85,9 +112,11 @@ export function InviteFriendCard({
         }
       />
 
-      <ul className="mt-4 flex items-start justify-center gap-4">
+      {/* `flex-wrap` é o cinto de segurança: mesmo que a conta acima erre um dia,
+          a fileira quebra a linha em vez de empurrar a página pro lado. */}
+      <ul className="mt-4 flex flex-wrap items-start justify-center gap-4">
         <Seat name={profile.name} avatarUrl={profile.avatarUrl} label="Você" isMe />
-        {friends.slice(0, limit.max).map((item) => (
+        {mostrados.map((item) => (
           <Seat
             key={item.friendship.id}
             name={item.person.name}
@@ -95,7 +124,8 @@ export function InviteFriendCard({
             label={`@${item.person.handle}`}
           />
         ))}
-        {Array.from({ length: empty }, (_, index) => (
+        {escondidos > 0 ? <MoreSeat count={escondidos} /> : null}
+        {Array.from({ length: vagasVisiveis }, (_, index) => (
           <EmptySeat key={index} onClick={() => void share()} />
         ))}
       </ul>
@@ -154,6 +184,20 @@ function Seat({
       </span>
       <span className="w-full truncate text-center text-xs font-medium text-ink">{name}</span>
       <span className="w-full truncate text-center text-[0.625rem] text-ink-faint">{label}</span>
+    </li>
+  )
+}
+
+/** Quem não coube na fileira. A lista inteira está logo abaixo, na tela. */
+function MoreSeat({ count }: { readonly count: number }) {
+  return (
+    <li className="flex w-16 flex-col items-center gap-1.5">
+      <span className="tabular grid size-[3.5rem] place-items-center rounded-full border-2 border-line-hi text-sm font-semibold text-ink-muted">
+        +{count}
+      </span>
+      <span className="text-center text-xs text-ink-faint">
+        {count === 1 ? 'pessoa' : 'pessoas'}
+      </span>
     </li>
   )
 }
