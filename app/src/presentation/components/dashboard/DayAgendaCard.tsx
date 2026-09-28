@@ -1,15 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import {
-  AGENDA_KIND_LABELS,
-  agendaLenses,
-  agendaOfKind,
   isPastPlannedTime,
   openAgendaMinutes,
   type AgendaGroup,
   type AgendaItem,
-  type AgendaItemKind,
-  type AgendaLens,
   type DayAgenda,
 } from '@/domain/entities/day-agenda'
 import type { Task } from '@/domain/entities/task'
@@ -53,7 +48,6 @@ export function DayAgendaCard({
   onStartFocus,
   onAdd,
   onOpenRoutine,
-  onAddRoutine,
   onEditTask,
   onEditRoutine,
   onEditHabit,
@@ -61,28 +55,19 @@ export function DayAgendaCard({
   readonly agenda: DayAgenda
   readonly onStartFocus: (task: Task) => void
   readonly onAdd: () => void
-  /** Null esconde o atalho: a Rotina pode não estar disponível na tela. */
+  /**
+   * Só o dia vazio usa: é o único momento em que a tela precisa ensinar onde
+   * a rotina se monta. Com o dia cheio não existe atalho pra Rotina aqui, ela
+   * é uma área inteira na navegação, a um toque, e repetir a porta dela no
+   * rodapé de outra tela só gastava a largura da linha. Null esconde.
+   */
   readonly onOpenRoutine: (() => void) | null
-  /** Abre a Rotina já com o formulário de item novo. Null esconde o atalho. */
-  readonly onAddRoutine: (() => void) | null
   readonly onEditTask: (task: Task) => void
   readonly onEditRoutine: (itemId: string) => void
   readonly onEditHabit: (habitId: string) => void
 }) {
   const [picked, setPicked] = useState<AgendaItem | null>(null)
-  const [lens, setLens] = useState<AgendaItemKind | null>(null)
-
-  const lenses = useMemo(() => agendaLenses(agenda), [agenda])
-
-  /*
-    A lente só vale enquanto a espécie existir no dia. Marcar o último item da
-    rotina não muda nada, ele continua na lista riscado, mas apagar o último
-    deixaria a tela presa numa lente vazia sem nenhuma pista de como sair.
-  */
-  const active = lens && lenses.some((entry) => entry.kind === lens) ? lens : null
-  const shown = active ? agendaOfKind(agenda, active) : agenda
-  const fora = agenda.total - shown.total
-  const minutes = openAgendaMinutes(shown)
+  const minutes = openAgendaMinutes(agenda)
 
   return (
     <Panel tone="raised" aria-labelledby="dia-titulo" className="edge-light">
@@ -94,9 +79,9 @@ export function DayAgendaCard({
           <p className="mt-1 text-sm text-ink-muted">
             {agenda.empty
               ? 'Nada programado ainda.'
-              : `${active ? `${LENS_NOTE[active]} · ` : ''}${shown.total} ${
-                  shown.total === 1 ? 'item' : 'itens'
-                }${minutes ? ` · cerca de ${formatMinutes(minutes)} em aberto` : ''}`}
+              : `${agenda.total} ${agenda.total === 1 ? 'item' : 'itens'}${
+                  minutes ? ` · cerca de ${formatMinutes(minutes)} em aberto` : ''
+                }`}
           </p>
         </div>
 
@@ -105,13 +90,13 @@ export function DayAgendaCard({
             <div className="flex items-baseline justify-between gap-2 text-xs text-ink-faint">
               <span>Concluído</span>
               <span className="tabular text-ink-muted">
-                {shown.done} de {shown.total}
+                {agenda.done} de {agenda.total}
               </span>
             </div>
             <ProgressBar
               className="mt-1.5"
-              value={shown.ratio}
-              label={`${active ? AGENDA_KIND_LABELS[active] : 'Progresso do dia'}: ${shown.done} de ${shown.total}`}
+              value={agenda.ratio}
+              label={`Progresso do dia: ${agenda.done} de ${agenda.total}`}
             />
           </div>
         )}
@@ -121,38 +106,16 @@ export function DayAgendaCard({
         <EmptyDay onAdd={onAdd} onOpenRoutine={onOpenRoutine} />
       ) : (
         <>
-          <LensBar lenses={lenses} active={active} agenda={agenda} onPick={setLens} />
-
           <div className="mt-5 flex flex-col gap-5">
-            {shown.groups.map((group) => (
+            {agenda.groups.map((group) => (
               <AgendaSection
                 key={group.part}
                 group={group}
                 onOpenMenu={setPicked}
-                collapsible={shown.total > 8}
+                collapsible={agenda.total > 8}
               />
             ))}
           </div>
-
-          {/*
-            A lente diz em voz alta o que ficou de fora, e a volta fica ao lado.
-            Um filtro que esconde pendência em silêncio é o mesmo "ver mais" que
-            esta tela recusa, com outro nome.
-          */}
-          {active && fora > 0 ? (
-            <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-faint">
-              <span>
-                {fora} {fora === 1 ? 'item' : 'itens'} do dia fora desta lente.
-              </span>
-              <button
-                type="button"
-                onClick={() => setLens(null)}
-                className="min-h-11 font-medium text-brand-ink underline-offset-4 hover:underline"
-              >
-                Ver o dia inteiro
-              </button>
-            </div>
-          ) : null}
 
           <AgendaItemSheet
             item={picked}
@@ -164,134 +127,15 @@ export function DayAgendaCard({
             onEditHabit={onEditHabit}
           />
 
-          {/*
-            O rodapé segue a lente: com a rotina na frente, "adicionar" quer
-            dizer adicionar À ROTINA, e não uma ação avulsa de hoje. Um botão
-            que troca de destino sem trocar de nome é o jeito mais rápido de a
-            pessoa criar a coisa errada duas vezes.
-          */}
           <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-line pt-4">
-            {active === 'rotina' && onAddRoutine ? (
-              <Button size="sm" variant="secondary" onClick={onAddRoutine}>
-                <Icon name="mais" className="size-4" />
-                Adicionar à rotina
-              </Button>
-            ) : (
-              <Button size="sm" variant="secondary" onClick={onAdd}>
-                <Icon name="mais" className="size-4" />
-                Adicionar ao dia
-              </Button>
-            )}
-            {onOpenRoutine ? (
-              <Button size="sm" variant="ghost" onClick={onOpenRoutine}>
-                Organizar rotina
-                <Icon name="seta" className="size-3.5" />
-              </Button>
-            ) : null}
+            <Button size="sm" variant="secondary" onClick={onAdd}>
+              <Icon name="mais" className="size-4" />
+              Adicionar ao dia
+            </Button>
           </div>
         </>
       )}
     </Panel>
-  )
-}
-
-/**
- * O rótulo de cada lente na frase do cabeçalho.
- *
- * "Só a rotina", e não "Rotina": a etiqueta nomeia o filtro, a frase diz que a
- * lista encolheu. É a diferença entre achar que o dia tem quatro itens e saber
- * que você está olhando quatro de doze.
- */
-const LENS_NOTE: Readonly<Record<AgendaItemKind, string>> = {
-  acao: 'Só as ações',
-  rotina: 'Só a rotina',
-  habito: 'Só os hábitos',
-}
-
-/**
- * As lentes do dia.
- *
- * A lista continua sendo UMA: a lente recorta a mesma agenda, não cria uma
- * segunda. Ela existe porque o dia mistura três espécies em ordem de relógio,
- * e "quero dar check na minha rotina agora" obrigava a caçar quatro linhas no
- * meio de doze, com a tela da Rotina a dois toques de distância.
- *
- * Ela só aparece quando o dia mistura espécie. Com uma só, os botões seriam
- * "Tudo" e "Tudo" com outro nome.
- *
- * A contagem vive na própria etiqueta porque é ela que faz decidir se vale
- * tocar: "Rotina 4/7" já responde onde está o que falta, sem abrir nada.
- */
-function LensBar({
-  lenses,
-  active,
-  agenda,
-  onPick,
-}: {
-  readonly lenses: readonly AgendaLens[]
-  readonly active: AgendaItemKind | null
-  readonly agenda: DayAgenda
-  readonly onPick: (kind: AgendaItemKind | null) => void
-}) {
-  if (lenses.length < 2) return null
-
-  return (
-    <div role="group" aria-label="Lente do dia" className="mt-4 flex flex-wrap gap-1.5">
-      <LensChip
-        label="Tudo"
-        done={agenda.done}
-        total={agenda.total}
-        active={active === null}
-        onClick={() => onPick(null)}
-      />
-      {lenses.map((lens) => (
-        <LensChip
-          key={lens.kind}
-          label={lens.label}
-          done={lens.done}
-          total={lens.total}
-          active={active === lens.kind}
-          onClick={() => onPick(active === lens.kind ? null : lens.kind)}
-        />
-      ))}
-    </div>
-  )
-}
-
-function LensChip({
-  label,
-  done,
-  total,
-  active,
-  onClick,
-}: {
-  readonly label: string
-  readonly done: number
-  readonly total: number
-  readonly active: boolean
-  readonly onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      className={cn(
-        'relative flex min-h-9 items-center gap-1.5 rounded-full border px-3.5 text-xs font-medium transition-colors',
-        // Mesma conta do check: 36px desenhados, 44px de toque. A etiqueta alta
-        // empurrava a lista pra baixo numa tela de 390px, e a fileira quebrava
-        // em duas linhas antes da primeira pendência aparecer.
-        "before:absolute before:inset-x-0 before:-inset-y-1 before:content-['']",
-        active
-          ? 'border-brand bg-brand-dim/70 text-brand-ink'
-          : 'border-line text-ink-muted hover:text-ink active:bg-surface-hi',
-      )}
-    >
-      {label}
-      <span className={cn('tabular', active ? 'text-brand-ink/70' : 'text-ink-faint')}>
-        {done}/{total}
-      </span>
-    </button>
   )
 }
 

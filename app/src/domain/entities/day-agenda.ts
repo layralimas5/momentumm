@@ -40,21 +40,6 @@ import type { Task } from './task'
 
 export type AgendaItemKind = 'acao' | 'habito' | 'rotina'
 
-export const AGENDA_KIND_LABELS: Readonly<Record<AgendaItemKind, string>> = {
-  acao: 'Ações',
-  rotina: 'Rotina',
-  habito: 'Hábitos',
-}
-
-/**
- * A ordem das espécies quando elas viram lente.
- *
- * É a mesma do menu de adicionar: ação, rotina, hábito. Duas ordens diferentes
- * pras mesmas três palavras, em duas telas do mesmo app, fazem a pessoa reler
- * a lista toda vez em vez de ir direto no lugar de sempre.
- */
-export const AGENDA_KIND_ORDER: readonly AgendaItemKind[] = ['acao', 'rotina', 'habito']
-
 /**
  * Os quatro trechos do dia.
  *
@@ -184,18 +169,8 @@ export function buildDayAgenda(input: DayAgendaInput, day: DayKey): DayAgenda {
   const fromHabits = input.habitStates.map(habitToItem)
   const fromRoutine = input.routineStates.map(routineToItem)
 
-  return assembleAgenda([...fromTasks, ...fromHabits, ...fromRoutine].sort(byClock), day)
-}
+  const items = [...fromTasks, ...fromHabits, ...fromRoutine].sort(byClock)
 
-/**
- * O retrato, a partir de itens JÁ ordenados.
- *
- * Mora separado de `buildDayAgenda` porque a lente (`agendaOfKind`) precisa do
- * mesmo agrupamento sobre um recorte da lista. Duas montagens diferentes do
- * mesmo retrato seriam duas contas de "quantos faltam" divergindo na primeira
- * regra nova.
- */
-function assembleAgenda(items: readonly AgendaItem[], day: DayKey): DayAgenda {
   const groups = AGENDA_PARTS.map((part) => {
     const ofPart = items.filter((item) => item.part === part)
     return {
@@ -328,47 +303,6 @@ function byClock(a: AgendaItem, b: AgendaItem): number {
   const priority = comparePriority(a.priority, b.priority)
   if (priority !== 0) return priority
   return a.title.localeCompare(b.title, 'pt-BR')
-}
-
-export interface AgendaLens {
-  readonly kind: AgendaItemKind
-  readonly label: string
-  readonly total: number
-  readonly done: number
-}
-
-/**
- * As lentes que o dia oferece: uma por espécie PRESENTE nele.
- *
- * Espécie que não está no dia não vira lente, porque uma lente que abre numa
- * lista vazia ensina a não tocar nas outras. E a lista sai vazia com uma
- * frequência alta: rotina toda gente tem, hábito nem sempre, ação num domingo
- * quase nunca.
- */
-export function agendaLenses(agenda: DayAgenda): readonly AgendaLens[] {
-  return AGENDA_KIND_ORDER.map((kind) => {
-    const items = agenda.items.filter((item) => item.kind === kind)
-    return {
-      kind,
-      label: AGENDA_KIND_LABELS[kind],
-      total: items.length,
-      done: items.filter((item) => item.done).length,
-    }
-  }).filter((lens) => lens.total > 0)
-}
-
-/**
- * O mesmo dia, visto por uma espécie só.
- *
- * NÃO é uma segunda agenda: os itens são os mesmos objetos, já ordenados, e
- * continuam apontando pro registro original. O que muda é o recorte, e é por
- * isso que marcar dentro da lente marca no dia inteiro sem sincronizar nada.
- */
-export function agendaOfKind(agenda: DayAgenda, kind: AgendaItemKind): DayAgenda {
-  return assembleAgenda(
-    agenda.items.filter((item) => item.kind === kind),
-    agenda.day,
-  )
 }
 
 /** Os itens que ainda esperam movimento. É a conta de "faltam 3". */
