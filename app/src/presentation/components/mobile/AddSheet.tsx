@@ -5,99 +5,144 @@ import { Button } from '@/presentation/components/ui/Button'
 import { BottomSheet, SheetAction } from '@/presentation/components/ui/BottomSheet'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
-import { useFeature } from '@/presentation/plan/use-feature'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
 import { usePlanner } from '@/presentation/planner/use-planner'
 
+/** A tela de onde o "+" foi tocado. É ela que decide o que a folha oferece. */
+export type AddContext = 'hoje' | 'rotina'
+
+const SHEET_TITLE: Readonly<Record<AddContext, string>> = {
+  hoje: 'Adicionar para hoje',
+  rotina: 'Adicionar à rotina',
+}
+
+const SHEET_NOTE: Readonly<Record<AddContext, string>> = {
+  hoje: 'O que entra no teu dia de hoje?',
+  rotina: 'O que passa a fazer parte dos teus dias?',
+}
+
 /**
- * O que o botão central adiciona.
+ * O que o "+" adiciona, e isso depende de onde ele foi tocado.
  *
- * Ação, hábito e meta reaproveitam o mesmo formulário do desktop, e o objetivo
- * abre a mesma entrevista curta do onboarding. A vitória do dia é uma linha só,
- * abrir um formulário inteiro pra ela seria fricção sem motivo, então ela é
- * resolvida aqui mesmo.
+ * Antes era uma folha só, com seis ações fixas, aberta pelo botão central da
+ * barra: dentro da Rotina ela oferecia "criar objetivo", dentro do Progresso
+ * oferecia "item da rotina". Uma lista que serve pra tudo não serve pra tela
+ * nenhuma, e a pessoa lia as seis linhas toda vez pra achar a que queria.
  *
- * A dupla também entra aqui, e não é desvio de tema: o que se adiciona é uma
- * PESSOA. Foi por não existir nessa folha que o Juntos ficava alcançável só
- * pela barra lateral e pelos atalhos do perfil, dois lugares onde ninguém vai
- * procurar por alguém pra combinar.
+ * Agora a primeira linha é a resposta provável daquela tela, em tom de marca, e
+ * as outras são as vizinhas dela. O que saiu daqui não saiu do app: objetivo,
+ * meta, hábito e dupla têm botão de criar nas próprias telas, e continuam na
+ * busca rápida e nos atalhos do Perfil.
+ *
+ * ## Compromisso não é entidade nova
+ *
+ * "Dentista, terça, 10:30" é um item de rotina com recorrência `unica`. Criar
+ * uma tabela de compromissos ao lado seria um segundo motor de dia, com uma
+ * segunda conta de "o que tenho hoje", divergindo da primeira na primeira
+ * regra nova. O que muda entre os dois é o preenchimento inicial do
+ * formulário, e é só isso que o parâmetro `tipo` carrega.
  */
-export function AddSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function AddSheet({
+  open,
+  context,
+  onClose,
+}: {
+  readonly open: boolean
+  readonly context: AddContext
+  readonly onClose: () => void
+}) {
   const composer = useComposer()
   const navigate = useNavigate()
-  const juntos = useFeature('juntos')
   const [winOpen, setWinOpen] = useState(false)
 
-  const pick = (kind: 'acao' | 'habito' | 'meta' | 'objetivo') => {
+  const pick = (kind: 'acao' | 'habito') => {
     onClose()
     composer.open(kind)
+  }
+
+  const go = (to: string) => {
+    onClose()
+    navigate(to)
   }
 
   return (
     <>
       <BottomSheet
         open={open && !winOpen}
-        title="Adicionar"
-        description="O que você quer colocar em movimento?"
+        title={SHEET_TITLE[context]}
+        description={SHEET_NOTE[context]}
         onClose={onClose}
       >
         <div className="flex flex-col gap-1">
-          <SheetAction
-            icon={<Icon name="jornada" className="size-5" />}
-            label="Ação"
-            hint="Uma coisa concreta pra hoje ou amanhã"
-            tone="brand"
-            onClick={() => pick('acao')}
-          />
-          {/*
-            A rotina entra logo depois da ação, e antes do hábito, porque é o
-            que a pessoa mais adiciona depois que a rotina dela existe: o
-            compromisso da semana, a coisa que acontece e não vira meta.
-          */}
-          <SheetAction
-            icon={<Icon name="calendario" className="size-5" />}
-            label="Item da rotina"
-            hint="O que se repete no seu dia, ou um compromisso"
-            onClick={() => {
-              onClose()
-              navigate('/app/rotina?novo=1')
-            }}
-          />
-          <SheetAction
-            icon={<Icon name="habitos" className="size-5" />}
-            label="Hábito"
-            hint="Uma repetição que sustenta a meta"
-            onClick={() => pick('habito')}
-          />
-          <SheetAction
-            icon={<Icon name="metas" className="size-5" />}
-            label="Meta"
-            hint="Um número e um período"
-            onClick={() => pick('meta')}
-          />
-          <SheetAction
-            icon={<Icon name="objetivo" className="size-5" />}
-            label="Objetivo"
-            hint="Com prazo, e o plano sai pronto"
-            onClick={() => pick('objetivo')}
-          />
-          <SheetAction
-            icon={<Icon name="trofeu" className="size-5" />}
-            label="Vitória do dia"
-            hint="O que avançou, mesmo que pequeno"
-            onClick={() => setWinOpen(true)}
-          />
-          {juntos.enabled ? (
-            <SheetAction
-              icon={<Icon name="metas" className="size-5" />}
-              label="Uma pessoa na dupla"
-              hint="Alguém que vê se você avançou no dia"
-              onClick={() => {
-                onClose()
-                navigate('/app/juntos')
-              }}
-            />
-          ) : null}
+          {context === 'hoje' ? (
+            <>
+              <SheetAction
+                icon={<Icon name="jornada" className="size-5" />}
+                label="Ação"
+                hint="Uma coisa concreta pra fazer hoje"
+                tone="brand"
+                onClick={() => pick('acao')}
+              />
+              <SheetAction
+                icon={<Icon name="relogio" className="size-5" />}
+                label="Compromisso"
+                hint="Com hora marcada, numa data só"
+                onClick={() => go('/app/rotina?novo=1&tipo=compromisso')}
+              />
+              <SheetAction
+                icon={<Icon name="habitos" className="size-5" />}
+                label="Hábito"
+                hint="Uma repetição que sustenta a meta"
+                onClick={() => pick('habito')}
+              />
+              {/*
+                A saída pra recorrência fica por último e em voz baixa: quem
+                abriu o "+" no Hoje quer resolver hoje. Ela existe pro momento
+                em que a pessoa percebe, no meio do gesto, que aquilo não é de
+                hoje, é de todo dia.
+              */}
+              <SheetAction
+                icon={<Icon name="calendario" className="size-5" />}
+                label="Item da rotina"
+                hint="O que se repete, e passa a aparecer sozinho aqui"
+                onClick={() => go('/app/rotina?novo=1')}
+              />
+              <SheetAction
+                icon={<Icon name="trofeu" className="size-5" />}
+                label="Vitória do dia"
+                hint="O que avançou, mesmo que pequeno"
+                onClick={() => setWinOpen(true)}
+              />
+            </>
+          ) : (
+            <>
+              <SheetAction
+                icon={<Icon name="calendario" className="size-5" />}
+                label="Item da rotina"
+                hint="O que se repete no seu dia"
+                tone="brand"
+                onClick={() => go('/app/rotina?novo=1')}
+              />
+              <SheetAction
+                icon={<Icon name="relogio" className="size-5" />}
+                label="Compromisso"
+                hint="Com hora marcada, numa data só"
+                onClick={() => go('/app/rotina?novo=1&tipo=compromisso')}
+              />
+              <SheetAction
+                icon={<Icon name="habitos" className="size-5" />}
+                label="Hábito"
+                hint="Uma repetição que sustenta a meta"
+                onClick={() => pick('habito')}
+              />
+              <SheetAction
+                icon={<Icon name="objetivo" className="size-5" />}
+                label="Ação de objetivo"
+                hint="Um passo do plano, com dia e hora"
+                onClick={() => pick('acao')}
+              />
+            </>
+          )}
         </div>
       </BottomSheet>
 

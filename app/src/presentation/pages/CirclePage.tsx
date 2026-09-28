@@ -3,9 +3,8 @@ import { Avatar } from '@/presentation/components/ui/Avatar'
 import { Button } from '@/presentation/components/ui/Button'
 import { ConfirmDialog } from '@/presentation/components/ui/ConfirmDialog'
 import { Icon } from '@/presentation/components/ui/Icon'
-import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
+import { ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { Panel, PanelHeader } from '@/presentation/components/ui/Surface'
-import { CircleMomentCard } from '@/presentation/circle/CircleMomentCard'
 import { FriendSearch } from '@/presentation/circle/FriendSearch'
 import { InviteFriendCard } from '@/presentation/circle/InviteFriendCard'
 import { friendLimit } from '@/domain/entities/plan-usage'
@@ -41,7 +40,7 @@ export function CirclePage() {
   if (circle.loading) return <LoadingBlock label="Carregando teu círculo" />
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 lg:gap-6">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 lg:gap-6">
       <PageHeader
         title="Círculo"
         description="Quem você acompanha, e o que decidiram mostrar."
@@ -93,41 +92,26 @@ export function CirclePage() {
         </Panel>
       ) : null}
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-6">
-        <section aria-label="O que o teu círculo compartilhou" className="flex flex-col gap-4">
-          {circle.feed.length === 0 ? (
-            <EmptyState
-              title={
-                circle.friends.length === 0
-                  ? 'Teu círculo ainda está vazio'
-                  : 'Nada compartilhado por enquanto'
-              }
-              description={
-                circle.friends.length === 0
-                  ? 'Busca alguém pelo nome ou pelo @ e envia um pedido. Nada seu fica visível até você marcar um momento pra mostrar.'
-                  : 'Teus amigos ainda não marcaram nenhum momento pra mostrar. Você também escolhe o que compartilhar, momento a momento, no teu perfil.'
-              }
-              action={
-                <Link
-                  to="/app/perfil"
-                  className="text-sm font-medium text-brand-hi hover:text-brand-ink"
-                >
-                  Escolher o que compartilhar
-                </Link>
-              }
-            />
-          ) : (
-            circle.feed.map((item) => (
-              <CircleMomentCard
-                key={item.event.id}
-                item={item}
-                today={planner.today}
-                onSupport={(eventId, supported) => void circle.support(eventId, supported)}
-              />
-            ))
-          )}
-        </section>
+      {/*
+        O que os amigos mostraram mora no Feed, e não aqui.
 
+        Eram a mesma página, em duas colunas: o conteúdo de um lado, a lista de
+        amigos, os pedidos e a busca do outro. Num celular as duas colunas viram
+        uma rolagem só, e o conteúdo perdia, porque ele é o que fica embaixo.
+        Nada deixou de existir, o feed mudou de endereço e ganhou aba própria.
+      */}
+      <Link
+        to="/app/feed"
+        className="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 transition-colors active:bg-surface-hi"
+      >
+        <Icon name="globo" className="size-5 shrink-0 text-brand-ink" />
+        <span className="min-w-0 flex-1 text-sm text-ink">
+          O que o teu círculo compartilhou agora fica no Feed.
+        </span>
+        <Icon name="seta" className="size-4 shrink-0 text-ink-faint" />
+      </Link>
+
+      <div className="flex flex-col gap-5 lg:gap-6">
         <div className="flex flex-col gap-5 lg:gap-6">
           {/*
             O círculo com os lugares vazios vem ANTES da busca: procurar alguém

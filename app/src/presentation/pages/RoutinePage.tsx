@@ -8,6 +8,7 @@ import {
   ROUTINE_RECURRENCE_LABELS,
   type RoutineDayState,
   type RoutineItem,
+  type RoutineRecurrence,
 } from '@/domain/entities/routine-item'
 import { Button } from '@/presentation/components/ui/Button'
 import { ConfirmDialog } from '@/presentation/components/ui/ConfirmDialog'
@@ -47,6 +48,12 @@ export function RoutinePage() {
   const [editing, setEditing] = useState<RoutineItem | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [removing, setRemoving] = useState<RoutineItem | null>(null)
+  /*
+    "Compromisso" e "item da rotina" abrem o MESMO formulário: o que muda é a
+    recorrência com que ele nasce. Guardar isso aqui, e não no parâmetro da
+    URL, é o que permite limpar a URL na hora sem perder a escolha.
+  */
+  const [presetRecurrence, setPresetRecurrence] = useState<RoutineRecurrence | null>(null)
 
   /*
     O "+" da barra de baixo abre esta tela já com o formulário aberto
@@ -56,6 +63,7 @@ export function RoutinePage() {
   useEffect(() => {
     if (params.get('novo') === '1') {
       setEditing(null)
+      setPresetRecurrence(params.get('tipo') === 'compromisso' ? 'unica' : null)
       setDialogOpen(true)
       setParams({}, { replace: true })
       return
@@ -67,6 +75,7 @@ export function RoutinePage() {
     const item = planner.routineItems.find((entry) => entry.id === alvo)
     if (item) {
       setEditing(item)
+      setPresetRecurrence(null)
       setDialogOpen(true)
     }
     setParams({}, { replace: true })
@@ -87,6 +96,7 @@ export function RoutinePage() {
 
   const abrirNovo = () => {
     setEditing(null)
+    setPresetRecurrence(null)
     setDialogOpen(true)
   }
 
@@ -252,6 +262,7 @@ export function RoutinePage() {
         open={dialogOpen}
         editing={editing}
         presetDay={picked}
+        presetRecurrence={presetRecurrence}
         onClose={() => {
           setDialogOpen(false)
           setEditing(null)

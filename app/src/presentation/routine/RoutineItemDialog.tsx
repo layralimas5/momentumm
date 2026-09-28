@@ -57,12 +57,22 @@ export function RoutineItemDialog({
   open,
   editing,
   presetDay,
+  presetRecurrence,
   onClose,
 }: {
   readonly open: boolean
   readonly editing: RoutineItem | null
   /** O dia escolhido na visão semanal: um item de uma vez só já nasce nele. */
   readonly presetDay: string | null
+  /**
+   * A recorrência que o formulário já abre marcada.
+   *
+   * É o que diferencia "compromisso" de "item da rotina": os dois são a mesma
+   * entidade, e o compromisso é o que acontece UMA vez. Sem isso, quem toca em
+   * "Compromisso" cai num formulário marcado como "Todos os dias" e precisa
+   * desfazer a escolha que acabou de fazer.
+   */
+  readonly presetRecurrence: RoutineRecurrence | null
   readonly onClose: () => void
 }) {
   const planner = usePlanner()
@@ -71,6 +81,16 @@ export function RoutineItemDialog({
   const [time, setTime] = useState('')
   const [recurrence, setRecurrence] = useState<RoutineRecurrence>('diario')
   const [weekdays, setWeekdays] = useState<readonly number[]>([])
+  /*
+    A data de um item de uma vez só.
+
+    Sem ela, "Dentista na terça" só dava pra criar abrindo a visão semanal e
+    tocando na terça ANTES de abrir o formulário: o compromisso nascia sempre
+    no dia que estava aberto, e quem veio pelo "+" do Hoje não tinha como
+    escolher outro. O campo só aparece em `unica`, que é a única recorrência
+    que tem data.
+  */
+  const [day, setDay] = useState('')
   const [durationMin, setDurationMin] = useState('')
   const [category, setCategory] = useState('')
   const [objectiveId, setObjectiveId] = useState('')
@@ -82,8 +102,9 @@ export function RoutineItemDialog({
     if (!open) return
     setTitle(editing?.title ?? '')
     setTime(editing?.timeOfDay ?? '')
-    setRecurrence(editing?.recurrence ?? 'diario')
+    setRecurrence(editing?.recurrence ?? presetRecurrence ?? 'diario')
     setWeekdays(editing?.weekdays ?? [])
+    setDay(editing?.day ?? presetDay ?? planner.today)
     setDurationMin(editing?.durationMin ? String(editing.durationMin) : '')
     setCategory(editing?.category ?? '')
     setObjectiveId(editing?.objectiveId ?? '')
@@ -94,7 +115,7 @@ export function RoutineItemDialog({
     setDetails(
       Boolean(editing?.durationMin || editing?.category || editing?.objectiveId || editing?.note),
     )
-  }, [open, editing])
+  }, [open, editing, presetRecurrence, presetDay, planner.today])
 
   const objetivos = planner.objectives.filter(isRunning)
   const clean = title.trim()
@@ -106,7 +127,7 @@ export function RoutineItemDialog({
       timeOfDay: time || null,
       recurrence,
       weekdays: recurrence === 'dias-semana' ? weekdays : [],
-      day: recurrence === 'unica' ? ((presetDay ?? planner.today) as RoutineItem['day']) : null,
+      day: recurrence === 'unica' ? ((day || planner.today) as RoutineItem['day']) : null,
       durationMin: durationMin ? Number(durationMin) : null,
       category: category.trim() || null,
       objectiveId: objectiveId || null,
@@ -129,7 +150,18 @@ export function RoutineItemDialog({
   return (
     <Dialog
       open={open}
-      title={editing ? 'Editar item da rotina' : 'Novo item da rotina'}
+      /*
+        O título devolve a palavra que a pessoa tocou. Quem veio por
+        "Compromisso" e lia "Novo item da rotina" tinha motivo pra achar que
+        abriu a coisa errada, mesmo sendo a certa.
+      */
+      title={
+        editing
+          ? 'Editar item da rotina'
+          : presetRecurrence === 'unica'
+            ? 'Novo compromisso'
+            : 'Novo item da rotina'
+      }
       description={
         editing
           ? 'O que mudar aqui vale pra todos os dias daqui pra frente.'
@@ -199,6 +231,20 @@ export function RoutineItemDialog({
             )}
           </Field>
         </div>
+
+        {recurrence === 'unica' ? (
+          <Field label="Em que dia" hint="O compromisso acontece uma vez, nesta data.">
+            {(id, describedBy) => (
+              <TextInput
+                id={id}
+                aria-describedby={describedBy}
+                type="date"
+                value={day}
+                onChange={(event) => setDay(event.target.value)}
+              />
+            )}
+          </Field>
+        ) : null}
 
         {recurrence === 'dias-semana' ? (
           <Field label="Em que dias">
