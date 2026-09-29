@@ -62,6 +62,12 @@ export type AiEndpointRequest =
 const SHORT = z.string().trim().min(1).max(120)
 const SENTENCE = z.string().trim().min(1).max(400)
 
+const planStepSchema = z.object({
+  title: SHORT,
+  description: SENTENCE,
+  weight: z.number().int().min(5).max(70),
+})
+
 export const planSuggestionSchema = z.object({
   /*
     A etapa deixou de ser uma string.
@@ -73,16 +79,7 @@ export const planSuggestionSchema = z.object({
     estruturada consome); quem fecha os 100 é `normalizeStepWeights`, no
     domínio, depois de ler.
   */
-  steps: z
-    .array(
-      z.object({
-        title: SHORT,
-        description: SENTENCE,
-        weight: z.number().int().min(5).max(70),
-      }),
-    )
-    .min(3)
-    .max(5),
+  steps: z.array(planStepSchema).min(3).max(5),
   habits: z
     .array(
       z.object({
@@ -203,6 +200,11 @@ export const coachNudgeSchema = z.object({
   order: z.string().trim().min(1).max(160),
 })
 
+/**
+ * O que o app PEDE ao modelo. Vira JSON Schema pra saída estruturada, então
+ * ele é estrito: união e `refine` não têm representação lá, e um schema
+ * ambíguo faz o modelo escolher o formato errado.
+ */
 export const AI_OUTPUT_SCHEMAS = {
   plan: planSuggestionSchema,
   day: dayPlanSchema,
@@ -211,6 +213,38 @@ export const AI_OUTPUT_SCHEMAS = {
   review_draft: reviewDraftSchema,
   recovery: recoveryPlanSchema,
   coach: coachNudgeSchema,
+} as const
+
+/**
+ * A etapa como o servidor ANTIGO devolvia: uma string solta.
+ *
+ * Ela existe porque o app e a Edge Function sobem SEPARADOS. Entre publicar o
+ * front e rodar `npm run ai:deploy` existe uma janela em que o cliente novo
+ * conversa com o servidor velho, e foi exatamente o que aconteceu: o front
+ * subiu primeiro, o servidor continuou mandando `steps: string[]`, e o cliente
+ * recusou a resposta inteira com "a IA devolveu um formato que o app não
+ * reconhece". Quem pediu um plano naquele intervalo levou um erro.
+ *
+ * O conserto não é lembrar de publicar na ordem: é o cliente aceitar o formato
+ * anterior. Peça o formato novo, aceite os dois — a única postura que
+ * sobrevive a dois artefatos que não sobem juntos.
+ */
+const legacyStepSchema = SHORT.transform((title) => ({
+  title,
+  /* Sem descrição, o título vira a própria explicação: é o que havia. */
+  description: title,
+  weight: 0,
+}))
+
+/**
+ * O que o app ACEITA ler. Só `plan` difere: os outros tipos não mudaram de
+ * forma, então eles são o mesmo schema.
+ */
+export const AI_READ_SCHEMAS = {
+  ...AI_OUTPUT_SCHEMAS,
+  plan: planSuggestionSchema.extend({
+    steps: z.array(z.union([planStepSchema, legacyStepSchema])).min(1).max(6),
+  }),
 } as const
 
 // ---------------------------------------------------------------------------
