@@ -116,7 +116,15 @@ async function main() {
 }
 
 async function capturar(browser, rota) {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } })
+  /*
+    Movimento reduzido: as animações de entrada vão direto pro estado final.
+    Sem isto o retrato saía com o botão do hero no meio do fade, invisível no
+    HTML que o celular pinta antes do JavaScript.
+  */
+  const page = await browser.newPage({
+    viewport: { width: 1280, height: 900 },
+    reducedMotion: 'reduce',
+  })
 
   /*
     Nada de rede pra fora durante o pré-render.

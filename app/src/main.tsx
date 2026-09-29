@@ -4,6 +4,7 @@ import { App } from './App'
 import { installGlobalErrorReporter } from './infrastructure/errors/error-reporter'
 import { watchInstallPrompt } from './infrastructure/pwa/install-prompt'
 import { registerServiceWorker } from './infrastructure/pwa/register-sw'
+import { holdPrerender } from './presentation/seo/prerender-snapshot'
 import { applyTheme, readStoredTheme } from './presentation/theme/theme'
 import './index.css'
 
@@ -19,6 +20,8 @@ const root = document.getElementById('root')
 if (!root) {
   throw new Error('Elemento #root não encontrado no index.html.')
 }
+
+holdPrerender(root)
 
 createRoot(root).render(
   <StrictMode>

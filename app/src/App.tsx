@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { PrerenderRelease } from '@/presentation/seo/prerender-snapshot'
 import { useRouteSeo } from '@/presentation/seo/use-route-seo'
 import { QUIZ_SHORT_PATH } from '@/domain/analytics/quiz-links'
 import { circleOpen, isAuthBypass } from '@/infrastructure/config/env'
@@ -238,6 +239,7 @@ export function App() {
         <RouteSeo />
         <ScrollToHash />
         <Suspense fallback={<RouteFallback />}>
+          <PrerenderRelease />
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route
