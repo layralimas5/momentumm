@@ -7,7 +7,7 @@ import {
 } from '@/domain/entities/activity-type'
 import { sortByRecent } from '@/domain/entities/activity'
 import type { CheckIn, NewCheckInInput } from '@/domain/entities/checkin'
-import { dayKeyOf, type DayKey } from '@/domain/entities/day'
+import type { DayKey } from '@/domain/entities/day'
 import { isActive, progressOf, type Goal, type NewGoalInput } from '@/domain/entities/goal'
 import {
   countsAsDone,
@@ -68,6 +68,7 @@ import { track } from '@/infrastructure/analytics/track'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { usePlanLimits } from '@/presentation/plan/use-plan-limits'
+import { useToday } from '@/presentation/hooks/use-today'
 import { DomainError, toUserMessage } from '@/shared/errors'
 import { PlannerContext, type PlannerState } from './planner-context'
 
@@ -136,8 +137,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   const snapshot = useRef<Snapshot>(EMPTY)
   snapshot.current = data
 
-  // Recalculado a cada render: o app aberto virando o dia acompanha a data.
-  const today = dayKeyOf(new Date())
+  const today = useToday()
 
   const limits = usePlanLimits()
 
@@ -286,6 +286,17 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       document.removeEventListener('visibilitychange', onVisible)
     }
   }, [reload])
+
+  /*
+    Virou o dia com o app aberto: busca de novo. O que o outro aparelho marcou
+    de madrugada e as ocorrências de hoje só existem no servidor.
+  */
+  const loadedDay = useRef(today)
+  useEffect(() => {
+    if (loadedDay.current === today) return
+    loadedDay.current = today
+    if (navigator.onLine) void reload({ silent: true })
+  }, [today, reload])
 
   /** Escrita otimista: aplica, e se o servidor recusar volta ao estado anterior. */
   const mutate = useCallback(
