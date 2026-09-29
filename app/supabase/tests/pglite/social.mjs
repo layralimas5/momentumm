@@ -311,13 +311,49 @@ check('o total avisa que são duas', Number(celula2?.total) === 2, String(celula
 const doDia = await q(`select * from public.posts_of_day($1, current_date)`, [B])
 check('o dia abre as duas publicações', doDia.length === 2, String(doDia.length))
 
+/*
+  A regra da 0069: publicação SEM foto não pode roubar a capa de uma COM foto.
+
+  É a sequência banal que apagava o dia: foto do treino de manhã, "fechei a
+  semana" à noite, e o calendário ficava cinza porque a mais recente virava a
+  capa sem ter imagem.
+*/
+const postTexto = (await one(
+  `insert into public.posts (user_id, caption, day, created_at)
+        values ($1, 'fechei a semana', current_date, now() + interval '2 minutes') returning id`, [B])).id
+
+const cal4 = await q(`select * from public.profile_calendar($1, (current_date - 31), current_date)`, [B])
+const celula4 = cal4.find((linha) => String(linha.day).slice(0, 10) === String(hoje).slice(0, 10))
+check('publicação sem foto não vira a capa', celula4?.cover_path === `${B}/posts/foto2.jpg`, String(celula4?.cover_path))
+check('e a célula abre a publicação COM foto', celula4?.post_id === postB2, String(celula4?.post_id))
+check('mas a contagem conta todas as três', Number(celula4?.total) === 3, String(celula4?.total))
+
+/* Dia com publicação só de texto e foto guardada: mostra a foto, abre o post. */
+await db.query(`delete from public.posts where id = $1`, [postTexto])
+const soTexto = (await one(
+  `insert into public.posts (user_id, caption, day) values ($1, 'só escrevi', current_date - 5) returning id`,
+  [B])).id
+await db.query(
+  `insert into public.day_photos (user_id, day, path) values ($1, current_date - 5, $2)`,
+  [B, `${B}/fotos/daquele-dia.jpg`])
+
+const cal5 = await q(`select * from public.profile_calendar($1, (current_date - 31), current_date)`, [B])
+const mista = cal5.find((linha) => linha.post_id === soTexto)
+check('dia de texto + álbum mostra a foto do álbum', mista?.cover_path === `${B}/fotos/daquele-dia.jpg`, String(mista?.cover_path))
+check('e continua abrindo a publicação', mista?.post_id === soTexto)
+check('marcada como vinda do álbum, pra assinar no bucket certo', mista?.from_album === true)
+
+await db.query(`delete from public.posts where id = $1`, [soTexto])
+
 /* O álbum manual (0060) continua servindo de reserva num dia sem publicação. */
 await db.query(
   `insert into public.day_photos (user_id, day, path) values ($1, current_date - 3, $2)`,
   [B, `${B}/fotos/velha.jpg`])
 const cal3 = await q(`select * from public.profile_calendar($1, (current_date - 31), current_date)`, [B])
-const reserva = cal3.find((linha) => linha.from_album === true)
-check('dia sem publicação usa a foto do álbum', reserva?.cover_path === `${B}/fotos/velha.jpg`)
+const tresDiasAtras = (await one(`select (current_date - 3) as d`)).d
+const reserva = cal3.find((linha) => String(linha.day).slice(0, 10) === String(tresDiasAtras).slice(0, 10))
+check('dia sem publicação usa a foto do álbum', reserva?.cover_path === `${B}/fotos/velha.jpg`, String(reserva?.cover_path))
+check('e não aponta pra publicação nenhuma', reserva?.post_id === null)
 
 // ---------------------------------------------------------------- cenário 8
 

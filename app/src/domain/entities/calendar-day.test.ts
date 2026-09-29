@@ -46,6 +46,32 @@ describe('buildCalendar', () => {
     expect(cells[0]?.postId).toBe('post-1')
   })
 
+  it('publicação de texto com foto no álbum: mostra a foto E abre a publicação', () => {
+    /*
+      O caso que separa "o que a célula mostra" de "o que a célula abre".
+
+      Antes os dois saíam da mesma resposta, e um dia com publicação só de
+      texto mais uma foto guardada caía em "album": a célula abria a folha da
+      foto e escondia a publicação que existia ali.
+    */
+    const cells = buildCalendar(
+      grid(['2026-09-16']),
+      MONTH,
+      TODAY,
+      new Map([
+        [
+          '2026-09-16' as DayKey,
+          entry('2026-09-16', { fromAlbum: true, coverPath: 'uid/fotos/guardada.jpg', postId: 'post-texto' }),
+        ],
+      ]),
+      new Set(),
+    )
+
+    expect(cells[0]?.kind).toBe('publicacao')
+    expect(cells[0]?.coverPath).toBe('uid/fotos/guardada.jpg')
+    expect(cells[0]?.postId).toBe('post-texto')
+  })
+
   it('a publicação ganha do álbum: ela tem legenda, objetivo e conversa', () => {
     const cells = buildCalendar(
       grid(['2026-09-10']),
@@ -88,6 +114,31 @@ describe('buildCalendar', () => {
     expect(cells[0]?.kind).toBe('movimento')
     // O dia continua abrindo a publicação, mesmo sem imagem.
     expect(cells[0]?.postId).toBe('post-1')
+  })
+
+  it('publicação sem foto NÃO apaga a foto de outra publicação do mesmo dia', () => {
+    /*
+      O bug que a 0069 corrigiu, visto daqui: o servidor passa a mandar a capa
+      da publicação mais recente COM foto, e a contagem de todas. Publicar
+      "fechei a semana" às 21h depois da foto do treino às 9h não pode deixar o
+      dia cinza.
+    */
+    const cells = buildCalendar(
+      grid(['2026-09-12']),
+      MONTH,
+      TODAY,
+      new Map([
+        [
+          '2026-09-12' as DayKey,
+          entry('2026-09-12', { postId: 'post-com-foto', coverPath: 'uid/posts/treino.jpg', total: 2 }),
+        ],
+      ]),
+      new Set(),
+    )
+
+    expect(cells[0]?.kind).toBe('publicacao')
+    expect(cells[0]?.coverPath).toBe('uid/posts/treino.jpg')
+    expect(cells[0]?.postCount).toBe(2)
   })
 
   it('dia sem imagem mas com registro no Momentumm vira movimento', () => {

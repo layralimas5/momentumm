@@ -398,37 +398,53 @@ export class DemoSocialRepository implements SocialRepository {
     if (userId !== DEMO_USER.id) return []
 
     const byDay = new Map<DayKey, CalendarEntry>()
+
     /*
-      A capa é a publicação mais recente do dia, igual ao `distinct on` do
-      servidor. A lista já vem do mais novo pro mais velho, então o primeiro
-      que chega em cada dia é o que fica, e o total é contado por cima.
+      A capa é a publicação mais recente QUE TEM foto, e a contagem conta
+      todas. É a regra da 0069, repetida aqui: divergir do servidor faria o
+      calendário do demo contar uma história que a produção não conta.
     */
     for (const post of this.visiblePosts()) {
       if (post.day < from || post.day > to) continue
+
       const current = byDay.get(post.day)
-      if (current) {
-        byDay.set(post.day, { ...current, total: current.total + 1 })
+      const cover = post.media[0]?.path ?? null
+
+      if (!current) {
+        byDay.set(post.day, {
+          day: post.day,
+          postId: post.id,
+          coverPath: cover,
+          total: 1,
+          fromAlbum: false,
+        })
         continue
       }
+
+      /* A lista vem do mais novo pro mais velho: a primeira COM foto fica. */
       byDay.set(post.day, {
-        day: post.day,
-        postId: post.id,
-        coverPath: post.media[0]?.path ?? null,
-        total: 1,
-        fromAlbum: false,
+        ...current,
+        total: current.total + 1,
+        postId: current.coverPath ? current.postId : (cover ? post.id : current.postId),
+        coverPath: current.coverPath ?? cover,
       })
     }
 
-    // O álbum manual (0060) é a reserva dos dias sem publicação.
+    // O álbum manual entra sempre que o dia não tem foto publicada.
     for (const photo of demoStore.dayPhotos(from, to)) {
-      if (byDay.has(photo.day)) continue
-      byDay.set(photo.day, {
-        day: photo.day,
-        postId: null,
-        coverPath: photo.path,
-        total: 0,
-        fromAlbum: true,
-      })
+      const current = byDay.get(photo.day)
+      if (!current) {
+        byDay.set(photo.day, {
+          day: photo.day,
+          postId: null,
+          coverPath: photo.path,
+          total: 0,
+          fromAlbum: true,
+        })
+        continue
+      }
+      if (current.coverPath) continue
+      byDay.set(photo.day, { ...current, coverPath: photo.path, fromAlbum: true })
     }
 
     return [...byDay.values()]

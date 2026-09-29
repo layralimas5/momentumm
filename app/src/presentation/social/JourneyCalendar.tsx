@@ -85,7 +85,7 @@ export function JourneyCalendar({
         />
       </header>
 
-      <div className="grid grid-cols-7 gap-1 text-center">
+      <div className="grid grid-cols-7 gap-y-1 text-center">
         {MONTH_WEEKDAY_LABELS.map((label) => (
           <span
             key={label}
@@ -139,74 +139,74 @@ function DayCell({
   const disabled = cell.ahead || (readOnly && cell.kind === 'vazio')
 
   return (
-    <button
-      type="button"
-      onClick={onPick}
-      disabled={disabled}
-      aria-label={describe(cell, number, today)}
-      className={cn(
-        'relative aspect-square overflow-hidden rounded-lg border transition-colors',
-        cell.isToday ? 'border-brand' : 'border-transparent',
-        !cell.inMonth && 'opacity-30',
-        hasImage
-          ? 'bg-surface-hi'
-          : cell.kind === 'movimento'
-            ? 'bg-surface-hi'
-            : 'bg-surface/60',
-        !disabled && 'active:brightness-110',
-      )}
-    >
-      {hasImage && cover ? (
-        <>
-          <img src={cover} alt="" aria-hidden="true" className="absolute inset-0 size-full object-cover" />
-          {/* Uma sombra só embaixo: sem ela o número some numa foto clara, e
-              um véu sobre a imagem inteira apagaria o álbum. */}
-          <span
-            aria-hidden="true"
-            className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/55 to-transparent"
-          />
-          <span className="absolute bottom-0.5 left-1 text-[0.625rem] font-medium text-white tabular drop-shadow">
-            {number}
-          </span>
-        </>
-      ) : hasImage && loading ? (
-        <span aria-hidden="true" className="absolute inset-0 animate-pulse bg-surface-top/60" />
-      ) : (
-        <span
+    <div className="flex flex-col items-center gap-1 py-1">
+      {/*
+        O invólucro não recorta, e é isso que deixa o sinal de "vários
+        registros" pousar na borda do círculo sem ser cortado por ele.
+      */}
+      <span className="relative">
+        <button
+          type="button"
+          onClick={onPick}
+          disabled={disabled}
+          aria-label={describe(cell, number, today)}
           className={cn(
-            'grid size-full place-items-center text-xs tabular',
-            cell.isToday
-              ? 'font-semibold text-ink'
-              : cell.kind === 'movimento'
-                ? 'text-ink-muted'
-                : 'text-ink-faint',
+            'relative grid size-11 place-items-center overflow-hidden rounded-full border transition-colors',
+            cell.isToday ? 'border-brand' : 'border-line',
+            !cell.inMonth && 'opacity-35',
+            disabled ? 'text-ink-faint' : 'active:bg-surface-hi',
           )}
         >
-          {number}
-        </span>
-      )}
+          {hasImage && cover ? (
+            /*
+              Com foto, o número SAI.
 
-      {/* Vários registros no mesmo dia: duas camadas no canto, discretas. É o
-          sinal de "tem mais aqui dentro", e ele precisa sobreviver por cima de
-          qualquer foto. */}
-      {cell.postCount > 1 ? (
-        <span
-          aria-hidden="true"
-          className="absolute right-1 top-1 grid size-4 place-items-center rounded-[0.25rem] bg-black/55 text-[0.5rem] font-semibold text-white tabular backdrop-blur-sm"
-        >
-          {cell.postCount > 9 ? '9+' : cell.postCount}
-        </span>
-      ) : null}
+              Ele não cabe num círculo de 44px por cima de uma imagem sem virar
+              sujeira, e a posição na grade já diz que dia é. O que a célula
+              precisa mostrar ali é a lembrança, não o rótulo.
+            */
+            <img src={cover} alt="" aria-hidden="true" className="absolute inset-0 size-full object-cover" />
+          ) : hasImage && loading ? (
+            <span aria-hidden="true" className="absolute inset-0 animate-pulse bg-surface-top/60" />
+          ) : (
+            <span
+              className={cn(
+                'tabular text-sm font-medium',
+                cell.isToday
+                  ? 'text-ink'
+                  : cell.kind === 'movimento'
+                    ? 'text-ink-muted'
+                    : 'text-ink-faint',
+              )}
+            >
+              {number}
+            </span>
+          )}
+        </button>
 
-      {/* O ponto do dia que andou sem foto. Ele NÃO aparece sobre imagem: ali a
-          própria foto já é a prova de que o dia aconteceu. */}
-      {!hasImage && cell.kind === 'movimento' ? (
-        <span
-          aria-hidden="true"
-          className="absolute inset-x-0 bottom-1 mx-auto size-1 rounded-full bg-brand"
-        />
-      ) : null}
-    </button>
+        {/* Vários registros no mesmo dia: um selo pequeno na borda. É o sinal
+            de "tem mais aqui dentro", e ele precisa sobreviver por cima de
+            qualquer foto, clara ou escura. */}
+        {cell.postCount > 1 ? (
+          <span
+            aria-hidden="true"
+            className="absolute -right-0.5 -top-0.5 grid size-4 place-items-center rounded-full border border-canvas bg-brand text-[0.5rem] font-semibold text-white tabular"
+          >
+            {cell.postCount > 9 ? '9' : cell.postCount}
+          </span>
+        ) : null}
+      </span>
+
+      {/* O ponto fica FORA do círculo: dentro, ele brigaria com a foto
+          justamente nos dias que têm as duas coisas. */}
+      <span
+        aria-hidden="true"
+        className={cn(
+          'size-1.5 rounded-full',
+          cell.kind !== 'vazio' && cell.inMonth ? 'bg-brand' : 'bg-transparent',
+        )}
+      />
+    </div>
   )
 }
 

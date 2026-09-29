@@ -80,31 +80,44 @@ export function buildCalendar(
       ahead: day > today,
     } as const
 
-    if (entry?.coverPath && !entry.fromAlbum) {
+    const cover = entry?.coverPath ?? null
+    const postId = entry?.postId ?? null
+
+    /*
+      O estado sai do que EXISTE, não de onde a imagem veio.
+
+      Um dia pode ter publicação de texto e foto guardada no álbum ao mesmo
+      tempo, e antes essa combinação caía em "album": a célula abria a folha da
+      foto e escondia a publicação. Agora quem decide o que a célula ABRE é o
+      `postId`, e quem decide o que ela MOSTRA é o `coverPath`, que são duas
+      perguntas diferentes.
+    */
+    if (cover && postId) {
       return {
         ...base,
         kind: 'publicacao' as const,
-        coverPath: entry.coverPath,
-        postId: entry.postId,
-        postCount: entry.total,
+        coverPath: cover,
+        postId,
+        postCount: entry?.total ?? 1,
       }
     }
 
-    if (entry?.coverPath) {
-      return { ...base, kind: 'album' as const, coverPath: entry.coverPath, postId: null, postCount: 0 }
+    if (cover) {
+      return { ...base, kind: 'album' as const, coverPath: cover, postId: null, postCount: 0 }
     }
 
     /*
-      Publicação sem foto (só legenda) ainda é um dia que andou, e ela chega
-      aqui com `coverPath` nulo. Cai em `movimento`, que é exatamente o que
-      ela significa: teve registro, não teve imagem.
+      Publicação sem foto nenhuma ainda é um dia que andou. Ela chega aqui com
+      `coverPath` nulo e cai em `movimento`, que é exatamente o que ela
+      significa: teve registro, não teve imagem. A célula continua abrindo a
+      publicação.
     */
-    if (entry || movedDays.has(day)) {
+    if (postId || movedDays.has(day)) {
       return {
         ...base,
         kind: 'movimento' as const,
         coverPath: null,
-        postId: entry?.postId ?? null,
+        postId,
         postCount: entry?.total ?? 0,
       }
     }
