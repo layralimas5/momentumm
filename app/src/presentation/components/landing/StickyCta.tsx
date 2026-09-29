@@ -61,7 +61,7 @@ export function StickyCta() {
               ) : (
                 <>
                   <span className="block font-medium text-ink">{CTA.reassurance}</span>
-                  Seu próximo passo em uma tela.
+                  {CTA.timeToStart}
                 </>
               )}
             </p>

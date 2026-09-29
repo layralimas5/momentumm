@@ -90,9 +90,12 @@ function PlanCard({ plan, cycle }: PlanCardProps) {
   const price = plan.prices[cycle]
   const isPro = plan.highlight === true
 
-  // O card do gratuito usa o CTA da página inteira; o do PRO leva pro checkout.
-  const to = isPro ? `/app/assinatura?ciclo=${cycle}` : cta.primary.to
-  const label = isPro ? plan.cta : cta.primary.label
+  // Sem conta, os dois cards usam o CTA da página inteira: o PRO começa pelo
+  // teste, e um segundo texto de botão quebraria a regra do CTA único. Com
+  // conta, o card do PRO é o que leva pro checkout.
+  const goesToCheckout = isPro && (cta.signedIn || !TRIAL_PROMISE_VERIFIED)
+  const to = goesToCheckout ? `/app/assinatura?ciclo=${cycle}` : cta.primary.to
+  const label = goesToCheckout ? plan.cta : cta.primary.label
 
   return (
     <article

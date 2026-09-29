@@ -1,7 +1,9 @@
 import { Faq } from '@/presentation/components/landing/Faq'
 import { Features } from '@/presentation/components/landing/Features'
 import { FinalCta } from '@/presentation/components/landing/FinalCta'
+import { ForWhom } from '@/presentation/components/landing/ForWhom'
 import { Hero } from '@/presentation/components/landing/Hero'
+import { HowItWorks } from '@/presentation/components/landing/HowItWorks'
 import { Pricing } from '@/presentation/components/landing/Pricing'
 import { SiteFooter } from '@/presentation/components/landing/SiteFooter'
 import { SiteHeader } from '@/presentation/components/landing/SiteHeader'
@@ -9,7 +11,8 @@ import { StickyCta } from '@/presentation/components/landing/StickyCta'
 import { useLandingView } from '@/presentation/components/landing/landing-analytics'
 
 /**
- * A página curta: promessa, o app, preço, objeções e convite.
+ * A página curta: promessa, pra quem é, o app, como funciona, preço,
+ * objeções e convite.
  *
  * Quem chega aqui vem de um carrossel e já sabe a dor. A página não explica
  * o método: mostra a tela real, diz o que muda no dia, mostra o preço e tira
@@ -35,7 +38,9 @@ export function LandingPage() {
 
       <main id="conteudo">
         <Hero />
+        <ForWhom />
         <Features />
+        <HowItWorks />
         <Pricing />
         <Faq />
         <FinalCta />
