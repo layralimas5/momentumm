@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { addDays, type DayKey } from '@/domain/entities/day'
 import type { AgendaItem } from '@/domain/entities/day-agenda'
+import { planOccurrenceMove } from '@/domain/entities/routine-item'
 import type { Task } from '@/domain/entities/task'
 import { BottomSheet, SheetAction } from '@/presentation/components/ui/BottomSheet'
 import { Icon } from '@/presentation/components/ui/Icon'
+import { RescheduleForm } from '@/presentation/components/dashboard/RescheduleForm'
 import { usePlanner } from '@/presentation/planner/use-planner'
 
 /**
@@ -23,6 +25,10 @@ import { usePlanner } from '@/presentation/planner/use-planner'
  * São dois lugares diferentes de propósito: um diálogo perguntando "só hoje ou
  * sempre?" a cada toque é a forma mais rápida de alguém mudar a recorrência
  * inteira sem querer, e depois não descobrir onde desfazer.
+ *
+ * Por isso o submenu separa os dois em blocos com nome: "Só nesse dia" mexe na
+ * ocorrência (mais tarde, amanhã ou um dia e horário escolhidos) e "Na rotina"
+ * abre a regra.
  *
  * ## Hábito não muda de data
  *
@@ -48,10 +54,10 @@ export function AgendaItemSheet({
   readonly onEditHabit: (habitId: string) => void
 }) {
   const planner = usePlanner()
-  const [reschedule, setReschedule] = useState(false)
+  const [mode, setMode] = useState<'menu' | 'reagendar' | 'escolher'>('menu')
 
   const close = () => {
-    setReschedule(false)
+    setMode('menu')
     onClose()
   }
 
@@ -111,6 +117,44 @@ export function AgendaItemSheet({
     close()
   }
 
+  const moverPara = async (day: DayKey, time: string | null) => {
+    const move = planOccurrenceMove({
+      from: today,
+      to: day,
+      time,
+      currentTime: item.time,
+      ruleTime: routineState ? routineState.item.timeOfDay : null,
+    })
+
+    if (task) {
+      await planner.updateTask(
+        task.id,
+        move.kind === 'mesmo-dia'
+          ? { timeOfDay: move.time }
+          : { day: move.day, ...(move.time ? { timeOfDay: move.time } : {}) },
+      )
+    } else if (routineState) {
+      const itemId = routineState.item.id
+      if (move.kind === 'mesmo-dia') {
+        await planner.setRoutineStatus(itemId, {
+          status: 'pendente',
+          timeOverride: move.time,
+          plannedTime: item.time,
+        })
+      } else {
+        await planner.setRoutineStatus(itemId, {
+          status: 'reagendado',
+          movedToDay: move.day,
+          plannedTime: item.time,
+        })
+        if (move.time) {
+          await planner.setRoutineStatus(itemId, { status: 'pendente', timeOverride: move.time }, move.day)
+        }
+      }
+    }
+    close()
+  }
+
   const pularHoje = async () => {
     if (habitState) await planner.setHabitStatus(habitState.habit.id, 'pulado')
     else if (routineState)
@@ -134,8 +178,16 @@ export function AgendaItemSheet({
       onClose={close}
     >
       <div className="flex flex-col gap-1">
-        {reschedule ? (
+        {mode === 'escolher' ? (
+          <RescheduleForm
+            today={today}
+            initialTime={item.time}
+            onSubmit={moverPara}
+            onCancel={() => setMode('reagendar')}
+          />
+        ) : mode === 'reagendar' ? (
           <>
+            <SheetGroupLabel>Só nesse dia</SheetGroupLabel>
             <SheetAction
               icon={<Icon name="relogio" className="size-5" />}
               label="Hoje, mais tarde"
@@ -150,23 +202,31 @@ export function AgendaItemSheet({
               onClick={() => void adiarPraAmanha()}
             />
             <SheetAction
-              icon={<Icon name="editar" className="size-5" />}
+              icon={<Icon name="adiar" className="size-5" />}
               label="Escolher dia e horário"
-              hint={
-                routineState
-                  ? 'Abre o item: o que mudar ali vale pra todos os dias'
-                  : 'Abre a ação com data e horário'
-              }
-              onClick={() => {
-                if (task) onEditTask(task)
-                else if (routineState) onEditRoutine(routineState.item.id)
-                close()
-              }}
+              hint={routineState ? 'Move só essa vez, os outros dias ficam iguais' : 'Leva a ação pra outra data ou hora'}
+              onClick={() => setMode('escolher')}
             />
+
+            {routineState ? (
+              <>
+                <SheetGroupLabel>Na rotina</SheetGroupLabel>
+                <SheetAction
+                  icon={<Icon name="editar" className="size-5" />}
+                  label="Mudar em todos os dias"
+                  hint="Abre o item: o que mudar ali vale daqui pra frente"
+                  onClick={() => {
+                    onEditRoutine(routineState.item.id)
+                    close()
+                  }}
+                />
+              </>
+            ) : null}
+
             <SheetAction
               icon={<Icon name="seta" className="size-5 rotate-180" />}
               label="Voltar"
-              onClick={() => setReschedule(false)}
+              onClick={() => setMode('menu')}
             />
           </>
         ) : (
@@ -208,7 +268,7 @@ export function AgendaItemSheet({
                 icon={<Icon name="adiar" className="size-5" />}
                 label="Reagendar"
                 hint={routineState ? 'Só hoje. A rotina continua igual' : 'Outro horário ou outro dia'}
-                onClick={() => setReschedule(true)}
+                onClick={() => setMode('reagendar')}
               />
             ) : null}
 
@@ -236,5 +296,13 @@ export function AgendaItemSheet({
         )}
       </div>
     </BottomSheet>
+  )
+}
+
+function SheetGroupLabel({ children }: { readonly children: string }) {
+  return (
+    <p className="px-3 pt-3 pb-1 text-xs font-medium tracking-wide text-ink-faint uppercase first:pt-0">
+      {children}
+    </p>
   )
 }

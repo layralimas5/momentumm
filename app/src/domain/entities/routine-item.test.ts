@@ -3,6 +3,7 @@ import { parseDayKey } from './day'
 import {
   createRoutineItem,
   isRoutineScheduledOn,
+  planOccurrenceMove,
   routineDayStates,
   routineStatusOf,
   routineWeek,
@@ -303,5 +304,42 @@ describe('recorrência ao longo do tempo', () => {
     )
 
     expect(semana.filter((dia) => dia.states.length > 0)).toHaveLength(2)
+  })
+})
+
+describe('planOccurrenceMove', () => {
+  const base = { from: SEGUNDA, currentTime: '07:00', ruleTime: '07:00' }
+
+  it('no mesmo dia vira só horário trocado', () => {
+    expect(planOccurrenceMove({ ...base, to: SEGUNDA, time: '19:30' })).toEqual({
+      kind: 'mesmo-dia',
+      time: '19:30',
+    })
+  })
+
+  it('no mesmo dia exige um horário diferente do atual', () => {
+    expect(() => planOccurrenceMove({ ...base, to: SEGUNDA, time: '07:00' })).toThrow(DomainError)
+    expect(() => planOccurrenceMove({ ...base, to: SEGUNDA, time: null })).toThrow(DomainError)
+  })
+
+  it('não volta pro passado', () => {
+    expect(() => planOccurrenceMove({ ...base, to: DOMINGO, time: '08:00' })).toThrow(DomainError)
+  })
+
+  it('em outro dia guarda o horário só quando ele difere da regra', () => {
+    expect(planOccurrenceMove({ ...base, to: QUARTA, time: '07:00' })).toEqual({
+      kind: 'outro-dia',
+      day: QUARTA,
+      time: null,
+    })
+    expect(planOccurrenceMove({ ...base, to: QUARTA, time: '21:00' })).toEqual({
+      kind: 'outro-dia',
+      day: QUARTA,
+      time: '21:00',
+    })
+  })
+
+  it('recusa horário malformado', () => {
+    expect(() => planOccurrenceMove({ ...base, to: QUARTA, time: '25:00' })).toThrow(DomainError)
   })
 })
