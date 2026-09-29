@@ -44,6 +44,15 @@ export function RoutinePage() {
   const [params, setParams] = useSearchParams()
 
   const [picked, setPicked] = useState<DayKey>(planner.today)
+  /*
+    Quem estava olhando o dia de hoje continua olhando hoje depois da
+    meia-noite. Quem escolheu outro dia fica nele: a escolha foi dela.
+  */
+  const [shownToday, setShownToday] = useState(planner.today)
+  if (shownToday !== planner.today) {
+    setShownToday(planner.today)
+    if (picked === shownToday) setPicked(planner.today)
+  }
   const [view, setView] = useState<'dia' | 'semana' | 'todos'>('dia')
   const [editing, setEditing] = useState<RoutineItem | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
