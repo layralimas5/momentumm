@@ -24,7 +24,7 @@ Branch de trabalho: `feat/nova-navegacao-e-rotina`, já mergeada na `main`
 | 10. Calendário visual | **Escrito.** Ligado a publicações, com sinal de vários no dia e aba de grade |
 | 11. Stories | **Escrito.** Foto e vídeo curto, 24h pela política, visualizador em tela cheia |
 | 12. Segurança e moderação | **Escrito.** Bloqueio, denúncia e painel de desbloqueio |
-| 13. Refinamento | **Parcial.** Falta virada de dia; uploads entraram com a camada social |
+| 13. Refinamento | **Feito.** Virada de dia em produção desde 29/09 (`useToday`); uploads entraram com a camada social |
 
 **As fases 7 a 12 estão prontas no código e provadas contra um Postgres de
 verdade (`npm run db:test`, 55 asserções em `supabase/tests/pglite/social.mjs`),
