@@ -128,6 +128,11 @@ var aiEndpointRequestSchema = z.object({
 });
 var SHORT = z.string().trim().min(1).max(120);
 var SENTENCE = z.string().trim().min(1).max(400);
+var planStepSchema = z.object({
+  title: SHORT,
+  description: SENTENCE,
+  weight: z.number().int().min(5).max(70)
+});
 var planSuggestionSchema = z.object({
   /*
       A etapa deixou de ser uma string.
@@ -139,13 +144,7 @@ var planSuggestionSchema = z.object({
       estruturada consome); quem fecha os 100 é `normalizeStepWeights`, no
       domínio, depois de ler.
     */
-  steps: z.array(
-    z.object({
-      title: SHORT,
-      description: SENTENCE,
-      weight: z.number().int().min(5).max(70)
-    })
-  ).min(3).max(5),
+  steps: z.array(planStepSchema).min(3).max(5),
   habits: z.array(
     z.object({
       name: SHORT,
@@ -253,6 +252,18 @@ var AI_OUTPUT_SCHEMAS = {
   review_draft: reviewDraftSchema,
   recovery: recoveryPlanSchema,
   coach: coachNudgeSchema
+};
+var legacyStepSchema = SHORT.transform((title) => ({
+  title,
+  /* Sem descrição, o título vira a própria explicação: é o que havia. */
+  description: title,
+  weight: 0
+}));
+var AI_READ_SCHEMAS = {
+  ...AI_OUTPUT_SCHEMAS,
+  plan: planSuggestionSchema.extend({
+    steps: z.array(z.union([planStepSchema, legacyStepSchema])).min(1).max(6)
+  })
 };
 var AI_SYSTEM_PROMPT = `Voc\xEA \xE9 a Momentumm AI, a parte do app Momentumm que transforma objetivo em plano e l\xEA o progresso de uma pessoa.
 
