@@ -17,7 +17,7 @@ Branch de trabalho: `feat/nova-navegacao-e-rotina`, já mergeada na `main`
 | 3. Hoje | **Feito e conferido**, menos o teste da §81 na composição exata |
 | 4. Rotina | **Feito, não validado** contra o design de timeline das §10 e §57 |
 | 5. Integração | **Parcial.** Fonte única existe; o caminho da §16 nunca foi testado ponta a ponta |
-| 6. Reagendamento | **Feito em 29/09**, branch `feat/reagendar-so-hoje` (worktree `momentumm-reagendar`), ainda sem merge na main |
+| 6. Reagendamento | **Feito e em produção desde 29/09** |
 | 7. Modelo social + RLS | **Escrito e provado, NÃO aplicado em produção.** Migrations 0067 e 0068 |
 | 8. Perfis e follows | **Escrito.** Perfil público/fechado, pedido com aprovação, listas |
 | 9. Feed e publicações | **Escrito.** Publicação com foto, carrossel, legenda, objetivo e privacidade |
