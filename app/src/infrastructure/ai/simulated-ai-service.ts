@@ -6,6 +6,7 @@ import type {
   AiDayRequest,
   AiHabitSuggestion,
   AiPlanRequest,
+  AiPlanStep,
   AiPlanSuggestion,
   AiProgressReading,
   AiProgressRequest,
@@ -363,17 +364,58 @@ function unitPerMinute(unitLabel: string): number {
   return unitLabel.startsWith('pág') ? 1.2 : 1
 }
 
-function buildSteps(request: AiPlanRequest, weeks: number): string[] {
-  const chunk = Math.ceil(request.target / Math.min(4, weeks))
-  const count = Math.min(4, weeks)
+/**
+ * As etapas da IA simulada.
+ *
+ * Quando existe roteiro pro assunto, ela usa O ROTEIRO: é o que o modelo de
+ * verdade recebe como base, e o demo precisa dar a mesma resposta, senão quem
+ * experimenta vê um plano pior do que o produto entrega.
+ *
+ * Sem roteiro, o volume acumulado vira os degraus. É o que dá pra afirmar
+ * sabendo só o alvo e o prazo, e a simulação não finge saber mais que isso.
+ */
+function buildSteps(request: AiPlanRequest, weeks: number): AiPlanStep[] {
+  const baseline = request.baseline
+  if (baseline && baseline.steps.length > 0) {
+    // Peso decrescente: a preparação vale menos que o que sustenta o resultado.
+    const pesos = [15, 45, 40, 25, 20]
+    return baseline.steps.map((step, index) => ({
+      title: step.title,
+      description: step.description,
+      weight: pesos[index] ?? 20,
+    }))
+  }
+
+  const count = Math.max(3, Math.min(4, weeks))
+  const chunk = Math.ceil(request.target / count)
 
   return Array.from({ length: count }, (_, index) => {
     const upTo = Math.min(request.target, chunk * (index + 1))
-    return `Etapa ${index + 1}: chegar em ${upTo} ${request.unitLabel}`
+    return {
+      title: index === count - 1 ? 'Fechar o objetivo' : `Chegar em ${upTo} ${request.unitLabel}`,
+      description: `Acumular ${upTo} ${request.unitLabel} e conferir se o ritmo está de pé.`,
+      weight: index === 0 ? 20 : Math.round(80 / (count - 1)),
+    }
   })
 }
 
 function buildHabits(request: AiPlanRequest, perDay: number): AiHabitSuggestion[] {
+  /* Com roteiro, os hábitos são os dele: o demo espelha o produto. */
+  const baseline = request.baseline
+  if (baseline && baseline.habits.length > 0) {
+    return baseline.habits.slice(0, 4).map((name, index) => ({
+      name,
+      icon: 'livro' as const,
+      frequency: 'vezes-semana' as const,
+      weekdays: [],
+      timesPerWeek: index === 0 ? 5 : 3,
+      dayPart: 'qualquer' as const,
+      target: Math.max(5, Math.round(perDay / (index + 1))),
+      minimalTarget: Math.max(3, Math.round(perDay / ((index + 1) * 3))),
+      rationale: 'Vem do roteiro que o app usa pra esse assunto.',
+    }))
+  }
+
   return [
     {
       name: `${capitalize(request.axis)} todo dia`,
@@ -389,10 +431,26 @@ function buildHabits(request: AiPlanRequest, perDay: number): AiHabitSuggestion[
   ]
 }
 
-function buildTasks(request: AiPlanRequest, steps: readonly string[]): AiTaskSuggestion[] {
+function buildTasks(request: AiPlanRequest, steps: readonly AiPlanStep[]): AiTaskSuggestion[] {
+  /* Com roteiro, as ações são as dele, espalhadas pelas etapas. */
+  const doRoteiro = request.baseline?.tasks ?? []
+  if (doRoteiro.length > 0) {
+    return doRoteiro.slice(0, 16).map((title, index) => ({
+      title,
+      description: null,
+      day: addDays(request.startedOn, index === 0 ? 0 : index * 5) as DayKey,
+      estimatedMin: Math.min(request.minutesPerDay, 45),
+      effort: index === 0 ? 'leve' : 'medio',
+      priority: index === 0 ? 'alta' : 'media',
+      minimalVersion: null,
+      order: index,
+      stepIndex: Math.min(index, steps.length - 1),
+    }))
+  }
+
   return steps.map((step, index) => ({
-    title: step,
-    description: null,
+    title: step.title,
+    description: step.description,
     day: addDays(request.startedOn, index * 7) as DayKey,
     estimatedMin: Math.min(request.minutesPerDay, 45),
     effort: index === 0 ? 'leve' : 'medio',

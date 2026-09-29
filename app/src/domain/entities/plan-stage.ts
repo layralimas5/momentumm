@@ -170,8 +170,44 @@ export function rebalanceWeights(stages: readonly PlanStage[]): PlanStage[] {
   }))
 }
 
+/**
+ * Pesos que vieram de fora, ajustados pra somar 100 sem perder a proporção.
+ *
+ * A saída estruturada do modelo não consegue garantir soma (o `refine` do zod
+ * não tem representação em JSON Schema, que é o que ela consome), então a IA
+ * devolve pesos que quase sempre somam algo perto de 100 e este ajuste fecha a
+ * conta. Proporcional, e não redistribuição igual: a IA dizer "a primeira
+ * etapa vale 15 e a do meio vale 45" é informação, e achatar tudo em 33/33/33
+ * jogaria fora justamente o que ela tinha pra dizer.
+ *
+ * A sobra do arredondamento vai pras primeiras, como em `distributeWeights`.
+ */
+export function normalizeWeights(weights: readonly number[]): number[] {
+  const positivos = weights.map((weight) => (Number.isFinite(weight) && weight > 0 ? weight : 1))
+  const total = positivos.reduce((sum, weight) => sum + weight, 0)
+  if (total <= 0) return distributeWeights(weights.length)
+
+  const escalados = positivos.map((weight) =>
+    Math.max(1, Math.floor((weight / total) * TOTAL_WEIGHT)),
+  )
+  let sobra = TOTAL_WEIGHT - escalados.reduce((sum, weight) => sum + weight, 0)
+
+  for (let index = 0; sobra > 0; index = (index + 1) % escalados.length) {
+    escalados[index] = (escalados[index] ?? 0) + 1
+    sobra -= 1
+  }
+  /* Sobra negativa (arredondamento pra cima do piso de 1) tira das maiores. */
+  while (sobra < 0) {
+    const maior = escalados.indexOf(Math.max(...escalados))
+    escalados[maior] = Math.max(1, (escalados[maior] ?? 1) - 1)
+    sobra += 1
+  }
+
+  return escalados
+}
+
 /** A soma dos pesos. Serve pra tela avisar antes de o domínio recusar. */
-export function totalWeightOf(stages: readonly PlanStage[]): number {
+export function totalWeightOf(stages: readonly { readonly weight: number }[]): number {
   return stages.reduce((sum, stage) => sum + stage.weight, 0)
 }
 
@@ -231,7 +267,9 @@ export function reopenStage(stage: PlanStage): PlanStage {
  * pessoa consegue conferir de cabeça, e ela pode mexer depois.
  */
 export function suggestDueDates(
-  stages: readonly PlanStage[],
+  /* Só o peso importa aqui. `PlanStage` satisfaz isto por estrutura, e quem
+     tem apenas os pesos (a prévia da IA) não precisa forjar uma etapa. */
+  stages: readonly { readonly weight: number }[],
   startedOn: DayKey,
   deadline: DayKey,
   addDaysFn: (day: DayKey, amount: number) => DayKey,
