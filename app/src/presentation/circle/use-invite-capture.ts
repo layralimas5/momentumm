@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { INVITE_STORAGE_KEY, parseInviteCode } from '@/domain/entities/referral'
+import type { FriendshipRepository } from '@/domain/repositories/friendship-repository'
 import { track } from '@/infrastructure/analytics/track'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
@@ -17,9 +18,11 @@ import { useAuth } from '@/presentation/auth/use-auth'
  * daria o mesmo não, e um código eterno no navegador acabaria atribuindo uma
  * conta criada meses depois.
  *
- * Nada aqui muda o que a pessoa vê. A atribuição é de análise: ela não conecta
- * ninguém a ninguém, porque acompanhar o progresso de alguém continua sendo
- * pedido e aceite dos dois lados.
+ * Quando a atribuição vale, sai também um PEDIDO de amizade pra quem convidou.
+ * Antes a atribuição era só de análise, e quem mandou o link via a amiga
+ * entrar e nunca aparecer no próprio círculo: o convite parecia quebrado. O
+ * pedido respeita a regra de que acompanhar alguém é aceite dos dois lados:
+ * quem entrou pelo link já disse sim, quem convidou aceita com um toque.
  */
 export function useInviteCapture(): void {
   const { user } = useAuth()
@@ -34,11 +37,37 @@ export function useInviteCapture(): void {
 
     void container.referrals
       .register(stored)
-      .then((registered) => {
-        if (registered) track('friend_invite_accepted', 'circulo', { result: 'registrado' })
+      .then(async (registered) => {
+        if (!registered) return
+        track('friend_invite_accepted', 'circulo', { result: 'registrado' })
+        await requestInviter(container.friendships, user.id, stored)
       })
-      .catch(() => undefined)
+      .catch((cause: unknown) => console.warn('convite: não consegui ligar ao círculo', cause))
   }, [user])
+}
+
+/**
+ * O pedido de amizade pra quem mandou o link.
+ *
+ * A busca exata pelo @ acha qualquer perfil, inclusive privado, que é o caso
+ * de quase todo mundo: perfil nasce privado.
+ */
+export async function requestInviter(
+  friendships: FriendshipRepository,
+  userId: string,
+  handle: string,
+): Promise<void> {
+  const found = await friendships.search(userId, handle)
+  const inviter = found.find((person) => person.handle.toLowerCase() === handle.toLowerCase())
+  if (!inviter) return
+
+  const existing = await friendships.listByUser(userId)
+  const alreadyLinked = existing.some(
+    (row) => row.requesterId === inviter.id || row.addresseeId === inviter.id,
+  )
+  if (alreadyLinked) return
+
+  await friendships.request({ requesterId: userId, addresseeId: inviter.id })
 }
 
 function read(): string | null {
