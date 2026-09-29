@@ -342,6 +342,35 @@ export function PersonalProfilePage() {
         />
       </StatGrid>
 
+      {/*
+        A porta pro Progresso inteiro.
+
+        Ele saiu da barra de baixo porque respondia quase o que esta aba já
+        responde: momentum, constância, sequência, objetivos com barra. O que
+        ele tem e daqui não dá pra ver é o diagnóstico: o que precisa de
+        atenção, a leitura por etapa e as métricas. Então a entrada fica
+        exatamente aqui, embaixo dos números que ela aprofunda, e não numa
+        lista de atalhos no fim da página.
+      */}
+      <Link
+        to="/app/progresso"
+        className="flex min-h-14 items-center gap-3.5 rounded-card border border-line bg-surface px-4 py-3 transition-colors active:bg-surface-hi"
+      >
+        <span
+          aria-hidden="true"
+          className="grid size-10 shrink-0 place-items-center rounded-xl border border-line bg-surface-hi text-ink-muted"
+        >
+          <Icon name="progresso" className="size-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-medium text-ink">Progresso completo</span>
+          <span className="mt-0.5 block text-sm text-pretty text-ink-faint">
+            O que precisa de atenção, o avanço por etapa e as leituras do ritmo
+          </span>
+        </span>
+        <Icon name="seta" className="size-4 shrink-0 text-ink-faint" />
+      </Link>
+
       <div className="grid gap-5 lg:grid-cols-2 lg:items-start lg:gap-6">
         <Panel>
           <PanelHeader

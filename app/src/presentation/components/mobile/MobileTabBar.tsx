@@ -12,27 +12,41 @@ interface TabItem {
   readonly end: boolean
 }
 
-/** As rotas que a barra leva: o topo e os atalhos do perfil leem daqui. */
+/**
+ * As rotas que a barra leva: o topo e os atalhos do perfil leem daqui.
+ *
+ * O que NÃO está aqui aparece sozinho nos atalhos do Perfil
+ * (`MobileShortcuts`), e é assim que o Progresso continua alcançável depois de
+ * sair da barra, sem ninguém precisar lembrar de editar dois arquivos.
+ */
 export const TAB_ROUTES: readonly string[] = [
   '/app/feed',
+  '/app/rotina',
   '/app',
-  '/app/progresso',
   '/app/perfil',
 ]
 
 /**
  * Quatro destinos e um gesto, na ordem do dia da pessoa.
  *
- * Feed e Perfil nas pontas (a camada social, que se olha), Hoje e Progresso
- * por dentro (o que se executa e o que resultou), e o "+" no meio, onde o
- * polegar chega sem mirar.
+ * Feed e Perfil nas pontas (a camada social, que se olha) e, por dentro, o par
+ * que se usa todo dia: **Rotina responde "como eu organizei meus dias", Hoje
+ * responde "o que eu preciso fazer agora"**. Uma é desenho, a outra é
+ * execução, e elas ficam vizinhas porque a pergunta passa de uma pra outra o
+ * tempo todo.
  *
- * Rotina saiu da barra pra o "+" entrar. Ela não desapareceu: continua na rota
- * própria, na barra lateral do desktop, na busca rápida e nos atalhos do
- * Perfil, que se montam sozinhos a partir de tudo que não está em
- * `TAB_ROUTES`. O que ela perdeu foi a posição de destaque, e a razão é que
- * abrir a rotina é uma decisão de vez em quando; publicar e registrar é o
- * gesto de todo dia.
+ * O "+" no meio, onde o polegar chega sem mirar.
+ *
+ * ## O Progresso saiu daqui, e não sumiu
+ *
+ * Ele respondia quase o que o Perfil já responde: momentum, constância,
+ * sequência, objetivos com barra, conquistas. Duas portas pro mesmo quarto, e
+ * uma delas ocupando um dos cinco lugares que a barra tem. Agora ele é uma das
+ * seções do Perfil e continua inteiro na rota própria, alcançável pelos
+ * atalhos do Perfil, pela busca rápida e pela barra lateral do desktop.
+ *
+ * A outra razão é aritmética: "+" no CENTRO exige número ímpar de espaços. Com
+ * seis, ele cai em 42% da largura e fica visivelmente torto.
  *
  * Configurações nunca esteve aqui e continua não estando: ela mora atrás da
  * engrenagem no topo do Perfil, que é onde qualquer pessoa procura por ela
@@ -40,11 +54,11 @@ export const TAB_ROUTES: readonly string[] = [
  */
 const LEFT: readonly TabItem[] = [
   { to: '/app/feed', label: 'Feed', icon: 'globo', end: false },
-  { to: '/app', label: 'Hoje', icon: 'casa', end: true },
+  { to: '/app/rotina', label: 'Rotina', icon: 'calendario', end: false },
 ]
 
 const RIGHT: readonly TabItem[] = [
-  { to: '/app/progresso', label: 'Progresso', icon: 'progresso', end: false },
+  { to: '/app', label: 'Hoje', icon: 'casa', end: true },
   { to: '/app/perfil', label: 'Perfil', icon: 'pessoa', end: false },
 ]
 
