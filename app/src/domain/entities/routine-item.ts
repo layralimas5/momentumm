@@ -425,3 +425,36 @@ export function routineWeek(
 ): { readonly day: DayKey; readonly states: readonly RoutineDayState[] }[] {
   return days.map((day) => ({ day, states: routineDayStates(items, occurrences, day) }))
 }
+
+/**
+ * Pra onde vai UMA ocorrência quando a pessoa escolhe dia e horário.
+ *
+ * É o reagendamento de "só dessa vez": a regra do item não muda. No mesmo dia
+ * vira horário trocado; em outro dia vira mudança de data, e o horário só é
+ * guardado quando difere do da regra, pra que editar a regra depois continue
+ * valendo naquele dia.
+ */
+export type OccurrenceMove =
+  | { readonly kind: 'mesmo-dia'; readonly time: string }
+  | { readonly kind: 'outro-dia'; readonly day: DayKey; readonly time: string | null }
+
+export function planOccurrenceMove(input: {
+  readonly from: DayKey
+  readonly to: DayKey
+  readonly time: string | null
+  readonly currentTime: string | null
+  readonly ruleTime: string | null
+}): OccurrenceMove {
+  const time = input.time?.trim() || null
+  if (time && !TIME_PATTERN.test(time)) throw new DomainError('Horário inválido.')
+  if (input.to < input.from) throw new DomainError('Escolha hoje ou um dia depois.')
+
+  if (input.to === input.from) {
+    if (!time || time === input.currentTime) {
+      throw new DomainError('Pra ficar hoje, escolha um horário diferente do atual.')
+    }
+    return { kind: 'mesmo-dia', time }
+  }
+
+  return { kind: 'outro-dia', day: input.to, time: time && time !== input.ruleTime ? time : null }
+}

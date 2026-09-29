@@ -17,7 +17,7 @@ Branch de trabalho: `feat/nova-navegacao-e-rotina`, já mergeada na `main`
 | 3. Hoje | **Feito e conferido**, menos o teste da §81 na composição exata |
 | 4. Rotina | **Feito, não validado** contra o design de timeline das §10 e §57 |
 | 5. Integração | **Parcial.** Fonte única existe; o caminho da §16 nunca foi testado ponta a ponta |
-| 6. Reagendamento | **Parcial.** Falta mover só a ocorrência pra uma data escolhida |
+| 6. Reagendamento | **Feito em 29/09**, branch `feat/reagendar-so-hoje` (worktree `momentumm-reagendar`), ainda sem merge na main |
 | 7. Modelo social + RLS | **Escrito e provado, NÃO aplicado em produção.** Migrations 0067 e 0068 |
 | 8. Perfis e follows | **Escrito.** Perfil público/fechado, pedido com aprovação, listas |
 | 9. Feed e publicações | **Escrito.** Publicação com foto, carrossel, legenda, objetivo e privacidade |
@@ -47,7 +47,9 @@ abaixo, e continua valendo inteiro.
 
 Depois disso, o teste com duas contas reais (§ "Critérios de conclusão").
 
-**Fase 6, fechar o reagendamento.** É o item que não depende do banco.
+**Fase 6: feita em 29/09** na branch `feat/reagendar-so-hoje`. O submenu agora separa "Só nesse dia" de "Na rotina", e `planOccurrenceMove` decide o que a data escolhida significa. Falta o merge. O texto abaixo fica como registro do que foi pedido.
+
+~~Fase 6, fechar o reagendamento.~~
 
 No `AgendaItemSheet`, o submenu Reagendar tem "Hoje, mais tarde" e "Amanhã",
 que mexem só na ocorrência, e "Escolher dia e horário", que abre o editor da
