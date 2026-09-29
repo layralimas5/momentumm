@@ -87,6 +87,32 @@ export const ICON_PATHS = {
   // Aspas de abertura: marca a frase do dia sem precisar do rotulo em cima dela.
   aspas:
     'M6 16c-1.7 0-3-1.4-3-3.2 0-3.2 2.3-6 5.4-6.8M15 16c-1.7 0-3-1.4-3-3.2 0-3.2 2.3-6 5.4-6.8M3 12.8V16h5.4M12 12.8V16h5.4',
+  /*
+    Os gestos do Feed.
+
+    Coração e marcador são traçados como caminho FECHADO, com o `Z` no fim: são
+    os dois únicos ícones do app que também aparecem preenchidos (curtido,
+    salvo), e um caminho aberto pintado por dentro vaza tinta pela abertura.
+  */
+  coracao:
+    'M12 20.3 4.3 12.9a4.7 4.7 0 0 1 0-6.8 4.9 4.9 0 0 1 6.8 0l.9.9.9-.9a4.9 4.9 0 0 1 6.8 0 4.7 4.7 0 0 1 0 6.8Z',
+  comentario:
+    'M21 11.5a8.5 8.5 0 0 1-12.3 7.6L3 20.5l1.5-5.4A8.5 8.5 0 1 1 21 11.5Z',
+  salvar: 'M6 3.8h12a1 1 0 0 1 1 1v15.4l-7-4.2-7 4.2V4.8a1 1 0 0 1 1-1Z',
+  // As reticências do menu de cada publicação.
+  maisOpcoes: 'M6 12h.01M12 12h.01M18 12h.01',
+  // Foto: o retângulo com o sol e a montanha.
+  imagem:
+    'M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1ZM8.5 10.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM3.5 16.5 9 12l5 4 2.5-2 4 3.5',
+  // Denunciar: a bandeirinha fincada.
+  bandeira: 'M5 21V4M5 4h10l-1.5 3.5L15 11H5',
+  // Bloquear: o círculo cortado.
+  bloquear: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM5.6 5.6l12.8 12.8',
+  // A dupla de pessoas: seguidores e seguindo.
+  pessoas:
+    'M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM2.5 19.5a6.5 6.5 0 0 1 13 0M16 11.2A3.5 3.5 0 0 0 16 4.3M18 19.5a6.5 6.5 0 0 0-2.2-4.9',
+  // A grade de publicações do perfil.
+  grade: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
 } as const
 
 export type IconName = keyof typeof ICON_PATHS
@@ -95,14 +121,20 @@ interface IconProps {
   readonly name: IconName
   readonly className?: string
   readonly strokeWidth?: number
+  /**
+   * Pinta o miolo com a cor do traço. Só faz sentido nos caminhos fechados
+   * (`coracao`, `salvar`): é o estado ligado de curtir e de salvar, e é o
+   * preenchimento, não a cor, que diz "já fiz isso" a um metro de distância.
+   */
+  readonly filled?: boolean
 }
 
-export function Icon({ name, className, strokeWidth = 1.75 }: IconProps) {
+export function Icon({ name, className, strokeWidth = 1.75, filled = false }: IconProps) {
   return (
     <svg
       viewBox="0 0 24 24"
       aria-hidden="true"
-      fill="none"
+      fill={filled ? 'currentColor' : 'none'}
       stroke="currentColor"
       strokeWidth={strokeWidth}
       strokeLinecap="round"

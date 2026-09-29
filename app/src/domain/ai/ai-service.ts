@@ -48,6 +48,30 @@ export interface AiPlanRequest {
   readonly deadline: DayKey
   readonly minutesPerDay: number
   readonly motive: string | null
+  /**
+   * O roteiro que o app já montou pro assunto (`plan-blueprint`), quando
+   * existe um.
+   *
+   * A IA não começa do zero em assunto conhecido: ela recebe o que a
+   * biblioteca sabe sobre emagrecer, correr ou estudar pra prova, e o trabalho
+   * dela passa a ser PERSONALIZAR — cortar o que não serve pra esta pessoa,
+   * acrescentar o que o objetivo escrito pede, ajustar ao que ela já faz.
+   *
+   * Sem isso, o mesmo pedido gerava um plano diferente a cada vez e às vezes
+   * pior que o determinístico, porque o modelo reinventava a estrutura em vez
+   * de gastar o raciocínio no que é específico daquela pessoa.
+   */
+  readonly baseline: AiPlanBaseline | null
+}
+
+/** O roteiro da biblioteca, compacto, do jeito que o prompt precisa dele. */
+export interface AiPlanBaseline {
+  readonly label: string
+  readonly steps: readonly { readonly title: string; readonly description: string }[]
+  readonly habits: readonly string[]
+  readonly tasks: readonly string[]
+  /** O limite do que o app faz, quando o assunto pede. É repassado à risca. */
+  readonly caution: string | null
 }
 
 export interface AiHabitSuggestion {
@@ -82,9 +106,25 @@ export interface AiTaskSuggestion {
   readonly stepIndex: number | null
 }
 
+/**
+ * A etapa do caminho, com o que ela é e quanto ela vale.
+ *
+ * Era uma STRING solta, e a consequência aparecia na hora de gravar: o
+ * objetivo nascia com etapas sem descrição e com pesos redistribuídos em
+ * partes iguais, então o plano da IA perdia justamente o que ela tinha pra
+ * dizer — que a primeira etapa é curta, que o trabalho está no meio, e por
+ * quê. O plano determinístico já entregava as três coisas.
+ */
+export interface AiPlanStep {
+  readonly title: string
+  readonly description: string
+  /** Quanto vale do objetivo. O conjunto é normalizado pra somar 100. */
+  readonly weight: number
+}
+
 export interface AiPlanSuggestion {
   /** As etapas do caminho, em ordem. É o que a prévia mostra primeiro. */
-  readonly steps: readonly string[]
+  readonly steps: readonly AiPlanStep[]
   readonly habits: readonly AiHabitSuggestion[]
   readonly tasks: readonly AiTaskSuggestion[]
   /** Prazo que a IA acha realista, quando difere do pedido. */

@@ -280,7 +280,10 @@ export function planMatrix(): readonly PlanMatrixRow[] {
     { feature: 'Registros por voz', free: 'Não disponível', pro: 'Disponível com limite mensal' },
     { feature: 'Análises de IA', free: 'Não disponível', pro: 'Padrões, gargalos e recomendações' },
     { feature: 'Templates de objetivos', free: `Até ${free.objectiveTemplates} templates básicos`, pro: 'Biblioteca completa' },
-    { feature: 'Compartilhamento', free: `${free.shareTemplates} arranjos, todas as cores e PNG`, pro: 'Todos os modelos e personalização' },
+    // O estúdio tem uma cor só (PNG sem fundo) e dois arranjos, e os dois são
+    // de todo mundo. O que o PRO acrescenta é a foto de fundo e escolher o que
+    // entra no card, então é isso que a linha promete.
+    { feature: 'Compartilhamento', free: 'Card em PNG, com os dois arranjos', pro: 'Foto de fundo e o que aparece no card' },
     {
       feature: 'Duplas no Juntos',
       free: count(free.pairs, 'dupla', 'duplas'),

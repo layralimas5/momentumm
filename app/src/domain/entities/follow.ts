@@ -12,9 +12,18 @@ import { DomainError } from '@/shared/errors'
  *   seguir    "eu quero ver o que essa pessoa publica", não pede licença, não
  *             dá acesso a nada que já não fosse público.
  *
- * A segunda frase é a regra inteira de privacidade daqui: seguir alguém NÃO
- * abre nada. Quem tem perfil privado continua privado pra quem segue, e o
- * número de seguidores não é uma porta, é uma contagem.
+ * ## O que mudou quando o feed entrou (migrations 0067 e 0068)
+ *
+ * Quando `follows` nasceu (0060), seguir NÃO abria nada: era contagem, e o
+ * comentário aqui dizia isso com todas as letras. Com o feed, seguir passou a
+ * ser a porta do conteúdo — sem ele não existe feed — e o que entrou junto foi
+ * o PEDIDO DE APROVAÇÃO: perfil aberto aceita na hora, perfil fechado
+ * responde. Sem essa segunda metade, abrir o feed teria transformado toda
+ * conta fechada em conta aberta sem ninguém escolher isso.
+ *
+ * O estado do laço (segue, pediu, me segue, bloqueei) mora em
+ * `social-graph.ts`, porque é outra coisa: aqui está a LINHA, lá está o que a
+ * tela precisa saber pra desenhar um botão.
  *
  * Uma linha por direção. "A e B se seguem" são duas linhas, e é isso que
  * permite que uma delas acabe sem mexer na outra.
@@ -28,12 +37,11 @@ export interface Follow {
   readonly createdAt: Date
 }
 
+/** Os dois lados de um par, como o `demo-store` os conta. */
 export interface FollowCounts {
   readonly followers: number
   readonly following: number
 }
-
-export const EMPTY_FOLLOW_COUNTS: FollowCounts = { followers: 0, following: 0 }
 
 export interface NewFollowInput {
   readonly followerId: string

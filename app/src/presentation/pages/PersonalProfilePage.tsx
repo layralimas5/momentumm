@@ -32,12 +32,11 @@ import { Stat, StatGrid } from '@/presentation/components/ui/Stat'
 import { MobileShortcuts } from '@/presentation/components/mobile/MobileShortcuts'
 import { ProfileEditor } from '@/presentation/profile/ProfileEditor'
 import { ProfileIdentityCard } from '@/presentation/profile/ProfileIdentityCard'
-import { ProfileCalendar } from '@/presentation/profile/ProfileCalendar'
+import { ProfileJourney } from '@/presentation/social/ProfileJourney'
+import { FollowListSheet } from '@/presentation/social/FollowListSheet'
+import { FollowRequestsCard } from '@/presentation/social/FollowRequestsCard'
 import { ProfileTabs, type ProfileTab } from '@/presentation/profile/ProfileTabs'
-import { useDayPhotos } from '@/presentation/profile/use-day-photos'
-import { useFollowCounts } from '@/presentation/profile/use-follow-counts'
-import { addMonths, startOfMonthKey } from '@/domain/entities/month'
-import { addDays } from '@/domain/entities/day'
+import { useSocialCounts } from '@/presentation/social/use-social-counts'
 import { useShareStudio } from '@/presentation/share/ShareStudioProvider'
 import { StatusEditor } from '@/presentation/profile/StatusEditor'
 import { ProfileVisibilityPanel } from '@/presentation/profile/ProfileVisibilityPanel'
@@ -77,13 +76,11 @@ export function PersonalProfilePage() {
     é ajuste, e nenhum dos dois é a primeira pergunta.
   */
   const [tab, setTab] = useState<ProfileTab>('progresso')
-  const [month, setMonth] = useState(() => startOfMonthKey(planner.today))
+  /** Qual lista de laços está aberta, quando está. */
+  const [listKind, setListKind] = useState<'seguidores' | 'seguindo' | null>(null)
 
   const share = useShareStudio()
-  const follows = useFollowCounts(profile?.id ?? null)
-  // O mês inteiro, e não a grade: a grade traz dias dos meses vizinhos, e pedir
-  // fotos deles encheria a tela de imagem que não é daquele mês.
-  const album = useDayPhotos(month, addDays(addMonths(month, 1), -1))
+  const counts = useSocialCounts(profile?.id ?? null)
 
   const { summary: evolutionSummary } = evolution
   const achievementsUnlocked = evolutionSummary.achievements.filter(
@@ -166,6 +163,10 @@ export function PersonalProfilePage() {
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 lg:gap-6">
       <ProfileTabs value={tab} onChange={setTab} />
 
+      {/* Pedido esperando resposta é a única coisa nesta tela que outra pessoa
+          está aguardando, então ele passa na frente do resto. */}
+      <FollowRequestsCard />
+
       {/*
         O cartão de visita fica ACIMA das abas e não muda com elas: quem você é
         não é uma das três respostas, é a moldura das três.
@@ -191,9 +192,10 @@ export function PersonalProfilePage() {
         <>
           <ProfileIdentityCard
             profile={profile}
-            counts={follows.counts}
-            moments={journeyEvents.length}
+            counts={counts}
             aurora={auroraFrame}
+            onOpenFollowers={() => setListKind('seguidores')}
+            onOpenFollowing={() => setListKind('seguindo')}
             onEdit={() => setEditing(true)}
             onShare={() =>
               share.open(
@@ -237,6 +239,15 @@ export function PersonalProfilePage() {
         </>
       )}
 
+      {listKind && profile ? (
+        <FollowListSheet
+          open
+          userId={profile.id}
+          kind={listKind}
+          onClose={() => setListKind(null)}
+        />
+      ) : null}
+
       <StatusEditor
         open={statusOpen}
         profileId={profile.id}
@@ -248,18 +259,22 @@ export function PersonalProfilePage() {
       {tab === 'progresso' ? (
       <>
       {/*
-        O mês vem primeiro, antes de qualquer número.
+        A jornada vem primeiro, antes de qualquer número.
 
-        Ele responde a pergunta do perfil na forma mais curta que existe: o que
-        eu sustentei. E responde com memória, não com estatística, a foto de um
-        dia diz o que aconteceu nele melhor que qualquer barra de progresso.
+        Ela responde a pergunta do perfil na forma mais curta que existe: o que
+        eu sustentei. E responde com MEMÓRIA, não com estatística — a foto de um
+        dia diz o que aconteceu nele melhor que qualquer barra de progresso, e
+        um mês inteiro preenchido diz o que nenhum gráfico diz.
+
+        Calendário e publicações são as duas leituras da mesma coisa, e o
+        calendário abre primeiro de propósito: a grade é a resposta que todo app
+        dá, o calendário é a que só existe aqui.
       */}
-      <ProfileCalendar
-        month={month}
+      <ProfileJourney
+        userId={profile.id}
         today={planner.today}
-        onMonthChange={setMonth}
         movedDays={movedDays}
-        album={album}
+        owner
       />
 
       {/*
@@ -326,6 +341,35 @@ export function PersonalProfilePage() {
           accent="var(--color-flame)"
         />
       </StatGrid>
+
+      {/*
+        A porta pro Progresso inteiro.
+
+        Ele saiu da barra de baixo porque respondia quase o que esta aba já
+        responde: momentum, constância, sequência, objetivos com barra. O que
+        ele tem e daqui não dá pra ver é o diagnóstico: o que precisa de
+        atenção, a leitura por etapa e as métricas. Então a entrada fica
+        exatamente aqui, embaixo dos números que ela aprofunda, e não numa
+        lista de atalhos no fim da página.
+      */}
+      <Link
+        to="/app/progresso"
+        className="flex min-h-14 items-center gap-3.5 rounded-card border border-line bg-surface px-4 py-3 transition-colors active:bg-surface-hi"
+      >
+        <span
+          aria-hidden="true"
+          className="grid size-10 shrink-0 place-items-center rounded-xl border border-line bg-surface-hi text-ink-muted"
+        >
+          <Icon name="progresso" className="size-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-medium text-ink">Progresso completo</span>
+          <span className="mt-0.5 block text-sm text-pretty text-ink-faint">
+            O que precisa de atenção, o avanço por etapa e as leituras do ritmo
+          </span>
+        </span>
+        <Icon name="seta" className="size-4 shrink-0 text-ink-faint" />
+      </Link>
 
       <div className="grid gap-5 lg:grid-cols-2 lg:items-start lg:gap-6">
         <Panel>

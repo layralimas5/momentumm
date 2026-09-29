@@ -127,6 +127,14 @@ const PersonalProfilePage = lazy(() =>
     default: m.PersonalProfilePage,
   })),
 )
+const PublicProfilePage = lazy(() =>
+  import('@/presentation/pages/PublicProfilePage').then((m) => ({
+    default: m.PublicProfilePage,
+  })),
+)
+const PostPage = lazy(() =>
+  import('@/presentation/pages/PostPage').then((m) => ({ default: m.PostPage })),
+)
 const ObjectivesPage = lazy(() =>
   import('@/presentation/pages/ObjectivesPage').then((m) => ({ default: m.ObjectivesPage })),
 )
@@ -305,6 +313,29 @@ export function App() {
               <Route path="foco" element={<FocusPage />} />
               <Route path="insights" element={<InsightsPage />} />
               <Route path="perfil" element={<PersonalProfilePage />} />
+              {/*
+                O perfil de outra pessoa e a publicação avulsa seguem a MESMA
+                flag do Círculo, e não uma própria: com a comunidade fechada e
+                estas duas abertas, o Feed diria "ainda não" enquanto o link
+                compartilhado de uma publicação abriria normalmente. Uma porta
+                fechada e outra aberta pro mesmo cômodo é pior que as duas
+                fechadas.
+
+                O perfil de outra pessoa fica embaixo de `/app/perfil` de
+                propósito: é a mesma coisa vista de fora, e um endereço
+                separado ("/app/pessoa/:id") daria dois nomes pra um conceito.
+              */}
+              {circleOpen ? (
+                <>
+                  <Route path="perfil/:id" element={<PublicProfilePage />} />
+                  <Route path="publicacao/:id" element={<PostPage />} />
+                </>
+              ) : (
+                <>
+                  <Route path="perfil/:id" element={<CircleLockedPage />} />
+                  <Route path="publicacao/:id" element={<CircleLockedPage />} />
+                </>
+              )}
               <Route path="evolucao" element={<EvolutionPage />} />
               {/* A dupla. A própria tela consulta a flag `features.juntos`. */}
               <Route path="juntos" element={<JuntosPage />} />

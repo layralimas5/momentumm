@@ -6,7 +6,7 @@ import type { ChallengeRepository } from '@/domain/repositories/challenge-reposi
 import type { CheckInRepository } from '@/domain/repositories/checkin-repository'
 import type { GoalRepository } from '@/domain/repositories/goal-repository'
 import type { FriendshipRepository } from '@/domain/repositories/friendship-repository'
-import type { FollowRepository } from '@/domain/repositories/follow-repository'
+import type { SocialRepository } from '@/domain/repositories/social-repository'
 import type { DayPhotoRepository } from '@/domain/repositories/day-photo-repository'
 import type { ReferralRepository } from '@/domain/repositories/referral-repository'
 import type { ClubRepository } from '@/domain/repositories/club-repository'
@@ -21,6 +21,8 @@ import type { WeeklyReviewRepository } from '@/domain/repositories/weekly-review
 import type { WinRepository } from '@/domain/repositories/win-repository'
 import type { EvolutionRepository } from '@/domain/repositories/evolution-repository'
 import { SupabaseEvolutionRepository } from './supabase/supabase-evolution'
+import { SupabaseSocialRepository } from './supabase/supabase-social'
+import { DemoSocialRepository } from './demo/demo-social'
 import { SimulatedAiService } from './ai/simulated-ai-service'
 import type { LegalAcceptanceRepository } from '@/domain/repositories/legal-acceptance-repository'
 import type { MediaRepository } from '@/domain/repositories/media-repository'
@@ -50,7 +52,6 @@ import {
   DemoCheckInRepository,
   DemoGoalRepository,
   DemoFriendshipRepository,
-  DemoFollowRepository,
   DemoDayPhotoRepository,
   DemoReferralRepository,
   DemoClubRepository,
@@ -75,7 +76,6 @@ import {
   SupabaseCheckInRepository,
   SupabaseGoalRepository,
   SupabaseFriendshipRepository,
-  SupabaseFollowRepository,
   SupabaseDayPhotoRepository,
   SupabaseReferralRepository,
   SupabaseClubRepository,
@@ -118,13 +118,16 @@ export interface Container {
   readonly evolution: EvolutionRepository
   /** O Círculo: amizades e a busca por gente. */
   readonly friendships: FriendshipRepository
-  /**
-   * Seguir, de uma via. Convive com a amizade e não substitui: seguir alguém
-   * não abre nada que já não fosse público.
-   */
-  readonly follows: FollowRepository
   /** A foto de cada dia, o vínculo dia -> arquivo. O arquivo em si é `media`. */
   readonly dayPhotos: DayPhotoRepository
+  /**
+   * A camada social: publicação, story, comentário, curtida, laço e bloqueio.
+   *
+   * Uma injeção só porque quase toda tela dela usa mais de uma dessas coisas,
+   * e as seis respondem à MESMA pergunta de autorização (`can_view_content_of`,
+   * migration 0067). Três repositórios seriam três portas pra uma regra só.
+   */
+  readonly social: SocialRepository
   /** De onde a conta veio. Atribuição de convite, sem recompensa nenhuma. */
   readonly referrals: ReferralRepository
   /**
@@ -193,8 +196,8 @@ export const container: Container = isDemoMode
       journeyEvents: new DemoJourneyEventRepository(),
       evolution: new DemoEvolutionRepository(),
       friendships: new DemoFriendshipRepository(),
-      follows: new DemoFollowRepository(),
       dayPhotos: new DemoDayPhotoRepository(),
+      social: new DemoSocialRepository(),
       referrals: new DemoReferralRepository(),
       clubs: new DemoClubRepository(),
       challenges: new DemoChallengeRepository(),
@@ -225,8 +228,8 @@ export const container: Container = isDemoMode
       journeyEvents: new SupabaseJourneyEventRepository(),
       evolution: new SupabaseEvolutionRepository(),
       friendships: new SupabaseFriendshipRepository(),
-      follows: new SupabaseFollowRepository(),
       dayPhotos: new SupabaseDayPhotoRepository(),
+      social: new SupabaseSocialRepository(),
       referrals: new SupabaseReferralRepository(),
       clubs: new SupabaseClubRepository(),
       challenges: new SupabaseChallengeRepository(),

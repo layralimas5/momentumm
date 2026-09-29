@@ -10,7 +10,7 @@ import {
 import { renderShareCard } from './render-share-card'
 
 /**
- * As quatro cores e os oito arranjos desenhando de verdade.
+ * As quatro cores e os dois arranjos desenhando de verdade.
  *
  * O renderizador é canvas puro: um arranjo que erra o nome de um método ou
  * esquece de fechar um caminho não quebra o build nem o teste de domínio, ele

@@ -63,7 +63,7 @@ que existir base. Feed vazio afasta usuário.
 Fase 1 em pé, em `app/`. Roda em **modo demo** sem configurar nada (dados em
 `localStorage`) e vira contas reais ao preencher `.env.local` com o Supabase.
 
-Pronto: domínio completo com 675 testes, migrations com RLS até a 0021, repositórios demo e
+Pronto: domínio completo (1.042 testes), migrations com RLS até a 0068, repositórios demo e
 Supabase, auth com rota protegida, registro rápido, cronômetro de sessão, streak
 dos últimos 7 dias, histórico com filtro por eixo, metas com progresso e perfil
 editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
@@ -708,9 +708,11 @@ grava. O custo de errar aqui não aparece hoje, aparece no dia em que mil
 linhas gravadas com a visibilidade errada ficam visíveis pra outra pessoa, e aí
 não há correção que desfaça o que já foi visto.
 
-**Não implementado de propósito:** feed, amigos, curtidas, comentários,
-comunidade, ranking e perfil público. A arquitetura está pronta pra eles; o
-produto continua single-player.
+**Feed, curtida, comentário e perfil público chegaram em 28/09/2026**, na
+camada social (ver a seção própria). O Share Studio não mudou: ele continua
+lendo `journey-event` e gerando imagem no aparelho. Publicação é outra coisa,
+e as duas convivem sem se misturar. Ranking e comunidade pública seguem fora,
+de propósito.
 
 ### O gravador de momentos e o Perfil
 
@@ -775,9 +777,11 @@ políticas, URL assinada, limpeza de órfão, por um arquivo que cada conta tem
 UM. Quando existir foto de capa ou álbum, a migração é trocar o conteúdo da
 coluna por um caminho, e nada acima muda.
 
-Ainda **não existe** feed, amigos, seguidores, curtida, comentário, ranking nem
-comunidade, e o perfil termina dizendo isso em voz alta: nada ali é público, e
-compartilhar gera uma imagem no aparelho, não uma publicação.
+Desde 28/09/2026 o perfil ganhou a camada social por cima disso: os três
+números do cartão, o calendário ligado às publicações e a aba de grade (ver a
+seção própria). O que NÃO mudou é o miolo: momentum, constância, conquistas e
+objetivos continuam sendo do dono e de mais ninguém, e o visitante vê só o
+cartão, os números e a jornada que a pessoa publicou.
 
 ### Círculo de amigos
 
@@ -835,7 +839,161 @@ No modo demo existem três pessoas de fábrica (dois amigos aceitos e um pedido
 esperando resposta): o Círculo só dá pra conferir com os olhos se houver com
 quem tê-lo.
 
-**Não implementado:** comentário, seguidor, comunidade pública, grupo e chat.
+**Seguidor, comentário e curtida chegaram em 28/09/2026**, na camada social, e
+convivem com o Círculo sem substituí-lo: amizade continua sendo o que abre o
+perfil marcado `amigos`, e seguir é o que alimenta o Feed. Grupo e chat seguem
+fora.
+
+### A camada social: publicação, feed, stories e o álbum do dia
+
+Migrations `0067_social.sql` e `0068_social_leitura.sql`, 28/09/2026. É o que o
+Círculo não era: até aqui o produto registrava o que o APP percebia sozinho
+(`journey_events`) e deixava a pessoa marcar um a um o que mostrar. Agora ela
+CONTA, com a foto e as palavras dela.
+
+**As duas camadas convivem e não se misturam.** Momento continua alimentando o
+Share Studio e o feed do Círculo; publicação alimenta o Feed, o perfil e o
+calendário. Fundir as duas encheria o feed de "hábito concluído" automático, que
+é exatamente o feed que ninguém lê.
+
+**Uma pergunta de autorização, uma função:**
+
+    public.can_view_content_of(dono uuid) -> boolean
+
+Perfil `publico`: qualquer conta autenticada vê. Perfil fechado (`privado` e
+`amigos`): só quem segue com pedido ACEITO. Bloqueio derruba os dois casos.
+Publicação, mídia, story, comentário, curtida, salvo e o Storage leem dessa
+mesma função. Espalhar a regra por sete políticas seria garantir que uma delas
+afrouxasse sozinha no dia em que a próxima tela precisasse de uma exceção.
+
+**Seguir passou a abrir conteúdo, e o pedido entrou junto.** A 0060 dizia com
+todas as letras que seguir NÃO ABRIA NADA — e estava certo, porque não havia
+feed. Com feed, seguir É a porta, e o que devolve ao perfil fechado o controle
+que ele tinha é o `status` (`pendente` / `aceito`). **Quem escreve o status é um
+trigger, nunca o cliente**: deixá-lo sob a policy de insert do dono repetiria a
+falha de `profiles.plan` (ver Segurança), e um PATCH com o status já preenchido
+viraria acesso ao perfil fechado de outra pessoa.
+
+As linhas que já existiam viraram `aceito` só onde o destino é `publico`; o
+resto voltou a `pendente`. É a leitura conservadora: elas nasceram quando seguir
+não significava nada, então nenhuma delas é consentimento pra ver conteúdo
+fechado.
+
+**O bucket é outro, e a leitura é pela LINHA.** `social-media`, privado, ao lado
+do `user-media` (0014). Lá a política é "só o dono lê" e está certa pro que mora
+lá; aqui a leitura é de terceiros por regra, e afrouxar a política do bucket
+existente pra caber os dois casos transformaria uma condição simples numa
+expressão que alguém precisa reler inteira antes de mexer.
+
+A política de leitura pergunta pela linha que aponta pro arquivo
+(`can_read_social_file`), nunca pela pasta. "Pasta de perfil público é legível"
+seria a política mais curta e o furo mais fácil: `list` também passa por SELECT
+em `storage.objects`, então qualquer conta listaria a pasta inteira de alguém e
+pediria link pra tudo que estivesse lá — inclusive a foto de uma publicação
+marcada como privada e a de um story já vencido. Amarrado ao registro, o arquivo
+vive exatamente o que a publicação vive.
+
+**O dia é escolhido, não deduzido.** `posts.day` não sai de `created_at`. Quem
+publica 00:40 de quarta está quase sempre contando a terça, e quem viaja muda de
+fuso sem mudar de vida. É esse dia que o calendário usa.
+
+**O progresso é congelado** (`progress_done`, `progress_goal`, `progress_unit`).
+Ler o objetivo hoje pra desenhar o card de dois meses atrás reescreveria o que a
+pessoa contou: "1.240 de 1.800 páginas" viraria "1.800 de 1.800" no dia em que
+ela terminasse. A unidade vem junto porque `objectives` é de dono puro, e sem
+ela o card de terceiros mostraria dois números soltos.
+
+**As contagens são colunas, mantidas por trigger** (`like_count`,
+`comment_count`). Contar por `select count(*)` devolveria o número que a RLS de
+quem pergunta deixa ver — cada pessoa veria "1 curtida" em qualquer publicação
+que ela mesma curtiu, que é o mesmo problema que `follow_counts` (0060) existiu
+pra resolver. O trigger é `security definer`, porque quem curte não é o dono da
+publicação.
+
+**A leitura é por função, e sempre paginada** (0068). Um card precisa do post,
+do autor, das fotos, do objetivo e de dois booleanos do próprio leitor; pelo
+PostgREST isso são cinco requisições, e a quinta ("eu curti?") não tem como ser
+pedida em lote. As funções são `security invoker`: a RLS continua valendo por
+dentro, e o que sai delas é o que a pessoa já poderia ler tabela a tabela. Não
+existe caminho no arquivo que devolva "todas as publicações".
+
+**O que o feed NÃO mostra:** seguidores do autor, pontuação, posição. O produto
+recusa tabela de classificação, e um "1.2k seguidores" embaixo de cada card
+montaria a tabela sem nunca chamá-la assim, entre pessoas tentando mudar de
+vida. Os três números (publicações, seguidores, seguindo) existem no CARTÃO do
+perfil, que é onde alguém decide seguir, e não na rolagem.
+
+**O feed é cronológico, e é escolha.** Ordenar por engajamento seria montar o
+mesmo ranking por outro nome, na tela que a pessoa abre todo dia.
+
+### O calendário visual
+
+É a parte mais importante da camada social, e a razão é que um mapa de calor diz
+"dia aceso, dia apagado" e ninguém sente saudade de um quadradinho verde. A foto
+no dia transforma "22 dias em movimento" numa lembrança de QUÊ: o treino na
+chuva, o café das cinco, a página que terminou. Depois de alguns meses, o perfil
+deixa de ser um painel e vira um álbum da evolução.
+
+Quatro estados, em ordem de força (`domain/entities/calendar-day`):
+
+    publicacao  publicou com foto naquele dia. A célula É a foto.
+    album       guardou uma foto no dia, sem publicar (o álbum da 0060).
+    movimento   não tem imagem, mas o dia andou: atividade, hábito ou ação.
+    vazio       nada.
+
+A publicação ganha do álbum porque ela é o registro que tem legenda, objetivo e
+conversa em volta. O álbum não foi jogado fora: nem todo dia que vale lembrar é
+um dia que se quer contar, e essa diferença é o que separa o calendário de um
+perfil público. Vários registros no mesmo dia mostram a contagem no canto, e o
+dia abre todos.
+
+**Dia vazio não é punição.** Mesmo tom do fundo, número discreto, nenhum
+vermelho, nenhuma contagem de "dias perdidos". Pelo mesmo motivo a frase do mês
+conta o que HOUVE ("12 dias com foto · 6 em movimento") e nunca o que faltou:
+num produto sobre retomar o ritmo, a leitura de falha é a que faz a pessoa
+fechar o app.
+
+O perfil tem duas leituras da mesma jornada, **Calendário | Publicações**, e o
+calendário abre primeiro de propósito: a grade é a resposta que todo app dá, o
+calendário é a que só existe aqui.
+
+### A navegação de baixo, e o "+"
+
+`Feed | Hoje | + | Progresso | Perfil`. Rotina saiu da barra e caiu sozinha nos
+atalhos do Perfil, que se derivam de `TAB_ROUTES`. Abrir a rotina é uma decisão
+de vez em quando; publicar e registrar é o gesto de todo dia.
+
+O "+" é o único alvo da barra que não é navegação, e por isso é desenhado como
+outra coisa: quadrado arredondado em cor de marca, sem rótulo. Ele substituiu o
+`AddFab` flutuante, que cobria o canto inferior direito em toda rolagem (justo
+onde o último card do feed termina) e oferecia listas diferentes conforme a
+rota — "criar" não tinha um lugar só.
+
+A folha oferece cinco coisas, e quatro delas abrem fluxos que JÁ existiam (o
+registro rápido da Jornada, o `Composer` e o `ObjectiveDialog`). Se ela tivesse
+formulários próprios, existiriam dois jeitos de criar um hábito, e eles
+divergiriam na primeira regra nova.
+
+Configurações nunca esteve na barra e continua não estando: mora atrás da
+engrenagem no topo do Perfil, que é onde qualquer pessoa procura sem ler.
+
+### Moderação, na menor versão que ainda é útil
+
+Bloqueio é de uma via no registro e MÚTUO na leitura: se valesse só pra quem
+bloqueou, a pessoa bloqueada continuaria vendo tudo e comentando. Quem foi
+bloqueado não lê a linha — saber que foi bloqueado é informação que ele usa, e a
+defesa de quem bloqueou é o silêncio. Bloquear desfaz o laço nos dois sentidos,
+por trigger, senão a contagem de seguidores incluiria alguém que não vê mais
+nada, e desfazer o bloqueio devolveria o acesso sem ninguém pedir de novo.
+
+Denúncia: uma por pessoa e por alvo (chave única), sem update nem delete pra
+conta comum — denúncia que o denunciante apaga é denúncia que some junto com a
+pressão pra apagá-la. `post_comments.hidden_at` já existe: moderação que chega
+depois costuma chegar como DELETE, e apagar é a resposta que não dá pra revisar.
+
+**Não implementado de propósito:** chat, grupos, comunidades, lives, algoritmo
+de recomendação, monetização de criador, ranking público e gamificação
+competitiva.
 
 ### Desafios entre amigos
 

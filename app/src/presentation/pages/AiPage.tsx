@@ -2,7 +2,8 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import type { AiPlanSuggestion, AiTaskSuggestion } from '@/domain/ai/ai-service'
 import { activityType } from '@/domain/entities/activity-type'
-import { formatDayLabel, parseDayKey } from '@/domain/entities/day'
+import { addDays, daysBetween, formatDayLabel, parseDayKey } from '@/domain/entities/day'
+import { normalizeWeights, suggestDueDates } from '@/domain/entities/plan-stage'
 import { deadlineFrom, MAX_OBJECTIVE_TITLE } from '@/domain/entities/objective'
 import { Button } from '@/presentation/components/ui/Button'
 import { ChoiceGroup } from '@/presentation/components/ui/Choice'
@@ -291,12 +292,33 @@ function PlanPreview({
       declarado, o provider redistribui pra somar 100, a mesma regra do plano
       montado na mão.
     */
+    /*
+      O peso e a data vêm da prévia, não de uma redistribuição igual.
+
+      Antes a etapa era gravada só com título, e o provider repartia 100 em
+      partes iguais: "a preparação vale 15 e o meio vale 45" virava 33/33/33, e
+      o plano perdia exatamente o que a IA tinha a dizer sobre onde está o
+      trabalho. A data sai do peso, como no plano determinístico: uma etapa de
+      40% ocupa 40% do calendário.
+    */
+    const pesos = normalizeWeights(suggestion.steps.map((step) => step.weight))
+    const datas = suggestDueDates(
+      pesos.map((weight) => ({ weight })),
+      planner.today,
+      suggestion.suggestedDeadline,
+      addDays,
+      daysBetween,
+    )
+
     const stageIds: (string | null)[] = []
     for (const [index, step] of suggestion.steps.entries()) {
       const stage = await planner.createStage({
         objectiveId: objective.id,
-        title: step,
+        title: step.title,
+        description: step.description,
         order: index,
+        weight: pesos[index] ?? 0,
+        dueOn: datas[index] ?? suggestion.suggestedDeadline,
       })
       stageIds.push(stage?.id ?? null)
     }
@@ -359,14 +381,18 @@ function PlanPreview({
       <section className="mt-5">
         <h3 className="text-sm font-semibold tracking-wide text-ink-muted uppercase">Etapas</h3>
         <p className="mt-1 text-xs text-ink-faint">
-          Viram as etapas do plano ao salvar, com peso distribuído igualmente. Cada ação abaixo
-          já nasce dentro da sua.
+          Viram as etapas do plano ao salvar, com o peso que a prévia mostra. Cada ação abaixo já
+          nasce dentro da sua.
         </p>
-        <ol className="mt-2 flex flex-col gap-1.5">
+        <ol className="mt-2 flex flex-col gap-2">
           {suggestion.steps.map((step, index) => (
-            <li key={step} className="flex gap-2.5 text-sm text-ink-muted">
+            <li key={step.title} className="flex gap-2.5 text-sm">
               <span className="tabular text-ink-faint">{index + 1}.</span>
-              <span>{step}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-ink">{step.title}</span>
+                <span className="block text-xs text-pretty text-ink-faint">{step.description}</span>
+              </span>
+              <span className="tabular shrink-0 text-xs text-ink-faint">{step.weight}%</span>
             </li>
           ))}
         </ol>
@@ -423,7 +449,7 @@ function PlanPreview({
                 <p className="mt-0.5 truncate text-xs text-ink-faint">
                   {formatDayLabel(task.day, planner.today)} · {task.estimatedMin} min
                   {task.stepIndex !== null && suggestion.steps[task.stepIndex]
-                    ? ` · Etapa: ${suggestion.steps[task.stepIndex]}`
+                    ? ` · Etapa: ${suggestion.steps[task.stepIndex]?.title}`
                     : ''}
                 </p>
               </div>

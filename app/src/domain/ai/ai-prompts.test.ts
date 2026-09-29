@@ -201,11 +201,89 @@ describe('renderContext', () => {
         deadline: addDays(TODAY, 60),
         minutesPerDay: 30,
         motive: null,
+        baseline: null,
       },
     })
     expect(prompt).toContain('"Aprender violão"')
     expect(prompt).toContain('30 minutos por dia (teto)')
     expect(prompt).toContain('CONTEXTO DA CONTA')
+  })
+
+  it('sem roteiro pro assunto, o prompt manda montar do zero', () => {
+    const prompt = userPromptFor({
+      kind: 'plan',
+      request: {
+        context,
+        title: 'Aprender violão',
+        axis: 'estudo',
+        target: 1200,
+        unitLabel: 'minutos',
+        startedOn: TODAY,
+        deadline: addDays(TODAY, 60),
+        minutesPerDay: 30,
+        motive: null,
+        baseline: null,
+      },
+    })
+    expect(prompt).toContain('Não existe roteiro pronto pra esse assunto')
+  })
+
+  it('com roteiro, o prompt manda personalizar em vez de reinventar', () => {
+    /*
+      É a diferença que faz o plano de "emagrecer" não mudar de estrutura a
+      cada chamada: em assunto conhecido a IA parte do que a biblioteca sabe e
+      gasta o raciocínio no que é desta pessoa.
+    */
+    const prompt = userPromptFor({
+      kind: 'plan',
+      request: {
+        context,
+        title: 'Emagrecer 8kg',
+        axis: 'treino',
+        target: 1200,
+        unitLabel: 'minutos',
+        startedOn: TODAY,
+        deadline: addDays(TODAY, 90),
+        minutesPerDay: 60,
+        motive: null,
+        baseline: {
+          label: 'Plano de emagrecimento',
+          steps: [{ title: 'Saber de onde você parte', description: 'Peso, medidas e a semana de hoje.' }],
+          habits: ['Treinar', 'Registrar o que comi'],
+          tasks: ['Pesar e tirar as fotos do primeiro dia'],
+          caution: 'O Momentumm organiza a rotina, não prescreve dieta.',
+        },
+      },
+    })
+
+    expect(prompt).toContain('ROTEIRO BASE ("Plano de emagrecimento"')
+    expect(prompt).toContain('mantenha o que serve')
+    expect(prompt).toContain('Saber de onde você parte')
+    expect(prompt).toContain('Limite a repassar em warnings')
+  })
+
+  it('o prompt cobra que o plano faça sentido pro assunto', () => {
+    const prompt = userPromptFor({
+      kind: 'plan',
+      request: {
+        context,
+        title: 'Emagrecer 8kg',
+        axis: 'treino',
+        target: 1200,
+        unitLabel: 'minutos',
+        startedOn: TODAY,
+        deadline: addDays(TODAY, 90),
+        minutesPerDay: 60,
+        motive: null,
+        baseline: null,
+      },
+    })
+
+    // As três regras que mudam o resultado, e a que protege a pessoa.
+    expect(prompt).toContain('precisa fazer sentido PRO ASSUNTO')
+    expect(prompt).toContain('Ação concreta')
+    expect(prompt).toContain('Os pesos dizem onde está o trabalho')
+    expect(prompt).toContain('NENHUMA prescrição de saúde')
   })
 })
 
@@ -222,6 +300,7 @@ describe('schemas de saída', () => {
       deadline: addDays(TODAY, 60),
       minutesPerDay: 30,
       motive: null,
+      baseline: null,
     })
     expect(planSuggestionSchema.safeParse(plan).success).toBe(true)
 

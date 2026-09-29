@@ -46,7 +46,6 @@ import { STAGE_STATUSES, type PlanStage } from '@/domain/entities/plan-stage'
 import { PRIORITIES } from '@/domain/entities/priority'
 import { normalizeRestWeekdays } from '@/domain/entities/momentum'
 import { PROFILE_VISIBILITIES, type Profile } from '@/domain/entities/profile'
-import type { Follow, FollowCounts } from '@/domain/entities/follow'
 import type { DayPhoto } from '@/domain/entities/day-photo'
 import {
   CLUB_CATEGORIES,
@@ -266,36 +265,6 @@ export function toProfile(row: unknown): Profile {
     },
     createdAt: new Date(parsed.created_at),
   }
-}
-
-const followRowSchema = z.object({
-  follower_id: z.string(),
-  following_id: z.string(),
-  created_at: z.string(),
-})
-
-export function toFollow(row: unknown): Follow {
-  const parsed = parseOrThrow(followRowSchema, row, 'seguir')
-  return {
-    followerId: parsed.follower_id,
-    followingId: parsed.following_id,
-    createdAt: new Date(parsed.created_at),
-  }
-}
-
-const followCountsRowSchema = z.object({
-  followers: z.coerce.number().int().nonnegative(),
-  following: z.coerce.number().int().nonnegative(),
-})
-
-/**
- * As contagens vêm de `follow_counts` (0060), e o Postgres devolve `bigint`
- * como STRING no PostgREST. `coerce` é o que impede "132" de virar o número
- * 132 só às vezes, dependendo do tamanho.
- */
-export function toFollowCounts(row: unknown): FollowCounts {
-  const parsed = parseOrThrow(followCountsRowSchema, row, 'contagem de seguidores')
-  return { followers: parsed.followers, following: parsed.following }
 }
 
 const dayPhotoRowSchema = z.object({

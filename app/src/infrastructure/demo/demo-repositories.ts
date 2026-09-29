@@ -79,7 +79,6 @@ import type {
   ChallengeUpdate,
 } from '@/domain/repositories/challenge-repository'
 import type { FriendshipRepository } from '@/domain/repositories/friendship-repository'
-import type { FollowRepository } from '@/domain/repositories/follow-repository'
 import type { ReferralRepository } from '@/domain/repositories/referral-repository'
 import type { ClubRepository } from '@/domain/repositories/club-repository'
 import type { ClubInvitation, ClubInvitePreview } from '@/domain/entities/club-invite'
@@ -94,7 +93,6 @@ import {
   type NewClubInput,
 } from '@/domain/entities/club'
 import type { DayPhotoRepository } from '@/domain/repositories/day-photo-repository'
-import type { Follow, FollowCounts, NewFollowInput } from '@/domain/entities/follow'
 import type { DayPhoto, NewDayPhotoInput } from '@/domain/entities/day-photo'
 import type { JourneyEventRepository } from '@/domain/repositories/journey-event-repository'
 import type { WeeklyReviewRepository } from '@/domain/repositories/weekly-review-repository'
@@ -719,30 +717,6 @@ export class DemoMediaRepository implements MediaRepository {
     return [...this.files.values()]
       .map((entry) => entry.media)
       .filter((media) => media.kind === kind && media.path.startsWith(`${userId}/`))
-  }
-}
-
-/**
- * Seguir, no modo demo.
- *
- * Sem RLS, o filtro por dono não existe: a demo tem uma conta só, e a regra de
- * quem pode ver o quê mora no banco quando existe banco.
- */
-export class DemoFollowRepository implements FollowRepository {
-  async counts(userId: string): Promise<FollowCounts> {
-    return demoStore.followCounts(userId)
-  }
-
-  async isFollowing(followerId: string, followingId: string): Promise<boolean> {
-    return demoStore.isFollowing(followerId, followingId)
-  }
-
-  async follow(input: NewFollowInput): Promise<Follow> {
-    return demoStore.addFollow(input)
-  }
-
-  async unfollow(followerId: string, followingId: string): Promise<void> {
-    demoStore.removeFollow(followerId, followingId)
   }
 }
 

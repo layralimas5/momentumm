@@ -6,7 +6,6 @@ import { Avatar } from '@/presentation/components/ui/Avatar'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { LogoMark, Wordmark } from '@/presentation/components/brand/Logo'
-import { AddFab } from '@/presentation/components/mobile/AddFab'
 import { MobileTabBar } from '@/presentation/components/mobile/MobileTabBar'
 import { TrialBanner } from '@/presentation/plan/TrialBanner'
 import { SUBSCRIPTION_PATH } from '@/presentation/plan/subscription-path'
@@ -21,6 +20,7 @@ import { ComposerProvider } from '@/presentation/planner/ComposerProvider'
 import { LegalGate } from '@/presentation/legal/LegalGate'
 import { PlannerProvider } from '@/presentation/planner/PlannerProvider'
 import { ShareStudioProvider } from '@/presentation/share/ShareStudioProvider'
+import { PostComposerProvider } from '@/presentation/social/PostComposerProvider'
 import { useDocumentTitle } from '@/presentation/hooks/use-document-title'
 import { useIsDesktop } from '@/presentation/hooks/use-media-query'
 import { offerSource, storedOffer } from '@/presentation/components/landing/offers'
@@ -61,10 +61,18 @@ export function AppLayout() {
               dentro de um e em volta do outro.
             */}
             <ShareStudioProvider>
-              <LayoutShell />
-              <FocusSession />
-              <LegalGate />
-              <EvolutionNotice />
+              {/*
+                O criador de publicação fica aqui pelo mesmo motivo do Share
+                Studio: ele é aberto pelo "+" da barra (que mora na casca), pelo
+                Feed e pelo Perfil. Um criador por tela seria o começo de três
+                publicações com regras diferentes.
+              */}
+              <PostComposerProvider>
+                <LayoutShell />
+                <FocusSession />
+                <LegalGate />
+                <EvolutionNotice />
+              </PostComposerProvider>
             </ShareStudioProvider>
           </EvolutionProvider>
         </FocusProvider>
@@ -77,7 +85,13 @@ function LayoutShell() {
   const [collapsed, setCollapsed] = useState(readCollapsed)
   const isDesktop = useIsDesktop()
   const { pathname } = useLocation()
-  const isProfile = pathname === '/app/perfil'
+  /*
+    Duas telas trazem a PRÓPRIA barra de cima no celular, e por isso a padrão
+    não entra nelas: o Perfil (marca, as três seções e a engrenagem) e o Feed
+    (marca, pedidos e avisos). Empilhar a barra padrão em cima de uma delas
+    daria duas logos e duas linhas de controle antes do conteúdo.
+  */
+  const ownsTopBar = pathname === '/app/perfil' || pathname === '/app/feed'
 
   // O convite que trouxe a pessoa até aqui, gasto uma vez e esquecido.
   useInviteCapture()
@@ -116,12 +130,7 @@ function LayoutShell() {
       <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/*
-          O perfil traz a própria barra de cima no celular, marca, as três
-          seções e a engrenagem, numa faixa só. Empilhar a barra padrão em cima
-          dela daria duas logos e duas linhas de controle antes do conteúdo.
-        */}
-        {isDesktop ? <AppHeader /> : isProfile ? null : <MobileTopBar />}
+        {isDesktop ? <AppHeader /> : ownsTopBar ? null : <MobileTopBar />}
         <SystemNotice />
         <OfflineBanner />
 
@@ -149,11 +158,11 @@ function LayoutShell() {
       </div>
 
       {/*
-        O "+" contextual vem antes da barra na árvore e fica acima dela na
-        tela. Ele mora aqui, e não dentro de cada página, porque é a rota que
-        decide se ele existe: página nenhuma precisa saber que ele existe.
+        A barra inferior traz o "+" no meio, e é ela que abre a folha de criar.
+        Antes existia um "+" flutuante e contextual por cima do conteúdo
+        (`AddFab`): ele cobria o canto da tela em toda rolagem e oferecia listas
+        diferentes conforme a rota, então "criar" não tinha um lugar só.
       */}
-      {isDesktop ? null : <AddFab />}
       {isDesktop ? null : <MobileTabBar />}
     </div>
   )

@@ -1,4 +1,5 @@
 import { DomainError } from '@/shared/errors'
+import { canvasOf, loadImage, toBlob } from '@/shared/lib/image'
 
 /**
  * A foto escolhida virando um avatar pequeno.
@@ -101,25 +102,12 @@ export async function downscaleToDayPhotoDataUrl(file: File): Promise<string> {
   }
 }
 
-/** O data URL virando arquivo, que é o que o bucket recebe. */
-async function toBlob(dataUrl: string): Promise<Blob> {
-  const response = await fetch(dataUrl)
-  return response.blob()
-}
-
 /** Recorte pelo centro na proporção pedida, como `object-fit: cover`. */
 function cropCover(image: HTMLImageElement, width: number, height: number): string {
   const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight)
   const sourceWidth = width / scale
   const sourceHeight = height / scale
-  const canvas = document.createElement('canvas')
-  canvas.width = width
-  canvas.height = height
-
-  const ctx = canvas.getContext('2d')
-  if (!ctx) {
-    throw new DomainError('Este navegador não conseguiu preparar a imagem.')
-  }
+  const ctx = canvasOf(width, height)
 
   ctx.drawImage(
     image,
@@ -133,7 +121,7 @@ function cropCover(image: HTMLImageElement, width: number, height: number): stri
     height,
   )
 
-  return canvas.toDataURL('image/jpeg', QUALITY)
+  return ctx.canvas.toDataURL('image/jpeg', QUALITY)
 }
 
 /**
@@ -145,14 +133,7 @@ function cropCover(image: HTMLImageElement, width: number, height: number): stri
  */
 function crop(image: HTMLImageElement): string {
   const side = Math.min(image.naturalWidth, image.naturalHeight)
-  const canvas = document.createElement('canvas')
-  canvas.width = AVATAR_SIZE
-  canvas.height = AVATAR_SIZE
-
-  const ctx = canvas.getContext('2d')
-  if (!ctx) {
-    throw new DomainError('Este navegador não conseguiu preparar a imagem.')
-  }
+  const ctx = canvasOf(AVATAR_SIZE, AVATAR_SIZE)
 
   ctx.drawImage(
     image,
@@ -166,19 +147,5 @@ function crop(image: HTMLImageElement): string {
     AVATAR_SIZE,
   )
 
-  return canvas.toDataURL('image/jpeg', QUALITY)
-}
-
-function loadImage(url: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const image = new Image()
-    image.decoding = 'async'
-    image.addEventListener('load', () => resolve(image))
-    // O navegador aplica a orientação do EXIF sozinho ao carregar a tag, então
-    // a selfie deitada chega em pé.
-    image.addEventListener('error', () =>
-      reject(new DomainError('Não consegui abrir essa imagem. Tenta outra.')),
-    )
-    image.src = url
-  })
+  return ctx.canvas.toDataURL('image/jpeg', QUALITY)
 }
