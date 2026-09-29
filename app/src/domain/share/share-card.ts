@@ -50,13 +50,18 @@ export const DEFAULT_SHARE_FORMAT: ShareFormat = 'stories'
 // ---------------------------------------------------------------------------
 
 /**
- * A COR do card. Quatro, e só.
+ * A COR do card.
  *
- * Preto, neon, branco e o PNG sem fundo. Gradiente, cartaz colorido e escala de
- * cinza saíram porque o que muda entre um card e outro não é o tom da tinta: é
- * como a informação se organiza dentro dele, e isso agora tem dimensão
- * própria (`ShareComposition`). Cor e arranjo separados dão 4 x 6 combinações
- * com dez descrições, em vez de vinte e quatro templates pra manter.
+ * Eram quatro no estúdio de progresso (preto, neon, branco e o PNG sem fundo).
+ * **O estúdio ficou com o PNG e mais nada** (`STUDIO_SHARE_TEMPLATE`), e a
+ * razão é a mesma que tirou o seletor de formato: o card que a pessoa posta
+ * precisa parecer dela, não o print de um dashboard, e um fundo desenhado pelo
+ * app é justamente o que denuncia de onde a imagem saiu. Sem fundo, o card
+ * vira adesivo: vai por cima da foto dela, e a foto é que carrega o momento.
+ *
+ * As quatro continuam existindo porque o CARD DE FRASE (`QuoteCard`, no Hoje)
+ * usa a paleta inteira, e lá ela faz sentido: a frase não tem foto por trás,
+ * então o fundo é o card.
  */
 export const SHARE_TEMPLATES = ['dark', 'neon', 'light', 'transparent'] as const
 export type ShareTemplateId = (typeof SHARE_TEMPLATES)[number]
@@ -121,14 +126,13 @@ export const SHARE_COMPOSITION_SPECS: Readonly<
 export const DEFAULT_SHARE_COMPOSITION: ShareCompositionId = 'grade'
 
 /**
- * O gratuito leva os dois arranjos e todas as cores.
+ * O gratuito leva os dois arranjos.
  *
  * Com dois arranjos, prender um atrás do plano deixaria o gratuito com um card
  * só, e um card só não deixa ninguém descobrir que existe escolha. O que
  * diferencia o PRO aqui é a foto de fundo e os toggles, não o arranjo.
  */
 export const FREE_SHARE_COMPOSITIONS: readonly ShareCompositionId[] = [...SHARE_COMPOSITIONS]
-export const FREE_SHARE_TEMPLATES: readonly ShareTemplateId[] = [...SHARE_TEMPLATES]
 
 /**
  * O que a EVOLUÇÃO libera, por cima do plano.
@@ -144,8 +148,6 @@ export const FREE_SHARE_TEMPLATES: readonly ShareTemplateId[] = [...SHARE_TEMPLA
 */
 const COMPOSITION_UNLOCKS: Readonly<Record<string, ShareCompositionId>> = {}
 
-const TEMPLATE_UNLOCKS: Readonly<Record<string, ShareTemplateId>> = {}
-
 export function compositionsAllowedFor(
   unlimited: boolean,
   unlocked: ReadonlySet<string> = new Set(),
@@ -158,18 +160,23 @@ export function compositionsAllowedFor(
   return SHARE_COMPOSITIONS.filter((id) => FREE_SHARE_COMPOSITIONS.includes(id) || extra.includes(id))
 }
 
-export function templatesAllowedFor(
-  unlimited: boolean,
-  unlocked: ReadonlySet<string> = new Set(),
-): readonly ShareTemplateId[] {
-  if (unlimited) return SHARE_TEMPLATES
-  const extra = Object.entries(TEMPLATE_UNLOCKS)
-    .filter(([key]) => unlocked.has(key))
-    .map(([, id]) => id)
-  return SHARE_TEMPLATES.filter((id) => FREE_SHARE_TEMPLATES.includes(id) || extra.includes(id))
-}
+/*
+  `templatesAllowedFor`, `FREE_SHARE_TEMPLATES` e `TEMPLATE_UNLOCKS` saíram
+  junto com o seletor de cor: com uma cor só no estúdio, não existe o que
+  liberar, e uma função que sempre devolve a lista inteira é uma porta aberta
+  pra alguém achar que ela ainda decide alguma coisa.
+*/
 
 export const DEFAULT_SHARE_TEMPLATE: ShareTemplateId = 'dark'
+
+/**
+ * A cor do card do estúdio de progresso, e ela não se escolhe.
+ *
+ * Uma constante em vez de um estado porque pergunta com uma resposta só não é
+ * escolha: é o mesmo motivo que aposentou o seletor de formato quando sobrou
+ * o Stories. Se um dia voltar a haver duas, o seletor volta com elas.
+ */
+export const STUDIO_SHARE_TEMPLATE: ShareTemplateId = 'transparent'
 
 // ---------------------------------------------------------------------------
 // o que aparece no card
