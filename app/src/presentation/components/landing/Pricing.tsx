@@ -3,7 +3,7 @@ import { TRIAL_DAYS } from '@/domain/billing/trial'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { cn } from '@/shared/lib/cn'
 import { trackLanding, useSectionView } from './landing-analytics'
-import { PRICING_FOOTNOTE, PRICING_PLANS, type PricingPlan } from './plans'
+import { PRICING_FOOTNOTE, PRICING_PLANS, PRO_ALL_FEATURES, type PricingPlan } from './plans'
 import { Reveal } from './Reveal'
 import { Section, SectionHeading } from './Section'
 import { TRIAL_PROMISE_VERIFIED } from './site'
@@ -32,9 +32,9 @@ export function Pricing() {
           description="O gratuito roda o ciclo inteiro. O PRO tira os limites, abre o histórico completo e a leitura da IA."
         />
 
-        <ul className="mx-auto mt-12 grid max-w-md items-stretch gap-5 lg:max-w-none lg:grid-cols-3">
+        <ul className="mx-auto mt-12 grid max-w-md items-stretch gap-5 lg:max-w-none lg:grid-cols-3 lg:gap-6">
           {PRICING_PLANS.map((plan, index) => (
-            <li key={plan.id} className={cn('h-full', plan.highlight && 'order-first lg:order-none')}>
+            <li key={plan.id} className="h-full">
               <Reveal delay={index * 0.08} className="h-full">
                 <PlanCard plan={plan} />
               </Reveal>
@@ -43,6 +43,10 @@ export function Pricing() {
         </ul>
 
         <Reveal delay={0.16}>
+          <ProFeaturesDetails />
+        </Reveal>
+
+        <Reveal delay={0.2}>
           <ul className="mx-auto mt-8 flex max-w-3xl flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-ink-muted">
             {GUARANTEES.map((item) => (
               <li key={item} className="inline-flex items-center gap-2">
@@ -66,15 +70,18 @@ interface PlanCardProps {
 }
 
 /**
- * O PRO anual é o card que a página quer que a pessoa escolha, e o desenho
- * diz isso: fundo de marca, preço maior, selo de recomendado e a lista
- * inteira do que o PRO tem. O que muda no jeito de pagar fica colado no
- * preço. Os outros dois ficam contidos, e os limites do gratuito aparecem
+ * Os três cards têm a mesma espinha, na mesma ordem: selo, nome, preço, frase,
+ * botão e lista. O bloco do preço e o da frase têm altura mínima no desktop,
+ * então os três botões caem na mesma linha, e a lista vem depois do botão:
+ * quem já decidiu não precisa rolar o card pra achar onde clicar.
+ *
+ * O anual é o card que a página quer que a pessoa escolha, e o desenho diz
+ * isso: fundo de marca e selo de recomendado. Os limites do gratuito aparecem
  * como limites (marcação neutra), não como vantagens.
  */
 function PlanCard({ plan }: PlanCardProps) {
   const cta = useSiteCta('lp-precos')
-  const price = plan.price
+  const { price } = plan
   const isPro = plan.checkoutCycle !== undefined
   const isFeatured = plan.highlight === true
 
@@ -89,17 +96,21 @@ function PlanCard({ plan }: PlanCardProps) {
     <article
       aria-labelledby={`plano-${plan.id}`}
       className={cn(
-        'pulse-on-hover flex h-full flex-col rounded-card border',
+        'pulse-on-hover relative flex h-full flex-col rounded-card border p-6 sm:p-7',
         isFeatured
-          ? 'surface-brand edge-light border-brand p-6 shadow-2xl shadow-brand/20 ring-1 ring-brand/40 sm:p-8'
-          : 'border-line bg-surface p-6',
+          ? 'surface-brand edge-light border-brand shadow-2xl shadow-brand/20 ring-1 ring-brand/40'
+          : 'border-line bg-surface',
       )}
     >
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex h-7 items-center justify-between gap-3">
         <p
           className={cn(
-            'inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wide',
-            isFeatured ? 'bg-brand text-white' : isPro ? 'border border-brand/40 text-brand-ink' : 'border border-line text-ink-muted',
+            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wide',
+            isFeatured
+              ? 'bg-brand text-white'
+              : isPro
+                ? 'border border-brand/40 text-brand-ink'
+                : 'border border-line text-ink-muted',
           )}
         >
           {isPro ? <BoltIcon /> : null}
@@ -112,37 +123,40 @@ function PlanCard({ plan }: PlanCardProps) {
         ) : null}
       </div>
 
-      <h3
-        id={`plano-${plan.id}`}
-        className={cn('mt-4 text-balance font-semibold', isFeatured ? 'text-xl text-ink' : 'text-lg text-ink-muted')}
-      >
+      <h3 id={`plano-${plan.id}`} className="mt-4 text-lg font-semibold text-ink">
         {plan.headline}
       </h3>
 
-      <div className="mt-4 min-h-[5.5rem]">
-        <p className="flex flex-wrap items-baseline gap-x-1">
-          <span className={cn('tabular font-semibold text-ink', isFeatured ? 'text-4xl sm:text-5xl' : 'text-3xl')}>
-            {price.amount}
-          </span>
+      <div className="mt-4 lg:min-h-[9.75rem]">
+        <p className="flex flex-wrap items-baseline gap-x-1.5">
+          <span className="tabular text-4xl font-semibold text-ink">{price.amount}</span>
           <span className="text-sm text-ink-muted">{price.period}</span>
-          {price.strike ? (
-            <>
-              <span className="sr-only">, contra</span>
-              <s className="tabular ml-2 text-sm text-ink-faint">{price.strike}</s>
-              <span className="sr-only">pagando mês a mês</span>
-            </>
-          ) : null}
         </p>
-        {price.note ? <p className="tabular mt-1 text-sm text-ink-muted">{price.note}</p> : null}
-        {price.savings ? (
-          <p className="mt-2 inline-flex rounded-full bg-positive/15 px-2.5 py-1 text-xs font-medium text-positive">
-            {price.savings}
+        {price.note ? (
+          <p className="tabular mt-1 text-sm text-ink-muted">
+            {price.strike ? (
+              <>
+                <s className="text-ink-faint">{price.strike}</s>
+                <span className="sr-only"> pagando mês a mês,</span>{' '}
+              </>
+            ) : null}
+            {price.note}
+          </p>
+        ) : null}
+        {price.tag ? (
+          <p
+            className={cn(
+              'mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-medium',
+              price.tagTone === 'positive' ? 'bg-positive/15 text-positive' : 'bg-white/5 text-ink-muted',
+            )}
+          >
+            {price.tag}
           </p>
         ) : null}
         {price.perks ? (
-          <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
+          <ul className="mt-3 flex flex-col gap-1.5">
             {price.perks.map((perk) => (
-              <li key={perk} className="inline-flex items-center gap-1.5 text-xs text-ink-muted">
+              <li key={perk} className="inline-flex items-start gap-1.5 text-xs text-ink-muted">
                 <CheckIcon tone="positive" />
                 {perk}
               </li>
@@ -151,11 +165,31 @@ function PlanCard({ plan }: PlanCardProps) {
         ) : null}
       </div>
 
-      <p className="mt-3 text-pretty text-sm text-ink-muted">{plan.description}</p>
+      <p className="mt-3 text-pretty text-sm text-ink-muted lg:min-h-[2.75rem]">{plan.description}</p>
 
-      <div className="mt-5 flex flex-1 flex-col border-t border-line pt-5">
+      <Link
+        to={to}
+        onClick={() => trackLanding('pricing_cta_clicked')}
+        className={cn(
+          'pulse-button mt-5 inline-flex h-12 items-center justify-center rounded-xl px-4 font-medium transition-colors',
+          isFeatured
+            ? 'bg-brand text-white hover:bg-brand-hi'
+            : 'border border-line-hi text-ink hover:border-brand/60 hover:bg-brand/10',
+        )}
+      >
+        {label}
+      </Link>
+      <p className="mt-2.5 text-center text-xs text-ink-faint">
+        {isPro
+          ? TRIAL_PROMISE_VERIFIED
+            ? `${TRIAL_DAYS} dias de teste, sem cartão.`
+            : 'Cancela quando quiser.'
+          : 'Grátis e sem cartão. Sem prazo pra decidir.'}
+      </p>
+
+      <div className="mt-6 flex flex-1 flex-col border-t border-line pt-5">
         {plan.featuresIntro ? (
-          <p className="mb-4 text-sm font-semibold text-ink">{plan.featuresIntro}</p>
+          <p className="mb-3 text-sm font-semibold text-ink">{plan.featuresIntro}</p>
         ) : null}
 
         <ul className="flex flex-col gap-2.5">
@@ -178,27 +212,40 @@ function PlanCard({ plan }: PlanCardProps) {
           </ul>
         ) : null}
       </div>
-
-      <Link
-        to={to}
-        onClick={() => trackLanding('pricing_cta_clicked')}
-        className={cn(
-          'pulse-button mt-6 inline-flex items-center justify-center rounded-xl px-4 font-medium transition-colors',
-          isFeatured
-            ? 'h-12 bg-brand text-base text-white hover:bg-brand-hi'
-            : 'h-11 border border-line text-sm text-ink hover:border-line-hi',
-        )}
-      >
-        {label}
-      </Link>
-      <p className="mt-2.5 text-center text-xs text-ink-faint">
-        {isPro
-          ? TRIAL_PROMISE_VERIFIED
-            ? `${TRIAL_DAYS} dias de teste, sem cartão. Cancela quando quiser.`
-            : 'Cancela quando quiser.'
-          : 'Grátis e sem cartão. Sem prazo pra decidir.'}
-      </p>
     </article>
+  )
+}
+
+/** A lista inteira do PRO, fechada por padrão: os cards mostram só o resumo. */
+function ProFeaturesDetails() {
+  return (
+    <details
+      className="group mx-auto mt-6 max-w-3xl rounded-card border border-line bg-surface/60 open:bg-surface"
+    >
+      <summary className="flex cursor-pointer list-none items-center justify-center gap-2 px-5 py-4 text-sm font-medium text-ink marker:hidden">
+        Ver tudo o que o PRO tem
+        <svg
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          className="size-4 transition-transform duration-200 group-open:rotate-180"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </summary>
+      <ul className="grid gap-x-8 gap-y-2.5 px-5 pb-6 sm:grid-cols-2 sm:px-8">
+        {PRO_ALL_FEATURES.map((feature) => (
+          <li key={feature} className="flex gap-2.5 text-sm text-ink">
+            <CheckIcon tone="brand" />
+            {feature}
+          </li>
+        ))}
+      </ul>
+    </details>
   )
 }
 
