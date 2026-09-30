@@ -40,12 +40,6 @@ export const CTA = {
 } as const
 
 /**
- * O que o produto É, numa linha, pra quem não veio de um carrossel e lê o
- * título de dor sem saber se aquilo é curso, livro ou app.
- */
-export const CATEGORY_LINE = 'App de metas e hábitos que se ajusta ao seu dia'
-
-/**
  * O teste de PRO só aparece na página quando esta chave estiver ligada.
  *
  * O fluxo existe em código (`trial.ts`), no banco (migration 0034, que dá os

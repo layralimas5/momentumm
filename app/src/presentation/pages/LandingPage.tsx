@@ -26,7 +26,7 @@ export function LandingPage() {
   useLandingView()
 
   return (
-    <div className="min-h-dvh bg-canvas">
+    <div className="relative isolate min-h-dvh overflow-x-clip bg-canvas">
       <a
         href="#conteudo"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-brand focus:px-4 focus:py-2 focus:text-white"

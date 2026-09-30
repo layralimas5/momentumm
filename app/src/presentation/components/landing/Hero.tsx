@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { servedPrerendered } from '@/presentation/seo/prerender-snapshot'
 import { cn } from '@/shared/lib/cn'
 import { trackLanding } from './landing-analytics'
-import { CATEGORY_LINE, CTA } from './site'
+import { CTA } from './site'
 import { useOffer } from './use-offer'
 import { useSiteCta } from './use-site-cta'
 
@@ -48,24 +48,23 @@ export function Hero() {
         }
   const reassurance = cta.signedIn
     ? 'Você já tem conta. O plano de hoje te espera.'
-    : `${CTA.reassurance} ${CTA.timeToStart}`
+    : CTA.reassurance
 
   return (
-    <section id="home" className="relative overflow-hidden">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-40 left-1/2 size-[48rem] -translate-x-1/2 rounded-full bg-brand/15 blur-[120px]"
-      />
+    <section id="home" className="relative">
+      {/*
+        O brilho de marca de sempre, estendido: ele desce além do hero e se
+        dissolve por trás da seção seguinte, em vez de ser cortado na borda.
+        Fica atrás de tudo (`-z-10`, com o `isolate` da página) e o corte
+        lateral é do contêiner da página, pra não criar rolagem horizontal.
+      */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 -top-40 -z-10 h-[150%]">
+        <div className="absolute left-1/2 top-0 size-[48rem] -translate-x-1/2 rounded-full bg-brand/15 blur-[120px] sm:size-[60rem]" />
+        <div className="absolute inset-x-0 top-0 h-full bg-[radial-gradient(ellipse_70%_60%_at_50%_30%,color-mix(in_oklab,var(--color-brand)_12%,transparent),transparent_75%)]" />
+      </div>
 
       <div className="relative mx-auto max-w-6xl px-4 pb-12 pt-28 sm:px-8 sm:pt-36 lg:pb-20 xl:pt-40">
         <div className="mx-auto max-w-3xl text-center">
-          <motion.p
-            {...intro(0)}
-            className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand-dim/40 px-3.5 py-1.5 text-sm font-medium text-brand-ink"
-          >
-            {CATEGORY_LINE}
-          </motion.p>
-
           <h1 className="text-balance text-4xl font-semibold tracking-tight text-ink sm:text-5xl xl:text-6xl">
             {lines.map((line, index) => (
               <motion.span
