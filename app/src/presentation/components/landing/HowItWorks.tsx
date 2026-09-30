@@ -25,22 +25,22 @@ const STEPS: readonly Step[] = [
     title: `Responda ${QUIZ_QUESTION_COUNT} perguntas`,
     description:
       'Objetivo, prazo e o tempo que você tem de verdade. Menos de 2 minutos, e o plano aparece antes de você criar conta.',
-    screen: '/telas/quiz.webp',
-    screenLabel: 'Primeira pergunta do quiz',
+    screen: '/telas/passo-1-quiz.webp',
+    screenLabel: 'Pergunta do quiz',
   },
   {
     title: 'Receba o plano por etapas',
     description:
       'A meta vira três marcos com prazo, uma rotina que cabe na sua semana e o primeiro passo de hoje.',
-    screen: '/telas/plano.webp',
+    screen: '/telas/passo-2-plano.webp',
     screenLabel: 'Plano gerado pelo quiz',
   },
   {
-    title: 'Veja a constância subir',
+    title: 'Faça o passo de hoje',
     description:
-      'O Momentumm Score mostra se o ritmo está de pé. Dia ruim faz o número cair devagar, nunca zerar.',
-    screen: '/telas/progresso.webp',
-    screenLabel: 'Tela Progresso, com o Momentumm Score',
+      'Abra o app e o passo do dia já está lá, do tamanho do tempo que você tem. Concluiu, o plano anda.',
+    screen: '/telas/passo-3-hoje.webp',
+    screenLabel: 'Tela Hoje, com o primeiro passo do plano',
   },
 ]
 
