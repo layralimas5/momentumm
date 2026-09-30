@@ -15,8 +15,8 @@ Branch de trabalho: `feat/nova-navegacao-e-rotina`, já mergeada na `main`
 | 1. Auditoria | **Feito e conferido.** 66 migrations, 63 tabelas, 40 páginas |
 | 2. Navegação | **Feito e conferido.** Em produção |
 | 3. Hoje | **Feito e conferido**, menos o teste da §81 na composição exata |
-| 4. Rotina | **Feito, não validado** contra o design de timeline das §10 e §57 |
-| 5. Integração | **Parcial.** Fonte única existe; o caminho da §16 nunca foi testado ponta a ponta |
+| 4. Rotina | **Validado em 30/09: parcial.** Lista, não timeline; ver "Lacunas das fases 4 e 5" |
+| 5. Integração | **Parcial.** Falta plano → rotina e a rotina no progresso do objetivo; ver "Lacunas das fases 4 e 5" |
 | 6. Reagendamento | **Feito e em produção desde 29/09** |
 | 7. Modelo social + RLS | **Escrito e provado, NÃO aplicado em produção.** Migrations 0067 e 0068 |
 | 8. Perfis e follows | **Escrito.** Perfil público/fechado, pedido com aprovação, listas |
@@ -59,6 +59,37 @@ que a §26 pede pra distinguir.
 O que falta: seletor de data que mova só a ocorrência de hoje
 (`setRoutineStatus` com `movedToDay`, que o banco já suporta desde a 0064), e
 separar em voz alta "só hoje" de "na rotina".
+
+---
+
+## Lacunas das fases 4 e 5 (auditoria de 30/09)
+
+O texto da especificação não está no repositório: foi colado no chat da sessão
+de 27/09. O essencial das seções usadas:
+
+- **§10 / §57:** timeline vertical limpa, horários fáceis de escanear, check
+  satisfatório, transições sutis, respiro, categorias discretas, objetivo sem
+  poluir. §13: o que não tem horário vai pra "Em algum momento". §59: check
+  animado.
+- **§16:** OBJETIVO → PLANO → ROTINA → HOJE → ✓ → PROGRESSO, sem duplicar
+  registro e sem perder o objetivo de origem.
+
+O que falta, em ordem:
+
+1. **Plano → rotina não existe.** `routine_items` não liga a etapa, e nada no
+   plano cria item de rotina. Ideia: "Levar pra rotina" na etapa/atividade.
+2. **Rotina fora do progresso do objetivo.** O score conta a ocorrência
+   feita (`momentum.ts`), mas `ObjectiveDetailPage` e `ProgressPage` não leem
+   a rotina, e o evento "Rotina concluída" (`journey-recorder.ts`) só olha
+   hábito.
+3. **Timeline de verdade.** Hoje é lista: sem trilho nem marcador de agora,
+   check sem animação (o Hoje já anima), sem grupo "Em algum momento" (o
+   `dayPart` é ignorado na Rotina).
+4. **Peso por linha.** Editar e apagar em toda linha; objetivo na única cor
+   forte.
+5. **Acertos pequenos.** "Pulado hoje" aparece em dia que não é hoje; em dia
+   passado o check trava mas editar/apagar não.
+6. **Teste de integração do caminho da §16**, no demo ou no PGlite.
 
 ---
 
