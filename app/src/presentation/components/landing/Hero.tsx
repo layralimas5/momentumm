@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { servedPrerendered } from '@/presentation/seo/prerender-snapshot'
 import { cn } from '@/shared/lib/cn'
+import { HeroBackdrop } from './HeroBackdrop'
 import { trackLanding } from './landing-analytics'
 import { CTA } from './site'
 import { useOffer } from './use-offer'
@@ -52,16 +53,7 @@ export function Hero() {
 
   return (
     <section id="home" className="relative">
-      {/*
-        O brilho de marca de sempre, estendido: ele desce além do hero e se
-        dissolve por trás da seção seguinte, em vez de ser cortado na borda.
-        Fica atrás de tudo (`-z-10`, com o `isolate` da página) e o corte
-        lateral é do contêiner da página, pra não criar rolagem horizontal.
-      */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 -top-40 -z-10 h-[150%]">
-        <div className="absolute left-1/2 top-0 size-[48rem] -translate-x-1/2 rounded-full bg-brand/15 blur-[120px] sm:size-[60rem]" />
-        <div className="absolute inset-x-0 top-0 h-full bg-[radial-gradient(ellipse_70%_60%_at_50%_30%,color-mix(in_oklab,var(--color-brand)_12%,transparent),transparent_75%)]" />
-      </div>
+      <HeroBackdrop />
 
       <div className="relative mx-auto max-w-6xl px-4 pb-12 pt-28 sm:px-8 sm:pt-36 lg:pb-20 xl:pt-40">
         <div className="mx-auto max-w-3xl text-center">
