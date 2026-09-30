@@ -187,6 +187,7 @@ export function pricingPlans(quotes: Readonly<Record<BillingCycle, ProQuote>>): 
       featuresIntro: 'Tudo do gratuito, e mais:',
       features: PRO_HIGHLIGHTS,
       cta: 'Começar com PRO',
+      highlight: true,
     },
     {
       id: 'pro-anual',
@@ -198,7 +199,6 @@ export function pricingPlans(quotes: Readonly<Record<BillingCycle, ProQuote>>): 
       featuresIntro: 'Tudo do gratuito, e mais:',
       features: PRO_HIGHLIGHTS,
       cta: 'Escolher anual',
-      highlight: true,
     },
   ]
 }

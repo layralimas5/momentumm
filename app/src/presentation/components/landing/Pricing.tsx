@@ -21,6 +21,12 @@ const GUARANTEES = [
   'Nada é apagado se você voltar pro gratuito',
 ] as const
 
+/**
+ * O recomendado perde o `h-full` no desktop: esticado pelo grid, a margem
+ * negativa o deixa mais alto que os vizinhos em vez de só deslocá-lo.
+ */
+const FEATURED_ITEM = 'h-full lg:-my-6 lg:h-auto'
+
 export function Pricing() {
   const viewRef = useSectionView('pricing_viewed')
   // Quem lê a landing é, quase sempre, quem nunca assinou: o preço de entrada.
@@ -38,7 +44,7 @@ export function Pricing() {
 
         <ul className="mx-auto mt-12 grid max-w-md items-stretch gap-5 lg:max-w-none lg:grid-cols-3 lg:gap-6">
           {plans.map((plan, index) => (
-            <li key={plan.id} className="h-full">
+            <li key={plan.id} className={plan.highlight ? FEATURED_ITEM : 'h-full'}>
               <Reveal delay={index * 0.08} className="h-full">
                 <PlanCard plan={plan} />
               </Reveal>
@@ -79,8 +85,10 @@ interface PlanCardProps {
  * então os três botões caem na mesma linha, e a lista vem depois do botão:
  * quem já decidiu não precisa rolar o card pra achar onde clicar.
  *
- * O anual é o card que a página quer que a pessoa escolha, e o desenho diz
- * isso: fundo de marca e selo de recomendado. Os limites do gratuito aparecem
+ * O mensal é o card que a página quer que a pessoa escolha, e o desenho diz
+ * isso: mais alto que os vizinhos, fundo de marca e selo de recomendado. É a
+ * porta mais barata pra começar (R$ 9,90 no primeiro mês); o anual continua
+ * com o selo de mais econômico no próprio preço. Os limites do gratuito aparecem
  * como limites (marcação neutra), não como vantagens.
  */
 function PlanCard({ plan }: PlanCardProps) {
@@ -101,6 +109,7 @@ function PlanCard({ plan }: PlanCardProps) {
       aria-labelledby={`plano-${plan.id}`}
       className={cn(
         'pulse-on-hover relative flex h-full flex-col rounded-card border p-6 sm:p-7',
+        isFeatured && 'lg:pt-10',
         isFeatured
           ? 'surface-brand edge-light border-brand shadow-2xl shadow-brand/20 ring-1 ring-brand/40'
           : 'border-line bg-surface',
@@ -122,7 +131,7 @@ function PlanCard({ plan }: PlanCardProps) {
         </p>
         {isFeatured ? (
           <p className="rounded-full border border-brand/40 bg-brand-dim/40 px-2.5 py-1 text-xs font-medium text-brand-ink">
-            Melhor custo-benefício
+            Recomendado
           </p>
         ) : null}
       </div>

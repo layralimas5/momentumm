@@ -70,7 +70,7 @@ export function SubscriptionPage() {
   const returned = readReturnStatus(params.get('assinatura'))
   const requestedCycle = params.get('ciclo')
 
-  const [cycle, setCycle] = useState<BillingCycle>(isBillingCycle(requestedCycle) ? requestedCycle : 'anual')
+  const [cycle, setCycle] = useState<BillingCycle>(isBillingCycle(requestedCycle) ? requestedCycle : 'mensal')
   const [subscription, setSubscription] = useState<Subscription | null | 'loading'>('loading')
   const [loadError, setLoadError] = useState<string | null>(null)
 
@@ -407,7 +407,9 @@ function QuotePrice({ quote }: { readonly quote: ProQuote }) {
         <p className="mb-2 inline-flex rounded-full bg-positive/15 px-2.5 py-1 text-xs font-medium text-positive">
           {founders ? 'Oferta Fundadores' : 'Melhor custo-benefício'}
         </p>
-      ) : null}
+      ) : (
+        <p className="mb-2 inline-flex rounded-full bg-brand px-2.5 py-1 text-xs font-medium text-white">Recomendado</p>
+      )}
       <p className="flex flex-wrap items-baseline gap-x-1.5">
         {founders ? (
           <>
