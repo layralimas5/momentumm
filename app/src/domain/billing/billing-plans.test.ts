@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { monthlyEquivalentCents, offerOfCharge, PRO_OFFER_TERMS, PRO_PRICES, quotePro } from './billing-plans'
+import { monthlyEquivalentCents, offerOfCharge, PRO_OFFER_TERMS, PRO_PRICES, quotePro, quoteSentence } from './billing-plans'
 
 const novo = { firstSubscription: true, foundersActive: false }
 const veterano = { firstSubscription: false, foundersActive: true }
@@ -51,4 +51,17 @@ describe('offerOfCharge', () => {
 
 it('o anual equivale a R$ 8,33 por mês', () => {
   expect(monthlyEquivalentCents('anual')).toBe(833)
+})
+
+describe('quoteSentence', () => {
+  it('diz a renovação junto com a oferta', () => {
+    expect(quoteSentence(quotePro('mensal', novo))).toBe('R$ 9,90 no primeiro mês, depois R$ 24,90 por mês.')
+    expect(quoteSentence(quotePro('anual', { firstSubscription: true, foundersActive: true }))).toBe(
+      'R$ 69,90 no primeiro ano, depois R$ 99,90 por ano.',
+    )
+  })
+
+  it('sem oferta, só o preço', () => {
+    expect(quoteSentence(quotePro('anual', novo))).toBe('R$ 99,90 por ano.')
+  })
 })

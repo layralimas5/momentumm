@@ -58,6 +58,7 @@ const settleResponseSchema = z.object({
 })
 
 const pixResponseSchema = z.object({
+  amountCents: z.number().int().positive().nullish().transform((value) => value ?? null),
   paymentId: z.string().min(1),
   qrCodeImage: z.string().min(1),
   qrCodePayload: z.string().min(1),

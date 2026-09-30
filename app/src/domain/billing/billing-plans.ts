@@ -132,3 +132,19 @@ export function monthlyEquivalentCents(cycle: BillingCycle, amountCents = PRO_PR
 export function cyclePeriod(cycle: BillingCycle): string {
   return cycle === 'anual' ? 'ano' : 'mês'
 }
+
+/**
+ * A frase que diz o preço inteiro, com a renovação. Vai na fatura do Asaas e
+ * na confirmação antes de pagar: a pessoa nunca descobre a renovação depois.
+ *
+ *   "R$ 9,90 no primeiro mês, depois R$ 24,90 por mês."
+ *   "R$ 69,90 no primeiro ano, depois R$ 99,90 por ano."
+ *   "R$ 99,90 por ano."
+ */
+export function quoteSentence(quote: ProQuote): string {
+  const period = cyclePeriod(quote.cycle)
+  const renewal = `${formatBRL(quote.renewalCents)} por ${period}`
+  if (quote.firstCents === quote.renewalCents) return `${renewal}.`
+  const first = quote.cycle === 'anual' ? 'no primeiro ano' : 'no primeiro mês'
+  return `${formatBRL(quote.firstCents)} ${first}, depois ${renewal}.`
+}
