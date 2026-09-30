@@ -22,11 +22,13 @@ import { createClient } from 'npm:@supabase/supabase-js@2.116.0'
 import nodemailer from 'nodemailer'
 // O preço vem do domínio empacotado (`npm run billing:bundle`), nunca escrito
 // à mão aqui: e-mail com preço errado é problema de cobrança, não de texto.
-import { PRO_PRICES, formatBRL } from '../_shared/billing.ts'
+import { PRO_PRICES, formatBRL, quotePro, quoteSentence } from '../_shared/billing.ts'
 
 const APP_URL = 'https://www.momentumm.com.br'
 const SIGNATURE_URL = `${APP_URL}/app/assinatura`
-const PRICE_LINE = `${formatBRL(PRO_PRICES.mensal.amountCents)} por mês ou ${formatBRL(PRO_PRICES.anual.amountCents)} por ano. Pix ou cartão, e dá pra cancelar quando quiser.`
+// Quem está no teste nunca pagou, então o mensal dele é o de entrada.
+const MONTHLY_LINE = quoteSentence(quotePro('mensal', { firstSubscription: true, foundersActive: false })).replace(/\.$/, '')
+const PRICE_LINE = `Mensal: ${MONTHLY_LINE}. Anual: ${formatBRL(PRO_PRICES.anual.amountCents)} por ano. Pix ou cartão, e dá pra cancelar quando quiser.`
 
 interface DueRow {
   readonly user_id: string
