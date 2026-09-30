@@ -22,11 +22,12 @@ import { TRIAL_PROMISE_VERIFIED } from './site'
  * nenhuma tela do app. Recurso entra nesta lista quando alguém consegue usar,
  * não quando ganha uma flag.
  *
- * O PRO é um plano só com dois ciclos de cobrança. O anual não tem recurso a
- * mais: é a mesma coisa cobrada de outro jeito.
+ * O PRO é um plano só com dois ciclos de cobrança, e a página mostra os dois
+ * como cards lado a lado com o gratuito: três preços visíveis de uma vez, sem
+ * seletor pra descobrir o outro. O anual não tem recurso a mais, é a mesma
+ * coisa cobrada de outro jeito, por isso o card do mensal resume a lista em
+ * vez de repetir as dezessete linhas.
  */
-
-export type { BillingCycle }
 
 export interface Price {
   readonly amount: string
@@ -43,7 +44,9 @@ export interface PricingPlan {
   readonly id: string
   readonly badge: string
   readonly headline: string
-  readonly prices: Readonly<Record<BillingCycle, Price>>
+  readonly price: Price
+  /** O ciclo que o botão abre no checkout. Ausente no gratuito, que não tem checkout. */
+  readonly checkoutCycle?: BillingCycle
   readonly description: string
   /** Linha que abre a lista, quando o plano soma sobre outro ("Tudo do gratuito, e mais:"). */
   readonly featuresIntro?: string
@@ -75,7 +78,7 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
     id: 'free',
     badge: 'FREE',
     headline: 'Organize e execute',
-    prices: { mensal: FREE_PRICE, anual: FREE_PRICE },
+    price: FREE_PRICE,
     description: FREE_DESCRIPTION,
     features: [
       'Objetivos com plano por etapas e ações',
@@ -93,24 +96,18 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
     cta: 'Criar meu plano',
   },
   {
-    id: 'pro',
-    badge: 'PRO',
+    id: 'pro-anual',
+    badge: 'PRO anual',
     headline: 'Registre, analise e evolua',
-    prices: {
-      mensal: {
-        amount: formatBRL(pro.mensal.amountCents),
-        period: '/mês',
-        perks: ['Sem fidelidade: cancela quando quiser'],
-      },
-      anual: {
-        amount: formatBRL(pro.anual.amountCents),
-        period: '/ano',
-        strike: formatBRL(pro.anual.strikeCents),
-        note: `equivale a ${formatBRL(monthlyEquivalentCents('anual'))}/mês`,
-        savings: `Economia de ${ANNUAL_SAVINGS} por ano`,
-        perks: ['Um pagamento só, sem cobrança todo mês', 'Preço protegido na renovação*'],
-      },
+    price: {
+      amount: formatBRL(pro.anual.amountCents),
+      period: '/ano',
+      strike: formatBRL(pro.anual.strikeCents),
+      note: `equivale a ${formatBRL(monthlyEquivalentCents('anual'))}/mês`,
+      savings: `Economia de ${ANNUAL_SAVINGS} por ano`,
+      perks: ['Um pagamento só, sem cobrança todo mês', 'Preço protegido na renovação*'],
     },
+    checkoutCycle: 'anual',
     description: 'O mesmo produto sem limites, com o histórico inteiro e a leitura da IA.',
     featuresIntro: 'Tudo do gratuito, e mais:',
     features: [
@@ -132,8 +129,29 @@ export const PRICING_PLANS: readonly PricingPlan[] = [
       'Todos os modelos de card pra compartilhar, com personalização',
       'Atendimento prioritário no suporte',
     ],
-    cta: 'Assinar o PRO',
+    cta: 'Assinar o PRO anual',
     highlight: true,
+  },
+  {
+    id: 'pro-mensal',
+    badge: 'PRO mensal',
+    headline: 'O mesmo PRO, mês a mês',
+    price: {
+      amount: formatBRL(pro.mensal.amountCents),
+      period: '/mês',
+      perks: ['Sem fidelidade: cancela quando quiser'],
+    },
+    checkoutCycle: 'mensal',
+    description: 'Tudo o que o PRO anual tem, pago mês a mês. Bom pra sentir o ritmo antes de fechar o ano.',
+    featuresIntro: 'Tudo do PRO anual, incluindo:',
+    features: [
+      'Objetivos, hábitos e planos sem limite',
+      'Histórico completo e review semanal',
+      `Momentumm AI: ${PLAN_LIMITS.pro.aiCallsPerMonth} leituras por mês`,
+      'Juntos: duplas ilimitadas',
+      'Atendimento prioritário no suporte',
+    ],
+    cta: 'Assinar o PRO mensal',
   },
 ]
 

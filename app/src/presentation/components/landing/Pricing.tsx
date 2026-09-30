@@ -1,17 +1,10 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { TRIAL_DAYS } from '@/domain/billing/trial'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { cn } from '@/shared/lib/cn'
 import { trackLanding, useSectionView } from './landing-analytics'
-import {
-  PRICING_FOOTNOTE,
-  PRICING_PLANS,
-  type BillingCycle,
-  type PricingPlan,
-} from './plans'
+import { PRICING_FOOTNOTE, PRICING_PLANS, type PricingPlan } from './plans'
 import { Reveal } from './Reveal'
-import { CycleToggle } from './CycleToggle'
 import { Section, SectionHeading } from './Section'
 import { TRIAL_PROMISE_VERIFIED } from './site'
 import { useSiteCta } from './use-site-cta'
@@ -28,7 +21,6 @@ const GUARANTEES = [
 ] as const
 
 export function Pricing() {
-  const [cycle, setCycle] = useState<BillingCycle>('anual')
   const viewRef = useSectionView('pricing_viewed')
 
   return (
@@ -40,15 +32,11 @@ export function Pricing() {
           description="O gratuito roda o ciclo inteiro. O PRO tira os limites, abre o histórico completo e a leitura da IA."
         />
 
-        <div className="mt-8 flex justify-center">
-          <CycleToggle value={cycle} onChange={setCycle} />
-        </div>
-
-        <ul className="mx-auto mt-8 grid max-w-5xl items-stretch gap-5 md:grid-cols-[0.85fr_1.15fr]">
+        <ul className="mx-auto mt-12 grid max-w-md items-stretch gap-5 lg:max-w-none lg:grid-cols-3">
           {PRICING_PLANS.map((plan, index) => (
-            <li key={plan.id} className={cn('h-full', plan.highlight && 'order-first md:order-none')}>
+            <li key={plan.id} className={cn('h-full', plan.highlight && 'order-first lg:order-none')}>
               <Reveal delay={index * 0.08} className="h-full">
-                <PlanCard plan={plan} cycle={cycle} />
+                <PlanCard plan={plan} />
               </Reveal>
             </li>
           ))}
@@ -75,26 +63,26 @@ export function Pricing() {
 
 interface PlanCardProps {
   readonly plan: PricingPlan
-  readonly cycle: BillingCycle
 }
 
 /**
- * O PRO é o card que a página quer que a pessoa escolha, e o desenho diz
- * isso: mais largo, fundo de marca, preço maior e a lista inteira do que ele
- * tem. O que muda no jeito de pagar (anual ou mensal) fica colado
- * no preço. O gratuito fica contido, e os limites dele aparecem como limites
- * (marcação neutra), não como vantagens.
+ * O PRO anual é o card que a página quer que a pessoa escolha, e o desenho
+ * diz isso: fundo de marca, preço maior, selo de recomendado e a lista
+ * inteira do que o PRO tem. O que muda no jeito de pagar fica colado no
+ * preço. Os outros dois ficam contidos, e os limites do gratuito aparecem
+ * como limites (marcação neutra), não como vantagens.
  */
-function PlanCard({ plan, cycle }: PlanCardProps) {
+function PlanCard({ plan }: PlanCardProps) {
   const cta = useSiteCta('lp-precos')
-  const price = plan.prices[cycle]
-  const isPro = plan.highlight === true
+  const price = plan.price
+  const isPro = plan.checkoutCycle !== undefined
+  const isFeatured = plan.highlight === true
 
-  // Sem conta, os dois cards usam o CTA da página inteira: o PRO começa pelo
+  // Sem conta, todos os cards usam o CTA da página inteira: o PRO começa pelo
   // teste, e um segundo texto de botão quebraria a regra do CTA único. Com
-  // conta, o card do PRO é o que leva pro checkout.
+  // conta, os cards do PRO levam pro checkout do ciclo deles.
   const goesToCheckout = isPro && (cta.signedIn || !TRIAL_PROMISE_VERIFIED)
-  const to = goesToCheckout ? `/app/assinatura?ciclo=${cycle}` : cta.primary.to
+  const to = goesToCheckout ? `/app/assinatura?ciclo=${plan.checkoutCycle}` : cta.primary.to
   const label = goesToCheckout ? plan.cta : cta.primary.label
 
   return (
@@ -102,7 +90,7 @@ function PlanCard({ plan, cycle }: PlanCardProps) {
       aria-labelledby={`plano-${plan.id}`}
       className={cn(
         'pulse-on-hover flex h-full flex-col rounded-card border',
-        isPro
+        isFeatured
           ? 'surface-brand edge-light border-brand p-6 shadow-2xl shadow-brand/20 ring-1 ring-brand/40 sm:p-8'
           : 'border-line bg-surface p-6',
       )}
@@ -111,13 +99,13 @@ function PlanCard({ plan, cycle }: PlanCardProps) {
         <p
           className={cn(
             'inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wide',
-            isPro ? 'bg-brand text-white' : 'border border-line text-ink-muted',
+            isFeatured ? 'bg-brand text-white' : isPro ? 'border border-brand/40 text-brand-ink' : 'border border-line text-ink-muted',
           )}
         >
           {isPro ? <BoltIcon /> : null}
           {plan.badge}
         </p>
-        {isPro ? (
+        {isFeatured ? (
           <p className="rounded-full border border-brand/40 bg-brand-dim/40 px-2.5 py-1 text-xs font-medium text-brand-ink">
             Recomendado
           </p>
@@ -126,14 +114,14 @@ function PlanCard({ plan, cycle }: PlanCardProps) {
 
       <h3
         id={`plano-${plan.id}`}
-        className={cn('mt-4 text-balance font-semibold', isPro ? 'text-xl text-ink' : 'text-lg text-ink-muted')}
+        className={cn('mt-4 text-balance font-semibold', isFeatured ? 'text-xl text-ink' : 'text-lg text-ink-muted')}
       >
         {plan.headline}
       </h3>
 
-      <div className="mt-4 min-h-[5.5rem]" aria-live="polite">
+      <div className="mt-4 min-h-[5.5rem]">
         <p className="flex flex-wrap items-baseline gap-x-1">
-          <span className={cn('tabular font-semibold text-ink', isPro ? 'text-4xl sm:text-5xl' : 'text-3xl')}>
+          <span className={cn('tabular font-semibold text-ink', isFeatured ? 'text-4xl sm:text-5xl' : 'text-3xl')}>
             {price.amount}
           </span>
           <span className="text-sm text-ink-muted">{price.period}</span>
@@ -196,7 +184,7 @@ function PlanCard({ plan, cycle }: PlanCardProps) {
         onClick={() => trackLanding('pricing_cta_clicked')}
         className={cn(
           'pulse-button mt-6 inline-flex items-center justify-center rounded-xl px-4 font-medium transition-colors',
-          isPro
+          isFeatured
             ? 'h-12 bg-brand text-base text-white hover:bg-brand-hi'
             : 'h-11 border border-line text-sm text-ink hover:border-line-hi',
         )}

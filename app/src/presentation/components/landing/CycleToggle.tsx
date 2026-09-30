@@ -1,7 +1,7 @@
 import { useId } from 'react'
 import { formatBRL, monthlyEquivalentCents } from '@/domain/billing/billing-plans'
 import { cn } from '@/shared/lib/cn'
-import type { BillingCycle } from './plans'
+import type { BillingCycle } from '@/domain/billing/billing-plans'
 
 /**
  * Botões de verdade com `aria-pressed`, não um switch: as duas opções têm
