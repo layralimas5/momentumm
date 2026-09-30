@@ -3,7 +3,8 @@ import { TRIAL_DAYS } from '@/domain/billing/trial'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { cn } from '@/shared/lib/cn'
 import { trackLanding, useSectionView } from './landing-analytics'
-import { PRICING_FOOTNOTE, PRICING_PLANS, PRO_ALL_FEATURES, type PricingPlan } from './plans'
+import { useProQuotes } from '@/presentation/billing/use-pro-quotes'
+import { pricingFootnote, pricingPlans, PRO_ALL_FEATURES, type PricingPlan } from './plans'
 import { Reveal } from './Reveal'
 import { Section, SectionHeading } from './Section'
 import { TRIAL_PROMISE_VERIFIED } from './site'
@@ -22,18 +23,21 @@ const GUARANTEES = [
 
 export function Pricing() {
   const viewRef = useSectionView('pricing_viewed')
+  // Quem lê a landing é, quase sempre, quem nunca assinou: o preço de entrada.
+  const { quotes } = useProQuotes(true)
+  const plans = pricingPlans(quotes)
 
   return (
     <Section id="planos" className="border-t border-line">
       <div ref={viewRef}>
         <SectionHeading
           eyebrow="Planos"
-          title="Comece de graça. Assine quando fizer diferença."
-          description="O gratuito roda o ciclo inteiro. O PRO tira os limites, abre o histórico completo e a leitura da IA."
+          title="Pare de começar de novo."
+          description="Comece de graça. O PRO transforma seus objetivos em progresso real: clareza do que fazer hoje, constância nos dias ruins e a sua evolução à vista."
         />
 
         <ul className="mx-auto mt-12 grid max-w-md items-stretch gap-5 lg:max-w-none lg:grid-cols-3 lg:gap-6">
-          {PRICING_PLANS.map((plan, index) => (
+          {plans.map((plan, index) => (
             <li key={plan.id} className="h-full">
               <Reveal delay={index * 0.08} className="h-full">
                 <PlanCard plan={plan} />
@@ -58,7 +62,7 @@ export function Pricing() {
         </Reveal>
 
         <p className="mx-auto mt-6 max-w-2xl text-center text-xs text-ink-faint">
-          {PRICING_FOOTNOTE}
+          {pricingFootnote(quotes)}
         </p>
       </div>
     </Section>
@@ -118,7 +122,7 @@ function PlanCard({ plan }: PlanCardProps) {
         </p>
         {isFeatured ? (
           <p className="rounded-full border border-brand/40 bg-brand-dim/40 px-2.5 py-1 text-xs font-medium text-brand-ink">
-            Recomendado
+            Melhor custo-benefício
           </p>
         ) : null}
       </div>
@@ -127,21 +131,19 @@ function PlanCard({ plan }: PlanCardProps) {
         {plan.headline}
       </h3>
 
-      <div className="mt-4 lg:min-h-[9.75rem]">
+      <div className="mt-4 lg:min-h-[11.5rem]">
         <p className="flex flex-wrap items-baseline gap-x-1.5">
+          {price.strike ? (
+            <>
+              <s className="tabular text-lg text-ink-faint">{price.strike}</s>
+              <span className="sr-only">, agora </span>
+            </>
+          ) : null}
           <span className="tabular text-4xl font-semibold text-ink">{price.amount}</span>
           <span className="text-sm text-ink-muted">{price.period}</span>
         </p>
         {price.note ? (
-          <p className="tabular mt-1 text-sm text-ink-muted">
-            {price.strike ? (
-              <>
-                <s className="text-ink-faint">{price.strike}</s>
-                <span className="sr-only"> pagando mês a mês,</span>{' '}
-              </>
-            ) : null}
-            {price.note}
-          </p>
+          <p className="tabular mt-1 text-sm text-ink-muted">{price.note}</p>
         ) : null}
         {price.tag ? (
           <p

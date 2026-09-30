@@ -60,6 +60,7 @@ const DOCUMENTS: Readonly<Record<LegalKind, LegalDocument>> = {
         paragraphs: [
           'O PRO é uma assinatura mensal ou anual, cobrada no início de cada período. Não há fidelidade: você pode cancelar quando quiser em Configurações e mantém o PRO até o fim do período já pago. Depois disso a conta volta pro plano gratuito com tudo que você criou.',
           'O preço protegido do plano anual vale enquanto a assinatura não for cancelada. Mudanças de preço são avisadas com pelo menos 30 dias de antecedência.',
+          'Condições de entrada: quem nunca assinou o PRO paga um valor promocional no primeiro mês do plano mensal. Quando a campanha Fundadores estiver ativa, quem nunca assinou paga um valor promocional no primeiro ano do plano anual. Nos dois casos, o valor promocional e o valor da renovação são mostrados antes do pagamento, e a partir da segunda cobrança vale o preço vigente do plano. O preço protegido do anual vale a partir desse preço vigente, não do valor promocional.',
         ],
       },
       {

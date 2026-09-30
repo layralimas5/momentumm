@@ -1,8 +1,9 @@
 import {
+  cyclePeriod,
   formatBRL,
   monthlyEquivalentCents,
-  PRO_PRICES,
   type BillingCycle,
+  type ProQuote,
 } from '@/domain/billing/billing-plans'
 import { TRIAL_DAYS } from '@/domain/billing/trial'
 import { PLAN_LIMITS } from '@/domain/entities/plan'
@@ -33,7 +34,7 @@ import { TRIAL_PROMISE_VERIFIED } from './site'
 export interface Price {
   readonly amount: string
   readonly period: string
-  /** O que custaria pagando mês a mês no mesmo período. Só no anual, e é uma conta, não uma promoção. */
+  /** O preço de tabela riscado ao lado do valor. Só na campanha Fundadores. */
   readonly strike?: string
   readonly note?: string
   /** O selo embaixo do preço: a economia do anual, ou o que define o ciclo. */
@@ -61,10 +62,6 @@ export interface PricingPlan {
 }
 
 const free = PLAN_LIMITS.free
-const pro = PRO_PRICES
-
-/** A economia do anual é conta, não promoção: doze meses do mensal menos o anual. */
-const ANNUAL_SAVINGS = formatBRL(pro.anual.strikeCents - pro.anual.amountCents)
 
 function plural(count: number, singular: string, pluralForm: string): string {
   return `${count} ${count === 1 ? singular : pluralForm}`
@@ -114,67 +111,101 @@ const PRO_HIGHLIGHTS: readonly string[] = [
   'Juntos: duplas ilimitadas',
 ]
 
-export const PRICING_PLANS: readonly PricingPlan[] = [
-  {
-    id: 'free',
-    badge: 'FREE',
-    headline: 'Organize e execute',
-    price: FREE_PRICE,
-    description: FREE_DESCRIPTION,
-    features: [
-      'Objetivos com plano por etapas e ações',
-      'Hábitos com versão mínima e sequência',
-      'A tela Hoje, com Dia Adaptável e Modo Retomada',
-      'Momentumm Score de hoje',
-      `Juntos: ${plural(free.pairs, 'dupla', 'duplas')}`,
-    ],
-    limits: [
-      `Até ${plural(free.activeObjectives, 'objetivo', 'objetivos')}, ${plural(free.activeHabits, 'hábito', 'hábitos')} e ${plural(free.activePlans, 'plano', 'planos')} ativos`,
-      `Até ${free.actionsPerDay} ações por dia`,
-      `Histórico dos últimos ${free.historyDays} dias`,
-      'Sem Momentumm AI, review completo e métricas',
-    ],
-    cta: 'Criar meu plano',
-  },
-  {
-    id: 'pro-mensal',
-    badge: 'PRO mensal',
-    headline: 'Sem limites, mês a mês',
-    price: {
-      amount: formatBRL(pro.mensal.amountCents),
-      period: '/mês',
-      note: `${formatBRL(pro.mensal.amountCents * 12)} em 12 meses`,
-      tag: 'Sem fidelidade',
-      tagTone: 'neutral',
-      perks: ['Cancela quando quiser, em Configurações', 'Os mesmos recursos do PRO anual'],
-    },
-    checkoutCycle: 'mensal',
-    description: 'O PRO inteiro, pago mês a mês. Bom pra sentir o ritmo antes de fechar o ano.',
-    featuresIntro: 'Tudo do gratuito, e mais:',
-    features: PRO_HIGHLIGHTS,
-    cta: 'Assinar o PRO mensal',
-  },
-  {
-    id: 'pro-anual',
-    badge: 'PRO anual',
-    headline: 'Sem limites, pelo menor preço',
-    price: {
-      amount: formatBRL(pro.anual.amountCents),
-      period: '/ano',
-      strike: formatBRL(pro.anual.strikeCents),
-      note: `equivale a ${formatBRL(monthlyEquivalentCents('anual'))}/mês`,
-      tag: `Economia de ${ANNUAL_SAVINGS} por ano`,
-      tagTone: 'positive',
-      perks: ['Um pagamento só, sem cobrança todo mês', 'Preço protegido na renovação*'],
-    },
-    checkoutCycle: 'anual',
-    description: 'O mesmo PRO num pagamento só, com o histórico inteiro e a leitura da IA.',
-    featuresIntro: 'Tudo do gratuito, e mais:',
-    features: PRO_HIGHLIGHTS,
-    cta: 'Assinar o PRO anual',
-    highlight: true,
-  },
-]
+/**
+ * O preço sempre diz a renovação, na mesma frase. Oferta que esconde quanto
+ * vem depois é o jeito mais rápido de o primeiro mês barato virar pedido de
+ * reembolso no segundo.
+ */
+function renewalNote(quote: ProQuote): string {
+  return `Depois, ${formatBRL(quote.renewalCents)}/${cyclePeriod(quote.cycle)}.`
+}
 
-export const PRICING_FOOTNOTE =
-  '* O preço protegido vale enquanto a assinatura anual não for cancelada. O valor riscado e a economia são a conta de doze meses do plano mensal.'
+function monthlyPrice(quote: ProQuote): Price {
+  const intro = quote.offer === 'primeiro_mes'
+  return {
+    amount: formatBRL(quote.firstCents),
+    period: intro ? 'no primeiro mês' : '/mês',
+    ...(intro ? { note: renewalNote(quote) } : {}),
+    tag: 'Sem fidelidade',
+    tagTone: 'neutral',
+    perks: ['Cancela quando quiser, em Configurações', 'Os mesmos recursos do PRO anual'],
+  }
+}
+
+function annualPrice(quote: ProQuote): Price {
+  if (quote.offer === 'fundadores') {
+    return {
+      amount: formatBRL(quote.firstCents),
+      period: 'no primeiro ano',
+      strike: formatBRL(quote.renewalCents),
+      note: renewalNote(quote),
+      tag: 'Oferta Fundadores',
+      tagTone: 'positive',
+      perks: ['Condição especial dos primeiros usuários do Momentumm', 'Um pagamento só, sem cobrança todo mês'],
+    }
+  }
+  return {
+    amount: formatBRL(quote.firstCents),
+    period: '/ano',
+    note: `equivale a ${formatBRL(monthlyEquivalentCents('anual', quote.firstCents))}/mês`,
+    tag: 'Mais econômico',
+    tagTone: 'positive',
+    perks: ['Um pagamento só, sem cobrança todo mês', 'Preço protegido na renovação*'],
+  }
+}
+
+export function pricingPlans(quotes: Readonly<Record<BillingCycle, ProQuote>>): readonly PricingPlan[] {
+  return [
+    {
+      id: 'free',
+      badge: 'FREE',
+      headline: 'Organize e execute',
+      price: FREE_PRICE,
+      description: FREE_DESCRIPTION,
+      features: [
+        'Objetivos com plano por etapas e ações',
+        'Hábitos com versão mínima e sequência',
+        'A tela Hoje, com Dia Adaptável e Modo Retomada',
+        'Momentumm Score de hoje',
+        `Juntos: ${plural(free.pairs, 'dupla', 'duplas')}`,
+      ],
+      limits: [
+        `Até ${plural(free.activeObjectives, 'objetivo', 'objetivos')}, ${plural(free.activeHabits, 'hábito', 'hábitos')} e ${plural(free.activePlans, 'plano', 'planos')} ativos`,
+        `Até ${free.actionsPerDay} ações por dia`,
+        `Histórico dos últimos ${free.historyDays} dias`,
+        'Sem Momentumm AI, review completo e métricas',
+      ],
+      cta: 'Criar meu plano',
+    },
+    {
+      id: 'pro-mensal',
+      badge: 'PRO mensal',
+      headline: 'Pra começar a avançar',
+      price: monthlyPrice(quotes.mensal),
+      checkoutCycle: 'mensal',
+      description: 'O PRO inteiro, mês a mês. Bom pra sentir o ritmo antes de fechar o ano.',
+      featuresIntro: 'Tudo do gratuito, e mais:',
+      features: PRO_HIGHLIGHTS,
+      cta: 'Começar com PRO',
+    },
+    {
+      id: 'pro-anual',
+      badge: 'PRO anual',
+      headline: 'Um ano inteiro de constância',
+      price: annualPrice(quotes.anual),
+      checkoutCycle: 'anual',
+      description: 'O mesmo PRO num pagamento só, pelo menor preço por mês.',
+      featuresIntro: 'Tudo do gratuito, e mais:',
+      features: PRO_HIGHLIGHTS,
+      cta: 'Escolher anual',
+      highlight: true,
+    },
+  ]
+}
+
+export function pricingFootnote(quotes: Readonly<Record<BillingCycle, ProQuote>>): string {
+  if (quotes.anual.offer === 'fundadores') {
+    return `A Oferta Fundadores vale no primeiro ano. Depois, a assinatura renova pelo preço anual vigente, hoje ${formatBRL(quotes.anual.renewalCents)}.`
+  }
+  return '* O preço protegido vale enquanto a assinatura anual não for cancelada.'
+}
