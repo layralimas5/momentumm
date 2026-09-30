@@ -186,6 +186,18 @@ export const QUIZ_LINK_CODES: Readonly<Record<string, QuizLinkCode>> = {
     theme: null,
     note: 'Botão do rodapé da landing',
   },
+  /*
+    A tela de entrada (`/inicio`) não é a landing: é a porta dos anúncios e do
+    app instalado. Código próprio pra o funil separar quem começou por ela de
+    quem leu a página inteira.
+  */
+  inicio: {
+    source: 'site',
+    medium: 'inicio',
+    campaign: 'tela-inicio',
+    theme: null,
+    note: 'Botão "Quero começar" da tela de entrada',
+  },
 }
 
 export type QuizLinkCodeKey = keyof typeof QUIZ_LINK_CODES

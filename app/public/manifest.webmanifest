@@ -3,7 +3,7 @@
   "short_name": "Momentumm",
   "description": "Do objetivo à ação de hoje.",
   "id": "/app",
-  "start_url": "/app",
+  "start_url": "/inicio",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
