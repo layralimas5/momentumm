@@ -14,7 +14,7 @@ describe('moveItem', () => {
 
   /*
     A diferença que motivou a função. Trocar de lugar (o que as setinhas
-    faziam) só coincide com mover quando o salto é de uma posição — arrastando
+    faziam) só coincide com mover quando o salto é de uma posição, arrastando
     o terceiro item pro topo, trocar largaria o primeiro no meio da lista.
   */
   it('mover não é trocar de lugar quando o salto é maior que um', () => {

@@ -4,7 +4,7 @@ import { activityType } from '@/domain/entities/activity-type'
 import { belongsInCircle } from '@/domain/entities/circle-feed'
 import { circleOpen } from '@/infrastructure/config/env'
 import { countsAsDone } from '@/domain/entities/habit'
-import { formatDayLabel, startOfWeek } from '@/domain/entities/day'
+import { formatDayLabel, startOfWeek, type DayKey } from '@/domain/entities/day'
 import {
   JOURNEY_EVENT_TYPE_LABELS,
   type JourneyEvent,
@@ -21,19 +21,23 @@ import {
   type MilestoneKind,
   type MilestoneTotals,
 } from '@/domain/entities/milestone'
-import { membershipLabel, PROFILE_VISIBILITY_LABELS } from '@/domain/entities/profile'
 import { totalMinutes } from '@/domain/entities/activity'
+import { isDone } from '@/domain/entities/task'
 import { milestoneEvent, momentumEvent } from '@/domain/share/journey-event-builders'
 import { useAuth } from '@/presentation/auth/use-auth'
-import { Avatar } from '@/presentation/components/ui/Avatar'
-import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { Panel, PanelHeader, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
 import { Stat, StatGrid } from '@/presentation/components/ui/Stat'
 import { MobileShortcuts } from '@/presentation/components/mobile/MobileShortcuts'
-import { ProfileBanner } from '@/presentation/profile/ProfileBanner'
 import { ProfileEditor } from '@/presentation/profile/ProfileEditor'
+import { ProfileIdentityCard } from '@/presentation/profile/ProfileIdentityCard'
+import { ProfileJourney } from '@/presentation/social/ProfileJourney'
+import { FollowListSheet } from '@/presentation/social/FollowListSheet'
+import { FollowRequestsCard } from '@/presentation/social/FollowRequestsCard'
+import { ProfileTabs, type ProfileTab } from '@/presentation/profile/ProfileTabs'
+import { useSocialCounts } from '@/presentation/social/use-social-counts'
+import { useShareStudio } from '@/presentation/share/ShareStudioProvider'
 import { StatusEditor } from '@/presentation/profile/StatusEditor'
 import { ProfileVisibilityPanel } from '@/presentation/profile/ProfileVisibilityPanel'
 import { LevelCard } from '@/presentation/evolution/LevelCard'
@@ -42,14 +46,13 @@ import { ShareButton } from '@/presentation/share/ShareButton'
 import { useDashboard } from '@/presentation/planner/use-dashboard'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
-import { PageHeader } from './PageHeader'
 
 /**
  * Perfil.
  *
  * É um painel da evolução pessoal, não uma página de rede social. A diferença
  * é o que ele responde: não "quem me segue", mas "o quanto eu mudei desde que
- * comecei". Por isso ele funciona inteiro com uma pessoa só usando o app —
+ * comecei". Por isso ele funciona inteiro com uma pessoa só usando o app,
  * momentum, constância, semanas de progresso, objetivos e conquistas são todos
  * dados que a própria pessoa gerou.
  *
@@ -66,6 +69,18 @@ export function PersonalProfilePage() {
   const evolution = useEvolution()
   const [editing, setEditing] = useState(false)
   const [statusOpen, setStatusOpen] = useState(false)
+
+  /*
+    A aba abre no Progresso: é a resposta que a pessoa vem buscar quando abre o
+    próprio perfil, o mês, o que ela sustentou. Atividades é histórico e Perfil
+    é ajuste, e nenhum dos dois é a primeira pergunta.
+  */
+  const [tab, setTab] = useState<ProfileTab>('progresso')
+  /** Qual lista de laços está aberta, quando está. */
+  const [listKind, setListKind] = useState<'seguidores' | 'seguindo' | null>(null)
+
+  const share = useShareStudio()
+  const counts = useSocialCounts(profile?.id ?? null)
 
   const { summary: evolutionSummary } = evolution
   const achievementsUnlocked = evolutionSummary.achievements.filter(
@@ -101,6 +116,22 @@ export function PersonalProfilePage() {
     [journeyEvents],
   )
 
+  /**
+   * Os dias em que alguma coisa se moveu, o ponto embaixo de cada número do
+   * calendário.
+   *
+   * Conta os três registros que o produto trata como movimento: atividade
+   * registrada, hábito cumprido e ação concluída. É a mesma definição que o
+   * momentum usa; se um dia ela mudar, muda num lugar só.
+   */
+  const movedDays = useMemo(() => {
+    const days = new Set<DayKey>()
+    for (const activity of activities) days.add(activity.day)
+    for (const log of habitLogs) if (countsAsDone(log.status)) days.add(log.day)
+    for (const task of planner.tasks) if (isDone(task)) days.add(task.day)
+    return days
+  }, [activities, habitLogs, planner.tasks])
+
   const recent = useMemo(
     () => journeyEvents.filter((event) => event.type !== 'milestone').slice(0, 6),
     [journeyEvents],
@@ -113,8 +144,8 @@ export function PersonalProfilePage() {
     A consistência em PORCENTAGEM, e não em "5/7".
 
     A fração é a leitura do dashboard, onde a semana é o assunto e cada dia
-    ainda dá pra recuperar. Aqui a pergunta é outra — "o quanto eu venho
-    sustentando isso" — e a porcentagem é o que responde numa linha só, junto
+    ainda dá pra recuperar. Aqui a pergunta é outra, "o quanto eu venho
+    sustentando isso", e a porcentagem é o que responde numa linha só, junto
     com objetivos ativos e tempo de casa.
 
     O número é o FATOR de consistência do próprio score (28 dias, a última
@@ -130,40 +161,24 @@ export function PersonalProfilePage() {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 lg:gap-6">
-      <PageHeader
-        title="Perfil"
-        description="Onde você está e o que já construiu."
-        action={
-          editing ? undefined : (
-            <div className="flex flex-wrap items-center gap-2">
-              {/*
-                O único ponto de entrada do Share Studio que existe todo dia,
-                em qualquer tela. Os outros aparecem só quando há um momento
-                digno de card; este serve pra quem quer o card do momentum
-                agora, sem esperar o dia render.
-              */}
-              <ShareButton
-                label="Compartilhar Momentumm"
-                build={() =>
-                  momentumEvent({
-                    userId: profile.id,
-                    today: planner.today,
-                    momentum: view.momentum,
-                    streakDays: planner.streak.current,
-                  })
-                }
-              />
-              <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
-                <Icon name="editar" className="size-4" />
-                Editar perfil
-              </Button>
-            </div>
-          )
-        }
-      />
+      <ProfileTabs value={tab} onChange={setTab} />
 
-      <Panel flush={!editing}>
-        {editing ? (
+      {/* Pedido esperando resposta é a única coisa nesta tela que outra pessoa
+          está aguardando, então ele passa na frente do resto. */}
+      <FollowRequestsCard />
+
+      {/*
+        O cartão de visita fica ACIMA das abas e não muda com elas: quem você é
+        não é uma das três respostas, é a moldura das três.
+
+        Ele substituiu o cabeçalho de página com capa, avatar montado na borda e
+        uma linha de cinco números em texto corrido. Aquilo respondia "como vou
+        indo" antes mesmo de dizer quem estava indo, e as mesmas medidas
+        aparecem inteiras na aba Progresso, onde elas têm espaço pra significar
+        alguma coisa.
+      */}
+      {editing ? (
+        <Panel>
           <ProfileEditor
             profile={profile}
             onCancel={() => setEditing(false)}
@@ -172,99 +187,66 @@ export function PersonalProfilePage() {
               setEditing(false)
             }}
           />
-        ) : (
-          <div>
-            {/*
-              Capa em cima, avatar montado na borda dela: o card lê como um
-              cartão de identidade, não como uma linha de lista. A capa é
-              escolha da pessoa (tema ou foto) e o status vem logo abaixo do
-              nome, onde ela conta em que pé está.
-            */}
-            <ProfileBanner banner={profile.banner} className="h-24 sm:h-32" />
-            <div className="px-5 pb-5">
-              <div className="-mt-10 flex items-end gap-3 sm:-mt-12">
-                <span
-                  className={cn(
-                    'shrink-0 rounded-full bg-surface p-1',
-                    // A moldura Aurora é um desbloqueio (PRO + nível 7): um anel, não um enfeite.
-                    auroraFrame && 'ring-2 ring-brand/70 shadow-[0_0_24px_-4px_var(--color-brand)]',
-                  )}
-                >
-                  <Avatar
-                    name={profile.name}
-                    src={profile.avatarUrl}
-                    className="size-20 sm:size-24"
-                    textClassName="text-xl sm:text-2xl"
-                  />
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setStatusOpen(true)}
-                  className={cn(
-                    'mb-1 inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-full border px-3 text-sm transition-colors',
-                    profile.status
-                      ? 'border-line bg-surface-hi text-ink hover:border-line-hi'
-                      : 'border-dashed border-line-hi text-ink-muted hover:bg-surface-hi hover:text-ink',
-                  )}
-                >
-                  {profile.status ? (
-                    <>
-                      {profile.status.emoji ? <span aria-hidden="true">{profile.status.emoji}</span> : null}
-                      <span className="truncate">{profile.status.text ?? 'Status'}</span>
-                      <span className="sr-only">. Editar status</span>
-                    </>
-                  ) : (
-                    <>
-                      <Icon name="mais" className="size-4" />
-                      Adicionar status
-                    </>
-                  )}
-                </button>
-              </div>
+        </Panel>
+      ) : (
+        <>
+          <ProfileIdentityCard
+            profile={profile}
+            counts={counts}
+            aurora={auroraFrame}
+            onOpenFollowers={() => setListKind('seguidores')}
+            onOpenFollowing={() => setListKind('seguindo')}
+            onEdit={() => setEditing(true)}
+            onShare={() =>
+              share.open(
+                momentumEvent({
+                  userId: profile.id,
+                  today: planner.today,
+                  momentum: view.momentum,
+                  streakDays: planner.streak.current,
+                }),
+              )
+            }
+          />
 
-              <div className="mt-3 min-w-0">
-              <h2 className="truncate text-xl font-semibold tracking-tight text-ink sm:text-2xl">
-                {profile.name}
-              </h2>
-              <p className="truncate text-sm text-ink-faint">
-                @{profile.handle}
-                {evolutionSummary.title ? (
-                  <span className="text-brand-ink"> · {evolutionSummary.title}</span>
+          {/* O status colado à identidade: é o que a pessoa está vivendo agora,
+              e não uma medida de nada. */}
+          <button
+            type="button"
+            onClick={() => setStatusOpen(true)}
+            className={cn(
+              'inline-flex min-h-11 max-w-full items-center gap-1.5 self-center rounded-full border px-4 text-sm transition-colors',
+              profile.status
+                ? 'border-line bg-surface text-ink active:bg-surface-hi'
+                : 'border-dashed border-line-hi text-ink-muted active:bg-surface-hi active:text-ink',
+            )}
+          >
+            {profile.status ? (
+              <>
+                {profile.status.emoji ? (
+                  <span aria-hidden="true">{profile.status.emoji}</span>
                 ) : null}
-              </p>
-              {profile.bio ? (
-                <p className="mt-1.5 text-sm text-pretty text-ink-muted">{profile.bio}</p>
-              ) : null}
+                <span className="truncate">{profile.status.text ?? 'Status'}</span>
+                <span className="sr-only">. Editar status</span>
+              </>
+            ) : (
+              <>
+                <Icon name="mais" className="size-4" />
+                Adicionar status
+              </>
+            )}
+          </button>
+        </>
+      )}
 
-              {/*
-                A linha que resume a pessoa em números, do jeito que ela seria
-                lida em voz alta: momentum, objetivos, consistência e tempo de
-                casa. Os mesmos dados aparecem abertos logo abaixo — aqui eles
-                existem pra caber num olhar, e é por isso que a linha é uma só.
-              */}
-              <p className="mt-2 text-sm text-ink-muted">
-                <span className="font-medium text-ink">
-                  Nível {evolutionSummary.progress.level}, {evolutionSummary.progress.name}
-                </span>
-                <span className="text-ink-faint"> · </span>
-                <span className="font-medium text-ink">Momentumm {view.momentum.value}</span>
-                <span className="text-ink-faint"> · </span>
-                {running.length} {running.length === 1 ? 'objetivo ativo' : 'objetivos ativos'}
-                <span className="text-ink-faint"> · </span>
-                {consistency}% de consistência
-                <span className="text-ink-faint"> · </span>
-                {membershipLabel(profile.createdAt, new Date())}
-              </p>
-
-              <p className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-ink-faint">
-                <Icon name="cadeado" className="size-3.5" />
-                {PROFILE_VISIBILITY_LABELS[profile.visibility]}
-              </p>
-              </div>
-            </div>
-          </div>
-        )}
-      </Panel>
+      {listKind && profile ? (
+        <FollowListSheet
+          open
+          userId={profile.id}
+          kind={listKind}
+          onClose={() => setListKind(null)}
+        />
+      ) : null}
 
       <StatusEditor
         open={statusOpen}
@@ -272,6 +254,27 @@ export function PersonalProfilePage() {
         status={profile.status}
         onClose={() => setStatusOpen(false)}
         onSaved={refreshProfile}
+      />
+
+      {tab === 'progresso' ? (
+      <>
+      {/*
+        A jornada vem primeiro, antes de qualquer número.
+
+        Ela responde a pergunta do perfil na forma mais curta que existe: o que
+        eu sustentei. E responde com MEMÓRIA, não com estatística — a foto de um
+        dia diz o que aconteceu nele melhor que qualquer barra de progresso, e
+        um mês inteiro preenchido diz o que nenhum gráfico diz.
+
+        Calendário e publicações são as duas leituras da mesma coisa, e o
+        calendário abre primeiro de propósito: a grade é a resposta que todo app
+        dá, o calendário é a que só existe aqui.
+      */}
+      <ProfileJourney
+        userId={profile.id}
+        today={planner.today}
+        movedDays={movedDays}
+        owner
       />
 
       {/*
@@ -338,6 +341,35 @@ export function PersonalProfilePage() {
           accent="var(--color-flame)"
         />
       </StatGrid>
+
+      {/*
+        A porta pro Progresso inteiro.
+
+        Ele saiu da barra de baixo porque respondia quase o que esta aba já
+        responde: momentum, constância, sequência, objetivos com barra. O que
+        ele tem e daqui não dá pra ver é o diagnóstico: o que precisa de
+        atenção, a leitura por etapa e as métricas. Então a entrada fica
+        exatamente aqui, embaixo dos números que ela aprofunda, e não numa
+        lista de atalhos no fim da página.
+      */}
+      <Link
+        to="/app/progresso"
+        className="flex min-h-14 items-center gap-3.5 rounded-card border border-line bg-surface px-4 py-3 transition-colors active:bg-surface-hi"
+      >
+        <span
+          aria-hidden="true"
+          className="grid size-10 shrink-0 place-items-center rounded-xl border border-line bg-surface-hi text-ink-muted"
+        >
+          <Icon name="progresso" className="size-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-medium text-ink">Progresso completo</span>
+          <span className="mt-0.5 block text-sm text-pretty text-ink-faint">
+            O que precisa de atenção, o avanço por etapa e as leituras do ritmo
+          </span>
+        </span>
+        <Icon name="seta" className="size-4 shrink-0 text-ink-faint" />
+      </Link>
 
       <div className="grid gap-5 lg:grid-cols-2 lg:items-start lg:gap-6">
         <Panel>
@@ -457,6 +489,10 @@ export function PersonalProfilePage() {
         </Panel>
       </div>
 
+      </>
+      ) : null}
+
+      {tab === 'atividades' ? (
       <Panel>
         <PanelHeader
           title="Progresso recente"
@@ -491,6 +527,10 @@ export function PersonalProfilePage() {
         )}
       </Panel>
 
+      ) : null}
+
+      {tab === 'perfil' ? (
+      <>
       {/* Quem vê o perfil só faz sentido quando existe alguém pra ver. */}
       {circleOpen ? <ProfileVisibilityPanel profile={profile} onSaved={refreshProfile} /> : null}
 
@@ -499,15 +539,18 @@ export function PersonalProfilePage() {
       {/*
         O aviso de privacidade fecha a página de propósito. Enquanto o produto
         for de uma pessoa só, é importante deixar explícito que nada disso está
-        exposto — e que compartilhar gera uma imagem, não uma publicação.
+        exposto, e que compartilhar gera uma imagem, não uma publicação.
       */}
       <p className="flex items-start gap-2.5 text-sm text-ink-faint">
         <Icon name="cadeado" className="mt-0.5 size-4 shrink-0" />
         <span>
-          Tudo neste perfil é só seu. Nada aqui é público, e compartilhar cria uma imagem no teu
-          aparelho, não uma publicação.
+          O que você registra é só seu: o calendário, as fotos e os números não
+          saem daqui. Quem te segue vê o que você publica, e compartilhar cria
+          uma imagem no teu aparelho, não uma publicação.
         </span>
       </p>
+      </>
+      ) : null}
     </div>
   )
 }
@@ -521,7 +564,7 @@ export function PersonalProfilePage() {
  *
  * O botão só aparece nos tipos que o feed aceita. Oferecer "mostrar no círculo"
  * num hábito solto faria a pessoa marcar, não ver aparecer e concluir que
- * quebrou — quando na verdade o produto decidiu que hábito avulso não é assunto
+ * quebrou, quando na verdade o produto decidiu que hábito avulso não é assunto
  * de feed.
  */
 function CircleToggle({
@@ -571,7 +614,7 @@ function MomentumDelta({ event }: { readonly event: JourneyEvent }) {
  * Um ícone por espécie de marco.
  *
  * O troféu repetido em toda linha achatava conquistas diferentes numa coisa só.
- * Sequência é fogo, objetivo é alvo, foco é relógio — os mesmos símbolos que
+ * Sequência é fogo, objetivo é alvo, foco é relógio, os mesmos símbolos que
  * essas ideias já têm no resto do app, e é isso que faz a lista ser lida sem
  * legenda.
  */

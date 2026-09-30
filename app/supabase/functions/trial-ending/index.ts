@@ -1,4 +1,4 @@
-// Momentumm — o e-mail do sexto dia: o teste do PRO acaba amanhã.
+// Momentumm, o e-mail do sexto dia: o teste do PRO acaba amanhã.
 //
 // Roda uma vez por dia (pg_cron → pg_net → aqui, migration 0040). Pergunta
 // ao banco quem tem teste terminando nas próximas 36 horas, ainda não foi

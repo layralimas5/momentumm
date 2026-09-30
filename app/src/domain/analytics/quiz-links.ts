@@ -6,7 +6,7 @@ import type { QuizAttribution } from './funnel-events'
  *
  * O link é o que vai na resposta de um comentário, no direct e na bio, então
  * ele precisa caber numa linha e ser ditável em voz alta. Montar `utm_*` na
- * mão pra cada envio produziria o de sempre — `utm_medium` escrito de três
+ * mão pra cada envio produziria o de sempre, `utm_medium` escrito de três
  * jeitos, e um funil que não fecha. Aqui o código curto é a única coisa que
  * circula, e a origem completa sai desta tabela.
  *
@@ -40,7 +40,7 @@ interface QuizLinkCode {
   /** `utm_source`: a rede de onde a pessoa veio. */
   readonly source: string
   /**
-   * `utm_medium` fixo do código, quando ele não vem de envio manual — é o
+   * `utm_medium` fixo do código, quando ele não vem de envio manual, é o
    * caso dos botões da própria landing, que não são comentário nem direct.
    * `?c=` continua vencendo, pra um link ser reaproveitado em outro canal.
    */

@@ -4,7 +4,7 @@ import type { DayKey } from './day'
 /**
  * Check-in do momento. É a primeira pergunta do dashboard e a que muda todo o
  * resto: o Momentumm não trata todos os dias como iguais. Dia de pouca energia
- * não recebe o mesmo plano de um dia em alta — recebe a versão mínima dele.
+ * não recebe o mesmo plano de um dia em alta, recebe a versão mínima dele.
  */
 
 export const MOOD_STATES = ['sem-energia', 'automatico', 'estavel', 'motivado', 'em-alta'] as const
@@ -135,7 +135,7 @@ export interface NewCheckInInput {
 
 export function createCheckIn(input: NewCheckInInput, id: string, now = new Date()): CheckIn {
   if (!MOOD_STATES.includes(input.mood)) {
-    throw new DomainError('Escolhe como você está chegando hoje.')
+    throw new DomainError('Escolhe como você está se sentindo hoje.')
   }
   if (!ENERGY_LEVELS.includes(input.energy)) {
     throw new DomainError('O nível de energia vai de 1 a 5.')

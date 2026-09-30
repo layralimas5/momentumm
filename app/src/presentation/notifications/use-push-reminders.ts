@@ -85,7 +85,7 @@ export function usePushReminders(): PushRemindersController {
     O pedido de permissão acontece AQUI e em nenhum outro lugar: dentro de um
     toque da pessoa, depois de ela ler o que vai receber. O navegador só deixa
     perguntar uma vez por site, e um pedido sem contexto é um pedido negado
-    pra sempre — no iPhone, inclusive, sem caminho de volta dentro do app.
+    pra sempre, no iPhone, inclusive, sem caminho de volta dentro do app.
   */
   const enable = useCallback(async () => {
     if (!vapidPublicKey) return
@@ -115,7 +115,7 @@ export function usePushReminders(): PushRemindersController {
         Sem ele o erro morre no `catch`: a pessoa vê "não consegui", tenta de
         novo, funciona, e não sobra nada pra descobrir o que falhou. Ligar o
         lembrete atravessa permissão do navegador, service worker, chave VAPID e
-        o servidor — cada um falha com uma cara diferente, e sem o relato não dá
+        o servidor, cada um falha com uma cara diferente, e sem o relato não dá
         pra saber qual foi.
       */
       reportCaughtError(cause, 'push.enable', 'alta')

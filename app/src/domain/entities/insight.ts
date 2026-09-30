@@ -22,7 +22,7 @@ import { inboxTasks, isPending, tasksOfDay, type Task } from './task'
  * Regra dura: nada de frase motivacional genérica. Todo insight aqui nasce de
  * uma contagem real, diz o MOTIVO, entrega UMA recomendação e carrega uma ação
  * que o app sabe aplicar sozinho. Se a regra não encontra padrão, não inventa
- * um — devolve nada e o card some.
+ * um, devolve nada e o card some.
  */
 
 export const INSIGHT_ACTIONS = [
@@ -43,7 +43,7 @@ export type InsightAction = (typeof INSIGHT_ACTIONS)[number]
 
 /**
  * O que o insight está apontando. Sem isso o botão de aplicar teria que
- * adivinhar qual objetivo, qual etapa ou qual ação a frase estava falando — e
+ * adivinhar qual objetivo, qual etapa ou qual ação a frase estava falando, e
  * um insight que fala de uma coisa e leva pra outra é pior que insight nenhum.
  */
 export interface InsightFocus {
@@ -96,7 +96,7 @@ const MORNING_END_HOUR = 12
 
 /**
  * Sobrecarga do dia: mais ações planejadas do que a capacidade de hoje comporta.
- * É o padrão que mais derruba meta — a pessoa não desiste por preguiça, desiste
+ * É o padrão que mais derruba meta, a pessoa não desiste por preguiça, desiste
  * por ter marcado seis coisas num dia de três.
  */
 const overloadedDay: Rule = (input) => {
@@ -268,7 +268,7 @@ function countDays(from: DayKey, to: DayKey): DayKey[] {
 // Regras da hierarquia
 //
 // Todas seguem a mesma disciplina das antigas: uma contagem real, o motivo em
-// números, UMA recomendação e um destino. O que muda é o alcance — elas leem
+// números, UMA recomendação e um destino. O que muda é o alcance, elas leem
 // etapa, peso e previsão, e por isso conseguem responder "o que está travando"
 // em vez de só descrever o dia.
 // ---------------------------------------------------------------------------
@@ -338,7 +338,7 @@ const UNSTAGED_THRESHOLD = 3
  *
  * É o elo que falta quando a pessoa acumula ações num objetivo que nunca virou
  * plano: o progresso cai no volume registrado, o gargalo não existe e a
- * previsão se cala. Só dispara com ação acumulada — objetivo recém-criado
+ * previsão se cala. Só dispara com ação acumulada, objetivo recém-criado
  * ainda não tem o que quebrar em etapas, e cobrar plano no primeiro dia é
  * cobrar burocracia.
  */
@@ -432,7 +432,7 @@ const weekBiggerThanCapacity: Rule = (input) => {
 /** Queda de consistência a partir da qual vale avisar, em pontos percentuais. */
 const CONSISTENCY_DROP = 0.25
 
-/** A constância caiu de uma semana pra outra — e o número diz o quanto. */
+/** A constância caiu de uma semana pra outra, e o número diz o quanto. */
 const consistencyDrop: Rule = (input) => {
   const running = input.habits.filter((habit) => habit.archivedAt === null)
   if (running.length === 0) return null
@@ -545,7 +545,7 @@ const RESUME_DAYS = 3
 /**
  * A retomada reconhecida.
  *
- * É o único insight que não pede nada — e é de propósito. Quem voltou depois de
+ * É o único insight que não pede nada, e é de propósito. Quem voltou depois de
  * uma semana parada não precisa de mais uma tarefa: precisa ver que o app
  * percebeu, senão a única leitura disponível na tela é a do que foi perdido.
  */

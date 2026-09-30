@@ -15,7 +15,7 @@ interface AvatarProps {
  *
  * Existe porque o mesmo par foto/iniciais aparece no header, na sidebar, na
  * barra do celular e no perfil. Quatro cópias garantiriam que uma delas
- * continuasse mostrando iniciais depois que a pessoa trocasse a foto — que foi
+ * continuasse mostrando iniciais depois que a pessoa trocasse a foto, que foi
  * exatamente o estado do app até agora.
  *
  * Sempre decorativo: em todos os lugares onde ele aparece, o nome está escrito

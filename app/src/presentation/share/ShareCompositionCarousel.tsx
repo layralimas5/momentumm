@@ -30,14 +30,14 @@ interface ShareCompositionCarouselProps {
  * O preview, deslizando.
  *
  * A escolha do arranjo acontece no PRÓPRIO card: arrasta pro lado e a mesma
- * informação se reorganiza — número gigante, cartaz, lista de tópicos, anel de
+ * informação se reorganiza, número gigante, cartaz, lista de tópicos, anel de
  * progresso, mapa. É o gesto que a pessoa já faz em qualquer app de foto, e
  * troca uma fileira de miniaturas de 60px por seis cards do tamanho real.
  *
  * Cada slide é um preview de verdade, não uma amostra: o desenho é o mesmo que
  * sai no PNG, então não existe "escolhi um e saiu outro".
  *
- * Os pontos embaixo não são só indicador — são botões. Deslizar não funciona
+ * Os pontos embaixo não são só indicador, são botões. Deslizar não funciona
  * por teclado nem por leitor de tela, e um seletor que só existe no gesto
  * deixa de fora justamente quem mais precisa de alternativa.
  */
@@ -58,7 +58,7 @@ export function ShareCompositionCarousel({
     Rolagem provocada por clique não pode disparar a troca de novo.
 
     Sem essa trava, clicar no ponto 5 rola o trilho, o listener lê os slides do
-    caminho e chama `onChange` pra cada um deles — e a pessoa vê o nome do
+    caminho e chama `onChange` pra cada um deles, e a pessoa vê o nome do
     arranjo piscando entre quatro valores antes de parar.
   */
   const programmatic = useRef(false)
@@ -115,7 +115,7 @@ export function ShareCompositionCarousel({
         /*
           `snap-mandatory` com os slides centrados: soltar o dedo no meio do
           caminho encaixa no card mais próximo em vez de deixar dois pela
-          metade — que é o estado em que ninguém consegue decidir.
+          metade, que é o estado em que ninguém consegue decidir.
         */
         className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0"
       >

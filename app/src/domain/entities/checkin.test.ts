@@ -57,7 +57,7 @@ describe('capacityOf', () => {
 
   it('vontade não compensa energia: motivada e sem energia continua dia mínimo', () => {
     // O estado não manda sozinho. Quem está animada mas exausta recebe o plano
-    // mínimo, não o plano cheio — é o que evita o ciclo de prometer e falhar.
+    // mínimo, não o plano cheio, é o que evita o ciclo de prometer e falhar.
     expect(capacityOf(checkIn({ mood: 'motivado', energy: 1, focus: 'disperso' })).capacity).toBe(
       'minima',
     )

@@ -3,18 +3,19 @@ import type { ActivityVisibility } from './activity'
 import { MAX_REST_WEEKDAYS, normalizeRestWeekdays } from './momentum'
 import type { PlanTier } from './plan'
 import type { ProfileStatus } from './profile-banner'
+import type { SocialLinks } from './social-link'
 
 /**
  * Quem enxerga o teu perfil.
  *
- * Três degraus, e o padrão é o mais fechado. A escolha é sobre o PERFIL — os
- * números da evolução, as conquistas, os objetivos ativos —, não sobre cada
+ * Três degraus, e o padrão é o mais fechado. A escolha é sobre o PERFIL, os
+ * números da evolução, as conquistas, os objetivos ativos, não sobre cada
  * momento: momento continua tendo a visibilidade dele, e um perfil público não
  * torna público nada que a pessoa não marcou.
  *
  * `privado` e `amigos` continuam achaveis pelo @ EXATO. É o que o Instagram
  * faz com conta fechada, e por um motivo prático: sem isso, ninguém consegue
- * mandar pedido de amizade pra quem nasceu privado — que é todo mundo — e o
+ * mandar pedido de amizade pra quem nasceu privado, que é todo mundo, e o
  * Círculo viraria uma tela que nunca sai do zero. Quem busca pelo @ exato vê
  * nome, @ e foto; o resto do perfil continua fechado.
  */
@@ -61,6 +62,11 @@ export interface Profile {
   /** Capa atrás do avatar: chave de preset ou foto em data URL. `null` usa o preset padrão. */
   readonly banner: string | null
   /**
+   * Instagram, TikTok e LinkedIn, guardados como @ limpo. Aparecem no perfil
+   * pra quem gostou do que viu conseguir continuar acompanhando fora daqui.
+   */
+  readonly socials: SocialLinks
+  /**
    * Dias da semana de descanso planejado (0 = domingo). Vazio é o padrão:
    * ninguém nasce com folga marcada, e o Momentumm só tira da conta o que a
    * pessoa declarou. No máximo `MAX_REST_WEEKDAYS`.
@@ -100,7 +106,7 @@ export function normalizedRestWeekdays(weekdays: readonly number[]): number[] {
  * Há quanto tempo a pessoa está no Momentumm, em semanas.
  *
  * Semanas, e não dias: "12 semanas" conta uma história de constância que "84
- * dias" não conta, e a primeira semana já vale 1 — quem entrou ontem não está
+ * dias" não conta, e a primeira semana já vale 1, quem entrou ontem não está
  * há "zero semanas" no app.
  */
 export function weeksSince(createdAt: Date, now = new Date()): number {

@@ -17,7 +17,7 @@ const DISMISSED_KEY = 'momentumm.recovery.dismissed.v1'
  *
  * A detecção inteira é do domínio. O que mora aqui é a única coisa que o
  * domínio não pode saber: se a pessoa já respondeu esse recado hoje. Ela
- * escolheu um passo, ou fechou o card — nos dois casos o assunto está
+ * escolheu um passo, ou fechou o card, nos dois casos o assunto está
  * resolvido até amanhã, e insistir transformaria acolhimento em cobrança.
  *
  * Como o insight dispensado, isso fica no dispositivo: é preferência de

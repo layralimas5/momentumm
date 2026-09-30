@@ -95,3 +95,14 @@ export function formatDayLong(key: DayKey, today: DayKey = dayKeyOf(new Date()))
 export function formatClock(date: Date): string {
   return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 }
+
+/**
+ * Quanto falta pra meia-noite local, com um segundo de folga.
+ *
+ * A folga existe porque o timer pode disparar alguns milissegundos antes do
+ * previsto, e acordar em 23:59:59.998 recalcularia o mesmo dia.
+ */
+export function msUntilNextDay(now: Date): number {
+  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1, 0)
+  return next.getTime() - now.getTime()
+}

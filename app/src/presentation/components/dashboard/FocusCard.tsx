@@ -19,7 +19,7 @@ const DURATIONS = [15, 25, 45, 60] as const
 
 /**
  * Sessão de foco. O seletor sugere a duração que combina com a capacidade do
- * dia — em dia ruim ele não oferece uma hora de cara, porque a sessão que não
+ * dia, em dia ruim ele não oferece uma hora de cara, porque a sessão que não
  * começa não serve pra nada.
  */
 export function FocusCard({ task, capacity, minutesToday }: FocusCardProps) {

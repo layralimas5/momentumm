@@ -7,21 +7,18 @@ import {
   compositionsAllowedFor,
   DEFAULT_SHARE_COMPOSITION,
   DEFAULT_SHARE_FORMAT,
-  DEFAULT_SHARE_TEMPLATE,
+  STUDIO_SHARE_TEMPLATE,
   defaultFieldsFor,
-  templatesAllowedFor,
   type ShareCardData,
   type ShareCompositionId,
   type ShareField,
   type ShareFieldSet,
   type ShareFormat,
-  type ShareTemplateId,
 } from '@/domain/share/share-card'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { EmptyState, ErrorNote } from '@/presentation/components/ui/States'
 import { ShareCompositionCarousel } from './ShareCompositionCarousel'
-import { ShareStudioControls } from './ShareStudioControls'
 import { ShareStudioPhotoPicker } from './ShareStudioPhotoPicker'
 import { ShareStudioVisibilityControls } from './ShareStudioVisibilityControls'
 import { UpgradeHint } from '@/presentation/components/dashboard/UpgradeHint'
@@ -53,26 +50,34 @@ type Status = 'idle' | 'generating' | 'shared' | 'saved' | 'cancelled'
 /**
  * Share Studio.
  *
- * A tela é curta de propósito: escolher formato, escolher template, decidir o
- * que aparece, compartilhar. Não é editor — a hora que ele virar um Canva
- * dentro do app, o caminho de "concluí minha rotina" até "postei" deixa de
- * caber em poucos segundos, que é a única métrica que importa aqui.
+ * A tela é curta de propósito: escolher o arranjo, decidir o que aparece,
+ * compartilhar. Não é editor, a hora que ele virar um Canva dentro do app, o
+ * caminho de "concluí minha rotina" até "postei" deixa de caber em poucos
+ * segundos, que é a única métrica que importa aqui.
  *
- * No celular a ordem é preview, fundo, templates, privacidade, ações. No
- * desktop vira duas colunas com o preview fixo à esquerda: personalizar sem ver
- * o resultado é escolher no escuro.
+ * No celular a ordem é preview, fundo, privacidade, ações. No desktop vira
+ * duas colunas com o preview fixo à esquerda: personalizar sem ver o resultado
+ * é escolher no escuro.
  *
- * Não existe escolha de formato: o card é feito pro Story, e um seletor com uma
- * opção só é uma pergunta que já tem resposta.
+ * ## Duas perguntas que não se fazem mais
+ *
+ * Não existe escolha de FORMATO: o card é feito pro Story, e um seletor com
+ * uma opção só é uma pergunta que já tem resposta.
+ *
+ * Não existe escolha de COR. Eram quatro (preto, neon, branco, PNG) e ficou o
+ * PNG, sem fundo. O card que a pessoa posta precisa parecer dela, e um fundo
+ * desenhado pelo app é justamente o que entrega de onde a imagem saiu. Sem
+ * fundo ele vira adesivo: vai por cima da foto dela, e é a foto que carrega o
+ * momento. Pelo mesmo motivo o seletor sumiu junto com as três cores, em vez
+ * de ficar com um botão só marcado.
  */
 export function ShareStudio({ event, displayName, today, compact }: ShareStudioProps) {
   const { limits } = usePlanner()
   const profilePlan = useAuth().profile?.plan ?? 'free'
   /*
-    O gratuito escolhe entre três arranjos, com todas as cores e o PNG; o PRO
-    leva os oito arranjos, a foto de fundo e os toggles do que entra
-    no card. Os arranjos e cores trancados continuam VISÍVEIS: é o preview que
-    vende o PRO, e o botão de compartilhar é quem recusa.
+    O gratuito leva os dois arranjos; o PRO leva a foto de fundo e os toggles do
+    que entra no card. Arranjo trancado continua VISÍVEL: é o preview que vende
+    o PRO, e o botão de compartilhar é quem recusa.
   */
   const unlimited = isUnlimited(limits.shareTemplates)
   // O nível libera arranjos por cima do plano: é o que a Evolução promete.
@@ -82,10 +87,10 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
     [evolution.progress.level, profilePlan],
   )
   const allowedCompositions = compositionsAllowedFor(unlimited, unlocked)
-  const allowedTemplates = templatesAllowedFor(unlimited, unlocked)
   const customizable = limits.shareCustomization
   const format: ShareFormat = DEFAULT_SHARE_FORMAT
-  const [template, setTemplate] = useState<ShareTemplateId>(DEFAULT_SHARE_TEMPLATE)
+  /* Constante, não estado: o estúdio tem uma cor só (ver o comentário acima). */
+  const template = STUDIO_SHARE_TEMPLATE
   const [composition, setComposition] = useState<ShareCompositionId>(DEFAULT_SHARE_COMPOSITION)
   const [fields, setFields] = useState<ShareFieldSet>(() => defaultFieldsFor(event.type))
   const [status, setStatus] = useState<Status>('idle')
@@ -121,15 +126,6 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
     setFields((current) => ({ ...current, [field]: value }))
     setStatus('idle')
   }, [])
-
-  const chooseTemplate = useCallback(
-    (next: ShareTemplateId) => {
-      setTemplate(next)
-      setStatus('idle')
-      trackShare('share_template_selected', { ...analytics, template: next })
-    },
-    [analytics],
-  )
 
   const chooseComposition = useCallback(
     (next: ShareCompositionId) => {
@@ -209,8 +205,7 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
   }
 
   const busy = status === 'generating'
-  const lockedChoice =
-    !allowedCompositions.includes(composition) || !allowedTemplates.includes(template)
+  const lockedChoice = !allowedCompositions.includes(composition)
 
   const preview = (
     <ShareCompositionCarousel
@@ -240,15 +235,6 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
         </Field>
       ) : null}
 
-      <Field
-        label="Cor"
-        {...(background.photo
-          ? { hint: 'Com foto, a cor sai de cena: o texto vira branco com sombra.' }
-          : {})}
-      >
-        <ShareStudioControls value={template} onChange={chooseTemplate} allowed={allowedTemplates} />
-      </Field>
-
       {customizable ? (
         <Field
           label="Mostrar no card"
@@ -260,7 +246,7 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
           />
         </Field>
       ) : (
-        <UpgradeHint message="No PRO você libera os oito arranjos, a foto de fundo e escolhe o que aparece no card." />
+        <UpgradeHint message="No PRO você põe uma foto de fundo e escolhe o que aparece no card." />
       )}
     </div>
   )
@@ -275,7 +261,7 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
 
     Botões grandes porque é um app de celular: `lg` dá 52px de altura, que é o
     alvo confortável pro polegar. O retorno ("Imagem salva") fica ABAIXO dos
-    botões de propósito — acima, ele empurraria os dois pra baixo bem no
+    botões de propósito, acima, ele empurraria os dois pra baixo bem no
     instante em que a pessoa acabou de mirar neles.
   */
   const actions = (
@@ -286,7 +272,7 @@ export function ShareStudio({ event, displayName, today, compact }: ShareStudioP
         Empilhados, o container é uma COLUNA, e ali o eixo principal do flex é o
         vertical: `flex-1` traz `flex-basis: 0%`, que atropela a altura da classe
         e faz o botão encolher até o tamanho do texto. Era esse o motivo de eles
-        parecerem espremidos — 24px em vez dos 52px do tamanho `lg`. Lado a lado,
+        parecerem espremidos, 24px em vez dos 52px do tamanho `lg`. Lado a lado,
         a partir do `sm`, o eixo vira horizontal e aí `flex-1` faz o que se
         espera: divide a largura em partes iguais.
       */}

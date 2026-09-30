@@ -62,7 +62,7 @@ export function assertMediaAllowed(input: MediaUploadInput): void {
 /**
  * O caminho no bucket: `<uid>/<tipo>/<id>.<ext>`. O primeiro segmento É a
  * autorização (a política compara com `auth.uid()`), o segundo é o tipo que a
- * política também confere, e o nome é um id — nunca o nome original do
+ * política também confere, e o nome é um id, nunca o nome original do
  * arquivo, que carrega o que a pessoa digitou no computador dela.
  */
 export function mediaPath(userId: string, kind: MediaKind, mimeType: string, id: string): string {

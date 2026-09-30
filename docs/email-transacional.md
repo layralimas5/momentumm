@@ -12,9 +12,9 @@ não pra um produto pago.
   conta `momentumm.suport@gmail.com`.
 - `app/supabase/templates/`: os três modelos em português, com a identidade do
   app (fundo escuro, violeta da marca, assinatura momentumm.com.br).
-  - `confirmacao.html` — confirmação de cadastro
-  - `recuperacao.html` — senha nova
-  - `troca-de-email.html` — troca de endereço
+  - `confirmacao.html`, confirmação de cadastro
+  - `recuperacao.html`, senha nova
+  - `troca-de-email.html`, troca de endereço
 
 Falta só o que não pode morar no repositório: a senha.
 

@@ -4,7 +4,7 @@ import { Icon, type IconName } from './Icon'
 
 /**
  * Blocos do dashboard. Todo card da tela nasce daqui pra profundidade,
- * espaçamento e hierarquia de título serem os mesmos em toda parte — é o que
+ * espaçamento e hierarquia de título serem os mesmos em toda parte, é o que
  * evita o efeito colcha de retalhos quando a tela tem dez seções.
  */
 

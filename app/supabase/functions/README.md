@@ -26,7 +26,7 @@ npm run ai:deploy
 `src/domain/ai/edge-shared.ts`. O bundler do Supabase não resolve os imports
 sem extensão do app (`./ai-context` em vez de `./ai-context.ts`), então a
 função não importa `src/` direto: importa o pacote. Ele fica versionado pra o
-deploy funcionar de qualquer checkout, e `npm run ai:bundle` o regenera —
+deploy funcionar de qualquer checkout, e `npm run ai:bundle` o regenera,
 rodar sempre que `ai-prompts`, `ai-context` ou `plan` mudarem.
 
 Até o deploy, o app com Supabase configurado mostra "A Momentumm AI ainda não
@@ -79,17 +79,17 @@ Suíte de autorização do painel: `supabase/tests/admin-authorization.sql`
 
 A cobrança do PRO, pelo Asaas. Duas funções e um domínio compartilhado:
 
-- `asaas-billing` — com o JWT da pessoa. `checkout` abre uma sessão de
+- `asaas-billing`, com o JWT da pessoa. `checkout` abre uma sessão de
   Checkout do Asaas (cartão ou Pix, CPF e endereço coletados lá) e devolve
   o link; `cancel` cancela a assinatura no Asaas e marca aqui. Nunca grava
   `subscriptions`.
-- `asaas-webhook` — sem JWT (`verify_jwt = false` em `config.toml`);
+- `asaas-webhook`, sem JWT (`verify_jwt = false` em `config.toml`);
   autenticada pelo header `asaas-access-token`. É a ÚNICA escrita em
   `subscriptions`: pagamento confirmado ativa, vencido derruba pra
   inadimplente, reembolso e assinatura apagada cancelam. `profiles.plan`
   segue por trigger (0026). Cada evento fica em `billing_webhook_events`
   pela chave do Asaas, o que resolve a entrega "pelo menos uma vez".
-- `_shared/billing.ts` — o domínio empacotado (`npm run billing:bundle`,
+- `_shared/billing.ts`, o domínio empacotado (`npm run billing:bundle`,
   a partir de `src/domain/billing/edge-shared.ts`): preço, ciclo, a decisão
   de cada evento (`decideBillingEvent`, `transitionFor`) com teste em
   `asaas-events.test.ts`. `_shared/asaas.ts` é o cliente HTTP;
@@ -143,15 +143,15 @@ QUAL dos seis tipos, e manda um aviso pra cada aparelho. Endpoint morto
 
 A regra inteira mora no banco (migrations 0050 e 0056), não aqui:
 
-- **quando** — janela de 08:00 às 21:30 no fuso da pessoa, mais a janela de
+- **quando**, janela de 08:00 às 21:30 no fuso da pessoa, mais a janela de
   silêncio que ela escolheu (a mais apertada ganha);
-- **por que agora** — `proximo_passo` e `dia_dificil` saem a qualquer hora
+- **por que agora**, `proximo_passo` e `dia_dificil` saem a qualquer hora
   dentro da janela, desde que exista ação em aberto e já façam ~4 horas sem
   atividade no app; `retomada`, `continuidade`, `progresso` e `social` saem na
   hora preferida da pessoa;
-- **quanto** — no máximo um aviso por dia local, e o mesmo tipo não repete
+- **quanto**, no máximo um aviso por dia local, e o mesmo tipo não repete
   dentro do cooldown (20 horas);
-- **o que** — a copy de cada tipo está nesta função, sem citar o conteúdo da
+- **o que**, a copy de cada tipo está nesta função, sem citar o conteúdo da
   ação: o aviso aparece na tela bloqueada, que qualquer pessoa lê.
 
 Os limiares ficam em `public.notification_rules` (uma linha): dá pra afrouxar
@@ -200,7 +200,7 @@ curl -X POST "https://hsgjlxetdopomeibdbho.supabase.co/functions/v1/push-reminde
 # → {"hour":19,"legacy":false,"due":1,"sent":1,"dropped":0,"failed":0}
 ```
 
-Pra a fila não sair vazia, a conta precisa estar no estado que a regra pede —
+Pra a fila não sair vazia, a conta precisa estar no estado que a regra pede,
 parada há horas e com ação em aberto:
 
 ```sql

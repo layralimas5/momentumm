@@ -470,7 +470,7 @@ function ReturnNote({
 /**
  * Depois de pagar, o PRO só abre quando o webhook grava a assinatura.
  * Esta espera relê o perfil a cada poucos segundos até o plano virar ou
- * o tempo acabar — nunca declara PRO por conta própria.
+ * o tempo acabar, nunca declara PRO por conta própria.
  */
 function useConfirmationPolling(
   active: boolean,

@@ -62,8 +62,24 @@ export type AiEndpointRequest =
 const SHORT = z.string().trim().min(1).max(120)
 const SENTENCE = z.string().trim().min(1).max(400)
 
+const planStepSchema = z.object({
+  title: SHORT,
+  description: SENTENCE,
+  weight: z.number().int().min(5).max(70),
+})
+
 export const planSuggestionSchema = z.object({
-  steps: z.array(SHORT).min(2).max(6),
+  /*
+    A etapa deixou de ser uma string.
+
+    Com título só, o objetivo nascia sem descrição e com pesos iguais, e o
+    plano da IA perdia o que ela tinha pra dizer: que a primeira etapa é curta,
+    que o trabalho está no meio, e por quê. O peso não é validado como soma
+    aqui porque `refine` não tem representação em JSON Schema (é o que a saída
+    estruturada consome); quem fecha os 100 é `normalizeStepWeights`, no
+    domínio, depois de ler.
+  */
+  steps: z.array(planStepSchema).min(3).max(5),
   habits: z
     .array(
       z.object({
@@ -78,7 +94,7 @@ export const planSuggestionSchema = z.object({
         rationale: SENTENCE,
       }),
     )
-    .max(3),
+    .max(4),
   tasks: z
     .array(
       z.object({
@@ -94,7 +110,7 @@ export const planSuggestionSchema = z.object({
       }),
     )
     .min(1)
-    .max(12),
+    .max(16),
   suggestedDeadline: dayKeySchema,
   reasoning: SENTENCE,
   warnings: z.array(SENTENCE).max(4),
@@ -184,6 +200,11 @@ export const coachNudgeSchema = z.object({
   order: z.string().trim().min(1).max(160),
 })
 
+/**
+ * O que o app PEDE ao modelo. Vira JSON Schema pra saída estruturada, então
+ * ele é estrito: união e `refine` não têm representação lá, e um schema
+ * ambíguo faz o modelo escolher o formato errado.
+ */
 export const AI_OUTPUT_SCHEMAS = {
   plan: planSuggestionSchema,
   day: dayPlanSchema,
@@ -192,6 +213,38 @@ export const AI_OUTPUT_SCHEMAS = {
   review_draft: reviewDraftSchema,
   recovery: recoveryPlanSchema,
   coach: coachNudgeSchema,
+} as const
+
+/**
+ * A etapa como o servidor ANTIGO devolvia: uma string solta.
+ *
+ * Ela existe porque o app e a Edge Function sobem SEPARADOS. Entre publicar o
+ * front e rodar `npm run ai:deploy` existe uma janela em que o cliente novo
+ * conversa com o servidor velho, e foi exatamente o que aconteceu: o front
+ * subiu primeiro, o servidor continuou mandando `steps: string[]`, e o cliente
+ * recusou a resposta inteira com "a IA devolveu um formato que o app não
+ * reconhece". Quem pediu um plano naquele intervalo levou um erro.
+ *
+ * O conserto não é lembrar de publicar na ordem: é o cliente aceitar o formato
+ * anterior. Peça o formato novo, aceite os dois — a única postura que
+ * sobrevive a dois artefatos que não sobem juntos.
+ */
+const legacyStepSchema = SHORT.transform((title) => ({
+  title,
+  /* Sem descrição, o título vira a própria explicação: é o que havia. */
+  description: title,
+  weight: 0,
+}))
+
+/**
+ * O que o app ACEITA ler. Só `plan` difere: os outros tipos não mudaram de
+ * forma, então eles são o mesmo schema.
+ */
+export const AI_READ_SCHEMAS = {
+  ...AI_OUTPUT_SCHEMAS,
+  plan: planSuggestionSchema.extend({
+    steps: z.array(z.union([planStepSchema, legacyStepSchema])).min(1).max(6),
+  }),
 } as const
 
 // ---------------------------------------------------------------------------
@@ -293,6 +346,16 @@ export function renderContext(context: AiUserContext): string {
     }
   }
 
+  if (context.routine.length > 0) {
+    push('')
+    push('ROTINA DE HOJE (o dia já tem estas coisas dentro; não proponha nada por cima)')
+    for (const item of context.routine) {
+      push(
+        `- ${item.time ? `${item.time} ` : ''}"${item.title}"${item.durationMin ? ` (${item.durationMin} min)` : ''}${item.ofObjective ? ', de um objetivo' : ''}${item.done ? ' · feito' : ''}`,
+      )
+    }
+  }
+
   if (context.todayTasks.length > 0) {
     push('')
     push('AÇÕES DE HOJE')
@@ -344,6 +407,60 @@ export function renderContext(context: AiUserContext): string {
   return lines.join('\n')
 }
 
+/**
+ * O que separa um plano de uma lista de tarefas.
+ *
+ * O prompt antigo pedia "3 a 5 etapas, 2 hábitos e 4 a 10 ações" e mais nada
+ * sobre o CONTEÚDO, então o modelo devolvia um plano genérico bem formatado:
+ * "entrar no ritmo", "manter a constância", "fazer a primeira sessão". Era o
+ * mesmo plano pra emagrecer e pra aprender alemão, que é exatamente a queixa
+ * que o gerador determinístico já tinha.
+ *
+ * Estas regras existem pra o raciocínio do modelo ir pro assunto, e não pro
+ * formato. A regra da cobertura é a que mais muda o resultado: ela obriga a
+ * perguntar "o que esse objetivo exige que não está no título".
+ */
+const PLAN_RULES = [
+  'REGRAS DO PLANO',
+  '- O plano precisa fazer sentido PRO ASSUNTO. "Emagrecer" não é um objetivo de treino: é treino, comida, sono e medição, e um plano que só fala de treino já nasce errado. Antes de escrever, liste pra você mesma o que esse objetivo exige que não está escrito no título, e cubra isso.',
+  '- Ação concreta é a que a pessoa sabe executar sem pensar mais: "Pesar e tirar as fotos do primeiro dia" é ação; "Começar a cuidar da alimentação" é intenção. Se a ação não diz o que fazer, ela não serve.',
+  '- Etapa é um degrau com nome próprio, não um rótulo de tempo. "Saber de onde você parte" é etapa; "Fase 1" e "Entrar no ritmo" servem pra qualquer objetivo do mundo, ou seja, pra nenhum.',
+  '- Os pesos dizem onde está o trabalho. Etapa de preparação vale pouco; a que sustenta o resultado vale muito. Pesos iguais são a resposta de quem não olhou o assunto.',
+  '- Cada ação tem versão mínima (minimalVersion), e ela é o que segura o dia ruim: uma versão menor de verdade, não a mesma coisa com outras palavras.',
+  '- NENHUMA prescrição de saúde, dieta, treino ou finanças. Nada de caloria, macro, carga em quilo, hora de sono como meta ou onde investir. Você organiza COMPORTAMENTO: aparecer, registrar, medir, rever, preparar. Quando o assunto encosta em saúde ou dinheiro, diga em warnings que o app organiza a rotina e que o resto é com profissional.',
+  '- O tempo declarado é teto, nunca meta. Uma ação pontual pode levar mais que o dia (um simulado leva duas horas), mas hábito diário nunca passa do teto.',
+  '- Leve em conta o que a pessoa já tem: não repita hábito que ela já cumpre, e não encha um dia que já está cheio.',
+].join('\n')
+
+/**
+ * O roteiro da biblioteca, quando existe um pro assunto.
+ *
+ * A IA não começa do zero em assunto conhecido. O trabalho dela passa a ser
+ * personalizar: cortar o que não serve pra esta pessoa, acrescentar o que o
+ * objetivo escrito pede, ajustar ao que ela já faz. Sem isso o modelo
+ * reinventava a estrutura a cada chamada e às vezes devolvia algo pior que o
+ * plano determinístico, gastando o raciocínio no que já estava resolvido.
+ */
+function renderBaseline(baseline: AiPlanRequest['baseline']): string {
+  if (!baseline) {
+    return [
+      'ROTEIRO BASE',
+      'Não existe roteiro pronto pra esse assunto. Monte do zero, e traga o que o assunto exige.',
+    ].join('\n')
+  }
+
+  return [
+    `ROTEIRO BASE ("${baseline.label}", montado pelo app)`,
+    'Use como ponto de partida: mantenha o que serve, troque o que não serve PRA ESTA PESSOA e acrescente o que o objetivo escrito e o contexto dela pedem. Não copie sem olhar, e não jogue fora sem motivo.',
+    ...baseline.steps.map((step) => `- Etapa "${step.title}": ${step.description}`),
+    baseline.habits.length > 0 ? `- Hábitos: ${baseline.habits.join('; ')}` : null,
+    baseline.tasks.length > 0 ? `- Ações: ${baseline.tasks.join('; ')}` : null,
+    baseline.caution ? `- Limite a repassar em warnings: ${baseline.caution}` : null,
+  ]
+    .filter((line): line is string => line !== null)
+    .join('\n')
+}
+
 export function userPromptFor(endpointRequest: AiEndpointRequest): string {
   const context = renderContext(endpointRequest.request.context)
 
@@ -360,8 +477,15 @@ export function userPromptFor(endpointRequest: AiEndpointRequest): string {
         `Tempo disponível: ${request.minutesPerDay} minutos por dia (teto)`,
         request.motive ? `Por que importa: ${request.motive}` : null,
         '',
-        'Devolva de 3 a 5 etapas em ordem (steps), até 2 hábitos que sustentem o objetivo e de 4 a 10 ações concretas, cada uma dentro de uma etapa (stepIndex é a posição em steps, começando em 0). A primeira ação é para hoje. Datas no formato AAAA-MM-DD, dentro do prazo. estimatedMin nunca acima do teto diário. Se o alvo não cabe no prazo com esse tempo, diga em warnings e proponha suggestedDeadline realista; senão suggestedDeadline é o prazo pedido. reasoning é uma frase sobre a lógica do plano, não motivação.',
-        'Leve em conta o que a pessoa já tem: não repita hábito que ela já cumpre, e não sobrecarregue um dia que já está cheio.',
+        PLAN_RULES,
+        '',
+        renderBaseline(request.baseline),
+        '',
+        'FORMATO',
+        'steps: de 3 a 5 etapas em ordem, cada uma com title (o degrau, não "Etapa 1"), description (o que acontece nela e por quê) e weight (quanto ela vale do objetivo, em porcentagem). Os pesos não precisam somar 100 exatamente; a proporção entre eles é o que importa.',
+        'habits: até 4, o que se repete. target e minimalTarget na unidade da área. Nenhum hábito pode pedir mais que o teto diário.',
+        'tasks: de 4 a 16 ações concretas, cada uma dentro de uma etapa (stepIndex é a posição em steps, começando em 0). Pelo menos uma é para hoje. Datas AAAA-MM-DD dentro do prazo, e não amontoe várias ações pesadas no mesmo dia.',
+        'suggestedDeadline: o prazo pedido, ou um realista quando o alvo não cabe (e aí diga em warnings). reasoning: uma frase sobre a lógica do plano, não motivação.',
         '',
         'CONTEXTO DA CONTA',
         context,

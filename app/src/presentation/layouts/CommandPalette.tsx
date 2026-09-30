@@ -17,7 +17,7 @@ interface Command {
 
 /**
  * Busca e comando rápido (Ctrl/Cmd + K). Navegar e criar sem tirar a mão do
- * teclado — e sem inventar uma busca de conteúdo que ainda não existe: o que
+ * teclado, e sem inventar uma busca de conteúdo que ainda não existe: o que
  * ela encontra são telas e ações.
  */
 export function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {

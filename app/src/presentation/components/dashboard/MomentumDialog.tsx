@@ -22,7 +22,7 @@ import { MomentumRules } from './MomentumRules'
  *
  * Um diálogo e não uma tela: a pergunta "por que 62?" nasce olhando o 62, e
  * mandar a pessoa pra outra rota faria ela perder o dia de vista pra ler sobre
- * ele. O mesmo componente serve desktop e celular — o `Dialog` já sobe como
+ * ele. O mesmo componente serve desktop e celular, o `Dialog` já sobe como
  * folha embaixo em tela estreita e centraliza em tela larga.
  *
  * Sem `detail` (o gratuito), o diálogo mostra a pontuação de hoje e a frase

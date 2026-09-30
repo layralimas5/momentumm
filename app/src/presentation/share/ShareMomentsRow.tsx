@@ -5,8 +5,8 @@ import { useShareMoments } from './use-share-moments'
 /**
  * A fileira de "compartilhar" do dia.
  *
- * Ela aparece embaixo do que acabou de acontecer — dia cumprido, rotina
- * fechada, ritmo retomado — e some quando não há nada digno de card. Um botão
+ * Ela aparece embaixo do que acabou de acontecer, dia cumprido, rotina
+ * fechada, ritmo retomado, e some quando não há nada digno de card. Um botão
  * de compartilhar sempre visível vira mobília; um que aparece no momento certo
  * é convite.
  *

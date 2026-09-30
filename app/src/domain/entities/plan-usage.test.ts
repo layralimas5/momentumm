@@ -229,7 +229,7 @@ describe('objetivos na mesma área', () => {
   })
 
   /*
-    Pausado e concluído CONTINUAM ocupando a vaga do eixo — janela diferente da
+    Pausado e concluído CONTINUAM ocupando a vaga do eixo, janela diferente da
     de `objectiveLimit`, onde eles liberam. A diferença é a regra do índice que a
     0057 substituiu, e ela vale porque a soma das atividades do eixo não para de
     ser ambígua só porque um dos objetivos parou.

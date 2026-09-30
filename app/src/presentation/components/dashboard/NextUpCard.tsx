@@ -12,7 +12,7 @@ import { Panel, Tag } from '@/presentation/components/ui/Surface'
  * O card existe pra uma situação específica e comum: a pessoa escolheu a
  * prioridade de hoje por um motivo (energia, horário, vontade) e, enquanto
  * isso, o objetivo está preso em outra etapa. Nesse caso o dashboard precisa
- * dizer as duas coisas — o que ela decidiu fazer e o que o plano está pedindo —
+ * dizer as duas coisas, o que ela decidiu fazer e o que o plano está pedindo,
  * sem trocar uma pela outra.
  *
  * Quando as duas coincidem o card **não aparece**: repetir a mesma ação em dois

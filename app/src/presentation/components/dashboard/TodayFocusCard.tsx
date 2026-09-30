@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { activityType } from '@/domain/entities/activity-type'
 import { addDays } from '@/domain/entities/day'
 import type { Task } from '@/domain/entities/task'
@@ -16,12 +15,12 @@ import { cn } from '@/shared/lib/cn'
  *
  * É o único lugar da tela que responde "o que eu faço agora", e por isso ele
  * ganha o maior peso visual e a primeira dobra. Ação e hábito aparecem na mesma
- * lista porque é assim que o dia é vivido — separar em dois cards obriga a
+ * lista porque é assim que o dia é vivido, separar em dois cards obriga a
  * pessoa a somar de cabeça o que falta.
  *
  * No máximo três itens. O quarto não cabe numa decisão: a partir dele a pessoa
  * para de escolher e passa a varrer. O resto continua a um toque em "ver tudo
- * do dia" — o dashboard ordena o trabalho, nunca esconde.
+ * do dia", o dashboard ordena o trabalho, nunca esconde.
  *
  * Concluir aqui escreve no registro original (ação ou hábito). Não existe uma
  * segunda lista pro dashboard.
@@ -31,25 +30,13 @@ export function TodayFocusCard({
   onStartFocus,
   onSeeAll,
   onPlanDay,
-  secondary = false,
 }: {
   readonly focus: TodayFocus
   readonly onStartFocus: (task: Task) => void
   readonly onSeeAll: () => void
   readonly onPlanDay: () => void
-  /**
-   * Quando a ação principal já tem card próprio acima, o resto do dia não
-   * disputa com ela: vira uma linha recolhida, que abre a mesma lista.
-   */
-  readonly secondary?: boolean
 }) {
   const remaining = focus.total - focus.items.length
-
-  if (secondary) {
-    return (
-      <OtherActions focus={focus} onStartFocus={onStartFocus} onSeeAll={onSeeAll} />
-    )
-  }
 
   return (
     <Panel tone="raised" aria-labelledby="foco-titulo" className="edge-light">
@@ -60,8 +47,10 @@ export function TodayFocusCard({
           </h2>
           <p className="mt-1 text-sm text-ink-muted">
             {focus.total === 0
-              ? 'Nada planejado ainda.'
-              : `${focus.total} ${focus.total === 1 ? 'atividade' : 'atividades'}${
+              ? focus.dayHasWork
+                ? 'Nada marcado como prioridade.'
+                : 'Nada planejado ainda.'
+              : `${focus.total} ${focus.total === 1 ? 'prioridade' : 'prioridades'}${
                   focus.minutes ? ` · cerca de ${formatMinutes(focus.minutes)}` : ''
                 }`}
           </p>
@@ -78,26 +67,49 @@ export function TodayFocusCard({
             <ProgressBar
               className="mt-1.5"
               value={focus.total === 0 ? 0 : focus.done / focus.total}
-              label={`Progresso do dia: ${focus.done} de ${focus.total}`}
+              label={`Prioridades de hoje: ${focus.done} de ${focus.total}`}
             />
           </div>
         ) : null}
       </div>
 
+      {/*
+        Dois vazios diferentes, e a diferença importa.
+
+        "O dia está vazio" pede pra planejar. "O dia tem oito coisas e você não
+        escolheu nenhuma" pede pra escolher entre o que já existe, e oferecer
+        "planejar o dia" ali seria mandar criar mais trabalho em cima do
+        trabalho que a pessoa já tem.
+      */}
       {focus.total === 0 ? (
         <div className="mt-5 rounded-xl border border-dashed border-line-hi px-4 py-6 text-center">
-          <p className="text-sm text-ink">Seu dia ainda não tem atividades planejadas.</p>
-          <p className="mx-auto mt-1 max-w-md text-sm text-ink-muted">
-            Escolhe uma ação do teu plano ou cria uma pequena pra hoje. Uma só já tira da inércia.
+          <p className="text-sm text-ink">
+            {focus.dayHasWork
+              ? 'Você ainda não disse o que decide o dia de hoje.'
+              : 'Seu dia ainda não tem atividades planejadas.'}
+          </p>
+          <p className="mx-auto mt-1 max-w-md text-sm text-pretty text-ink-muted">
+            {focus.dayHasWork
+              ? 'Marca uma ação como prioridade e ela aparece aqui. O resto do dia continua logo abaixo.'
+              : 'Escolhe uma ação do teu plano ou cria uma pequena pra hoje. Uma só já tira da inércia.'}
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
-            <Button size="sm" onClick={onPlanDay}>
-              <Icon name="mais" className="size-4" />
-              Planejar o dia
-            </Button>
-            <Button size="sm" variant="secondary" onClick={onSeeAll}>
-              Escolher do plano
-            </Button>
+            {focus.dayHasWork ? (
+              <Button size="sm" onClick={onSeeAll}>
+                Ver o dia e escolher
+                <Icon name="seta" className="size-3.5" />
+              </Button>
+            ) : (
+              <>
+                <Button size="sm" onClick={onPlanDay}>
+                  <Icon name="mais" className="size-4" />
+                  Planejar o dia
+                </Button>
+                <Button size="sm" variant="secondary" onClick={onSeeAll}>
+                  Escolher do plano
+                </Button>
+              </>
+            )}
           </div>
         </div>
       ) : (
@@ -111,8 +123,8 @@ export function TodayFocusCard({
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
             <p className="text-xs text-ink-faint">
               {remaining > 0
-                ? `Mais ${remaining} ${remaining === 1 ? 'atividade' : 'atividades'} no dia.`
-                : 'Isso é tudo que você planejou pra hoje.'}
+                ? `Mais ${remaining} ${remaining === 1 ? 'prioridade' : 'prioridades'} hoje.`
+                : 'É isso que decide o teu dia. O resto vem abaixo.'}
             </p>
             <Button variant="ghost" size="sm" onClick={onSeeAll}>
               Ver tudo do dia
@@ -122,78 +134,6 @@ export function TodayFocusCard({
         </>
       )}
     </Panel>
-  )
-}
-
-/**
- * O resto do dia, recolhido.
- *
- * Fechado ele diz só quantas ações sobraram, pra pessoa saber que existem sem
- * precisar decidir sobre elas agora. Aberto é exatamente a mesma lista do card
- * cheio: nenhuma ação fica escondida atrás da hierarquia.
- */
-function OtherActions({
-  focus,
-  onStartFocus,
-  onSeeAll,
-}: {
-  readonly focus: TodayFocus
-  readonly onStartFocus: (task: Task) => void
-  readonly onSeeAll: () => void
-}) {
-  const [open, setOpen] = useState(false)
-  const reduceMotion = useReducedMotion()
-
-  const open_count = focus.total - focus.done
-  if (focus.total === 0 || open_count <= 0) return null
-
-  return (
-    <section aria-labelledby="outras-acoes-titulo" className="surface-card overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-        aria-controls="outras-acoes-lista"
-        className="flex min-h-13 w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors active:bg-surface-hi"
-      >
-        <span id="outras-acoes-titulo" className="text-sm font-medium text-ink-muted">
-          {open_count} {open_count === 1 ? 'outra ação hoje' : 'outras ações hoje'}
-        </span>
-        <Icon
-          name="seta"
-          aria-hidden="true"
-          className={cn(
-            'size-4 shrink-0 text-ink-faint transition-transform duration-200',
-            open ? '-rotate-90' : 'rotate-90',
-          )}
-        />
-      </button>
-
-      <AnimatePresence initial={false}>
-        {open ? (
-          <motion.div
-            id="outras-acoes-lista"
-            initial={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
-            animate={reduceMotion ? { opacity: 1 } : { height: 'auto', opacity: 1 }}
-            exit={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden"
-          >
-            <ul className="flex flex-col divide-y divide-line border-t border-line px-4">
-              {focus.items.map((item) => (
-                <FocusRow key={`${item.kind}-${item.id}`} item={item} onStartFocus={onStartFocus} />
-              ))}
-            </ul>
-            <div className="border-t border-line px-4 py-2.5">
-              <Button variant="ghost" size="sm" onClick={onSeeAll}>
-                Ver tudo do dia
-                <Icon name="seta" className="size-3.5" />
-              </Button>
-            </div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-    </section>
   )
 }
 

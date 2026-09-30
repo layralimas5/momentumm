@@ -37,6 +37,11 @@
   --color-positive-ink: #3ecf8e;
   --color-danger: #f05252;
 
+  /* O selo da conta PRO. Azul, e so ele: e o unico emblema preenchido do app, e
+     usar o violeta da marca faria o selo sumir dentro de um card que ja e
+     violeta. Nao aparece em botao, aviso nem grafico. */
+  --color-verified: #3b9bf0;
+
   /* Medalha conquistada. Ouro e reservado a conquista: nao e cor de interface,
      nao aparece em botao, aviso ou grafico. O laranja continua exclusivo do
      streak e o violeta, da marca. */
@@ -292,7 +297,7 @@
    A regra visual do app é "profundidade por camada, não por sombra". Em fundo
    preto, sombra vira mancha cinza; então o que separa um card do fundo é a
    diferença de grafite mais uma borda de 1px. O violeta entra só onde há
-   decisão a tomar — prioridade principal, foco em andamento, insight.
+   decisão a tomar, prioridade principal, foco em andamento, insight.
 --------------------------------------------------------------------------- */
 
 @layer components {
@@ -414,6 +419,9 @@
   --color-positive: #16a068;
   --color-positive-ink: #07603e;
   --color-danger: #d93a3a;
+
+  /* No claro o azul precisa de um degrau a mais de contraste sobre o branco. */
+  --color-verified: #1c7ed6;
 
   /* No claro o ouro escurece: o mesmo tom do escuro sumiria no branco. */
   --color-medal: #b8862b;

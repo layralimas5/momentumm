@@ -1,18 +1,18 @@
 import { dayKeyOf, type DayKey } from './day'
 
 /**
- * Juntos — a dupla de accountability.
+ * Juntos, a dupla de accountability.
  *
  * O produto inteiro é sobre alguém avançar nos próprios objetivos. A dupla
  * existe pra testar UMA hipótese: ter outra pessoa vendo que você avançou faz
- * você voltar amanhã. Tudo que não ajuda a testar isso ficou de fora — feed,
+ * você voltar amanhã. Tudo que não ajuda a testar isso ficou de fora, feed,
  * comentário, ranking, descoberta, chat.
  *
  * ## O contrato de privacidade, do lado do app
  *
  * O que chega aqui do servidor JÁ É só isto: nome curto, avatar, e um booleano
  * por dia. Não existe campo pra título de ação, objetivo, nota ou XP, e não é
- * porque a tela não mostra — é porque a função do banco não devolve (ver a
+ * porque a tela não mostra, é porque a função do banco não devolve (ver a
  * migration 0049). Esse tipo é o contrato: se um dia alguém precisar mostrar
  * mais, vai precisar mudar o banco, e aí a decisão aparece numa revisão.
  */
@@ -42,7 +42,7 @@ export interface EncouragementSpec {
  * Três gestos, e a escolha de cada um tem motivo.
  *
  * "Bora" chama pra ação, "mandou bem" reconhece o que já saiu e "tô contigo"
- * é o único que serve pro dia ruim — e é ele que o app sugere quando a outra
+ * é o único que serve pro dia ruim, e é ele que o app sugere quando a outra
  * pessoa está retomando, porque cobrar quem já está voltando é o jeito mais
  * rápido de fazer ela parar de novo.
  */
@@ -95,7 +95,7 @@ export interface Pair {
  *
  * `pairs` é sempre uma lista, e é ela que faz a tela do gratuito e a do PRO
  * serem a mesma tela: uma com um item, a outra com vários. `room` vem do
- * servidor pronto, porque quem sabe o teto de cada plano é ele — a tela só
+ * servidor pronto, porque quem sabe o teto de cada plano é ele, a tela só
  * precisa saber se ainda pode oferecer o convite.
  */
 export interface PairOverview {
@@ -267,7 +267,7 @@ export function daysAway(member: PairMember): number {
  * O dia sai de `dayKeyOf`, que lê o calendário LOCAL, e não de
  * `toISOString()`, que lê UTC. A diferença aparece toda noite: às 21h de
  * Brasília o UTC já virou, e um incentivo mandado às 21h30 era contado como de
- * amanhã — o botão voltava a dizer "Bora" como se nada tivesse sido enviado,
+ * amanhã, o botão voltava a dizer "Bora" como se nada tivesse sido enviado,
  * e o teto do plano dava vaga nova. `local_day_of` no servidor usa o fuso da
  * pessoa, então é esse o dia com que essa conta precisa concordar.
  */

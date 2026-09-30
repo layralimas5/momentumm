@@ -39,7 +39,7 @@ export function isCourtesyActive(until: Date | null, now = new Date()): boolean 
  * A cortesia vem ANTES do teste, e isso não é detalhe de ordenação.
  *
  * Toda conta nova nasce com sete dias de teste (0034), inclusive a de quem
- * opera o produto — e quem é owner ou admin também ganha cortesia infinita
+ * opera o produto, e quem é owner ou admin também ganha cortesia infinita
  * (0051). As duas coisas coexistem na mesma conta, e é a cortesia que decide:
  * quando o sétimo dia chegar, nada vai mudar pra ela. Com o teste na frente, o
  * app anunciava "PRO de teste até 24 de setembro (último dia)" pra quem nunca

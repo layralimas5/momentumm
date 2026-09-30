@@ -14,7 +14,7 @@ import {
  * A linha aqui não é de produto, é legal: exclusão de conta, exportação e
  * privacidade são obrigação, e uma delas atrás do PRO seria cobrar assinatura
  * pra alguém exercer um direito. Segurança, pagamento, acesso e denúncia ficam
- * do mesmo lado por consequência — quem não consegue entrar ou foi cobrado
+ * do mesmo lado por consequência, quem não consegue entrar ou foi cobrado
  * errado não pode ser obrigado a assinar pra reclamar disso.
  *
  * Por isso o teste trava as duas pontas: que o PRO abre tudo, e que o gratuito
@@ -50,7 +50,7 @@ describe('suporte por plano', () => {
   /*
     O caso que não pode quebrar em silêncio: sem exclusão e exportação, o
     gratuito perde o caminho de apagar a própria conta e de levar os dados
-    embora — e isso não é decisão de produto.
+    embora, e isso não é decisão de produto.
   */
   it('exclusão, exportação e privacidade valem em qualquer plano', () => {
     for (const tier of [FREE, PRO]) {

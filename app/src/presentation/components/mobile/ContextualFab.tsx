@@ -8,7 +8,7 @@ interface ContextualFabProps {
   readonly onClick: () => void
   /**
    * O card que já oferece essa mesma ação. Enquanto ele estiver visível o botão
-   * some — repetir na tela uma ação que a pessoa está vendo só compete com a
+   * some, repetir na tela uma ação que a pessoa está vendo só compete com a
    * navegação de baixo.
    */
   readonly anchor: RefObject<HTMLElement | null>
@@ -31,7 +31,12 @@ export function ContextualFab({ label, icon, onClick, anchor }: ContextualFabPro
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 16, scale: 0.95 }}
           transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed inset-x-0 z-30 flex justify-center px-4 bottom-above-tabbar lg:hidden"
+          /*
+            `pe-20` guarda a faixa da direita pro "+" contextual, que flutua na
+            mesma altura. Sem ela, numa tela de 320px a pílula passava por
+            baixo do botão e as duas ações dividiam o mesmo toque.
+          */
+          className="fixed inset-x-0 z-30 flex justify-center px-4 pe-20 bottom-above-tabbar lg:hidden"
         >
           <button
             type="button"

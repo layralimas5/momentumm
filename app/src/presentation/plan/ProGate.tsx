@@ -14,7 +14,7 @@ interface ProGateProps {
 /**
  * O lugar de um recurso que só existe no PRO.
  *
- * A tela continua acessível — a pessoa vê o que existe e o que ele responde —
+ * A tela continua acessível, a pessoa vê o que existe e o que ele responde,
  * mas o painel não finge funcionar. É a exceção à regra "nenhum bloqueio por
  * banner": aqui não há versão menor do recurso pra mostrar, então o que resta
  * é dizer em voz alta o que ele faz e como liberar.

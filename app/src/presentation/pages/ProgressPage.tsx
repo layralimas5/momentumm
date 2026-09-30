@@ -240,7 +240,7 @@ export function ProgressPage() {
               O ajuste vem colado no risco de propósito.
 
               Uma lista do que está travado e um link pra outra tela devolvem
-              o trabalho pra pessoa. Aqui o botão executa a recomendação — a
+              o trabalho pra pessoa. Aqui o botão executa a recomendação, a
               mesma que o dashboard executa, pelo mesmo hook.
             */}
             {progress.nextAdjustment ? (

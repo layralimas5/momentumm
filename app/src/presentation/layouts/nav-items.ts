@@ -15,7 +15,7 @@ export interface AppNavItem {
   readonly requiresCircle?: boolean
   /**
    * Só aparece com essa chave de `features` ligada no servidor. Diferente do
-   * `requiresCircle`, que é decidido no build, esta é decidida por conta — é
+   * `requiresCircle`, que é decidido no build, esta é decidida por conta, é
    * assim que o Juntos pode ser liberado aos poucos.
    */
   readonly requiresFeature?: FeatureKey
@@ -23,7 +23,7 @@ export interface AppNavItem {
 
 /**
  * A navegação do app em um lugar só. Sidebar, barra do celular e busca rápida
- * leem daqui — item novo aparece nos três sem edição em três arquivos.
+ * leem daqui, item novo aparece nos três sem edição em três arquivos.
  *
  * A ordem é o ciclo do produto, não o alfabeto: objetivo vira plano, plano vira
  * dia, dia vira progresso, progresso vira review, review vira objetivo de novo.
@@ -32,7 +32,7 @@ export interface AppNavItem {
  * As descrições dizem o PAPEL de cada tela no ciclo, não a funcionalidade
  * dela. "Gráficos e estatísticas" descreve um recurso que qualquer app tem;
  * "se o ritmo está de pé e qual é o próximo ajuste" descreve o que essa tela
- * resolve — e é essa a diferença que o produto vende.
+ * resolve, e é essa a diferença que o produto vende.
  */
 const ALL_NAV: readonly AppNavItem[] = [
   {
@@ -48,6 +48,13 @@ const ALL_NAV: readonly AppNavItem[] = [
     end: false,
     icon: 'objetivo',
     description: 'Onde você quer chegar, com prazo e o quanto já andou de verdade',
+  },
+  {
+    to: '/app/rotina',
+    label: 'Rotina',
+    end: false,
+    icon: 'calendario',
+    description: 'Como os seus dias normalmente funcionam, e o que se repete em cada um',
   },
   {
     to: '/app/habitos',
@@ -78,12 +85,25 @@ const ALL_NAV: readonly AppNavItem[] = [
     description: 'O que a semana mostrou e o que muda na próxima',
   },
   /*
-    Círculo fecha a navegação principal, e não entra no meio do ciclo, porque
-    ele não faz parte dele: o ciclo é objetivo → plano → dia → progresso →
-    review. O Círculo é o que existe DEPOIS de o ciclo estar rodando, e vem
-    por último de propósito — a pessoa abre o app pra cuidar da própria
-    rotina, não pra ver a dos outros.
+    A camada social fecha a navegação principal, e não entra no meio do ciclo,
+    porque ela não faz parte dele: o ciclo é objetivo → plano → rotina → dia →
+    progresso → review. O que existe aqui é o que vem DEPOIS de o ciclo estar
+    rodando, e vem por último de propósito, a pessoa abre o app pra cuidar da
+    própria rotina, não pra ver a dos outros.
+
+    Feed e Círculo são duas perguntas, e por isso são duas telas. O Feed
+    responde "o que as pessoas estão vivendo"; o Círculo responde "quem são
+    essas pessoas". Juntar as duas fazia a lista de amigos e os pedidos
+    dividirem a rolagem com o conteúdo, e nenhum dos dois ficava em casa.
   */
+  {
+    to: '/app/feed',
+    label: 'Feed',
+    end: false,
+    icon: 'globo',
+    description: 'O que as pessoas do teu círculo estão vivendo e construindo',
+    requiresCircle: true,
+  },
   {
     to: '/app/circulo',
     label: 'Círculo',
@@ -99,8 +119,24 @@ const ALL_NAV: readonly AppNavItem[] = [
     Ele não é uma tela que se abre todo dia: o desafio acontece no dia comum,
     pelo hábito que a pessoa já cumpre, e a tela existe pra combinar, conferir
     e encerrar. Colocá-lo na barra principal criaria a expectativa de ter algo
-    novo ali toda manhã — e a semana em que não tem nada ensinaria a ignorar.
+    novo ali toda manhã, e a semana em que não tem nada ensinaria a ignorar.
   */
+  /*
+    Clube fica ao lado do desafio, e secundário pelo mesmo motivo: não é uma
+    tela de todo dia. A diferença entre os dois é o tempo, o desafio começa e
+    acaba, o clube fica, e é por isso que eles são entradas separadas em vez
+    de uma lista só.
+  */
+  {
+    to: '/app/clubes',
+    label: 'Clubes',
+    end: false,
+    icon: 'objetivo',
+    description: 'Comunidades com ranking. Criar faz parte do PRO',
+    secondary: true,
+    requiresCircle: true,
+  },
+
   {
     to: '/app/desafios',
     label: 'Desafios',
@@ -113,7 +149,7 @@ const ALL_NAV: readonly AppNavItem[] = [
 
   /*
     Insights estava fora de TODA a navegação: a rota existia, a tela existia, e
-    nenhuma parte do app levava até ela — nem a busca, que lê esta lista. É a
+    nenhuma parte do app levava até ela, nem a busca, que lê esta lista. É a
     tela que responde "o que mudou no meu ritmo", então ela entra aqui como
     secundária e ganha entrada direta no dashboard e no progresso, que são os
     dois lugares onde a pergunta nasce.
@@ -134,7 +170,7 @@ const ALL_NAV: readonly AppNavItem[] = [
     perfil. O que muda é a promessa da barra lateral: um item "Momentumm AI"
     ao lado de "Hábitos" e "Progresso" apresenta o produto como uma coleção de
     recursos, e é justamente essa leitura que o posicionamento recusa. A IA não
-    é um lugar onde se vai — é o que monta o plano no onboarding e o que lê o
+    é um lugar onde se vai, é o que monta o plano no onboarding e o que lê o
     progresso quando a pessoa pede.
   */
   {
@@ -147,7 +183,7 @@ const ALL_NAV: readonly AppNavItem[] = [
   },
 
   // Fora da barra principal. Continuam existindo e continuam achaveis pela
-  // busca — o que sai da navegação é o peso visual, não a funcionalidade.
+  // busca, o que sai da navegação é o peso visual, não a funcionalidade.
   {
     to: '/app/foco',
     label: 'Foco',
@@ -233,7 +269,7 @@ export const PRIMARY_NAV = APP_NAV.filter((item) => !item.secondary)
 /**
  * Itens que dependem de uma flag do servidor.
  *
- * As listas acima continuam constantes — a busca rápida e os atalhos leem
+ * As listas acima continuam constantes, a busca rápida e os atalhos leem
  * delas sem esperar rede. Quem monta menu visível usa `visibleNav`, que recebe
  * as flags já resolvidas.
  */

@@ -21,7 +21,7 @@ import { PageHeader } from './PageHeader'
  *
  * A lista responde três coisas por cartão: onde está, quanto falta e o que
  * fazer agora. Um objetivo sem próxima ação visível é um objetivo que a pessoa
- * vai olhar e fechar a aba — por isso a próxima ação vem no cartão, não só no
+ * vai olhar e fechar a aba, por isso a próxima ação vem no cartão, não só no
  * detalhe.
  *
  * E ela vem com o botão que a coloca no dia. Marcar um objetivo como "parado
@@ -80,7 +80,7 @@ export function ObjectivesPage() {
         O aviso de limite só quando ele ENCOSTA.
 
         Ele era permanente, e abria a tela contando o que a conta não pode
-        fazer — antes mesmo de a pessoa ver o que ela já fez. Um teto que só
+        fazer, antes mesmo de a pessoa ver o que ela já fez. Um teto que só
         vale no terceiro objetivo não precisa aparecer no primeiro.
       */}
       {limit.reached && limit.message ? <UpgradeHint message={limit.message} /> : null}
@@ -137,7 +137,7 @@ function Group({
  * Tinha NOVE blocos: título, área, prazo, selo de estado, selo de prioridade,
  * barra, porcentagem, legenda da barra, parágrafo de diagnóstico, rodapé com
  * hábitos e ações, e a próxima ação. Três objetivos assim são vinte e sete
- * blocos numa tela — e boa parte deles dizia a mesma coisa duas vezes:
+ * blocos numa tela, e boa parte deles dizia a mesma coisa duas vezes:
  * "Atrasado" aparecia no parágrafo E no rodapé, "Em andamento" repetia o
  * título da própria seção, e o progresso vinha em quatro formatos.
  *
@@ -145,7 +145,7 @@ function Group({
  *
  *   o que é          título, área e prazo
  *   como vai         barra, porcentagem e o que ela mede
- *   precisa de mim?  só quando precisa — atrasado ou parado
+ *   precisa de mim?  só quando precisa, atrasado ou parado
  *   e agora?         a próxima ação, com o botão que a traz pro dia
  *
  * O diagnóstico em frase não sumiu: ele abre a tela do objetivo, que é onde a
@@ -225,7 +225,7 @@ function ObjectiveCard({ view }: { readonly view: ObjectiveView }) {
  * A próxima ação do objetivo, com a ponte pro dia.
  *
  * Era só texto. O caminho entre "o plano diz que é isso" e "hoje eu faço
- * isso" passava por abrir o objetivo, achar a ação e editar a data — três
+ * isso" passava por abrir o objetivo, achar a ação e editar a data, três
  * telas pra uma decisão que cabe em um toque, e é justamente a decisão que
  * tira um objetivo parado da inércia.
  */

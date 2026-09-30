@@ -14,9 +14,10 @@ import type {
   AiReviewRequest,
 } from '@/domain/ai/ai-service'
 import { buildAiContextBundle, type AiContextBundle } from '@/domain/ai/ai-context'
-import { activityType } from '@/domain/entities/activity-type'
+import { activityType, type ActivityTypeSlug } from '@/domain/entities/activity-type'
 import { capacityOf, checkInOfDay } from '@/domain/entities/checkin'
 import { deadlineFrom } from '@/domain/entities/objective'
+import { detectBlueprint } from '@/domain/entities/plan-blueprint'
 import { estimatedMinutesOf, isPending, tasksOfDay } from '@/domain/entities/task'
 import { AiError, type AiErrorCode } from '@/domain/ai/ai-error'
 import { container } from '@/infrastructure/container'
@@ -131,7 +132,7 @@ export interface RecoveryInput {
  *
  * O contexto é um recorte fechado (`buildAiContextBundle`): objetivos,
  * etapas, hábitos, ações, capacidade, progresso, score, últimos reviews e
- * vitórias recentes. Nada além disso sai do aparelho — nem e-mail, nem nome,
+ * vitórias recentes. Nada além disso sai do aparelho, nem e-mail, nem nome,
  * nem a observação do check-in. Os `refs` ficam aqui, do lado do app, e são a
  * única forma de a resposta apontar pra uma linha de verdade.
  */
@@ -152,6 +153,8 @@ export function useAi() {
         objectives: progress.objectives,
         habits: planner.habits,
         habitLogs: planner.habitLogs,
+      routineItems: planner.routineItems,
+      routineOccurrences: planner.routineOccurrences,
         tasks: planner.tasks,
         reviews: planner.weeklyReviews,
         wins: planner.wins,
@@ -172,6 +175,15 @@ export function useAi() {
       deadline: deadlineFrom(planner.today, draft.days),
       minutesPerDay: draft.minutesPerDay,
       motive: draft.motive.trim() || null,
+      /*
+        O roteiro da biblioteca vai junto quando o assunto é conhecido.
+
+        A IA deixa de reinventar a estrutura de "emagrecer" a cada chamada e
+        passa a gastar o raciocínio no que é específico DESTA pessoa. Em
+        assunto que a biblioteca não conhece, `baseline` é nulo e ela monta do
+        zero, que é justamente o que a IA existe pra cobrir.
+      */
+      baseline: baselineOf(draft.title, draft.axis, draft.motive),
     }
     return container.ai.buildPlan(request)
   })
@@ -278,3 +290,32 @@ export function useAi() {
 }
 
 export type AiController = ReturnType<typeof useAi>
+
+/**
+ * O roteiro da biblioteca no formato compacto que o prompt lê.
+ *
+ * Só o que ajuda o modelo a decidir: o degrau e o porquê dele, os nomes dos
+ * hábitos e das ações, e o limite a repassar. Os números (fração de tempo,
+ * minutos, pesos) ficam de fora de propósito, porque quem dimensiona é a
+ * aritmética do `plan-builder`, e mandá-los aqui convidaria o modelo a
+ * copiá-los sem saber quanto tempo esta pessoa tem.
+ */
+function baselineOf(
+  title: string,
+  axis: ActivityTypeSlug,
+  motive: string,
+): AiPlanRequest['baseline'] {
+  const blueprint = detectBlueprint(title, axis, motive)
+  if (!blueprint) return null
+
+  return {
+    label: blueprint.label,
+    steps: blueprint.stages.map((stage) => ({
+      title: stage.title,
+      description: stage.description,
+    })),
+    habits: blueprint.habits.map((habit) => habit.name),
+    tasks: blueprint.tasks.map((task) => task.title),
+    caution: blueprint.caution ?? null,
+  }
+}

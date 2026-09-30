@@ -8,7 +8,7 @@
        estática própria.
 
   O que ele NÃO faz: guardar a interface em cache. Todo HTML, script e imagem
-  vai direto pra rede — assim o registro dele nunca segura uma versão velha do
+  vai direto pra rede, assim o registro dele nunca segura uma versão velha do
   app depois de um deploy. O único arquivo guardado é o `offline.html`, que não
   muda e não é parte da interface.
 
@@ -46,7 +46,7 @@ self.addEventListener('activate', (event) => {
   Só navegação, e sempre pela rede primeiro.
 
   `request.mode === 'navigate'` é a pessoa abrindo uma página; o resto (js, css,
-  imagem, chamada ao Supabase) o worker nem toca — sem `respondWith` o navegador
+  imagem, chamada ao Supabase) o worker nem toca, sem `respondWith` o navegador
   segue o caminho normal, que é o que queremos.
 */
 self.addEventListener('fetch', (event) => {

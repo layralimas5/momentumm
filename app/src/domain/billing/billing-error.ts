@@ -13,7 +13,7 @@ export type BillingErrorCode = (typeof BILLING_ERROR_CODES)[number]
 
 /**
  * Erro de cobrança com código: a mensagem vai pra tela como está, e o
- * código deixa a tela decidir o que oferecer — recarregar o plano em
+ * código deixa a tela decidir o que oferecer, recarregar o plano em
  * `already_subscribed`, nada em `not_configured`.
  */
 export class BillingError extends DomainError {

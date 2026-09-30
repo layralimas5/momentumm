@@ -11,6 +11,12 @@ import {
   type NewHabitInput,
 } from '@/domain/entities/habit'
 import {
+  createRoutineItem,
+  type NewRoutineItemInput,
+  type RoutineItem,
+  type RoutineOccurrence,
+} from '@/domain/entities/routine-item'
+import {
   createPlanStage,
   type NewPlanStageInput,
   type PlanStage,
@@ -66,6 +72,11 @@ import type {
 import type { CheckInRepository } from '@/domain/repositories/checkin-repository'
 import type { HabitRepository, HabitUpdate } from '@/domain/repositories/habit-repository'
 import type {
+  RoutineItemUpdate,
+  RoutineOccurrencePatch,
+  RoutineRepository,
+} from '@/domain/repositories/routine-repository'
+import type {
   AccountExport,
   ProfileRepository,
   ProfileUpdate,
@@ -86,6 +97,20 @@ import type {
   ChallengeUpdate,
 } from '@/domain/repositories/challenge-repository'
 import type { FriendshipRepository } from '@/domain/repositories/friendship-repository'
+import type { ReferralRepository } from '@/domain/repositories/referral-repository'
+import type { ClubRepository } from '@/domain/repositories/club-repository'
+import type { ClubInvitation, ClubInvitePreview } from '@/domain/entities/club-invite'
+import {
+  assertValidClubDescription,
+  assertValidClubName,
+  rankClubMembers,
+  type Club,
+  type ClubMember,
+  type ClubRankedMember,
+  type NewClubInput,
+} from '@/domain/entities/club'
+import type { DayPhotoRepository } from '@/domain/repositories/day-photo-repository'
+import { createDayPhoto, type DayPhoto, type NewDayPhotoInput } from '@/domain/entities/day-photo'
 import type { JourneyEventRepository } from '@/domain/repositories/journey-event-repository'
 import type { WeeklyReviewRepository } from '@/domain/repositories/weekly-review-repository'
 import type { WinRepository } from '@/domain/repositories/win-repository'
@@ -104,7 +129,15 @@ import {
   toHabit,
   toObjective,
   toHabitLog,
+  toRoutineItem,
+  toRoutineOccurrence,
   toProfile,
+  toDayPhoto,
+  toClub,
+  toClubInvitation,
+  toClubInvitePreview,
+  toClubMember,
+  toClubRankingRow,
   toPlanStage,
   toTask,
   toWeeklyReview,
@@ -123,7 +156,7 @@ const UNIQUE_VIOLATION = '23505'
 const PLAN_REFUSED = '22023'
 /*
   Função ausente: base que ainda não rodou a 0012. A busca cai na parcial em
-  vez de estourar — pior que não achar pelo @ exato é a tela do Círculo inteira
+  vez de estourar, pior que não achar pelo @ exato é a tela do Círculo inteira
   quebrar num ambiente que só está desatualizado.
 */
 const FUNCTION_MISSING = 'PGRST202'
@@ -131,6 +164,15 @@ const FUNCTION_MISSING = 'PGRST202'
 function fail(error: PostgrestError, action: string): never {
   if (error.code === UNIQUE_VIOLATION) {
     throw new DomainError('Já existe um registro assim.')
+  }
+  /*
+    Banco atrás do app: a tela chama uma função que a migration ainda não
+    criou. Isso não é falha de conexão, e dizer "verifica a conexão" manda a
+    pessoa reiniciar o roteador por causa de um deploy que faltou. O texto diz
+    o que é, e some sozinho quando a migration sobe.
+  */
+  if (error.code === FUNCTION_MISSING) {
+    throw new DomainError('Esse recurso ainda não chegou ao servidor. Tenta de novo mais tarde.')
   }
   throw new InfrastructureError(`Falha ao ${action}.`, error)
 }
@@ -148,7 +190,7 @@ export { SupabaseAuthService } from './supabase-auth'
 /*
   Exclusão de conta.
 
-  A remoção acontece em `auth.users`, que a API pública não alcança — e nem
+  A remoção acontece em `auth.users`, que a API pública não alcança, e nem
   deveria. A função `delete_my_account` roda como definer, apaga sempre
   `auth.uid()` e deixa o cascade levar o resto: perfil, objetivos, hábitos,
   ações, registros, momentos e, pelo trigger de mídia, os arquivos.
@@ -159,7 +201,7 @@ export { SupabaseAuthService } from './supabase-auth'
  *
  * O Supabase recusa `delete from storage.objects` por SQL, então o trigger
  * do banco não consegue mais apagar a pasta da pessoa (migration 0017). Quem
- * pode é o próprio dono, daqui, pela política "dono apaga" — e é isso que faz
+ * pode é o próprio dono, daqui, pela política "dono apaga", e é isso que faz
  * a conta sair sem deixar arquivo órfão.
  */
 async function deleteOwnAccount(): Promise<void> {
@@ -291,7 +333,7 @@ export class SupabaseGoalRepository implements GoalRepository {
 /**
  * O slug de uma área criada é prefixado com o dono.
  *
- * `activity_types.slug` é chave primária global — é ela que as FKs de
+ * `activity_types.slug` é chave primária global, é ela que as FKs de
  * atividade, hábito, meta e objetivo apontam. Sem prefixo, duas pessoas
  * criando "Escrita" colidiriam na mesma linha e passariam a dividir o eixo.
  */
@@ -377,7 +419,7 @@ export class SupabaseObjectiveRepository implements ObjectiveRepository {
 
         Sobe como `PlanLimitError` porque é o tipo que a ativação do plano do
         quiz já sabe tratar: ela diz qual limite parou e oferece o que destrava.
-        Caindo no `fail` genérico viraria "Falha ao criar o objetivo." — e a
+        Caindo no `fail` genérico viraria "Falha ao criar o objetivo.", e a
         pessoa ficaria sem saber que a saída existe.
       */
       if (error.code === PLAN_REFUSED) {
@@ -386,7 +428,7 @@ export class SupabaseObjectiveRepository implements ObjectiveRepository {
       if (error.code === UNIQUE_VIOLATION) {
         /*
           Erro TIPADO, com o eixo junto. Quem chama precisa saber qual área
-          está ocupada pra oferecer a saída — sem isso a tela só sabe repetir
+          está ocupada pra oferecer a saída, sem isso a tela só sabe repetir
           a mensagem e mandar "tentar de novo", que falha igual.
         */
         throw new ObjectiveAxisConflictError(
@@ -474,6 +516,16 @@ export class SupabaseProfileRepository implements ProfileRepository {
           ? { status_emoji: status?.emoji ?? null, status_text: status?.text ?? null }
           : {}),
         ...(changes.banner !== undefined ? { banner: changes.banner } : {}),
+        /*
+          Rede por rede, e não o objeto inteiro: mandar `socials` fechado faria
+          "só troquei o Instagram" apagar o TikTok e o LinkedIn, porque o que
+          não vem no objeto vem como `undefined` e viraria `null` na coluna.
+        */
+        ...(changes.socials?.instagram !== undefined
+          ? { instagram: changes.socials.instagram }
+          : {}),
+        ...(changes.socials?.tiktok !== undefined ? { tiktok: changes.socials.tiktok } : {}),
+        ...(changes.socials?.linkedin !== undefined ? { linkedin: changes.socials.linkedin } : {}),
       })
       .eq('id', id)
       .select('*')
@@ -669,6 +721,162 @@ export class SupabaseHabitRepository implements HabitRepository {
 
     if (error) fail(error, 'registrar o hábito')
     return toHabitLog(data)
+  }
+}
+
+export class SupabaseRoutineRepository implements RoutineRepository {
+  async listItems(userId: string): Promise<RoutineItem[]> {
+    const { data, error } = await supabase()
+      .from('routine_items')
+      .select('*')
+      .eq('user_id', userId)
+      .is('archived_at', null)
+      .order('order', { ascending: true })
+
+    if (error) fail(error, 'carregar a rotina')
+    return (data ?? []).map(toRoutineItem)
+  }
+
+  async createItem(input: NewRoutineItemInput): Promise<RoutineItem> {
+    // O domínio valida ANTES do banco: nome curto, horário torto e "dias
+    // específicos sem dia" viram mensagem em português, não erro de constraint.
+    const draft = createRoutineItem(input, crypto.randomUUID())
+
+    const { data, error } = await supabase()
+      .from('routine_items')
+      .insert({
+        user_id: draft.userId,
+        title: draft.title,
+        note: draft.note,
+        category: draft.category,
+        time_of_day: draft.timeOfDay,
+        day_part: draft.dayPart,
+        duration_min: draft.durationMin,
+        recurrence: draft.recurrence,
+        weekdays: draft.weekdays,
+        day: draft.day,
+        objective_id: draft.objectiveId,
+        reminder_min: draft.reminderMin,
+        order: draft.order,
+      })
+      .select('*')
+      .single()
+
+    if (error) fail(error, 'criar o item da rotina')
+    return toRoutineItem(data)
+  }
+
+  async updateItem(id: string, userId: string, changes: RoutineItemUpdate): Promise<RoutineItem> {
+    const { data, error } = await supabase()
+      .from('routine_items')
+      .update({
+        ...(changes.title !== undefined ? { title: changes.title } : {}),
+        ...(changes.note !== undefined ? { note: changes.note } : {}),
+        ...(changes.category !== undefined ? { category: changes.category } : {}),
+        ...(changes.timeOfDay !== undefined ? { time_of_day: changes.timeOfDay } : {}),
+        ...(changes.dayPart !== undefined ? { day_part: changes.dayPart } : {}),
+        ...(changes.durationMin !== undefined ? { duration_min: changes.durationMin } : {}),
+        ...(changes.recurrence !== undefined ? { recurrence: changes.recurrence } : {}),
+        ...(changes.weekdays !== undefined ? { weekdays: changes.weekdays } : {}),
+        ...(changes.day !== undefined ? { day: changes.day } : {}),
+        ...(changes.objectiveId !== undefined ? { objective_id: changes.objectiveId } : {}),
+        ...(changes.reminderMin !== undefined ? { reminder_min: changes.reminderMin } : {}),
+        ...(changes.order !== undefined ? { order: changes.order } : {}),
+        ...(changes.pausedAt !== undefined
+          ? { paused_at: changes.pausedAt?.toISOString() ?? null }
+          : {}),
+      })
+      .eq('id', id)
+      .eq('user_id', userId)
+      .select('*')
+      .single()
+
+    if (error) fail(error, 'atualizar o item da rotina')
+    return toRoutineItem(data)
+  }
+
+  async archiveItem(id: string, userId: string): Promise<void> {
+    const { error } = await supabase()
+      .from('routine_items')
+      .update({ archived_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('user_id', userId)
+
+    if (error) fail(error, 'arquivar o item da rotina')
+  }
+
+  async listOccurrences(userId: string): Promise<RoutineOccurrence[]> {
+    const { data, error } = await supabase()
+      .from('routine_occurrences')
+      .select('*')
+      .eq('user_id', userId)
+      .order('day', { ascending: false })
+      .limit(1000)
+
+    if (error) fail(error, 'carregar os dias da rotina')
+    return (data ?? []).map(toRoutineOccurrence)
+  }
+
+  async setOccurrence(
+    userId: string,
+    itemId: string,
+    day: DayKey,
+    patch: RoutineOccurrencePatch,
+  ): Promise<RoutineOccurrence> {
+    /*
+      Pendente e sem nada guardado é a ausência de linha.
+
+      Desmarcar apaga em vez de gravar um "pendente", pelo mesmo motivo do
+      hábito: linha que não diz nada só faz a tabela crescer. Mas pendente COM
+      horário trocado ou dia de destino fica, porque ali ela carrega a decisão
+      de reagendar.
+    */
+    const guardaDecisao = patch.timeOverride != null || patch.movedToDay != null
+
+    if (patch.status === 'pendente' && !guardaDecisao) {
+      const { error } = await supabase()
+        .from('routine_occurrences')
+        .delete()
+        .eq('user_id', userId)
+        .eq('item_id', itemId)
+        .eq('day', day)
+
+      if (error) fail(error, 'desfazer o registro da rotina')
+      return {
+        id: crypto.randomUUID(),
+        userId,
+        itemId,
+        day,
+        status: 'pendente',
+        plannedTime: patch.plannedTime ?? null,
+        timeOverride: null,
+        movedToDay: null,
+        completedAt: null,
+        createdAt: new Date(),
+      }
+    }
+
+    const { data, error } = await supabase()
+      .from('routine_occurrences')
+      .upsert(
+        {
+          // O `user_id` é reescrito pelo trigger a partir do dono do item: o
+          // que vai daqui é conveniência, nunca a fonte da autorização.
+          user_id: userId,
+          item_id: itemId,
+          day,
+          status: patch.status,
+          ...(patch.plannedTime !== undefined ? { planned_time: patch.plannedTime } : {}),
+          ...(patch.timeOverride !== undefined ? { time_override: patch.timeOverride } : {}),
+          ...(patch.movedToDay !== undefined ? { moved_to_day: patch.movedToDay } : {}),
+        },
+        { onConflict: 'item_id,day' },
+      )
+      .select('*')
+      .single()
+
+    if (error) fail(error, 'registrar a rotina')
+    return toRoutineOccurrence(data)
   }
 }
 
@@ -978,7 +1186,7 @@ export class SupabaseWeeklyReviewRepository implements WeeklyReviewRepository {
  *
  * A leitura é limitada aos mais recentes: a tabela cresce pra sempre e nenhuma
  * tela do app precisa do histórico inteiro carregado de uma vez. Quando o feed
- * existir, ele pagina — não é essa chamada que vira infinita.
+ * existir, ele pagina, não é essa chamada que vira infinita.
  */
 export class SupabaseJourneyEventRepository implements JourneyEventRepository {
   async listByUser(userId: string): Promise<JourneyEvent[]> {
@@ -1147,8 +1355,8 @@ export class SupabaseJourneyEventRepository implements JourneyEventRepository {
 /**
  * Amizades.
  *
- * A leitura traz TODAS as linhas em que a pessoa aparece — aceitas, pendentes
- * e recusadas — porque as três importam na tela: amigo na lista, pedido
+ * A leitura traz TODAS as linhas em que a pessoa aparece, aceitas, pendentes
+ * e recusadas, porque as três importam na tela: amigo na lista, pedido
  * esperando resposta, e recusado pra a busca não oferecer de novo quem já
  * disse não.
  */
@@ -1185,7 +1393,7 @@ export class SupabaseFriendshipRepository implements FriendshipRepository {
     /*
       O filtro do PostgREST é uma STRING, com vírgula e parêntese como
       separadores. Deixar passar o que a pessoa digitou não seria injeção de
-      SQL, mas seria uma consulta que ela controla — e o `%` transformaria
+      SQL, mas seria uma consulta que ela controla, e o `%` transformaria
       qualquer busca num "traz todo mundo".
     */
     const escaped = needle.replace(/[%_,().*]/g, '')
@@ -1196,7 +1404,7 @@ export class SupabaseFriendshipRepository implements FriendshipRepository {
       inteira.
 
       A parcial roda pelo SELECT normal e, desde a 0012, só enxerga quem
-      escolheu `publico` — é o que "público" significa. A exata passa por uma
+      escolheu `publico`, é o que "público" significa. A exata passa por uma
       função `security definer` de retorno estreito e encontra qualquer pessoa
       pelo @ completo, inclusive quem é privado: sem isso ninguém conseguiria
       adicionar ninguém, já que todo perfil nasce fechado.
@@ -1286,7 +1494,7 @@ export class SupabaseChallengeRepository implements ChallengeRepository {
       Dois passos, e o primeiro existe pra ORDENAR, não pra proteger.
 
       A política de `challenges` já responde "posso ver este?". O que ela não
-      faz é separar o que a pessoa criou do que aceitaram — e a tela precisa
+      faz é separar o que a pessoa criou do que aceitaram, e a tela precisa
       dos dois lados. Buscar antes os ids em que ela aparece deixa a lista sob
       controle sem duplicar a regra de acesso: o banco continua sendo quem
       recusa.
@@ -1334,6 +1542,9 @@ export class SupabaseChallengeRepository implements ChallengeRepository {
       .from('challenges')
       .insert({
         owner_id: draft.ownerId,
+        // Só vai quando existe: base anterior à 0062 não tem a coluna, e
+        // mandar `null` nela quebraria a criação de desafio comum.
+        ...(draft.clubId ? { club_id: draft.clubId } : {}),
         name: draft.name,
         description: draft.description,
         axis: draft.axis,
@@ -1352,7 +1563,7 @@ export class SupabaseChallengeRepository implements ChallengeRepository {
     /*
       O dono entra na mesma operação, e se a entrada falhar o desafio some.
 
-      Não é transação de verdade — o PostgREST não oferece uma — mas é a
+      Não é transação de verdade, o PostgREST não oferece uma, mas é a
       compensação honesta: um desafio sem o dono dentro não é desafio, é uma
       linha órfã que a interface não consegue abrir nem apagar.
     */
@@ -1485,5 +1696,299 @@ export class SupabaseChallengeRepository implements ChallengeRepository {
 
     if (error) fail(error, 'publicar teu avanço no desafio')
     return toChallengeParticipant(data)
+  }
+}
+
+/**
+ * Seguir, contra o Supabase.
+ *
+ * As contagens NÃO saem de um `select count`: a política de `follows` só deixa
+ * cada pessoa ver as próprias linhas, então contar pelo select daria "1
+ * seguidor" em qualquer perfil que você mesma segue. Elas vêm da função
+ * `follow_counts` (0060), que devolve dois números e nada mais.
+ */
+/**
+ * A foto do dia, contra o Supabase.
+ *
+ * Aqui mora só o vínculo dia -> caminho. O arquivo sobe e é assinado pelo
+ * `MediaRepository`, que já tem bucket, limite de tamanho e link temporário,
+ * duplicar isso daria duas regras de upload discordando na primeira mudança.
+ */
+export class SupabaseDayPhotoRepository implements DayPhotoRepository {
+  async listBetween(userId: string, from: DayKey, to: DayKey): Promise<DayPhoto[]> {
+    const { data, error } = await supabase()
+      .from('day_photos')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('day', from)
+      .lte('day', to)
+      .order('day', { ascending: false })
+
+    if (error) fail(error, 'carregar as fotos do mês')
+    return (data ?? []).map(toDayPhoto)
+  }
+
+  async save(input: NewDayPhotoInput): Promise<DayPhoto> {
+    const draft = createDayPhoto(input)
+
+    const { data, error } = await supabase()
+      .from('day_photos')
+      .upsert(
+        { user_id: draft.userId, day: draft.day, path: draft.path },
+        // Uma por dia: a segunda foto do mesmo dia troca a primeira.
+        { onConflict: 'user_id,day' },
+      )
+      .select('*')
+      .single()
+
+    if (error) fail(error, 'guardar a foto do dia')
+    return toDayPhoto(data)
+  }
+
+  async remove(userId: string, day: DayKey): Promise<void> {
+    const { error } = await supabase()
+      .from('day_photos')
+      .delete()
+      .eq('user_id', userId)
+      .eq('day', day)
+
+    if (error) fail(error, 'tirar a foto do dia')
+  }
+}
+
+/**
+ * O convite de amigo, contra o Supabase.
+ *
+ * O registro passa por `register_referral` (0061), que aplica as regras e
+ * resolve o @ em id. A contagem sai do SELECT normal: a política deixa cada
+ * pessoa ver as próprias linhas, e "quantos entraram pelo meu convite" é
+ * exatamente uma delas.
+ */
+export class SupabaseReferralRepository implements ReferralRepository {
+  async register(inviteCode: string): Promise<boolean> {
+    const { data, error } = await supabase().rpc('register_referral', {
+      inviter_handle: inviteCode,
+    })
+
+    /*
+      Falhar aqui não pode estragar o primeiro minuto de uso: isto roda logo
+      depois de a conta nascer, e nada do que a pessoa veio fazer depende
+      disso. Erro vira "não registrei", e segue.
+    */
+    if (error) return false
+    return data === true
+  }
+
+  async countInvited(userId: string): Promise<number> {
+    const { count, error } = await supabase()
+      .from('referrals')
+      .select('*', { count: 'exact', head: true })
+      .eq('inviter_id', userId)
+
+    if (error) return 0
+    return count ?? 0
+  }
+}
+
+/**
+ * Os clubes, contra o Supabase.
+ *
+ * Criar passa pela função `create_club` (0062), que confere a assinatura e
+ * coloca o dono dentro na mesma transação. Editar e arquivar vão pelo UPDATE
+ * normal, onde a política já exige dono COM PRO, a tela esconde o botão, o
+ * banco recusa a escrita, e é o banco que vale.
+ */
+export class SupabaseClubRepository implements ClubRepository {
+  async listMine(userId: string): Promise<Club[]> {
+    const { data, error } = await supabase()
+      .from('club_members')
+      .select('clubs(*)')
+      .eq('user_id', userId)
+
+    if (error) fail(error, 'carregar teus clubes')
+
+    return (data ?? [])
+      .flatMap((row) => {
+        const club = (row as { clubs: unknown }).clubs
+        return club ? [toClub(club)] : []
+      })
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+  }
+
+  async listOpen(limit = 20): Promise<Club[]> {
+    /*
+      A política já esconde o que é por convite. O filtro aqui é pra não
+      arrastar os clubes de que a pessoa participa pra dentro da descoberta,
+      eles têm lista própria.
+    */
+    const { data, error } = await supabase()
+      .from('clubs')
+      .select('*')
+      .eq('privacy', 'aberto')
+      .is('archived_at', null)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) fail(error, 'carregar os clubes abertos')
+    return (data ?? []).map(toClub)
+  }
+
+  async findById(id: string): Promise<Club | null> {
+    const { data, error } = await supabase().from('clubs').select('*').eq('id', id).maybeSingle()
+    if (error) fail(error, 'abrir o clube')
+    return data ? toClub(data) : null
+  }
+
+  async listMembers(clubId: string): Promise<ClubMember[]> {
+    const { data, error } = await supabase()
+      .from('club_members')
+      .select('*')
+      .eq('club_id', clubId)
+      .order('joined_at', { ascending: true })
+
+    if (error) fail(error, 'carregar os membros')
+    return (data ?? []).map(toClubMember)
+  }
+
+  async ranking(clubId: string): Promise<ClubRankedMember[]> {
+    const { data, error } = await supabase().rpc('club_ranking', { club: clubId })
+    if (error) fail(error, 'carregar o ranking do clube')
+
+    const rows = ((data ?? []) as unknown[]).map(toClubRankingRow)
+    return rankClubMembers(rows)
+  }
+
+  async create(input: NewClubInput): Promise<Club> {
+    assertValidClubName(input.name)
+    assertValidClubDescription(input.description)
+
+    const { data, error } = await supabase().rpc('create_club', {
+      p_name: input.name.trim(),
+      p_description: input.description?.trim() || null,
+      p_category: input.category,
+      p_cover: input.cover,
+      p_privacy: input.privacy,
+    })
+
+    if (error) {
+      // O código que a função usa pra recusar quem não assina. A tela precisa
+      // distinguir isso de uma falha, pra oferecer o PRO em vez de um erro.
+      if (error.code === 'P0001') {
+        throw new DomainError('Criar clube faz parte do Momentumm PRO.')
+      }
+      fail(error, 'criar o clube')
+    }
+
+    // A função devolve a linha inteira; o PostgREST entrega como objeto.
+    return toClub(Array.isArray(data) ? data[0] : data)
+  }
+
+  async update(id: string, changes: Partial<NewClubInput>): Promise<Club> {
+    if (changes.name !== undefined) assertValidClubName(changes.name)
+    if (changes.description !== undefined) assertValidClubDescription(changes.description)
+
+    const { data, error } = await supabase()
+      .from('clubs')
+      .update({
+        ...(changes.name !== undefined ? { name: changes.name.trim() } : {}),
+        ...(changes.description !== undefined
+          ? { description: changes.description?.trim() || null }
+          : {}),
+        ...(changes.category !== undefined ? { category: changes.category } : {}),
+        ...(changes.cover !== undefined ? { cover: changes.cover } : {}),
+        ...(changes.privacy !== undefined ? { privacy: changes.privacy } : {}),
+      })
+      .eq('id', id)
+      .select('*')
+      .single()
+
+    if (error) fail(error, 'salvar o clube')
+    return toClub(data)
+  }
+
+  async archive(id: string): Promise<void> {
+    const { error } = await supabase()
+      .from('clubs')
+      .update({ archived_at: new Date().toISOString() })
+      .eq('id', id)
+
+    if (error) fail(error, 'arquivar o clube')
+  }
+
+  async join(clubId: string, userId: string): Promise<void> {
+    const { error } = await supabase()
+      .from('club_members')
+      .insert({ club_id: clubId, user_id: userId, role: 'membro' })
+
+    if (error) fail(error, 'entrar no clube')
+  }
+
+  async leave(clubId: string, userId: string): Promise<void> {
+    const { error } = await supabase()
+      .from('club_members')
+      .delete()
+      .eq('club_id', clubId)
+      .eq('user_id', userId)
+
+    if (error) fail(error, 'sair do clube')
+  }
+
+  async invite(clubId: string, userId: string): Promise<void> {
+    const { error } = await supabase().rpc('invite_to_club', {
+      p_club: clubId,
+      p_person: userId,
+    })
+
+    if (error) {
+      // O mesmo código que `create_club` usa pra recusar quem não assina: a
+      // tela oferece o PRO em vez de mostrar um aviso vermelho.
+      if (error.code === 'P0001') {
+        throw new DomainError('Convidar pro clube faz parte do Momentumm PRO.')
+      }
+      fail(error, 'convidar pro clube')
+    }
+  }
+
+  async listMyInvitations(): Promise<ClubInvitation[]> {
+    const { data, error } = await supabase().rpc('my_club_invitations')
+    if (error) fail(error, 'carregar teus convites')
+    return ((data ?? []) as unknown[]).map(toClubInvitation)
+  }
+
+  async respondInvitation(invitationId: string, accept: boolean): Promise<void> {
+    const { error } = await supabase().rpc('respond_club_invitation', {
+      p_invitation: invitationId,
+      p_accept: accept,
+    })
+
+    if (error) fail(error, accept ? 'entrar no clube' : 'recusar o convite')
+  }
+
+  async inviteToken(clubId: string, rotate = false): Promise<string> {
+    const { data, error } = await supabase().rpc('club_invite_token', {
+      p_club: clubId,
+      p_rotate: rotate,
+    })
+
+    if (error) {
+      if (error.code === 'P0001') {
+        throw new DomainError('O link do clube faz parte do Momentumm PRO.')
+      }
+      fail(error, 'gerar o link do clube')
+    }
+
+    return String(data)
+  }
+
+  async previewInvite(token: string): Promise<ClubInvitePreview> {
+    const { data, error } = await supabase().rpc('club_invite_preview', { p_token: token })
+    if (error) fail(error, 'abrir o convite')
+    return toClubInvitePreview(data)
+  }
+
+  async joinByToken(token: string): Promise<string> {
+    const { data, error } = await supabase().rpc('join_club_by_token', { p_token: token })
+    if (error) fail(error, 'entrar no clube')
+    return String(data)
   }
 }

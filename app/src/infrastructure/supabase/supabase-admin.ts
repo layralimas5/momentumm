@@ -60,7 +60,7 @@ export const ADMIN_FUNCTION_NAME = 'admin-actions'
  *
  * Nenhum `.from('tabela')` aqui: o painel não lê tabela nenhuma direto, nem
  * as administrativas. Se uma tela precisar de um dado novo, nasce uma função
- * no banco com o papel checado — não uma consulta no cliente.
+ * no banco com o papel checado, não uma consulta no cliente.
  */
 export class SupabaseAdminGateway implements AdminGateway {
   async me(): Promise<AdminSession> {

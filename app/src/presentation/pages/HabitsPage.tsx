@@ -31,7 +31,7 @@ const HISTORY_DAYS = 14
  * Hábitos.
  *
  * A tela mostra constância, não cobrança: cada hábito traz as últimas duas
- * semanas em quadradinhos, e dia perdido é um quadrado apagado — não um alerta
+ * semanas em quadradinhos, e dia perdido é um quadrado apagado, não um alerta
  * vermelho. A taxa embaixo é "de dez esperadas, quantas saíram", e não
  * sequência: uma falha isolada quase não move esse número, e é justamente isso
  * que impede o produto de virar um cassino de sequência.

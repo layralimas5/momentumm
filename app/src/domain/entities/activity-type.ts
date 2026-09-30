@@ -7,7 +7,7 @@ import { DomainError } from '@/shared/errors'
  * um módulo novo. Feed, streak, meta, hábito e objetivo leem daqui e funcionam
  * pra qualquer eixo sem código adicional.
  *
- * Quatro eixos vêm de fábrica. Os outros a pessoa cria — e é por isso que a
+ * Quatro eixos vêm de fábrica. Os outros a pessoa cria, e é por isso que a
  * lista deixou de ser uma constante: ela é um REGISTRO, montado no início da
  * sessão com os eixos de fábrica mais os que aquela conta criou. O slug segue
  * sendo a chave, e quem não conhece um slug recebe um eixo genérico em vez de
@@ -183,7 +183,7 @@ export interface NewActivityTypeInput {
  *
  * A unidade é sempre minutos. É a única que serve pra qualquer coisa que
  * alguém queira acompanhar (escrever, tocar, cozinhar, terapia) e é o
- * denominador comum do resto do produto — perguntar "páginas ou minutos?" no
+ * denominador comum do resto do produto, perguntar "páginas ou minutos?" no
  * onboarding seria cobrar uma decisão que a pessoa ainda não tem como tomar.
  */
 export function createActivityType(input: NewActivityTypeInput): ActivityType {

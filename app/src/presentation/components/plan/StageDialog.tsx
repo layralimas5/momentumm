@@ -22,7 +22,7 @@ import { usePlanner } from '@/presentation/planner/use-planner'
  * O peso só aparece na edição, e de propósito: na criação ele é distribuído
  * sozinho, e perguntar "quanto essa etapa vale do objetivo?" antes de a pessoa
  * ter escrito o caminho inteiro é uma pergunta que ninguém consegue responder.
- * Depois que o plano existe, ajustar o peso passa a fazer sentido — e aí a
+ * Depois que o plano existe, ajustar o peso passa a fazer sentido, e aí a
  * tela mostra a soma em tempo real.
  */
 export function StageDialog({

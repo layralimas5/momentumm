@@ -24,7 +24,7 @@ interface PlanPreviewProps {
   readonly today: DayKey
   /**
    * Falso quando outro plano já ficou com a prioridade do dia. A regra é uma
-   * por dia, e o preview não pode prometer duas — o que a tela mostra aqui é
+   * por dia, e o preview não pode prometer duas, o que a tela mostra aqui é
    * exatamente o que vai ser gravado.
    */
   readonly ownsMainPriority?: boolean
@@ -39,7 +39,7 @@ interface PlanPreviewProps {
  *
  * Mostra a conta antes do resultado: quem entende de onde saiu o número do
  * hábito cumpre o hábito; quem recebe número pronto, abandona. É o mesmo bloco
- * no onboarding e na criação de um objetivo novo — o plano precisa ter sempre
+ * no onboarding e na criação de um objetivo novo, o plano precisa ter sempre
  * a mesma cara, senão ele parece dois produtos diferentes.
  */
 export function PlanPreview({
@@ -54,12 +54,32 @@ export function PlanPreview({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
+        {/*
+          O nome do roteiro vem primeiro e em cor de marca: ele responde "esse
+          plano é DE quê" antes de a pessoa ler qualquer etapa. Sem roteiro o
+          selo não existe, em vez de dizer "plano genérico" — anunciar que o
+          plano é genérico é pior que ele ser.
+        */}
+        {plan.blueprint ? <Tag tone="brand">{plan.blueprint.label}</Tag> : null}
         <Tag tone={FEASIBILITY_TONE[plan.feasibility]}>{FEASIBILITY_LABEL[plan.feasibility]}</Tag>
         <Tag color={type.colorToken}>{type.label}</Tag>
         <Tag>{plan.sessionsPerWeek === 7 ? 'Todo dia' : `${plan.sessionsPerWeek}x por semana`}</Tag>
       </div>
 
       <p className="text-sm text-pretty text-ink-muted">{plan.rationale}</p>
+
+      {/*
+        O que o app NÃO faz, dito aqui e não no meio do plano.
+
+        Nos assuntos que encostam em saúde e dinheiro, a pessoa pode esperar do
+        Momentumm uma coisa que ele não é. Dizer o limite antes dela investir no
+        plano é mais honesto do que ela descobrir na terceira semana.
+      */}
+      {plan.blueprint?.caution ? (
+        <p className="rounded-card border border-line bg-surface/60 px-4 py-3 text-xs text-pretty text-ink-faint">
+          {plan.blueprint.caution}
+        </p>
+      ) : null}
 
       {plan.warning ? (
         <div
@@ -124,6 +144,38 @@ export function PlanPreview({
           </li>
         ))}
       </PlanBlock>
+
+      {/*
+        Os hábitos ficam entre o caminho e as ações porque é essa a leitura:
+        a etapa diz onde você está indo, o hábito diz o que se repete até
+        chegar lá, e a ação diz o que fazer hoje. Plano sem hábito não mostra
+        o bloco, em vez de mostrar um bloco vazio.
+      */}
+      {plan.habits.length > 0 ? (
+        <PlanBlock title="O que se repete" icon="habitos">
+          {plan.habits.map((habit) => (
+            <li key={habit.name} className="flex items-start gap-3 py-2">
+              <span
+                aria-hidden="true"
+                className="mt-1.5 size-1.5 shrink-0 rounded-full bg-line-hi"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm text-ink">{habit.name}</span>
+                <span className="block text-xs text-pretty text-ink-faint">
+                  {habit.description}
+                </span>
+              </span>
+              <span className="shrink-0 text-xs text-ink-faint tabular">
+                {habit.frequency === 'diario'
+                  ? 'todo dia'
+                  : `${habit.timesPerWeek ?? 1}x/sem`}
+                {' · '}
+                {habit.target} min
+              </span>
+            </li>
+          ))}
+        </PlanBlock>
+      ) : null}
 
       <PlanBlock title="As primeiras ações" icon="jornada">
         {plan.tasks.map((task) => {

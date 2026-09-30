@@ -9,7 +9,7 @@ import { Icon, type IconName } from '@/presentation/components/ui/Icon'
  *
  * O iOS não tem prompt de instalação: quem decide é a pessoa, no menu do
  * Safari, e o app só pode mostrar o caminho. Por isso o sheet é curto e
- * literal — o nome de cada item é o nome que está na tela do aparelho, na
+ * literal, o nome de cada item é o nome que está na tela do aparelho, na
  * ordem em que aparece. Nada de "siga as instruções do seu navegador".
  */
 

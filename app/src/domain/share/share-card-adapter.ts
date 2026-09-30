@@ -14,7 +14,7 @@ import {
  * `JourneyEvent` → `ShareCardData`.
  *
  * Este é o único lugar do app que decide o que um evento vira dentro de uma
- * imagem. Os templates desenham o que sai daqui e nada além — se um deles
+ * imagem. Os templates desenham o que sai daqui e nada além, se um deles
  * precisar consultar o evento original, a separação quebrou.
  *
  * A regra que manda: campo desligado não vira texto neutro nem placeholder,
@@ -80,7 +80,7 @@ function titleOf(event: JourneyEvent, showsTitle: boolean): string {
  * Tipos em que o título é escrito pela pessoa.
  *
  * "Lançar meu SaaS" é dela; "Minha semana" é do app. Só os primeiros dependem
- * do toggle — travar os dois atrás do mesmo botão faria o card do dia começar
+ * do toggle, travar os dois atrás do mesmo botão faria o card do dia começar
  * sem título nenhum.
  */
 function titleIsSensitive(type: JourneyEventType): boolean {
@@ -146,7 +146,7 @@ function kickerOf(event: JourneyEvent): string | null {
  *
  * Um card tem UMA estrela. Dia e objetivo mostram percentual, momentum mostra
  * o score, rotina mostra a fração, marco mostra a contagem. Quando o campo que
- * seria a estrela está desligado, o próximo número honesto assume — o card
+ * seria a estrela está desligado, o próximo número honesto assume, o card
  * nunca fica com um buraco no meio.
  */
 function primaryMetricOf(event: JourneyEvent, fields: ShareFieldSet): ShareMetric {
@@ -172,7 +172,7 @@ function primaryMetricOf(event: JourneyEvent, fields: ShareFieldSet): ShareMetri
     /*
       A retomada mostra a FRASE em tamanho grande, não a contagem de dias
       parados. Um "4" gigante num card de retomada transforma o retorno num
-      relatório da ausência — exatamente o oposto do que o produto quer que a
+      relatório da ausência, exatamente o oposto do que o produto quer que a
       pessoa sinta ao voltar.
     */
     case 'comeback':
@@ -354,7 +354,7 @@ function statsOf(event: JourneyEvent, fields: ShareFieldSet): readonly ShareCard
   /*
     O volume é o "quanto de verdade" do objetivo: a porcentagem diz que ele
     andou, o volume diz o que foi feito pra ele andar. Sem alvo a linha não
-    entra — "1240 páginas" sozinho não responde nada.
+    entra, "1240 páginas" sozinho não responde nada.
   */
   const done = event.metadata.doneValue
   const target = event.metadata.targetValue
@@ -431,7 +431,7 @@ function itemsOf(event: JourneyEvent): readonly ShareCardItem[] {
  * A frase do rodapé.
  *
  * Determinística, como o resto do produto: a mesma situação escreve sempre a
- * mesma coisa. Nada de "Parabéns!" — o card fala de continuidade, que é o que
+ * mesma coisa. Nada de "Parabéns!", o card fala de continuidade, que é o que
  * o Momentumm defende, e nunca de mérito.
  */
 function noteOf(event: JourneyEvent): string | null {

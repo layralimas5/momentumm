@@ -18,7 +18,7 @@ interface InsightCardProps {
  * O que o ritmo está mostrando.
  *
  * Cada insight nasce de uma contagem real e vem com motivo, recomendação e uma
- * ação que o app aplica sozinho. Sem padrão detectado, o card não aparece — é
+ * ação que o app aplica sozinho. Sem padrão detectado, o card não aparece, é
  * melhor não dizer nada do que encher a tela de frase motivacional.
  */
 export function InsightCard({ insight, limits, onApply, onDismiss }: InsightCardProps) {

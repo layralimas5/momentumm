@@ -7,7 +7,7 @@ import {
 } from '@/domain/entities/activity-type'
 import { sortByRecent } from '@/domain/entities/activity'
 import type { CheckIn, NewCheckInInput } from '@/domain/entities/checkin'
-import { dayKeyOf, type DayKey } from '@/domain/entities/day'
+import type { DayKey } from '@/domain/entities/day'
 import { isActive, progressOf, type Goal, type NewGoalInput } from '@/domain/entities/goal'
 import {
   countsAsDone,
@@ -16,6 +16,15 @@ import {
   type HabitStatus,
   type NewHabitInput,
 } from '@/domain/entities/habit'
+import type {
+  NewRoutineItemInput,
+  RoutineItem,
+  RoutineOccurrence,
+} from '@/domain/entities/routine-item'
+import type {
+  RoutineItemUpdate,
+  RoutineOccurrencePatch,
+} from '@/domain/repositories/routine-repository'
 import {
   isActiveObjective,
   progressOfObjective,
@@ -59,6 +68,7 @@ import { track } from '@/infrastructure/analytics/track'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { usePlanLimits } from '@/presentation/plan/use-plan-limits'
+import { useToday } from '@/presentation/hooks/use-today'
 import { DomainError, toUserMessage } from '@/shared/errors'
 import { PlannerContext, type PlannerState } from './planner-context'
 
@@ -70,6 +80,8 @@ interface Snapshot {
   readonly goals: Goal[]
   readonly habits: Habit[]
   readonly habitLogs: HabitLog[]
+  readonly routineItems: RoutineItem[]
+  readonly routineOccurrences: RoutineOccurrence[]
   readonly tasks: Task[]
   readonly checkIns: CheckIn[]
   readonly wins: Win[]
@@ -88,6 +100,8 @@ const EMPTY: Snapshot = {
   goals: [],
   habits: [],
   habitLogs: [],
+  routineItems: [],
+  routineOccurrences: [],
   tasks: [],
   checkIns: [],
   wins: [],
@@ -98,7 +112,7 @@ const EMPTY: Snapshot = {
 /**
  * Carrega o planejamento inteiro de uma vez e mantém tudo em um estado só.
  *
- * Uma busca por tela criaria dashboards que discordam entre si — a meta diria
+ * Uma busca por tela criaria dashboards que discordam entre si, a meta diria
  * uma coisa e o progresso diria outra. Aqui a fonte é única e as escritas são
  * otimistas: a tela responde na hora e volta atrás se o servidor recusar.
  */
@@ -123,8 +137,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   const snapshot = useRef<Snapshot>(EMPTY)
   snapshot.current = data
 
-  // Recalculado a cada render: o app aberto virando o dia acompanha a data.
-  const today = dayKeyOf(new Date())
+  const today = useToday()
 
   const limits = usePlanLimits()
 
@@ -169,6 +182,8 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         goals,
         habits,
         habitLogs,
+        routineItems,
+        routineOccurrences,
         tasks,
         checkIns,
         wins,
@@ -182,6 +197,8 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         container.goals.listByUser(user.id),
         container.habits.listByUser(user.id),
         container.habits.listLogs(user.id),
+        container.routine.listItems(user.id),
+        container.routine.listOccurrences(user.id),
         container.tasks.listByUser(user.id),
         container.checkIns.listByUser(user.id),
         container.wins.listByUser(user.id),
@@ -210,6 +227,8 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         goals: goals.filter(isActive),
         habits,
         habitLogs,
+        routineItems,
+        routineOccurrences,
         tasks,
         checkIns,
         wins,
@@ -267,6 +286,17 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       document.removeEventListener('visibilitychange', onVisible)
     }
   }, [reload])
+
+  /*
+    Virou o dia com o app aberto: busca de novo. O que o outro aparelho marcou
+    de madrugada e as ocorrências de hoje só existem no servidor.
+  */
+  const loadedDay = useRef(today)
+  useEffect(() => {
+    if (loadedDay.current === today) return
+    loadedDay.current = today
+    if (navigator.onLine) void reload({ silent: true })
+  }, [today, reload])
 
   /** Escrita otimista: aplica, e se o servidor recusar volta ao estado anterior. */
   const mutate = useCallback(
@@ -385,7 +415,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
    * Arquivar o objetivo leva o plano dele junto.
    *
    * Etapa não existe fora do objetivo: uma etapa órfã não significa nada e não
-   * aparece em lugar nenhum. Ação e hábito NÃO somem — eles perdem só o
+   * aparece em lugar nenhum. Ação e hábito NÃO somem, eles perdem só o
    * vínculo com a etapa, porque são trabalho registrado e histórico. É a mesma
    * regra do banco (`cascade` na etapa, `set null` na ação).
    */
@@ -425,7 +455,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
    * Concluir o objetivo e limpar o rastro dele no plano.
    *
    * As ações em aberto são canceladas, não apagadas: elas são o registro do que
-   * ficou pra trás e a review usa isso. Reabrir só devolve o objetivo — as
+   * ficou pra trás e a review usa isso. Reabrir só devolve o objetivo, as
    * ações canceladas ficam canceladas, porque ressuscitar tarefa antiga de
    * surpresa é a forma mais rápida de encher o dia de coisa que ninguém pediu.
    */
@@ -433,7 +463,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
    * Grava um momento da jornada.
    *
    * Nunca derruba a ação que o disparou: se a gravação falhar, o objetivo
-   * continua concluído e o review continua salvo. O evento é um subproduto —
+   * continua concluído e o review continua salvo. O evento é um subproduto,
    * perder um deles é aceitável, perder a conclusão do objetivo não é.
    *
    * A escrita é idempotente por (tipo, origem, dia), então repetir a mesma
@@ -463,7 +493,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
    * Muda quem vê um momento.
    *
    * É a ÚNICA porta pra um evento deixar de ser privado, e ela só é chamada
-   * onde a pessoa toca. Nenhuma regra do app promove visibilidade sozinha —
+   * onde a pessoa toca. Nenhuma regra do app promove visibilidade sozinha,
    * nem o gravador, nem o Share Studio, nem aceitar uma amizade.
    */
   const setEventVisibility = useCallback(
@@ -534,7 +564,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
    *
    * O peso é propriedade do CONJUNTO: criar a quarta etapa muda o valor das
    * outras três. Gravar só a nova deixaria o plano somando 133% até alguém
-   * abrir a tela de pesos — e uma barra de progresso passando de 100 destrói a
+   * abrir a tela de pesos, e uma barra de progresso passando de 100 destrói a
    * confiança em todos os outros números da tela junto.
    */
   const createStage = useCallback(
@@ -560,7 +590,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         input.weight === undefined ? rebalanceWeights([...siblings, created]) : [...siblings, created]
 
       /*
-        Sem peso informado, o conjunto é sempre reescrito — inclusive quando a
+        Sem peso informado, o conjunto é sempre reescrito, inclusive quando a
         etapa é a primeira. O repositório demo já rebalanceia sozinho no insert,
         o Supabase não: pular essa chamada faria a primeira etapa nascer valendo
         100% num lugar e 0% no outro, e o mesmo objetivo mostraria progressos
@@ -658,7 +688,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   /**
    * Apagar a etapa não apaga o trabalho.
    *
-   * As ações voltam pro objetivo sem etapa, onde a pessoa decide o destino —
+   * As ações voltam pro objetivo sem etapa, onde a pessoa decide o destino,
    * apagar tarefa junto com uma reorganização é a forma mais rápida de alguém
    * perder confiança no app. Os pesos das que sobraram são reequilibrados.
    */
@@ -752,7 +782,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         Do snapshot, não do render: a ação que nasce junto com a etapa (plano de
         um objetivo novo, sugestão da IA) é gravada no mesmo tick em que a etapa
         foi criada, e ler `data` aqui recusaria como inexistente uma etapa que
-        acabou de ser gravada — derrubando a criação do plano no meio.
+        acabou de ser gravada, derrubando a criação do plano no meio.
       */
       const stage = snapshot.current.planStages.find((item) => item.id === stageId)
       if (!stage) throw new DomainError('Essa etapa não existe mais.')
@@ -852,6 +882,112 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     [user, today, mutate],
   )
 
+  // ------------------------------------------------------------------ rotina
+
+  const createRoutineItem = useCallback(
+    async (input: Omit<NewRoutineItemInput, 'userId'>): Promise<RoutineItem | null> => {
+      if (!user) return null
+      const item = await container.routine.createItem({ userId: user.id, ...input })
+      setData((current) => ({ ...current, routineItems: [...current.routineItems, item] }))
+      return item
+    },
+    [user],
+  )
+
+  const updateRoutineItem = useCallback(
+    async (id: string, changes: RoutineItemUpdate) => {
+      if (!user) return
+      await mutate(
+        (current) => ({
+          ...current,
+          routineItems: current.routineItems.map((item) =>
+            item.id === id ? { ...item, ...changes } : item,
+          ),
+        }),
+        async () => {
+          await container.routine.updateItem(id, user.id, changes)
+        },
+      )
+    },
+    [user, mutate],
+  )
+
+  const archiveRoutineItem = useCallback(
+    async (id: string) => {
+      if (!user) return
+      await mutate(
+        (current) => ({
+          ...current,
+          routineItems: current.routineItems.filter((item) => item.id !== id),
+        }),
+        () => container.routine.archiveItem(id, user.id),
+      )
+    },
+    [user, mutate],
+  )
+
+  /**
+   * O estado de um item da rotina num dia.
+   *
+   * É a MESMA operação pra concluir, pular e reagendar: uma linha por item e
+   * dia. Ter três funções aqui seria ter três caminhos pro mesmo registro, e é
+   * assim que dois deles deixam de carimbar o que o terceiro carimba.
+   */
+  const setRoutineStatus = useCallback(
+    async (
+      itemId: string,
+      patch: RoutineOccurrencePatch,
+      day: DayKey = today,
+    ) => {
+      if (!user) return
+
+      const existing = snapshot.current.routineOccurrences.find(
+        (item) => item.itemId === itemId && item.day === day,
+      )
+      const timeOverride = patch.timeOverride ?? existing?.timeOverride ?? null
+      const movedToDay = patch.movedToDay ?? existing?.movedToDay ?? null
+      const vazia = patch.status === 'pendente' && timeOverride === null && movedToDay === null
+
+      const optimistic: RoutineOccurrence = {
+        id: existing?.id ?? `optimistic-${itemId}-${day}`,
+        userId: user.id,
+        itemId,
+        day,
+        status: patch.status,
+        plannedTime: patch.plannedTime ?? existing?.plannedTime ?? null,
+        timeOverride,
+        movedToDay,
+        completedAt: patch.status === 'feito' ? new Date() : null,
+        createdAt: existing?.createdAt ?? new Date(),
+      }
+
+      await mutate(
+        (current) => {
+          const withoutDay = current.routineOccurrences.filter(
+            (item) => !(item.itemId === itemId && item.day === day),
+          )
+          // Pendente e sem decisão guardada é a ausência de linha, como no
+          // hábito: o registro some em vez de virar histórico de nada.
+          return {
+            ...current,
+            routineOccurrences: vazia ? withoutDay : [...withoutDay, optimistic],
+          }
+        },
+        async () => {
+          const saved = await container.routine.setOccurrence(user.id, itemId, day, patch)
+          if (vazia) return
+          setData((current) => ({
+            ...current,
+            routineOccurrences: current.routineOccurrences.map((item) =>
+              item.id === optimistic.id ? saved : item,
+            ),
+          }))
+        },
+      )
+    },
+    [user, today, mutate],
+  )
+
   const createTask = useCallback(
     async (input: Omit<NewTaskInput, 'userId'>): Promise<Task | null> => {
       if (!user) return null
@@ -917,7 +1053,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   /**
    * Concluir ou reabrir uma ação. É por aqui que TODA conclusão passa.
    *
-   * O domínio é quem carimba a data — `completeTask` e `reopenTask` — em vez de
+   * O domínio é quem carimba a data, `completeTask` e `reopenTask`, em vez de
    * cada tela montar o objeto na mão. Duas telas construindo o mesmo estado é
    * como nasce a ação concluída sem `completedAt`, que some da série da
    * previsão sem nenhum erro aparecer.
@@ -1045,7 +1181,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
    *
    * A ordem dentro de cada plano importa: o objetivo primeiro (é ele que pode
    * ser recusado por já existir um ativo no eixo), depois o ritmo semanal,
-   * depois os hábitos e por último as ações — que nascem já apontando pra meta
+   * depois os hábitos e por último as ações, que nascem já apontando pra meta
    * criada, senão o card de "próxima ação" da meta nasceria vazio.
    *
    * Só a primeira ação do primeiro plano fica como prioridade principal: a
@@ -1069,7 +1205,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
           As etapas vêm antes das ações porque cada ação nasce dentro de uma.
           Sem esse passo o objetivo nasceria como uma lista: a barra mediria
           volume registrado em vez de caminho percorrido, e gargalo, previsão e
-          as regras de insight que leem etapa ficariam todas de fora — no
+          as regras de insight que leem etapa ficariam todas de fora, no
           objetivo recém-criado, que é justamente onde o plano importa mais.
         */
         /*
@@ -1095,6 +1231,25 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
           }
         }
 
+
+        /*
+          Os hábitos vêm depois das etapas e antes das ações, e só existem
+          quando o plano saiu de um roteiro por assunto: o plano genérico não
+          cria hábito de propósito (um "Trabalhar pra <objetivo>" gerado seria o
+          objetivo com outro nome na tela de Hábitos).
+
+          Falhar aqui não derruba o plano. Hábito recusado por limite de plano é
+          um hábito a menos, e a pessoa cria na mão; perder o objetivo inteiro
+          por causa dele seria trocar o principal pelo acessório.
+        */
+        for (const habit of plan.habits) {
+          const { stageIndex, ...fields } = habit
+          await createHabit({
+            ...fields,
+            objectiveId: objective?.id ?? null,
+            stageId: stageIndex === null ? null : (stageIds[stageIndex] ?? null),
+          }).catch(() => null)
+        }
 
         let order = 0
         for (const task of plan.tasks) {
@@ -1151,8 +1306,8 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
    * O plano de cada objetivo, calculado uma vez pro app inteiro.
    *
    * Dashboard, plano, progresso, detalhe e insight leem daqui. Foi a
-   * divergência entre essas telas — cada uma com a sua conta de "quanto está
-   * feito" — que motivou a hierarquia; recalcular por tela traria o problema
+   * divergência entre essas telas, cada uma com a sua conta de "quanto está
+   * feito", que motivou a hierarquia; recalcular por tela traria o problema
    * de volta pela porta dos fundos.
    */
   const plans = useMemo(
@@ -1192,6 +1347,8 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       goals: data.goals,
       goalProgress,
       habits: data.habits,
+      routineItems: data.routineItems,
+      routineOccurrences: data.routineOccurrences,
       habitLogs: data.habitLogs,
       tasks: data.tasks,
       checkIns: data.checkIns,
@@ -1229,6 +1386,10 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       setHabitPaused,
       archiveHabit,
       setHabitStatus,
+      createRoutineItem,
+      updateRoutineItem,
+      archiveRoutineItem,
+      setRoutineStatus,
       createTask,
       updateTask,
       setTaskDone,
@@ -1278,6 +1439,10 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       setHabitPaused,
       archiveHabit,
       setHabitStatus,
+      createRoutineItem,
+      updateRoutineItem,
+      archiveRoutineItem,
+      setRoutineStatus,
       createTask,
       updateTask,
       setTaskDone,

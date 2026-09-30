@@ -8,7 +8,7 @@ import { cn } from '@/shared/lib/cn'
  * As regras vêm do domínio (`MOMENTUM_RULES`), que é o mesmo texto que a
  * Momentumm AI recebe. Recolhido por padrão: quem abre o diálogo quer saber
  * por que 62, e a lista de regras é a leitura de quem quer entender a conta
- * inteira — vale existir, não vale empurrar.
+ * inteira, vale existir, não vale empurrar.
  */
 export function MomentumRules({ className }: { readonly className?: string }) {
   return (

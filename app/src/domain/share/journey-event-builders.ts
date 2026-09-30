@@ -19,7 +19,7 @@ import type { MomentumScore } from '@/domain/entities/momentum'
  * eventos que nunca aconteceram.
  *
  * Os dois caminhos terminam no mesmo lugar: um `JourneyEvent`. O Share Studio
- * não sabe (nem precisa saber) se o evento veio do banco ou daqui — que é
+ * não sabe (nem precisa saber) se o evento veio do banco ou daqui, que é
  * exatamente o desacoplamento que o feed futuro vai precisar.
  *
  * Tudo aqui é função pura: recebe números já apurados pelo domínio, devolve
@@ -158,7 +158,7 @@ export interface ObjectiveEventInput {
   /*
     O que o objetivo já tem além da porcentagem: o volume registrado contra o
     alvo, as etapas fechadas e o prazo. São os números que a tela do objetivo
-    mostra ao lado da barra — e não havia motivo pra o card ser mais pobre que
+    mostra ao lado da barra, e não havia motivo pra o card ser mais pobre que
     a tela de onde ele sai.
   */
   readonly doneValue?: number
@@ -317,7 +317,7 @@ export interface ComebackEventInput {
  *
  * O card NUNCA registra a queda como falha: ele conta os dias parados só pra
  * dar tamanho ao retorno. Um card de retomada que envergonha é um card que
- * ninguém compartilha — e, pior, que ensina a pessoa a não voltar.
+ * ninguém compartilha, e, pior, que ensina a pessoa a não voltar.
  */
 export function comebackEvent(input: ComebackEventInput): JourneyEvent {
   return ephemeral(
@@ -385,7 +385,7 @@ export interface ChallengeEventInput {
  *
  * Compartilhar "como está indo o desafio" numa terça qualquer não é uma
  * transição: é a foto do estado, e por isso sai daqui em vez de virar linha no
- * banco. O evento gravado — entrada, marco, conclusão — continua vindo do
+ * banco. O evento gravado, entrada, marco, conclusão, continua vindo do
  * `challenge-recorder`.
  *
  * O tipo acompanha o estado: fechado vira conclusão, o resto vira avanço. É o

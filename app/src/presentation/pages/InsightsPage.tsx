@@ -31,7 +31,7 @@ import { PageHeader } from './PageHeader'
  * Duas coisas que faltavam e são o motivo desta tela existir:
  *
  * 1. Ela recebe os OBJETIVOS com plano e previsão. Sem isso as oito regras que
- *    leem etapa, peso e prazo nunca disparavam aqui — justamente as que
+ *    leem etapa, peso e prazo nunca disparavam aqui, justamente as que
  *    percebem que o plano parou de funcionar, que é a pergunta da tela.
  * 2. Cada leitura carrega a ação que resolve. Descrever o problema e deixar a
  *    execução pra pessoa é devolver o trabalho que o app deveria fazer.
@@ -139,7 +139,7 @@ export function InsightsPage() {
 /**
  * Uma leitura, com o ajuste que ela pede.
  *
- * O botão executa a MESMA operação que o dashboard executa — mesmo hook, mesma
+ * O botão executa a MESMA operação que o dashboard executa, mesmo hook, mesma
  * escrita. Sem isso o app teria duas telas falando do mesmo padrão e só uma
  * capaz de resolver.
  *

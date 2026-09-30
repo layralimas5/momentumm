@@ -7,7 +7,7 @@ import { useAuth } from '@/presentation/auth/use-auth'
  *
  * Existe por causa de uma duplicação que já estava espalhada: quatro telas
  * escreviam `limitsOf(profile?.plan ?? 'free')` cada uma por conta própria. O
- * risco não é a repetição, é o PADRÃO — o dia em que uma delas esquecer o
+ * risco não é a repetição, é o PADRÃO, o dia em que uma delas esquecer o
  * `?? 'free'`, ou escrever `?? 'pro'`, aquela tela passa a liberar recurso pago
  * pra sessão que ainda está carregando o perfil, e nada acusa.
  *

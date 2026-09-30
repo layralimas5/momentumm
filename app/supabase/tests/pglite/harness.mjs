@@ -32,6 +32,20 @@ export async function boot() {
     `create table storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text, name text, owner uuid, metadata jsonb, created_at timestamptz default now())`,
     `create function storage.foldername(name text) returns text[] language sql immutable as $$ select string_to_array(name, '/') $$`,
     `create extension if not exists pgcrypto schema extensions`,
+    /*
+      O que o Supabase de verdade concede e o stub não concedia.
+
+      Sem `usage` em `auth`, toda função `security invoker` chamada por
+      `authenticated` morre em "permission denied for schema auth" na primeira
+      linha que usa `auth.uid()` — e a política de RLS ao lado passava porque
+      ela é avaliada pelo dono da tabela. O teste ficava dizendo que a função
+      estava quebrada quando quem estava incompleto era o stub.
+    */
+    `grant usage on schema auth to anon, authenticated, service_role`,
+    `grant usage on schema storage to anon, authenticated, service_role`,
+    `grant select on auth.users to authenticated, service_role`,
+    `grant select, insert, update, delete on storage.objects to authenticated, service_role`,
+    `grant select on storage.buckets to authenticated, service_role`,
   ]
   for (const st of stubs) {
     try {

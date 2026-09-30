@@ -4,7 +4,7 @@
   Duas perguntas que o frontend não consegue responder, porque o frontend é
   contornável: esconder o item do menu e proteger a rota resolve o que a pessoa
   VÊ, e não o que ela CONSEGUE chamar. Uma sessão qualquer tem o token e a URL
-  do PostgREST — se a recusa não estiver no banco, ela não existe.
+  do PostgREST, se a recusa não estiver no banco, ela não existe.
 
   Os dois eixos são separados de propósito e o teste cobra isso:
 
@@ -12,7 +12,7 @@
     papel  (user_roles)                     →  painel administrativo
 
   Conta PRO sem papel não entra no painel. Conta com papel não ganha PRO por ter
-  papel — ganha por `plan_courtesy_until`, que é dado gravado e auditável, não
+  papel, ganha por `plan_courtesy_until`, que é dado gravado e auditável, não
   um `if` em cima do e-mail.
 */
 import { boot, migrate } from './harness.mjs'
@@ -96,8 +96,8 @@ console.log('\n## O PRO da conta administrativa vem da cortesia, não do papel')
 /*
   Decisão de produto, tomada de propósito: quem opera o Momentumm não vê "isso
   faz parte do PRO" dentro do próprio app. Hoje isso é UMA conta, a da fundadora.
-  A 0051 implementa isso como CORTESIA — `plan_courtesy_until`, uma data gravada
-  na linha do perfil — e não como um atalho de autorização.
+  A 0051 implementa isso como CORTESIA, `plan_courtesy_until`, uma data gravada
+  na linha do perfil, e não como um atalho de autorização.
 
   A diferença importa e é o que este bloco prova: `plan_for_user` nunca consulta
   `user_roles`. Ela olha assinatura, cortesia e teste. Tirar a cortesia derruba a
@@ -116,7 +116,7 @@ check('a conta administrativa recebeu cortesia ao ganhar o papel', cortesia.t ==
 /*
   A cortesia tem guarda de escrita (`guard_profile_privileges`, 0034): ela só
   aceita a chave de sessão `momentumm.plan_sync`. No PGlite cada `query` é a
-  própria transação, então a chave precisa ser de SESSÃO (`false`) — com `true`
+  própria transação, então a chave precisa ser de SESSÃO (`false`), com `true`
   ela morre antes do update, e o próprio guard recusa. Que o guard recuse é
   ótimo, e é o que prova que ninguém mexe nisso de fora.
 */
@@ -205,7 +205,7 @@ console.log('\n## Ninguém se promove a PRO sozinho')
 /*
   Antes de qualquer regra "isto é do PRO" valer alguma coisa, uma pergunta
   precisa estar respondida: dá pra conta se declarar PRO? Se der, todo o resto é
-  decoração — o servidor recusa a categoria, a pessoa vira PRO e pede de novo.
+  decoração, o servidor recusa a categoria, a pessoa vira PRO e pede de novo.
 
   São cinco portas, e o teste cobre as cinco. Duas recusam com erro; as outras
   recusam em SILÊNCIO, afetando zero linhas pela política de RLS, e é por isso
@@ -251,7 +251,7 @@ check('nenhuma assinatura apareceu',
 console.log('\n## A área escolhida é a área gravada')
 
 /*
-  O bug era de tela, e a correção também — mas "gravou certo" é pergunta de
+  O bug era de tela, e a correção também, mas "gravou certo" é pergunta de
   banco. Um objetivo criado em treino tem que voltar em treino: se a ida e a
   volta discordassem, a tela consertada continuaria mostrando a área errada ao
   reabrir o objetivo.
@@ -312,7 +312,7 @@ console.log('\n## A recusa do suporte não vem do papel')
 
 /*
   Se "ajuda com o app" dependesse de papel em vez de plano, a Ana (PRO sem
-  papel) seria recusada. Ela não é — e é isso que mantém os dois eixos separados.
+  papel) seria recusada. Ela não é, e é isso que mantém os dois eixos separados.
 */
 await como(ana)
 check('PRO sem papel continua abrindo', (await abrir('suporte')) === null)

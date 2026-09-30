@@ -1,7 +1,7 @@
 /**
  * Atalho de desenvolvimento: abre o app já autenticado com a sessão demo, sem
  * passar pela tela de login. Serve pra trabalhar nas telas internas sem
- * autenticar a cada reload. Só vale em `vite dev` — num build de produção a
+ * autenticar a cada reload. Só vale em `vite dev`, num build de produção a
  * flag é ignorada, então não existe porta aberta em prod.
  */
 export const isAuthBypass =
@@ -23,6 +23,36 @@ export const devAutoLogin =
   import.meta.env.DEV && devEmail && devPassword
     ? ({ email: devEmail, password: devPassword } as const)
     : null
+
+/**
+ * O que está errado com o atalho de login, quando está.
+ *
+ * Isto existe porque a falha era MUDA: senha velha no `.env.local` derrubava a
+ * entrada automática e o app abria na tela de criar conta, sem dizer por quê, 
+ * e o palpite mais natural ("quebrei alguma coisa no código") é justamente o
+ * errado.
+ *
+ * Só olha o que dá pra saber daqui: campo em branco, senha curta demais pra ser
+ * aceita pelo cadastro, e-mail sem arroba. O resto (senha trocada, conta que
+ * não existe) só o servidor sabe, e quem conta é o `AuthProvider`.
+ */
+export function devAutoLoginProblem(): string | null {
+  if (!import.meta.env.DEV) return null
+  if (!devEmail && !devPassword) return null
+
+  if (!devEmail) return 'Falta VITE_DEV_LOGIN_EMAIL no .env.local.'
+  if (!devPassword) return 'Falta VITE_DEV_LOGIN_PASSWORD no .env.local.'
+  if (!devEmail.includes('@')) return 'VITE_DEV_LOGIN_EMAIL não parece um e-mail.'
+
+  // 12 é o mínimo que o cadastro aceita (`MIN_PASSWORD_LENGTH`): uma senha
+  // menor que isso no arquivo é senha velha, de antes da regra, ela nunca vai
+  // entrar, e o servidor só vai responder "credenciais inválidas".
+  if (devPassword.length < 12) {
+    return `A senha em VITE_DEV_LOGIN_PASSWORD tem ${devPassword.length} caracteres, e o mínimo da conta é 12. É provável que seja uma senha antiga.`
+  }
+
+  return null
+}
 
 /**
  * Sem Supabase configurado o app roda em MODO DEMO, com dados em memória.

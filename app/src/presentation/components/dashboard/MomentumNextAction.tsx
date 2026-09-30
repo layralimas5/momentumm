@@ -33,7 +33,7 @@ export function MomentumNextAction({
       <p className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
         <span className="text-sm font-medium text-ink">{action.title}</span>
         <span className="text-xs text-ink-faint">
-          {action.kind === 'habito' ? 'hábito' : 'ação'}
+          {action.kind === 'habito' ? 'hábito' : action.kind === 'rotina' ? 'rotina' : 'ação'}
         </span>
         <span className="tabular ml-auto inline-flex items-center gap-1 text-sm font-medium text-positive">
           <Icon name="subir" className="size-3.5" />

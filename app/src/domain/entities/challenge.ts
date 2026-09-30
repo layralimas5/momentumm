@@ -12,21 +12,21 @@ import { countsAsDone, type HabitLog } from './habit'
  * Não é um módulo novo. O desafio não guarda registro de esforço, não tem
  * unidade própria e não conhece leitura, treino nem estudo: ele é uma LEITURA
  * sobre o que a pessoa já registra. Quem move o progresso continua sendo a
- * atividade — ou o hábito que a pessoa vinculou. Se um dia um desafio precisar
+ * atividade, ou o hábito que a pessoa vinculou. Se um dia um desafio precisar
  * de tabela de progresso por dia, é sinal de que o desenho saiu do trilho.
  *
  * ## A unidade do desafio é o DIA CUMPRIDO
  *
  * Os três modos contam a mesma coisa e diferem só no que exigem dela:
  *
- * - `diaria` — todo dia da janela. "Ler 30 minutos por dia."
- * - `semanal` — X dias por semana, sem dia marcado. "Treinar 4x por semana."
- * - `total` — X dias ao longo da janela, quando não importa. "Treinar 20 dias
+ * - `diaria`, todo dia da janela. "Ler 30 minutos por dia."
+ * - `semanal`, X dias por semana, sem dia marcado. "Treinar 4x por semana."
+ * - `total`, X dias ao longo da janela, quando não importa. "Treinar 20 dias
  *   no mês."
  *
  * Contar volume acumulado seria a quarta forma, e ela já existe: chama-se
  * objetivo. O desafio é sobre APARECER, e é por isso que ele funciona entre
- * pessoas cujas metas são diferentes — 30 minutos dela e 1h dele fecham o
+ * pessoas cujas metas são diferentes, 30 minutos dela e 1h dele fecham o
  * mesmo dia.
  *
  * ## De onde vem o dia cumprido
@@ -34,7 +34,7 @@ import { countsAsDone, type HabitLog } from './habit'
  * Duas origens, nessa ordem de preferência:
  *
  * 1. O hábito vinculado. O dia fecha quando o hábito foi marcado (inclusive na
- *    versão mínima — a regra do produto vale aqui também).
+ *    versão mínima, a regra do produto vale aqui também).
  * 2. As atividades do eixo. O dia fecha quando o volume registrado alcança
  *    `dailyTarget`.
  *
@@ -75,6 +75,13 @@ export interface Challenge {
   readonly id: string
   /** Quem criou. É o único que edita, encerra e convida. */
   readonly ownerId: string
+  /**
+   * O clube a que este desafio pertence, quando pertence a algum.
+   *
+   * Nulo é o caso comum: um combinado entre amigos, sem clube nenhum. Quando
+   * existe, é ele que faz os dias cumpridos aqui contarem no ranking do clube.
+   */
+  readonly clubId: string | null
   readonly name: string
   readonly description: string | null
   /** O eixo que o desafio acompanha quando ninguém vinculou hábito. */
@@ -113,7 +120,7 @@ export const PARTICIPANT_STATUS_LABELS: Readonly<Record<ParticipantStatus, strin
  *
  * `doneDays` é o ÚNICO número publicado. Ele existe porque o progresso de
  * alguém é calculado a partir de hábitos e atividades que a RLS não deixa
- * ninguém mais ler — e nem deveria. Entrar num desafio é consentir em mostrar
+ * ninguém mais ler, e nem deveria. Entrar num desafio é consentir em mostrar
  * quantos dias você fechou nele, e nada além disso: nem o hábito que usou, nem
  * o volume, nem o momentum.
  *
@@ -149,6 +156,8 @@ export interface NewChallengeInput {
   readonly target?: number
   readonly dailyTarget?: number
   readonly habitId?: string | null
+  /** O clube que abriga este desafio. Ausente é o caso comum. */
+  readonly clubId?: string | null
 }
 
 const MAX_TIMES_PER_WEEK = 7
@@ -189,6 +198,7 @@ export function createChallenge(
   return {
     id,
     ownerId: input.ownerId,
+    clubId: input.clubId ?? null,
     name,
     description,
     axis: input.axis,
@@ -334,7 +344,7 @@ export interface ChallengeSources {
  * Os dias que essa pessoa fechou no desafio.
  *
  * Função pura sobre o que ela já registrou. Roda só com os dados de quem está
- * logado — o progresso dos outros chega publicado, porque a rotina de ninguém
+ * logado, o progresso dos outros chega publicado, porque a rotina de ninguém
  * é legível por mais ninguém.
  */
 export function doneDaysOf(
@@ -368,7 +378,7 @@ export function doneDaysOf(
  *
  * No modo semanal a cota é POR SEMANA: sete dias numa semana de um desafio de
  * três vezes contam três, e não sete. Sem esse teto, quem faz tudo numa semana
- * e some nas outras terminaria empatado com quem apareceu toda semana — e o
+ * e some nas outras terminaria empatado com quem apareceu toda semana, e o
  * desafio existe justamente pra premiar a segunda.
  */
 export function countedDays(challenge: Challenge, days: readonly DayKey[]): number {

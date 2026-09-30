@@ -16,7 +16,7 @@ const WEEKDAY_INITIALS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'] as const
 /**
  * Progresso semanal.
  *
- * Sete barras e uma frase. Gráfico bonito que exige interpretação não serve —
+ * Sete barras e uma frase. Gráfico bonito que exige interpretação não serve,
  * o que decide a semana seguinte é a conclusão escrita embaixo, não a curva.
  */
 export function WeeklyProgressCard({ week, limits }: WeeklyProgressCardProps) {

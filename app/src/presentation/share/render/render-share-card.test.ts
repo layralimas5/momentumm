@@ -10,10 +10,10 @@ import {
 import { renderShareCard } from './render-share-card'
 
 /**
- * As quatro cores e os oito arranjos desenhando de verdade.
+ * As quatro cores e os dois arranjos desenhando de verdade.
  *
  * O renderizador é canvas puro: um arranjo que erra o nome de um método ou
- * esquece de fechar um caminho não quebra o build nem o teste de domínio — ele
+ * esquece de fechar um caminho não quebra o build nem o teste de domínio, ele
  * quebra na mão da pessoa, no meio do Story. Este teste desenha as trinta e
  * duas combinações num contexto falso que anota tudo que foi chamado, e
  * confere que cada uma pintou fundo e escreveu texto no espaço do card.
@@ -102,13 +102,13 @@ const DATA: ShareCardData = {
   accent: '#6d5cff',
 }
 
-function drawWith(template: ShareTemplateId, composition: ShareCompositionId = 'selo') {
+function drawWith(template: ShareTemplateId, composition: ShareCompositionId = 'grade') {
   const ctx = fakeContext()
   renderShareCard(ctx, DATA, { template, composition, format: 'stories' })
   return ctx.calls
 }
 
-function textOf(template: ShareTemplateId, composition: ShareCompositionId = 'selo'): string {
+function textOf(template: ShareTemplateId, composition: ShareCompositionId = 'grade'): string {
   return drawWith(template, composition)
     .filter((call) => call.method === 'fillText')
     .map((call) => String(call.args[0]))
@@ -136,7 +136,7 @@ describe('as cores', () => {
     const ctx = fakeContext()
     renderShareCard(ctx, DATA, {
       template: 'neon',
-      composition: 'selo',
+      composition: 'grade',
       format: 'stories',
       photo: { image: {} as CanvasImageSource, width: 1080, height: 1440 },
     })
@@ -178,40 +178,17 @@ describe('os arranjos', () => {
       return { metric: written.indexOf('100%'), title: written.indexOf('Sete') }
     }
 
-    const selo = order('selo')
-    const resumo = order('resumo')
+    const grade = order('grade')
+    const pilha = order('pilha')
 
-    expect(selo.metric).toBeGreaterThanOrEqual(0)
-    expect(selo.metric).toBeLessThan(selo.title)
-    expect(resumo.title).toBeLessThan(resumo.metric)
+    // A grade abre pelo título; a pilha abre pelos números.
+    expect(grade.title).toBeGreaterThanOrEqual(0)
+    expect(grade.title).toBeLessThan(grade.metric)
+    expect(pilha.metric).toBeGreaterThanOrEqual(0)
   })
 
-  it('o selo desenha o círculo com a palavra do momento', () => {
-    const calls = drawWith('dark', 'selo')
-    expect(calls.some((call) => call.method === 'arc')).toBe(true)
-    expect(textOf('dark', 'selo')).toContain('HOJE')
-  })
 
-  it('o anel desenha o anel e as barras do momentum', () => {
-    const calls = drawWith('dark', 'anel')
 
-    // Trilho e preenchimento: dois arcos de círculo inteiro, no mesmo centro.
-    const rings = calls.filter(
-      (call) => call.method === 'arc' && Math.abs(Number(call.args[3]) - Math.PI * 2) > 0,
-    )
-    expect(rings.length).toBeGreaterThanOrEqual(2)
-
-    const written = textOf('dark', 'anel')
-    expect(written).toContain('100%')
-    expect(written).toContain('Momentumm agora')
-  })
-
-  it('a lista desenha os sete pontos da semana ao lado dos itens', () => {
-    const circles = drawWith('dark', 'lista').filter((call) => call.method === 'arc')
-    // Sete pontos da semana mais os marcadores de cada item.
-    expect(circles.length).toBeGreaterThanOrEqual(7 + DATA.items.length)
-    expect(textOf('dark', 'lista')).toContain('Leitura')
-  })
 
   it('a grade e a pilha escrevem os mesmos números da linha de apoio', () => {
     for (const composition of ['grade', 'pilha'] as const) {
@@ -221,12 +198,6 @@ describe('os arranjos', () => {
     }
   })
 
-  it('o recap escreve a frase a partir da linha de apoio', () => {
-    const written = textOf('dark', 'recap')
-    expect(written).toContain('São')
-    expect(written).toContain('12 dias seguidos')
-    expect(written).toContain('5 hábitos')
-  })
 
   /*
     O card cheio é o caso real agora que quase tudo nasce ligado: dez itens,

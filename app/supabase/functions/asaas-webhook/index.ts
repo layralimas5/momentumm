@@ -1,4 +1,4 @@
-// Momentumm — o webhook do Asaas.
+// Momentumm, o webhook do Asaas.
 //
 // É a ÚNICA coisa que grava em `subscriptions`. O Asaas avisa que uma
 // cobrança foi confirmada, venceu, foi estornada, ou que uma assinatura
@@ -9,7 +9,7 @@
 //   1. autenticar: o header `asaas-access-token` tem que bater com
 //      `ASAAS_WEBHOOK_TOKEN` (o mesmo cadastrado no painel do Asaas)
 //   2. registrar o evento pela chave do Asaas; repetido, responde 200 e
-//      para — entrega é "pelo menos uma vez"
+//      para, entrega é "pelo menos uma vez"
 //   3. descobrir QUEM é a pessoa: pelo cliente do Asaas já vinculado, pela
 //      assinatura já conhecida, pela referência externa (o user_id que o
 //      checkout carrega) ou, em último caso, pelo e-mail do cliente

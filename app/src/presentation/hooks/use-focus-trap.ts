@@ -7,7 +7,7 @@ const FOCUSABLE =
  * Armadilha de foco de camada modal: Esc fecha, Tab circula dentro, o foco
  * entra ao abrir e volta pra quem abriu ao fechar, e o fundo para de rolar.
  *
- * Escrito à mão porque são poucas regras e todas cabem aqui — e porque diálogo
+ * Escrito à mão porque são poucas regras e todas cabem aqui, e porque diálogo
  * e bottom sheet precisam exatamente das mesmas.
  */
 export function useFocusTrap(

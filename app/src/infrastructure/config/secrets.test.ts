@@ -16,7 +16,7 @@ import { describe, expect, it } from 'vitest'
  * ## Por que a chave publishable passa
  *
  * `VITE_SUPABASE_ANON_KEY` (as novas se chamam `sb_publishable_…`) É pública
- * por desenho: ela identifica o projeto e não carrega autorização nenhuma —
+ * por desenho: ela identifica o projeto e não carrega autorização nenhuma,
  * quem manda é a RLS. O que não pode aparecer é a `service_role`, que
  * ATRAVESSA a RLS e vale como acesso total ao banco.
  */
@@ -42,7 +42,7 @@ const PADROES: readonly { readonly nome: string; readonly regex: RegExp }[] = [
 const EXTENSOES = ['.ts', '.tsx', '.js', '.mjs', '.cjs', '.json', '.sql', '.html', '.md']
 
 /*
-  O próprio scanner fica de fora — e é o ÚNICO arquivo que fica.
+  O próprio scanner fica de fora, e é o ÚNICO arquivo que fica.
 
   Ele precisa escrever os padrões que procura, então casa com todos eles. A
   exceção é por caminho exato, não por "arquivo de teste": um segredo colado
@@ -124,7 +124,7 @@ describe('segredos no bundle', () => {
     cada `npm test` transformaria a suíte de domínio (dois segundos) numa
     espera de vinte. A verificação obrigatória é a de CÓDIGO-FONTE, acima:
     nada chega ao bundle sem passar por ela. Esta aqui é a confirmação de
-    que a compilação não trouxe nada de fora — e o CI, que buildar antes de
+    que a compilação não trouxe nada de fora, e o CI, que buildar antes de
     testar, executa as duas.
   */
   const dist = join(ROOT, 'dist')

@@ -4,6 +4,7 @@ import { AiError, isAiErrorCode } from '@/domain/ai/ai-error'
 import {
   AI_FUNCTION_NAME,
   AI_OUTPUT_SCHEMAS,
+  AI_READ_SCHEMAS,
   type AiEndpointRequest,
   type AiKind,
 } from '@/domain/ai/ai-prompts'
@@ -29,7 +30,7 @@ import { supabase } from '@/infrastructure/supabase/client'
 import { InfrastructureError } from '@/shared/errors'
 
 /**
- * Momentumm AI — a implementação REAL, pela Edge Function `momentumm-ai`.
+ * Momentumm AI, a implementação REAL, pela Edge Function `momentumm-ai`.
  *
  * O app nunca fala com o modelo: manda o pedido (com o contexto da conta) pra
  * função, autenticado com a sessão da pessoa, e recebe de volta a estrutura
@@ -104,7 +105,15 @@ export class SupabaseAiService implements AiService {
     if (!data) throw new AiError('invalid_output', 'A IA respondeu vazio.')
     if (data.usage) this.quota = { used: data.usage.used, limit: data.usage.limit }
 
-    const parsed = AI_OUTPUT_SCHEMAS[endpointRequest.kind].safeParse(data.result)
+    /*
+      Lê pelo schema TOLERANTE, não pelo que foi pedido.
+
+      O app e a Edge Function sobem separados, e entre um e outro existe uma
+      janela em que o cliente novo fala com o servidor antigo. `AI_READ_SCHEMAS`
+      aceita o formato anterior de `steps` e normaliza; pedir uma coisa e
+      aceitar duas é a única postura que sobrevive a isso.
+    */
+    const parsed = AI_READ_SCHEMAS[endpointRequest.kind].safeParse(data.result)
     if (!parsed.success) {
       throw new AiError('invalid_output', 'A IA devolveu um formato que o app não reconhece.')
     }

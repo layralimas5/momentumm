@@ -11,7 +11,7 @@ import { cn } from '@/shared/lib/cn'
  *
  * Mora fora das telas porque o mesmo detalhamento aparece no modal "Entender
  * meu score", nos insights e no progresso. Três cópias seriam três explicações
- * que divergem na primeira vez que um peso mudar — e a explicação divergindo do
+ * que divergem na primeira vez que um peso mudar, e a explicação divergindo do
  * número é pior que não ter explicação nenhuma.
  *
  * Cada linha mostra o peso do fator porque a pergunta que a pessoa faz não é

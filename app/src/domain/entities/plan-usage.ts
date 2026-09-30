@@ -12,7 +12,7 @@ import { OPEN_TASK_STATUSES, type Task } from './task'
  *
  * Uma função pura por limite, lendo o mesmo estado que as telas leem. O
  * `PlannerProvider` recusa a criação que passaria do limite e as telas
- * perguntam ANTES, pra desabilitar o botão e explicar — mas a regra é uma só,
+ * perguntam ANTES, pra desabilitar o botão e explicar, mas a regra é uma só,
  * e mora aqui: dois lugares contando "objetivo ativo" de jeitos diferentes é
  * como a tela promete um objetivo que o provider recusa.
  */
@@ -35,6 +35,28 @@ export class PlanLimitError extends DomainError {
   }
 }
 
+/**
+ * Quanta gente cabe no círculo, contra o que o plano deixa.
+ *
+ * Conta só amizade ACEITA. Pedido enviado e ainda sem resposta não ocupa vaga:
+ * seria dar a alguém o poder de encher o círculo de outra pessoa só ignorando
+ * o convite dela.
+ *
+ * O teto é de tela, não de banco: nenhuma política recusa a amizade de número
+ * três. É uma decisão consciente, o limite aqui é comercial, não de
+ * segurança, e RLS existe pra proteger dado, não pra cobrar assinatura. O que
+ * o servidor garante é o que importa: ninguém vê o que não pode ver.
+ */
+export function friendLimit(limits: PlanLimits, acceptedFriends: number): LimitCheck {
+  const check = checkLimit(acceptedFriends, limits.friends, 'pessoas no círculo')
+  return {
+    ...check,
+    message: check.reached
+      ? `Seu círculo está completo: o plano gratuito acompanha até ${limits.friends} pessoas.`
+      : null,
+  }
+}
+
 export function objectiveLimit(limits: PlanLimits, objectives: readonly Objective[]): LimitCheck {
   return checkLimit(objectives.filter(isRunning).length, limits.activeObjectives, 'objetivos ativos')
 }
@@ -42,7 +64,7 @@ export function objectiveLimit(limits: PlanLimits, objectives: readonly Objectiv
 /**
  * Quantos objetivos a conta já tem nessa área, contra o que o plano dela deixa.
  *
- * Conta o NÃO ARQUIVADO — pausado e concluído incluídos —, que é a mesma janela
+ * Conta o NÃO ARQUIVADO, pausado e concluído incluídos, que é a mesma janela
  * do índice que a 0057 substituiu e a mesma da contagem do servidor. É diferente
  * da janela de `objectiveLimit` de propósito: ver `plan.objectivesPerAxis`.
  */
@@ -108,7 +130,7 @@ export function habitLimit(limits: PlanLimits, habits: readonly Habit[]): LimitC
 /**
  * Ações de um dia. Cancelada não conta: a pessoa desistiu dela, e uma vaga
  * que continua ocupada por uma decisão de largar seria o limite punindo a
- * decisão certa. Concluída conta — o dia foi planejado com ela dentro.
+ * decisão certa. Concluída conta, o dia foi planejado com ela dentro.
  */
 export function actionsLimit(limits: PlanLimits, tasks: readonly Task[], day: DayKey): LimitCheck {
   const used = tasks.filter(

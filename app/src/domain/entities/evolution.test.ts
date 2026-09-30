@@ -268,8 +268,10 @@ describe('desbloqueios', () => {
   })
 
   it('o próximo desbloqueio é o primeiro ainda trancado', () => {
-    expect(nextUnlock(1, 'free')?.key).toBe('share_lista')
-    expect(nextUnlock(2, 'free')?.key).toBe('titulo_em_ritmo')
+    // Os arranjos de compartilhamento saíram da lista quando o estúdio ficou
+    // com dois, abertos a todo mundo: o primeiro prêmio agora é o título.
+    expect(nextUnlock(1, 'free')?.key).toBe('titulo_em_ritmo')
+    expect(nextUnlock(3, 'free')?.key).toBe('retrospectiva')
   })
 })
 

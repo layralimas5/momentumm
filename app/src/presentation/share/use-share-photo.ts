@@ -5,7 +5,7 @@ import type { SharePhoto } from './render/render-share-card'
  * A foto de fundo do card.
  *
  * Ela NUNCA sai do aparelho. O arquivo é lido pelo navegador, desenhado no
- * canvas e vira parte do PNG — não existe upload, não existe bucket, o servidor
+ * canvas e vira parte do PNG, não existe upload, não existe bucket, o servidor
  * do Momentumm não fica sabendo que a foto existiu. É a mesma promessa do resto
  * do Share Studio, e aqui ela importa mais: a foto é do quarto, do treino, do
  * rosto da pessoa.

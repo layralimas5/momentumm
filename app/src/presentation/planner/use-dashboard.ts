@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
 import { totalMinutes } from '@/domain/entities/activity'
 import { addDays, daysBetween } from '@/domain/entities/day'
+import { buildDayAgenda, type DayAgenda } from '@/domain/entities/day-agenda'
+import { routineDayStates } from '@/domain/entities/routine-item'
 import { capacityOf, checkInOfDay, type CapacityProfile, type CheckIn } from '@/domain/entities/checkin'
 import { paceOf, type GoalPace, type GoalProgress } from '@/domain/entities/goal'
 import {
@@ -43,7 +45,7 @@ const DISMISSED_KEY = 'momentumm.insights.dismissed.v1'
  *
  * Três é o limite da decisão, não do espaço: a partir do quarto item a pessoa
  * para de escolher e passa a varrer a lista. O que sobra continua acessível em
- * "ver tudo do dia" — o dashboard não esconde trabalho, ele ordena.
+ * "ver tudo do dia", o dashboard não esconde trabalho, ele ordena.
  */
 export const MAX_FOCUS_ITEMS = 3
 
@@ -54,7 +56,7 @@ export interface GoalInMotion {
 }
 
 /**
- * Um item do foco de hoje — ação ou hábito, na mesma lista.
+ * Um item do foco de hoje, ação ou hábito, na mesma lista.
  *
  * O dia é vivido misturado: às nove da manhã não existe "aba de hábitos" e
  * "aba de ações", existe o que precisa sair. Duas listas separadas obrigam a
@@ -83,12 +85,21 @@ export interface FocusItem {
 export interface TodayFocus {
   /** Até três itens: é o que cabe numa decisão. */
   readonly items: readonly FocusItem[]
-  /** Tudo do dia, pra tela dizer quantos ficaram de fora. */
+  /** Todas as prioridades do dia, pra tela dizer quantas ficaram de fora. */
   readonly all: readonly FocusItem[]
   readonly done: number
   readonly total: number
   /** Soma estimada dos itens em aberto, em minutos. Null sem nenhuma estimativa. */
   readonly minutes: number | null
+  /**
+   * O dia tem trabalho, mesmo que nenhuma prioridade marcada.
+   *
+   * É o que separa "hoje não tem nada" de "hoje tem oito coisas e você não
+   * escolheu nenhuma". A primeira pede pra planejar o dia; a segunda pede pra
+   * escolher entre o que já existe, e oferecer "planejar" ali seria mandar a
+   * pessoa criar mais trabalho em cima do trabalho que ela já tem.
+   */
+  readonly dayHasWork: boolean
 }
 
 /** Uma ação com o caminho dela: objetivo, etapa e por que ela importa hoje. */
@@ -110,12 +121,21 @@ export interface DashboardView {
   readonly checkIn: CheckIn | null
   /**
    * Os objetivos com plano e previsão. O dia lê daqui pra dizer a que etapa e
-   * a que objetivo cada linha pertence — é o que separa uma lista de tarefas
+   * a que objetivo cada linha pertence, é o que separa uma lista de tarefas
    * de um sistema de progresso.
    */
   readonly objectives: readonly ObjectiveView[]
   /** O foco de hoje: ações e hábitos numa lista só, na ordem da decisão. */
   readonly focus: TodayFocus
+  /**
+   * O dia inteiro, em ordem de relógio e agrupado por trecho.
+   *
+   * Diferente do `focus`, que recorta as três coisas que decidem o dia: aqui
+   * não falta nada. Foco responde "o que agora", agenda responde "o que hoje",
+   * e eram duas perguntas com uma resposta só, o que obrigava a pessoa a sair
+   * da tela pra achar o resto.
+   */
+  readonly agenda: DayAgenda
   /** A frase de contexto abaixo da saudação. Muda com o estado real do dia. */
   readonly headline: string
   /**
@@ -132,7 +152,7 @@ export interface DashboardView {
   readonly dayProgress: DayProgress
   /**
    * O recado de retomada quando ontem ficou pra trás. Null quando não há nada
-   * a retomar — a mensagem só aparece se muda alguma decisão de hoje.
+   * a retomar, a mensagem só aparece se muda alguma decisão de hoje.
    */
   readonly resumeNote: string | null
   readonly capacity: CapacityProfile
@@ -150,7 +170,7 @@ export interface DashboardView {
   /**
    * Dias parados imediatamente antes de hoje. Zero quando ontem teve
    * movimento. É o que separa uma retomada de um dia comum, e mora aqui porque
-   * o gravador de momentos e o Share Studio precisam da MESMA contagem — duas
+   * o gravador de momentos e o Share Studio precisam da MESMA contagem, duas
    * cópias da regra dariam dois números com o mesmo nome.
    */
   readonly daysAway: number
@@ -295,7 +315,7 @@ export function useDashboard(): DashboardView {
    * O foco de hoje.
    *
    * A ordem é a da decisão, não a do banco: prioridade principal, depois o que
-   * ainda está aberto por prioridade, e por último o que já saiu — o concluído
+   * ainda está aberto por prioridade, e por último o que já saiu, o concluído
    * fica pra dar a sensação de avanço, nunca pra ocupar o topo.
    */
   const focus = useMemo<TodayFocus>(() => {
@@ -337,10 +357,28 @@ export function useDashboard(): DashboardView {
     const rank = (item: FocusItem) => {
       if (item.done) return 3
       if (item.role === 'Prioridade principal') return 0
-      return item.priority === 'alta' ? 1 : 2
+      return 1
     }
 
-    const all = [...fromTasks, ...fromHabits].sort((a, b) => rank(a) - rank(b))
+    const doDia = [...fromTasks, ...fromHabits]
+
+    /*
+      O foco é o que a PESSOA marcou, e nada além disso.
+
+      Ele era "os três primeiros do dia depois de ordenar", o que fazia o bloco
+      de maior peso da tela mostrar um recorte que ninguém escolheu, e o
+      contador dele ("4 atividades") discordar do contador do dia ("8 itens")
+      na mesma tela, sem nenhuma pista de por quê.
+
+      Agora entram dois casos, e só eles: a prioridade principal, que é uma
+      escolha explícita de hoje, e o que a pessoa marcou como prioridade alta.
+      Rotina não entra porque ela não tem prioridade pra marcar: ela é o
+      contorno do dia, não a decisão dele. Tudo continua em "Seu dia".
+    */
+    const all = doDia
+      .filter((item) => item.role === 'Prioridade principal' || item.priority === 'alta')
+      .sort((a, b) => rank(a) - rank(b))
+
     const items = all.slice(0, MAX_FOCUS_ITEMS)
 
     const open = items.filter((item) => !item.done)
@@ -352,6 +390,7 @@ export function useDashboard(): DashboardView {
       done: all.filter((item) => item.done).length,
       total: all.length,
       minutes: open.some((item) => item.minutes !== null) ? estimated : null,
+      dayHasWork: doDia.length > 0,
     }
   }, [tasks, today, habitStates, objectiveOf, stageTitleOf])
 
@@ -359,14 +398,14 @@ export function useDashboard(): DashboardView {
    * A próxima ação, com o motivo dela.
    *
    * A prioridade principal vem primeiro por ser uma escolha explícita da
-   * pessoa. Sem ela, o app propõe a próxima ação do objetivo mais apertado —
+   * pessoa. Sem ela, o app propõe a próxima ação do objetivo mais apertado,
    * e diz por quê, porque uma sugestão sem motivo é indistinguível de um chute.
    */
   const nextUp = useMemo<NextUp | null>(() => {
     /*
       A ação que a pessoa já escolheu pra hoje sai da disputa.
 
-      Repetir a prioridade principal aqui não acrescenta nada — ela já é o
+      Repetir a prioridade principal aqui não acrescenta nada, ela já é o
       maior elemento da tela. O valor deste bloco é justamente mostrar o que o
       plano está pedindo QUANDO isso não é o que ela escolheu fazer.
 
@@ -489,10 +528,25 @@ export function useDashboard(): DashboardView {
     [tasks, today],
   )
 
+  /*
+    A agenda lê as MESMAS coleções que o foco, e é por isso que as duas não
+    podem discordar: o foco é um recorte dela, não uma segunda lista.
+  */
+  const routineStates = useMemo(
+    () => routineDayStates(planner.routineItems, planner.routineOccurrences, today),
+    [planner.routineItems, planner.routineOccurrences, today],
+  )
+
+  const agenda = useMemo(
+    () => buildDayAgenda({ tasks, habitStates, routineStates }, today),
+    [tasks, habitStates, routineStates, today],
+  )
+
   return {
     checkIn,
     objectives,
     focus,
+    agenda,
     headline,
     hasHistory,
     overdueCount,

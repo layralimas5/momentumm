@@ -1,10 +1,9 @@
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { useAuth } from '@/presentation/auth/use-auth'
-import { Avatar } from '@/presentation/components/ui/Avatar'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
 import { cn } from '@/shared/lib/cn'
-import { AddSheet } from './AddSheet'
+import { CreateSheet } from './CreateSheet'
 
 interface TabItem {
   readonly to: string
@@ -13,157 +12,169 @@ interface TabItem {
   readonly end: boolean
 }
 
-/** As rotas que a barra leva: o topo e os atalhos do perfil leem daqui. */
+/**
+ * As rotas que a barra leva: o topo e os atalhos do perfil leem daqui.
+ *
+ * O que NÃO está aqui aparece sozinho nos atalhos do Perfil
+ * (`MobileShortcuts`), e é assim que o Progresso continua alcançável depois de
+ * sair da barra, sem ninguém precisar lembrar de editar dois arquivos.
+ */
 export const TAB_ROUTES: readonly string[] = [
+  '/app/feed',
+  '/app/rotina',
   '/app',
-  '/app/objetivos',
-  '/app/progresso',
   '/app/perfil',
 ]
 
-/** Dois de cada lado do botão central. Mais que isso vira alvo pequeno demais. */
+/**
+ * Quatro destinos e um gesto, na ordem do dia da pessoa.
+ *
+ * Feed e Perfil nas pontas (a camada social, que se olha) e, por dentro, o par
+ * que se usa todo dia: **Rotina responde "como eu organizei meus dias", Hoje
+ * responde "o que eu preciso fazer agora"**. Uma é desenho, a outra é
+ * execução, e elas ficam vizinhas porque a pergunta passa de uma pra outra o
+ * tempo todo.
+ *
+ * O "+" no meio, onde o polegar chega sem mirar.
+ *
+ * ## O Progresso saiu daqui, e não sumiu
+ *
+ * Ele respondia quase o que o Perfil já responde: momentum, constância,
+ * sequência, objetivos com barra, conquistas. Duas portas pro mesmo quarto, e
+ * uma delas ocupando um dos cinco lugares que a barra tem. Agora ele é uma das
+ * seções do Perfil e continua inteiro na rota própria, alcançável pelos
+ * atalhos do Perfil, pela busca rápida e pela barra lateral do desktop.
+ *
+ * A outra razão é aritmética: "+" no CENTRO exige número ímpar de espaços. Com
+ * seis, ele cai em 42% da largura e fica visivelmente torto.
+ *
+ * Configurações nunca esteve aqui e continua não estando: ela mora atrás da
+ * engrenagem no topo do Perfil, que é onde qualquer pessoa procura por ela
+ * sem ler.
+ */
 const LEFT: readonly TabItem[] = [
-  { to: '/app', label: 'Hoje', icon: 'hoje', end: true },
-  { to: '/app/objetivos', label: 'Objetivos', icon: 'objetivo', end: false },
+  { to: '/app/feed', label: 'Feed', icon: 'globo', end: false },
+  { to: '/app/rotina', label: 'Rotina', icon: 'calendario', end: false },
 ]
 
-/*
-  Progresso no lugar do Plano.
-
-  A barra responde as três perguntas do app: como estou (Hoje), pra onde vou
-  (Objetivos) e estou avançando (Progresso). O Plano é a lista do dia inteiro,
-  e chega por dentro do Hoje ("Ver tudo do dia") e pelos atalhos do perfil, que
-  montam sozinhos tudo que não está aqui. Progresso, antes, só existia em dois
-  links soltos e no fim do Review.
-*/
 const RIGHT: readonly TabItem[] = [
-  { to: '/app/progresso', label: 'Progresso', icon: 'progresso', end: false },
+  { to: '/app', label: 'Hoje', icon: 'casa', end: true },
+  { to: '/app/perfil', label: 'Perfil', icon: 'pessoa', end: false },
 ]
-
-const PROFILE: TabItem = { to: '/app/perfil', label: 'Perfil', icon: 'trofeu', end: false }
 
 /**
  * Barra inferior do celular.
  *
- * É uma pílula solta sobre o conteúdo, não uma faixa colada na borda: o
- * conteúdo passa por baixo dela e a barra continua parecendo um controle, não
- * uma parede. A aba ativa ganha um fundo arredondado em vez de só trocar de
- * cor, porque cor sozinha some no sol.
+ * Uma faixa de largura cheia, ancorada na borda de baixo, com uma linha
+ * separando do conteúdo. A aba ativa acende em cor de marca e ganha um traço
+ * embaixo: cor sozinha some no sol, e o traço é o que sobrevive à luz forte e
+ * ao daltonismo.
+ *
+ * ## O "+" no meio
+ *
+ * Ele é o único alvo da barra que não é navegação, e por isso é desenhado
+ * como outra coisa: um quadrado arredondado em cor de marca, do tamanho do
+ * alvo confortável, sem rótulo embaixo. Um "+" que parecesse aba ensinaria que
+ * abas às vezes abrem folha, e aí nenhuma das cinco seria previsível.
+ *
+ * Ele não flutua sobre o conteúdo (era assim, como `AddFab`, à direita): um
+ * círculo flutuante cobre o canto da tela em toda rolagem, e o canto inferior
+ * direito é justo onde o último card do feed termina.
  *
  * ## O nome embaixo do ícone
  *
- * Os ícones eram mudos, com o nome só pro leitor de tela. Funciona pra quem já
- * decorou a barra e falha exatamente com quem acabou de chegar — que é quem
- * mais precisa dela. Ícone sozinho é adivinhação: alvo, troféu e gráfico não
- * dizem "objetivos", "perfil" e "progresso" pra ninguém na primeira semana.
+ * Ícone sozinho é adivinhação. O rótulo custa 12px de altura e devolve a tela
+ * inteira navegável sem tentar e errar. Com quatro nomes e o "+" no meio,
+ * nada aqui é cortado com reticências em 320px.
  *
- * O rótulo custa 12px de altura e devolve a tela inteira navegável sem tentar
- * e errar.
- *
- * O último item é o avatar da pessoa: é assim que ela reconhece "o meu" sem
- * ler nada. O adicionar fica no centro pelo mesmo motivo de sempre: é o alvo
- * mais fácil do polegar. A barra respeita a área segura do aparelho e o
- * conteúdo reserva a altura dela (`pb-tabbar`), então ela nunca cobre nada.
+ * A barra respeita a área segura do aparelho e o conteúdo reserva a altura
+ * dela (`pb-tabbar`), então ela nunca cobre nada.
  */
 export function MobileTabBar() {
-  const [addOpen, setAddOpen] = useState(false)
-  const { profile } = useAuth()
+  const [creating, setCreating] = useState(false)
 
   return (
     <>
       <nav
         aria-label="Navegação principal"
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden"
+        className={cn(
+          'fixed inset-x-0 bottom-0 z-40 border-t border-line bg-canvas/95 backdrop-blur-xl lg:hidden',
+          'pb-[max(0.5rem,env(safe-area-inset-bottom))]',
+        )}
       >
-        <ul
-          className={cn(
-            'pointer-events-auto flex w-full max-w-sm items-center justify-between gap-1 rounded-full p-1.5',
-            'border border-line bg-surface/90 shadow-[0_18px_40px_-16px_rgba(0,0,0,0.55)] backdrop-blur-xl',
-          )}
-        >
+        <ul className="mx-auto flex w-full max-w-md items-stretch px-1 pt-1.5">
           {LEFT.map((item) => (
             <TabLink key={item.to} item={item} />
           ))}
 
-          <li>
-            <button
-              type="button"
-              onClick={() => setAddOpen(true)}
-              aria-haspopup="dialog"
-              className={cn(
-                'grid size-12 place-items-center rounded-full bg-brand text-white',
-                'shadow-[0_10px_24px_-10px_var(--color-brand)] transition-transform',
-                'active:scale-95 active:bg-brand-hi',
-              )}
-            >
-              <Icon name="mais" className="size-6" strokeWidth={2.25} />
-              <span className="sr-only">Adicionar</span>
-            </button>
+          <li className="flex min-w-0 flex-1 items-center justify-center">
+            <CreateButton open={creating} onOpen={() => setCreating(true)} />
           </li>
 
           {RIGHT.map((item) => (
             <TabLink key={item.to} item={item} />
           ))}
-
-          <TabLink item={PROFILE}>
-            {(isActive) =>
-              profile ? (
-                <Avatar
-                  name={profile.name}
-                  src={profile.avatarUrl}
-                  className={cn('size-6', isActive && 'ring-2 ring-brand ring-offset-2 ring-offset-surface-hi')}
-                  textClassName="text-xs"
-                />
-              ) : (
-                <Icon name={PROFILE.icon} className="size-5" strokeWidth={isActive ? 2.25 : 1.75} />
-              )
-            }
-          </TabLink>
         </ul>
       </nav>
 
-      <AddSheet open={addOpen} onClose={() => setAddOpen(false)} />
+      <CreateSheet open={creating} onClose={() => setCreating(false)} />
     </>
   )
 }
 
-function TabLink({
-  item,
-  children,
-}: {
-  item: TabItem
-  /** Substitui o ícone; recebe se a aba está ativa. */
-  children?: (isActive: boolean) => ReactNode
-}) {
+function CreateButton({ open, onOpen }: { readonly open: boolean; readonly onOpen: () => void }) {
+  const reduceMotion = useReducedMotion()
+
   return (
-    <li>
+    <motion.button
+      type="button"
+      onClick={onOpen}
+      aria-haspopup="dialog"
+      aria-expanded={open}
+      {...(reduceMotion ? {} : { whileTap: { scale: 0.92 } })}
+      className={cn(
+        'grid size-12 place-items-center rounded-2xl bg-brand text-white transition-colors',
+        'shadow-[0_8px_20px_-8px_var(--color-brand)] active:bg-brand-hi',
+      )}
+    >
+      <Icon name="mais" className="size-6" strokeWidth={2.5} />
+      <span className="sr-only">Criar</span>
+    </motion.button>
+  )
+}
+
+function TabLink({ item }: { item: TabItem }) {
+  return (
+    <li className="min-w-0 flex-1">
       <NavLink
         to={item.to}
         end={item.end}
         aria-label={item.label}
         className={({ isActive }) =>
           cn(
-            // 52px de altura e 60 de largura: alvo confortável sem mirar, já
-            // contando o rótulo embaixo do ícone.
-            'flex h-[52px] w-16 flex-col items-center justify-center gap-0.5 rounded-2xl transition-colors',
-            isActive ? 'bg-surface-hi text-ink' : 'text-ink-faint active:bg-surface-hi',
+            // 56px de altura: alvo confortável sem mirar, já contando o rótulo
+            // embaixo do ícone e o traço de aba ativa.
+            'relative flex h-14 w-full flex-col items-center justify-center gap-1 px-0.5 transition-colors',
+            isActive ? 'text-brand-hi' : 'text-ink-faint active:text-ink',
           )
         }
       >
         {({ isActive }) => (
           <>
-            {children ? (
-              children(isActive)
-            ) : (
-              <Icon name={item.icon} className="size-5" strokeWidth={isActive ? 2.25 : 1.75} />
-            )}
+            <Icon name={item.icon} className="size-5" strokeWidth={isActive ? 2.25 : 1.75} />
             {/*
               `aria-hidden` porque o link já tem `aria-label`: sem isso o
               leitor de tela anuncia o nome da aba duas vezes.
             */}
-            <span aria-hidden="true" className="text-[0.625rem] leading-none font-medium">
+            <span aria-hidden="true" className="text-[0.625rem] font-medium leading-none">
               {item.label}
             </span>
+            {isActive ? (
+              <span
+                aria-hidden="true"
+                className="absolute inset-x-0 -bottom-1.5 mx-auto h-0.5 w-8 rounded-full bg-brand-hi"
+              />
+            ) : null}
           </>
         )}
       </NavLink>

@@ -5,6 +5,13 @@ import { BANNER_PRESET_LABELS, BANNER_PRESETS, DEFAULT_BANNER, isBannerPhoto } f
 import { Avatar } from '@/presentation/components/ui/Avatar'
 import { Button } from '@/presentation/components/ui/Button'
 import { Field, TextInput } from '@/presentation/components/ui/Field'
+import {
+  normalizeSocialHandle,
+  SOCIAL_LABELS,
+  SOCIAL_NETWORKS,
+  SOCIAL_PREFIXES,
+  type SocialNetwork,
+} from '@/domain/entities/social-link'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { ErrorNote } from '@/presentation/components/ui/States'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
@@ -26,7 +33,7 @@ interface ProfileEditorProps {
  * ajustes de conta, e misturá-los aqui transformaria a página da evolução
  * pessoal em mais um formulário.
  *
- * A foto é aplicada na hora do salvamento, junto do resto — trocar a imagem e
+ * A foto é aplicada na hora do salvamento, junto do resto, trocar a imagem e
  * sair sem salvar não deve deixar uma foto nova pendurada no perfil.
  */
 export function ProfileEditor({ profile, onSaved, onCancel }: ProfileEditorProps) {
@@ -34,6 +41,17 @@ export function ProfileEditor({ profile, onSaved, onCancel }: ProfileEditorProps
   const [bio, setBio] = useState(profile.bio ?? '')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(profile.avatarUrl)
   const [banner, setBanner] = useState<string | null>(profile.banner)
+  /*
+    As três redes num estado só, pelo texto CRU que a pessoa digitou. A limpeza
+    (URL colada, @ na frente, barra no fim) acontece no salvar, e não a cada
+    tecla: normalizar enquanto se digita apaga o "@" no instante em que ele é
+    escrito, e a pessoa fica achando que o campo está quebrado.
+  */
+  const [socials, setSocials] = useState<Record<SocialNetwork, string>>(() => ({
+    instagram: profile.socials.instagram ?? '',
+    tiktok: profile.socials.tiktok ?? '',
+    linkedin: profile.socials.linkedin ?? '',
+  }))
   const bannerInputRef = useRef<HTMLInputElement>(null)
   const [photoError, setPhotoError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -44,6 +62,11 @@ export function ProfileEditor({ profile, onSaved, onCancel }: ProfileEditorProps
       bio: bio.trim() || null,
       avatarUrl,
       banner,
+      socials: {
+        instagram: normalizeSocialHandle(socials.instagram),
+        tiktok: normalizeSocialHandle(socials.tiktok),
+        linkedin: normalizeSocialHandle(socials.linkedin),
+      },
     })
     await onSaved()
   })
@@ -188,6 +211,41 @@ export function ProfileEditor({ profile, onSaved, onCancel }: ProfileEditorProps
           />
         )}
       </Field>
+
+      {/*
+        As redes, uma por linha.
+
+        O campo aceita o @ ou a URL inteira colada do navegador, é o que a
+        pessoa tem à mão quando está no celular. O prefixo fixo à esquerda diz
+        qual dos dois formatos vai aparecer no perfil sem precisar de instrução
+        escrita.
+      */}
+      {SOCIAL_NETWORKS.map((network) => (
+        <Field key={network} label={SOCIAL_LABELS[network]}>
+          {(id) => (
+            <div className="flex items-center gap-2">
+              <span
+                aria-hidden="true"
+                className="grid size-11 shrink-0 place-items-center rounded-xl border border-line bg-surface-hi/50 text-ink-faint"
+              >
+                <Icon name={network} className="size-4" />
+              </span>
+              <TextInput
+                id={id}
+                value={socials[network]}
+                onChange={(event) =>
+                  setSocials((current) => ({ ...current, [network]: event.target.value }))
+                }
+                autoComplete="off"
+                autoCapitalize="none"
+                spellCheck={false}
+                maxLength={120}
+                placeholder={`${SOCIAL_PREFIXES[network]}seu.perfil`}
+              />
+            </div>
+          )}
+        </Field>
+      ))}
 
       <div className="flex flex-wrap gap-2">
         <Button type="submit" loading={save.running}>

@@ -1,4 +1,4 @@
-// Momentumm AI — o endpoint.
+// Momentumm AI, o endpoint.
 //
 // É a única porta entre o app e o modelo. A chave da Anthropic mora no
 // segredo desta função (`ANTHROPIC_API_KEY`) e nunca sai daqui; o app manda
@@ -10,7 +10,7 @@
 //      (`src/domain/ai/ai-prompts.ts`, compartilhado via import map)
 //   4. chama o modelo com saída estruturada e valida a resposta com o zod
 //   5. registra a chamada em `ai_calls` (tokens, tipo, modelo, duração e
-//      resultado; nunca conteúdo) — inclusive as recusadas por limite,
+//      resultado; nunca conteúdo), inclusive as recusadas por limite,
 //      bloqueio ou erro, com zero tokens, pra central de IA do painel
 //
 // Os tetos vêm de `product_settings` (`ai.limits`, editado pelo owner no

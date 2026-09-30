@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { useRouteSeo } from '@/presentation/seo/use-route-seo'
 import { QUIZ_SHORT_PATH } from '@/domain/analytics/quiz-links'
 import { circleOpen, isAuthBypass } from '@/infrastructure/config/env'
 import { AuthProvider } from '@/presentation/auth/AuthProvider'
@@ -40,6 +41,20 @@ const QuizActivationPage = lazy(() =>
 )
 const JuntosPage = lazy(() =>
   import('@/presentation/pages/JuntosPage').then((m) => ({ default: m.JuntosPage })),
+)
+const ClubsPage = lazy(() =>
+  import('@/presentation/pages/ClubsPage').then((m) => ({ default: m.ClubsPage })),
+)
+const ClubDetailPage = lazy(() =>
+  import('@/presentation/pages/ClubDetailPage').then((m) => ({ default: m.ClubDetailPage })),
+)
+const ClubInvitePage = lazy(() =>
+  import('@/presentation/pages/ClubInvitePage').then((m) => ({ default: m.ClubInvitePage })),
+)
+const FriendInvitePage = lazy(() =>
+  import('@/presentation/pages/FriendInvitePage').then((m) => ({
+    default: m.FriendInvitePage,
+  })),
 )
 const PairInvitePage = lazy(() =>
   import('@/presentation/pages/PairInvitePage').then((m) => ({ default: m.PairInvitePage })),
@@ -86,8 +101,16 @@ const CircleLockedPage = lazy(() =>
 const CirclePage = lazy(() =>
   import('@/presentation/pages/CirclePage').then((m) => ({ default: m.CirclePage })),
 )
+const FeedPage = lazy(() =>
+  import('@/presentation/pages/FeedPage').then((m) => ({ default: m.FeedPage })),
+)
 const ChallengesPage = lazy(() =>
   import('@/presentation/pages/ChallengesPage').then((m) => ({ default: m.ChallengesPage })),
+)
+const ChallengeRankingPage = lazy(() =>
+  import('@/presentation/pages/ChallengeRankingPage').then((m) => ({
+    default: m.ChallengeRankingPage,
+  })),
 )
 const ChallengeDetailPage = lazy(() =>
   import('@/presentation/pages/ChallengeDetailPage').then((m) => ({
@@ -107,6 +130,14 @@ const PersonalProfilePage = lazy(() =>
     default: m.PersonalProfilePage,
   })),
 )
+const PublicProfilePage = lazy(() =>
+  import('@/presentation/pages/PublicProfilePage').then((m) => ({
+    default: m.PublicProfilePage,
+  })),
+)
+const PostPage = lazy(() =>
+  import('@/presentation/pages/PostPage').then((m) => ({ default: m.PostPage })),
+)
 const ObjectivesPage = lazy(() =>
   import('@/presentation/pages/ObjectivesPage').then((m) => ({ default: m.ObjectivesPage })),
 )
@@ -117,6 +148,9 @@ const ObjectiveDetailPage = lazy(() =>
 )
 const PlanPage = lazy(() =>
   import('@/presentation/pages/PlanPage').then((m) => ({ default: m.PlanPage })),
+)
+const RoutinePage = lazy(() =>
+  import('@/presentation/pages/RoutinePage').then((m) => ({ default: m.RoutinePage })),
 )
 const ProgressPage = lazy(() =>
   import('@/presentation/pages/ProgressPage').then((m) => ({ default: m.ProgressPage })),
@@ -188,10 +222,23 @@ const AdminSettingsPage = lazy(() =>
   import('@/presentation/admin/pages/AdminSettingsPage').then((m) => ({ default: m.AdminSettingsPage })),
 )
 
+/** Só existe pra o hook rodar dentro do roteador. */
+function RouteSeo() {
+  useRouteSeo()
+  return null
+}
+
 export function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        {/*
+          A metadata da rota, num lugar só e acima das telas: title,
+          description, canônico e robots são consequência do endereço, e
+          espalhá-los pelas páginas cria uma fonte de verdade por tela e uma
+          sexta página nascendo sem nenhuma.
+        */}
+        <RouteSeo />
         <ScrollToHash />
         <Suspense fallback={<RouteFallback />}>
           <Routes>
@@ -213,7 +260,7 @@ export function App() {
               A entrada do funil: quiz público, sem conta.
 
               `/plano/<codigo>` é o link curto que vai na resposta de um
-              comentário, no direct e na bio — o código carrega a origem
+              comentário, no direct e na bio, o código carrega a origem
               inteira (`domain/analytics/quiz-links`). O `/criar-meu-plano`
               continua valendo: link já enviado não pode morrer.
             */}
@@ -233,6 +280,13 @@ export function App() {
               decide é o servidor.
             */}
             <Route path="/juntos/:token" element={<PairInvitePage />} />
+            {/* Convite de amigo: público, porque quem recebe quase nunca tem conta. */}
+            <Route path="/convite/:code" element={<FriendInvitePage />} />
+            {/*
+              O link do clube. Público pelo mesmo motivo do Juntos, e com um a
+              mais: o link é mandado pra grupo, onde a maioria não tem conta.
+            */}
+            <Route path="/clube/:token" element={<ClubInvitePage />} />
             <Route path="/termos" element={<LegalPage kind="termos" />} />
             <Route path="/privacidade" element={<LegalPage kind="privacidade" />} />
 
@@ -253,6 +307,7 @@ export function App() {
               <Route path="objetivos/:id" element={<ObjectiveDetailPage />} />
               <Route path="habitos" element={<HabitsPage />} />
               <Route path="plano" element={<PlanPage />} />
+              <Route path="rotina" element={<RoutinePage />} />
               <Route path="progresso" element={<ProgressPage />} />
               <Route path="review" element={<ReviewPage />} />
               <Route path="ia" element={<AiPage />} />
@@ -262,19 +317,47 @@ export function App() {
               <Route path="foco" element={<FocusPage />} />
               <Route path="insights" element={<InsightsPage />} />
               <Route path="perfil" element={<PersonalProfilePage />} />
+              {/*
+                O perfil de outra pessoa e a publicação avulsa seguem a MESMA
+                flag do Círculo, e não uma própria: com a comunidade fechada e
+                estas duas abertas, o Feed diria "ainda não" enquanto o link
+                compartilhado de uma publicação abriria normalmente. Uma porta
+                fechada e outra aberta pro mesmo cômodo é pior que as duas
+                fechadas.
+
+                O perfil de outra pessoa fica embaixo de `/app/perfil` de
+                propósito: é a mesma coisa vista de fora, e um endereço
+                separado ("/app/pessoa/:id") daria dois nomes pra um conceito.
+              */}
+              {circleOpen ? (
+                <>
+                  <Route path="perfil/:id" element={<PublicProfilePage />} />
+                  <Route path="publicacao/:id" element={<PostPage />} />
+                </>
+              ) : (
+                <>
+                  <Route path="perfil/:id" element={<CircleLockedPage />} />
+                  <Route path="publicacao/:id" element={<CircleLockedPage />} />
+                </>
+              )}
               <Route path="evolucao" element={<EvolutionPage />} />
               {/* A dupla. A própria tela consulta a flag `features.juntos`. */}
               <Route path="juntos" element={<JuntosPage />} />
               {circleOpen ? (
                 <>
+                  <Route path="feed" element={<FeedPage />} />
                   <Route path="circulo" element={<CirclePage />} />
                   <Route path="desafios" element={<ChallengesPage />} />
                   <Route path="desafios/:id" element={<ChallengeDetailPage />} />
+                  <Route path="desafios/:id/ranking" element={<ChallengeRankingPage />} />
+                  <Route path="clubes" element={<ClubsPage />} />
+                  <Route path="clubes/:id" element={<ClubDetailPage />} />
                   <Route path="circulo/:id" element={<FriendProfilePage />} />
                 </>
               ) : (
                 <>
                   {/* Fechado até os primeiros assinantes: a rota fica, a comunidade não. */}
+                  <Route path="feed" element={<CircleLockedPage />} />
                   <Route path="circulo/*" element={<CircleLockedPage />} />
                   <Route path="desafios/*" element={<CircleLockedPage />} />
                 </>

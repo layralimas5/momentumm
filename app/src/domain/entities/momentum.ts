@@ -3,7 +3,14 @@ import { totalMinutes } from './activity'
 import type { CapacityProfile } from './checkin'
 import { addDays, dayKeyToDate, dayRange, daysBetween, type DayKey } from './day'
 import { countsAsDone, type Habit, type HabitLog } from './habit'
-import { habitImpact, impactPointsOf, taskImpact, type ImpactLevel } from './momentum-impact'
+import {
+  habitImpact,
+  impactPointsOf,
+  routineImpact,
+  taskImpact,
+  type ImpactLevel,
+} from './momentum-impact'
+import type { RoutineItem, RoutineOccurrence } from './routine-item'
 import { type Task } from './task'
 import type { WeeklyReview } from './weekly-review'
 
@@ -74,13 +81,13 @@ const OLDER_DAY_WEIGHT = 1
 
 /**
  * Impacto que caracteriza um dia cumprido: uma ação de alta (3) mais um hábito
- * (1). Acima disso o dia não rende mais — dia excepcional não é o que sustenta
+ * (1). Acima disso o dia não rende mais, dia excepcional não é o que sustenta
  * ritmo, e premiar o excesso é premiar o que vem antes de parar.
  */
 const FULL_DAY_IMPACT = 4
 
 /**
- * Teto do que a repetição rende por dia — e ele é menor que uma prioridade de
+ * Teto do que a repetição rende por dia, e ele é menor que uma prioridade de
  * propósito. Com teto 3, marcar três hábitos fáceis empataria com fechar a
  * ação que destrava a etapa. Em 2, a prioridade ganha sempre.
  */
@@ -100,7 +107,7 @@ const PRESENCE_CREDIT = 0.5
  *
  * Adiar é decisão: a pessoa olhou pra ação e disse "não hoje". Ignorar é a
  * ação vencer sem ninguém olhar. Cobrar as duas igual ensina que não vale a
- * pena decidir — e zerar a adiada ensina que adiar é grátis.
+ * pena decidir, e zerar a adiada ensina que adiar é grátis.
  */
 export const POSTPONED_WEIGHT = 0.5
 
@@ -109,7 +116,7 @@ export const POSTPONED_WEIGHT = 0.5
  * planejado na janela.
  *
  * Sem ele, uma lista só de tarefas fáceis 100% cumprida marcaria 100 no fator
- * "execução das prioridades" — de quem nunca definiu uma prioridade. O teto é
+ * "execução das prioridades", de quem nunca definiu uma prioridade. O teto é
  * a diferença entre "cumpri o que planejei" e "planejei o que importa".
  */
 export const PRIORITIES_CAP_WITHOUT_PRIORITY = 0.7
@@ -140,7 +147,7 @@ const MIN_DAYS_FOR_FULL_SCORE = 7
  *
  * Subir mais rápido que cair é de propósito: a retomada precisa aparecer na
  * tela no dia em que acontece, e a queda precisa dar tempo de reagir antes de
- * virar um número que assusta. Nenhum dos dois esconde o valor bruto — ele
+ * virar um número que assusta. Nenhum dos dois esconde o valor bruto, ele
  * continua em `rawValue`, e a diferença aparece como "ainda a absorver".
  */
 export const MAX_DAILY_RISE = 6
@@ -159,7 +166,7 @@ const SMOOTHING_SPAN_DAYS = 56
  * Quantos dias de descanso planejado cabem numa semana.
  *
  * Dois, e não mais: acima disso "descanso" vira a maneira de tirar da conta os
- * dias em que não se quer ser medido. Dois dias por semana é fim de semana —
+ * dias em que não se quer ser medido. Dois dias por semana é fim de semana,
  * o único descanso que o produto precisa reconhecer sem discutir.
  */
 export const MAX_REST_WEEKDAYS = 2
@@ -274,6 +281,12 @@ export interface MomentumInput {
   readonly habits: readonly Habit[]
   readonly habitLogs: readonly HabitLog[]
   readonly tasks: readonly Task[]
+  /**
+   * A rotina. Opcional porque o score existia antes dela, e porque só uma
+   * parte dela conta: item SEM objetivo não entra (ver `routineImpact`).
+   */
+  readonly routineItems?: readonly RoutineItem[]
+  readonly routineOccurrences?: readonly RoutineOccurrence[]
   readonly today: DayKey
   /** Reviews escritos. Não entram no score; ficam pro resto do app. */
   readonly weeklyReviews?: readonly WeeklyReview[]
@@ -454,7 +467,7 @@ function windowScore(prepared: Prepared, end: DayKey): WindowScore {
   const { input, weights } = prepared
 
   /*
-    A janela começa no primeiro registro da conta, nunca antes dele — mas nunca
+    A janela começa no primeiro registro da conta, nunca antes dele, mas nunca
     é menor que uma semana.
 
     Quem tem duas semanas de app não pode ser medido contra 14 dias em que a
@@ -531,7 +544,7 @@ function dayWeight(day: DayKey, end: DayKey): number {
 /**
  * Consistência: a média ponderada do crédito de cada dia.
  *
- * Dia de descanso planejado que ficou vazio sai da média — nem soma, nem
+ * Dia de descanso planejado que ficou vazio sai da média, nem soma, nem
  * divide. Dia de descanso com movimento entra normal: descansar é direito,
  * não obrigação.
  */
@@ -556,17 +569,32 @@ function consistencyFactor(
 /**
  * O quanto de um dia foi cumprido, de 0 a 1.
  *
- * Soma o impacto do que saiu naquele dia — ações concluídas, hábitos cumpridos
- * e registros — cada categoria com o seu teto, e satura em `FULL_DAY_IMPACT`.
+ * Soma o impacto do que saiu naquele dia, ações concluídas, hábitos cumpridos
+ * e registros, cada categoria com o seu teto, e satura em `FULL_DAY_IMPACT`.
  * O teto por categoria é o que impede subir o número por repetição, e o teto do
  * dia é o que impede um sábado heroico valer por uma semana.
  */
 function dayCredit(input: MomentumInput, day: DayKey): number {
+  /*
+    Hábito e rotina dividem o MESMO teto.
+
+    Os dois são repetição, e o teto existe pra repetição não competir com a
+    ação que destrava a etapa. Dar um balde próprio à rotina seria dobrar o
+    espaço da repetição no número, que é o contrário do que ele defende.
+  */
   let habits = 0
   for (const log of input.habitLogs) {
     if (log.day !== day || !countsAsDone(log.status)) continue
     const habit = input.habits.find((item) => item.id === log.habitId)
     habits += habit ? impactPointsOf(habitImpact(habit)) : impactPointsOf('baixo')
+  }
+
+  for (const occurrence of input.routineOccurrences ?? []) {
+    if (occurrence.day !== day || occurrence.status !== 'feito') continue
+    const item = (input.routineItems ?? []).find((entry) => entry.id === occurrence.itemId)
+    if (!item) continue
+    const level = routineImpact(item)
+    if (level !== null) habits += impactPointsOf(level)
   }
 
   let low = 0
@@ -593,7 +621,7 @@ function dayCredit(input: MomentumInput, day: DayKey): number {
 
   /*
     Aparecer vale metade do dia; o tamanho do que saiu vale a outra metade.
-    Só o impacto faria um dia de leitura curta valer 25% de um dia normal — e
+    Só o impacto faria um dia de leitura curta valer 25% de um dia normal, e
     a mensagem do produto é a oposta: constância ganha de volume. Só a presença
     faria marcar um hábito de dois minutos valer o mesmo que fechar a etapa.
   */
@@ -675,7 +703,7 @@ function prioritiesFactor(
 /**
  * Progresso nos objetivos: o quanto o plano andou de verdade.
  *
- * Sem plano montado o fator não tem base e herda a consistência — cobrar avanço
+ * Sem plano montado o fator não tem base e herda a consistência, cobrar avanço
  * de plano de quem ainda não tem plano seria punir a conta nova por uma etapa
  * que ela nem chegou a criar.
  */
@@ -690,13 +718,13 @@ function objectivesFactor(gain: number | undefined): Factor {
  *
  * Cada pausa de dois dias ou mais vira uma nota pelo tempo que levou pra
  * fechar. Pausa ainda aberta no fim da janela entra com a nota do tamanho que
- * ela já tem — senão bastaria continuar parado pra o fator nunca contar.
+ * ela já tem, senão bastaria continuar parado pra o fator nunca contar.
  *
  * Dia de descanso vazio é transparente: não abre pausa, não alonga pausa e não
  * fecha pausa. Quem não parou não recebe nota cheia de graça: sem pausa nenhuma
  * o fator não tem base e herda a consistência.
  *
- * A retomada mais recente pesa o dobro das anteriores — ver
+ * A retomada mais recente pesa o dobro das anteriores, ver
  * `LATEST_RETURN_WEIGHT`. É por aí que voltar HOJE aparece no número.
  */
 function recoveryFactor(credits: readonly number[], rest: readonly boolean[]): Factor {
@@ -743,7 +771,7 @@ function recoveryFactor(credits: readonly number[], rest: readonly boolean[]): F
  *
  * Cai rápido no começo e devagar depois: a diferença entre voltar no terceiro e
  * no quinto dia importa muito mais que a diferença entre o décimo e o décimo
- * segundo — ali a pessoa já saiu da rotina de qualquer jeito.
+ * segundo, ali a pessoa já saiu da rotina de qualquer jeito.
  */
 function recoveryNote(gapDays: number): number {
   if (gapDays <= 2) return 1
@@ -799,7 +827,7 @@ function smoothedSeries(prepared: Prepared, end: DayKey): Map<DayKey, SmoothedPo
       Na primeira semana da conta o número é o bruto, sem limite: ele está
       "se formando" e a tela diz isso. Limitar ali faria quem cumpre tudo
       desde o primeiro dia ver 40 no sétimo, e a explicação seria "porque
-      ontem era 34" — uma regra de estabilidade aplicada a um número que
+      ontem era 34", uma regra de estabilidade aplicada a um número que
       ainda não existia.
     */
     const forming = daysBetween(prepared.first, day) + 1 < MIN_DAYS_FOR_FULL_SCORE
@@ -968,7 +996,7 @@ export function recommendationFor(score: MomentumScore, capacity: CapacityProfil
 
 /**
  * A frase sobre o que o número ainda não absorveu. Null quando bruto e
- * exibido já são o mesmo — aí não há nada a explicar.
+ * exibido já são o mesmo, aí não há nada a explicar.
  */
 export function heldBackNote(score: MomentumScore): string | null {
   if (score.heldBack >= 2) {
@@ -1081,7 +1109,7 @@ export function weakestFactor(
 /**
  * A evolução do score, um ponto por dia.
  *
- * Cada ponto é o score EXIBIDO daquele dia — a mesma série que produz o número
+ * Cada ponto é o score EXIBIDO daquele dia, a mesma série que produz o número
  * grande, com o mesmo limite diário. Guardar um histórico à parte abriria a
  * porta pra a curva discordar do número depois de qualquer ajuste na fórmula.
  */

@@ -9,7 +9,7 @@ import { DemoPairRepository } from './demo-pairs'
   O perfil de demonstração é gratuito (`demo-store`), então o teto de uma dupla
   e o de um incentivo por dia valem ali igual. Divergência entre os dois
   repositórios do mesmo contrato é o começo de dois produtos saindo do mesmo
-  código — e quem trabalha nas telas pelo modo demo é justamente quem não
+  código, e quem trabalha nas telas pelo modo demo é justamente quem não
   veria o limite antes de publicar.
 */
 describe('DemoPairRepository', () => {

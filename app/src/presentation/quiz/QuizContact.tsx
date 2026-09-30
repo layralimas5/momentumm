@@ -13,7 +13,7 @@ import { Field, TextInput } from '@/presentation/components/ui/Field'
  *
  * A finalidade é dita na tela, não escondida num termo, e ela é a VERDADEIRA:
  * o contato serve pra o Momentumm falar com a pessoa depois. O plano aparece
- * na tela seguinte, não no e-mail — nenhum envio existe, e prometer um seria
+ * na tela seguinte, não no e-mail, nenhum envio existe, e prometer um seria
  * a primeira promessa quebrada do produto, logo na porta de entrada. É o que
  * a LGPD chama de consentimento informado, e é o mínimo pra usar isso depois.
  */

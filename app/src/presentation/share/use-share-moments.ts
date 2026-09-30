@@ -75,7 +75,7 @@ export function useShareMoments(view: DashboardView): readonly ShareMoment[] {
     /*
       A rotina do app é o BLOCO do dia: os hábitos da manhã, os da noite. Não
       existe entidade "rotina" e criar uma só pra isso seria inventar um módulo
-      novo — exatamente o que a arquitetura do Momentumm recusa. O bloco só
+      novo, exatamente o que a arquitetura do Momentumm recusa. O bloco só
       vira card quando tem mais de um hábito e todos saíram: "1/1 concluída"
       não é rotina cumprida, é hábito cumprido.
     */

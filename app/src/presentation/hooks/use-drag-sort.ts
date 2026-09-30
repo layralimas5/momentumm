@@ -10,14 +10,14 @@ import { useCallback, useRef, useState, type CSSProperties, type KeyboardEvent, 
  * ## O que arrasta é a alça, não o card
  *
  * Só a alça captura o ponteiro (`touch-action: none` mora nela). O resto do
- * card continua rolando a página normalmente no celular — arrastar a lista
+ * card continua rolando a página normalmente no celular, arrastar a lista
  * inteira brigaria com a rolagem justamente onde ela mais é usada.
  *
  * ## Teclado e leitor de tela continuam funcionando
  *
  * A alça é um botão de verdade: com o foco nela, seta pra cima e pra baixo
  * movem o item uma posição. É o que as setinhas faziam, sem ocupar dois alvos
- * em cada linha — e sem deixar de fora quem não usa ponteiro.
+ * em cada linha, e sem deixar de fora quem não usa ponteiro.
  */
 
 interface DragState {
@@ -60,7 +60,7 @@ export function useDragSort(
   /*
     O mesmo estado num ref, e não é redundância: soltar precisa LER o destino
     pra avisar quem reordena, e ler de dentro do atualizador do `useState`
-    dispararia a gravação no meio do render de outro componente — o React
+    dispararia a gravação no meio do render de outro componente, o React
     avisa em voz alta e, mais cedo ou mais tarde, isso vira estado perdido.
   */
   const current = useRef<DragState | null>(null)

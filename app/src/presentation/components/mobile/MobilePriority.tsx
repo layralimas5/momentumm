@@ -1,21 +1,19 @@
 import { useState } from 'react'
-import { activityType } from '@/domain/entities/activity-type'
 import type { CapacityProfile } from '@/domain/entities/checkin'
-import type { Goal } from '@/domain/entities/goal'
-import type { Objective } from '@/domain/entities/objective'
-import { ContextLine } from '@/presentation/components/shared/Meta'
-import { TASK_EFFORT_LABELS, type Task } from '@/domain/entities/task'
+import type { Task } from '@/domain/entities/task'
 import { Button } from '@/presentation/components/ui/Button'
 import { BottomSheet, SheetAction } from '@/presentation/components/ui/BottomSheet'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { Panel } from '@/presentation/components/ui/Surface'
+import { MomentumRing } from '@/presentation/components/dashboard/MomentumRing'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
+import { cn } from '@/shared/lib/cn'
+import type { DayProgress } from '@/presentation/planner/use-dashboard'
 
 interface MobilePriorityProps {
   readonly task: Task | null
-  readonly goal: Goal | null
-  readonly objective: Objective | undefined
-  readonly stageTitle?: string | null | undefined
+  /** Quanto do dia já saiu. Vira o anel ao lado do título. */
+  readonly dayProgress: DayProgress
   readonly capacity: CapacityProfile
   readonly dayComplete: boolean
   readonly onStartFocus: (task: Task) => void
@@ -35,9 +33,7 @@ interface MobilePriorityProps {
  */
 export function MobilePriority({
   task,
-  goal,
-  objective,
-  stageTitle,
+  dayProgress,
   capacity,
   dayComplete,
   onStartFocus,
@@ -64,20 +60,28 @@ export function MobilePriority({
 
   if (!task) {
     return (
-      <Panel tone="brand" aria-labelledby="prioridade-titulo" className="p-5">
+      <Panel aria-labelledby="prioridade-titulo" className="p-5">
         <Eyebrow done={dayComplete} />
-        <h2 id="prioridade-titulo" className="mt-3 text-xl font-semibold text-balance text-ink">
-          {dayComplete ? 'Você já fez o movimento de hoje' : 'O movimento que muda seu dia'}
-        </h2>
-        <p className="mt-2 text-sm text-pretty text-ink-muted">
-          {dayComplete
-            ? 'O plano de hoje saiu inteiro. Hoje já está resolvido.'
-            : 'Escolhe uma ação só. O resto do dia fica mais leve quando existe uma decisão tomada.'}
-        </p>
+        <div className="mt-3 flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <h2
+              id="prioridade-titulo"
+              className="text-[1.375rem] leading-tight font-bold text-balance text-ink"
+            >
+              {dayComplete ? 'Você já fez o movimento de hoje' : 'O movimento que muda seu dia'}
+            </h2>
+            <p className="mt-2 text-sm text-pretty text-ink-muted">
+              {dayComplete
+                ? 'O plano de hoje saiu inteiro. Hoje já está resolvido.'
+                : 'Escolhe uma ação só. O resto do dia fica mais leve quando existe uma decisão tomada.'}
+            </p>
+          </div>
+          <DayRing progress={dayProgress} />
+        </div>
         <Button
           size="lg"
           variant={dayComplete ? 'secondary' : 'primary'}
-          className="mt-4 h-13 w-full"
+          className="mt-5 h-14 w-full rounded-2xl font-semibold"
           onClick={onCreate}
         >
           <Icon name="mais" className="size-4" />
@@ -87,37 +91,26 @@ export function MobilePriority({
     )
   }
 
-  const axis = task.axis ? activityType(task.axis) : null
   const preferMinimal = capacity.preferMinimal && task.minimalVersion !== null
 
   return (
     <>
-      <Panel
-        tone="brand"
-        glow
-        aria-labelledby="prioridade-titulo"
-        className="relative overflow-hidden p-5 pl-6"
-      >
-        {/*
-          A faixa do eixo na lateral. É a cor que já identifica leitura, estudo,
-          treino e meditação no resto do app, aqui do lado de fora do card: dá
-          pra saber de que tipo é a ação do dia antes de ler o título.
-        */}
-        {axis ? (
-          <span
-            aria-hidden="true"
-            className="absolute inset-y-0 left-0 w-1.5"
-            style={{ backgroundColor: axis.colorToken }}
-          />
-        ) : null}
+      {/*
+        Mesma casca dos outros cards da tela.
 
+        Ele era o único com gradiente roxo e brilho em volta, e numa tela em que
+        a ação já é o maior bloco, com o único botão cheio, o realce era
+        redundante: destaque que se repete em cor, tamanho e luz vira barulho. A
+        hierarquia agora vem do tamanho do título e do peso do botão.
+      */}
+      <Panel aria-labelledby="prioridade-titulo" className="relative overflow-hidden p-5">
         <div className="flex items-start justify-between gap-3">
           <Eyebrow />
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
             aria-haspopup="dialog"
-            className="-mr-2 -mt-2 grid size-11 shrink-0 place-items-center rounded-full text-ink-faint transition-colors active:bg-surface-hi"
+            className="-mr-2 -mt-3 grid size-11 shrink-0 place-items-center rounded-full text-line-hi transition-colors active:bg-surface-hi active:text-ink"
           >
             <span aria-hidden="true" className="text-xl leading-none">
               ⋯
@@ -132,42 +125,41 @@ export function MobilePriority({
           O que importa hoje
         </h2>
 
-        <p className="mt-3 text-2xl leading-snug font-semibold tracking-tight text-balance text-ink">
-          {task.title}
-        </p>
+        {/*
+          Título e anel lado a lado.
 
-        {/* O destino por trás da ação mais importante do dia. */}
-        <ContextLine
-          className="mt-1.5"
-          role="Ação prioritária"
-          stage={stageTitle}
-          objective={objective}
-        />
+          O anel mede o DIA, não esta ação, é a resposta curta pra "quanto
+          falta pra acabar", e ele mora aqui porque é aqui que a pessoa decide
+          se começa mais uma. Em bloco só dele, lá embaixo, ele era placar; ao
+          lado da ação, ele é argumento.
+        */}
+        <div className="mt-3 flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <p className="text-[1.375rem] leading-tight font-bold tracking-tight text-balance text-ink">
+              {task.title}
+            </p>
+            <p className="mt-2 text-sm text-pretty text-ink-muted">{dayLine(dayProgress)}</p>
+          </div>
+          <DayRing progress={dayProgress} />
+        </div>
 
         {/*
           O tempo sai da lista de detalhes e vira pastilha: é o dado que decide
           se dá pra começar agora, e antes ele disputava atenção com eixo e
           esforço na mesma linha cinza. O resto continua secundário, abaixo.
         */}
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="tabular inline-flex items-center gap-1.5 rounded-full border border-line-hi bg-canvas/50 px-2.5 py-1 text-sm font-medium text-ink">
+        {/*
+          Uma pastilha só: o tempo.
+
+          Aqui havia o eixo, o esforço, a meta e a linha de etapa e objetivo,
+          quatro metadados entre o título e o botão. São verdade, e nenhum deles
+          muda a única pergunta que este card faz: começo ou não? O tempo fica
+          porque é ele que responde "dá pra agora". O resto continua no menu de
+          opções, na tela do plano e na do objetivo.
+        */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="tabular inline-flex items-center gap-1.5 rounded-full border border-line-hi bg-canvas/60 px-3 py-1.5 text-sm font-medium text-ink">
             <Icon name="relogio" className="size-3.5 text-ink-faint" />~{task.estimatedMin} min
-          </span>
-          {axis ? (
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-sm"
-              style={{ color: axis.colorToken, borderColor: `color-mix(in oklab, ${axis.colorToken} 35%, transparent)` }}
-            >
-              {axis.label}
-            </span>
-          ) : null}
-          <span className="text-sm text-ink-faint">
-            {TASK_EFFORT_LABELS[task.effort].replace('Esforço ', 'esforço ')}
-            {goal
-              ? goal.type === task.axis
-                ? ' · ligada a uma meta'
-                : ` · meta de ${activityType(goal.type).label}`
-              : ''}
           </span>
         </div>
 
@@ -181,13 +173,13 @@ export function MobilePriority({
         {/*
           Em dia de baixa energia a versão mínima assume o botão principal. O
           card não pode empurrar o plano cheio logo depois de a pessoa dizer que
-          não tem energia — é assim que o dia termina em zero.
+          não tem energia, é assim que o dia termina em zero.
         */}
         {preferMinimal ? (
           <>
             <Button
               size="lg"
-              className="mt-4 h-14 w-full text-base"
+              className="mt-5 h-14 w-full rounded-2xl text-base font-semibold"
               onClick={() => void shrink.run(task)}
               loading={shrink.running}
             >
@@ -208,23 +200,29 @@ export function MobilePriority({
           <>
             <Button
               size="lg"
-              className="mt-4 h-14 w-full text-base"
+              className="relative mt-5 h-14 w-full rounded-2xl text-base font-semibold"
               onClick={() => onStartFocus(task)}
             >
-              <Icon name="play" className="size-5" />
               Começar agora
+              {/* A seta na ponta, e não colada no texto: é ela que diz que o
+                  botão leva pra outro lugar, em vez de marcar algo aqui. */}
+              <Icon name="seta" className="absolute right-4 size-5" strokeWidth={2.25} />
             </Button>
+            {/*
+              A versão mínima vira linha de texto sob o botão. Como segundo
+              botão de largura cheia ela empatava com o "começar", duas
+              chapas coladas, e a decisão do dia virando escolha múltipla.
+            */}
             {task.minimalVersion ? (
-              <Button
-                size="lg"
-                variant="secondary"
-                className="mt-2 h-12 w-full"
+              <button
+                type="button"
                 onClick={() => void shrink.run(task)}
-                loading={shrink.running}
+                disabled={shrink.running}
+                className="mx-auto mt-3 flex min-h-11 items-center gap-1.5 text-sm font-medium text-ink-faint transition-colors active:text-ink disabled:opacity-60"
               >
                 <Icon name="minimo" className="size-4" />
                 Fazer a versão mínima
-              </Button>
+              </button>
             ) : null}
           </>
         )}
@@ -281,14 +279,21 @@ export function MobilePriority({
   )
 }
 
+/**
+ * O rótulo do bloco.
+ *
+ * Era uma pílula com borda, e ela competia com o título logo abaixo: dois
+ * elementos marcados a 8px um do outro, e o olho sem saber qual ler primeiro.
+ * Agora é etiqueta de seção, caps pequeno, espaçado, sem casca. O ponto
+ * pulsante fica, porque é ele que diz que o dia ainda está em aberto.
+ */
 function Eyebrow({ done = false }: { done?: boolean }) {
   return (
     <span
-      className={
-        done
-          ? 'inline-flex items-center gap-2 rounded-full border border-positive/40 bg-positive/10 px-2.5 py-1 text-xs font-medium text-positive'
-          : 'inline-flex items-center gap-2 rounded-full border border-brand/40 bg-brand-dim/50 px-2.5 py-1 text-xs font-medium text-brand-ink'
-      }
+      className={cn(
+        'inline-flex items-center gap-2 text-[0.6875rem] font-medium tracking-[0.12em] uppercase',
+        done ? 'text-positive' : 'text-ink-faint',
+      )}
     >
       <span
         aria-hidden="true"
@@ -297,4 +302,47 @@ function Eyebrow({ done = false }: { done?: boolean }) {
       {done ? 'Dia fechado' : 'O que importa hoje'}
     </span>
   )
+}
+
+/**
+ * O anel do dia: a fração concluída, no lugar em que ela muda uma decisão.
+ *
+ * Sem nada planejado ele não aparece, anel vazio com "0/0" no meio é um
+ * gráfico que mede o nada.
+ */
+function DayRing({ progress }: { progress: DayProgress }) {
+  if (progress.total === 0) return null
+
+  return (
+    <MomentumRing value={progress.ratio * 100} size={84} stroke={7} className="mt-0.5">
+      <span className="flex flex-col items-center leading-none">
+        <span aria-hidden="true" className="tabular text-lg font-semibold text-ink">
+          {progress.done}/{progress.total}
+        </span>
+        <span aria-hidden="true" className="mt-1 text-[0.625rem] text-ink-faint">
+          concluídas
+        </span>
+        <span className="sr-only">
+          {progress.done} de {progress.total} do que você planejou pra hoje, concluído
+        </span>
+      </span>
+    </MomentumRing>
+  )
+}
+
+/** A leitura do dia em uma linha: é o que responde "vale começar mais uma?". */
+/**
+ * A frase embaixo da prioridade.
+ *
+ * Ela fala do que o anel mede: ação e hábito, o que move objetivo. Dizia
+ * "faltam 4 atividades pra fechar o dia" num dia de oito itens, porque tratava
+ * a conta do plano como se fosse a conta do dia. O dia inteiro tem a própria
+ * linha, nos números logo abaixo e em "Seu dia".
+ */
+function dayLine(progress: DayProgress): string {
+  if (progress.total === 0) return 'Uma decisão tomada já muda o tamanho do dia.'
+  const left = progress.total - progress.done
+  if (left <= 0) return 'Você fechou tudo que planejou. Essa aqui é lucro.'
+  if (left === 1) return 'Falta pouco pra encerrar o dia com progresso real.'
+  return `Faltam ${left} do que você planejou pra hoje.`
 }

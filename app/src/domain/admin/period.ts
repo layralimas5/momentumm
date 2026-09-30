@@ -3,7 +3,7 @@ import type { DayKey } from '@/domain/entities/day'
 /**
  * O período que todas as telas de métrica compartilham.
  *
- * Datas como `YYYY-MM-DD`, inclusivas nas duas pontas — é o que o SQL recebe
+ * Datas como `YYYY-MM-DD`, inclusivas nas duas pontas, é o que o SQL recebe
  * e o que a URL carrega. "Últimos 7 dias" termina hoje e começa seis dias
  * atrás, e a comparação é sempre com o bloco imediatamente anterior do mesmo
  * tamanho.
@@ -65,7 +65,7 @@ export function presetOf(period: Period, today: DayKey): PeriodPreset {
  *
  * Nulo quando não dá pra comparar: sem base anterior (zero) ou sem dado.
  * Mostrar "+∞%" ou "+100%" quando o anterior era zero é o número que engana
- * mais em painel novo — todo primeiro mês pareceria explosivo.
+ * mais em painel novo, todo primeiro mês pareceria explosivo.
  */
 export function deltaPercent(current: number | null, previous: number | null): number | null {
   if (current === null || previous === null) return null

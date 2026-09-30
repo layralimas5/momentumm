@@ -51,7 +51,7 @@ export class SupabaseAuthService implements AuthService {
   /**
    * A sessão como o SERVIDOR a enxerga.
    *
-   * `aal` vem de `getAuthenticatorAssuranceLevel`, que reflete o JWT — o
+   * `aal` vem de `getAuthenticatorAssuranceLevel`, que reflete o JWT, o
    * mesmo valor que o Postgres lê em `is_admin()`. Assim a tela e o banco
    * nunca discordam sobre a sessão estar em dois fatores, e não existe um
    * "sou admin" guardado em estado de cliente.
@@ -110,7 +110,7 @@ export class SupabaseAuthService implements AuthService {
    * already registered" com todas as letras: o formulário virava um
    * verificador de e-mails.
    *
-   * Agora todo caminho não-fatal termina igual — sem usuário e pedindo
+   * Agora todo caminho não-fatal termina igual, sem usuário e pedindo
    * confirmação. Quem já tinha conta recebe do Supabase um e-mail avisando
    * disso; quem não tinha recebe o link. A informação chega pela caixa de
    * entrada, que só o dono abre.
@@ -167,7 +167,7 @@ export class SupabaseAuthService implements AuthService {
   /**
    * Trocar a senha exige provar a senha atual.
    *
-   * `updateUser({ password })` sozinho aceita qualquer sessão válida — quem
+   * `updateUser({ password })` sozinho aceita qualquer sessão válida, quem
    * pega o navegador destravado troca a senha e fica com a conta. A
    * reautenticação é o que separa "tem a sessão" de "é a pessoa".
    */
@@ -265,7 +265,7 @@ export class SupabaseAuthService implements AuthService {
   /**
    * Desafio e verificação numa chamada só.
    *
-   * São dois passos no GoTrue e nenhuma tela precisa deles separados —
+   * São dois passos no GoTrue e nenhuma tela precisa deles separados,
    * separar aqui só criaria a chance de verificar contra um desafio velho.
    */
   private async challengeAndVerify(

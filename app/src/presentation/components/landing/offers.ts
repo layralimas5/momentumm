@@ -13,7 +13,7 @@
  * ângulo trouxe gente que de fato começou, não só gente que clicou.
  *
  * A oferta troca só a PROMESSA: título, subtítulo e a frase que fecha a
- * página. O botão não entra nessa lista de propósito — a página inteira usa
+ * página. O botão não entra nessa lista de propósito, a página inteira usa
  * um CTA só ("Criar meu plano"), e três textos diferentes de botão na mesma
  * campanha tornam impossível saber se foi o ângulo ou a palavra do botão que
  * mudou o resultado.

@@ -10,7 +10,7 @@ import { DomainError } from '@/shared/errors'
 /**
  * Suporte no modo demo: as solicitações vivem na memória da aba.
  *
- * Existe pra tela de Configurações funcionar sem Supabase — a pessoa abre
+ * Existe pra tela de Configurações funcionar sem Supabase, a pessoa abre
  * uma solicitação e vê o protocolo. Ninguém do outro lado vai responder, e
  * a tela diz isso.
  */
@@ -26,7 +26,7 @@ export class DemoSupportRepository implements SupportRepository {
 
       O demo precisa reproduzir o caminho inteiro: sem isso, uma conta gratuita
       no modo demo abriria "ajuda com o app" e a mesma tela recusaria em
-      produção — dois produtos saindo do mesmo código.
+      produção, dois produtos saindo do mesmo código.
     */
     if (isProSupportCategory(category) && !limitsOf(demoStore.profile().plan).appSupport) {
       throw new DomainError(

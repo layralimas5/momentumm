@@ -15,7 +15,7 @@ export type AiErrorCode = (typeof AI_ERROR_CODES)[number]
 
 /**
  * Erro da IA com código: a mensagem é de domínio (vai pra tela como está), e
- * o código deixa a tela decidir o que oferecer — "ver o PRO" na cota, nada
+ * o código deixa a tela decidir o que oferecer, "ver o PRO" na cota, nada
  * na configuração ausente.
  */
 export class AiError extends DomainError {

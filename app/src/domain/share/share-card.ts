@@ -6,7 +6,7 @@ import type { JourneyEventType } from '@/domain/entities/journey-event'
  * `ShareCardData` é a fronteira entre "o que aconteceu" e "o que aparece na
  * imagem". Nenhum template conhece hábito, objetivo, etapa ou momentum: eles
  * recebem título, métrica e lista já resolvidos. É o que permite ter cinco
- * templates sem cinco cópias da mesma regra — e trocar a origem do dado
+ * templates sem cinco cópias da mesma regra, e trocar a origem do dado
  * (evento salvo hoje, item de feed amanhã) sem tocar em desenho.
  */
 
@@ -17,7 +17,7 @@ import type { JourneyEventType } from '@/domain/entities/journey-event'
 /**
  * Um formato só: o Story.
  *
- * O card do Momentumm existe pra ser postado em Story — vertical, cheio de
+ * O card do Momentumm existe pra ser postado em Story, vertical, cheio de
  * tela, some em 24h. Feed e quadrado saíram porque nenhum dos dois é o lugar
  * de um progresso do dia: post de feed é publicação permanente, e um card
  * gerado por app no meio do perfil de alguém é o que ninguém posta duas vezes.
@@ -50,13 +50,18 @@ export const DEFAULT_SHARE_FORMAT: ShareFormat = 'stories'
 // ---------------------------------------------------------------------------
 
 /**
- * A COR do card. Quatro, e só.
+ * A COR do card.
  *
- * Preto, neon, branco e o PNG sem fundo. Gradiente, cartaz colorido e escala de
- * cinza saíram porque o que muda entre um card e outro não é o tom da tinta: é
- * como a informação se organiza dentro dele — e isso agora tem dimensão
- * própria (`ShareComposition`). Cor e arranjo separados dão 4 x 6 combinações
- * com dez descrições, em vez de vinte e quatro templates pra manter.
+ * Eram quatro no estúdio de progresso (preto, neon, branco e o PNG sem fundo).
+ * **O estúdio ficou com o PNG e mais nada** (`STUDIO_SHARE_TEMPLATE`), e a
+ * razão é a mesma que tirou o seletor de formato: o card que a pessoa posta
+ * precisa parecer dela, não o print de um dashboard, e um fundo desenhado pelo
+ * app é justamente o que denuncia de onde a imagem saiu. Sem fundo, o card
+ * vira adesivo: vai por cima da foto dela, e a foto é que carrega o momento.
+ *
+ * As quatro continuam existindo porque o CARD DE FRASE (`QuoteCard`, no Hoje)
+ * usa a paleta inteira, e lá ela faz sentido: a frase não tem foto por trás,
+ * então o fundo é o card.
  */
 export const SHARE_TEMPLATES = ['dark', 'neon', 'light', 'transparent'] as const
 export type ShareTemplateId = (typeof SHARE_TEMPLATES)[number]
@@ -93,22 +98,16 @@ export const SHARE_TEMPLATE_SPECS: Readonly<Record<ShareTemplateId, ShareTemplat
  * mesma história de um jeito, e todas leem os MESMOS dados, sem que nenhuma
  * conheça hábito, objetivo ou etapa.
  *
- * As oito vêm da referência do Strava e do Hevy, adaptadas: lá o assunto é
- * treino (volume, recorde, músculo); aqui é ritmo (momentum, sequência,
- * execução). O que ficou igual é a gramática — selo de recorde, resumo em
- * linha, lista com figura, gráfico, grade de números, pilha centrada, recap
- * em frase — porque é a gramática que as pessoas já sabem postar.
+ * Eram oito, vindas da referência do Strava e do Hevy. Ficaram DUAS, e a
+ * escolha não é de código: com oito, escolher virava trabalho, a pessoa
+ * passava mais tempo decidindo o arranjo do que postando o card, e seis deles
+ * quase nunca eram escolhidos.
+ *
+ * Grade e pilha sobreviveram porque são as duas leituras que funcionam pra
+ * qualquer momento: quatro números em quadrantes, ou tudo centrado, um embaixo
+ * do outro. As duas exportam em PNG, como todas exportavam.
  */
-export const SHARE_COMPOSITIONS = [
-  'selo',
-  'resumo',
-  'lista',
-  'anel',
-  'figura',
-  'grade',
-  'pilha',
-  'recap',
-] as const
+export const SHARE_COMPOSITIONS = ['grade', 'pilha'] as const
 export type ShareCompositionId = (typeof SHARE_COMPOSITIONS)[number]
 
 export interface ShareCompositionSpec {
@@ -120,28 +119,20 @@ export interface ShareCompositionSpec {
 export const SHARE_COMPOSITION_SPECS: Readonly<
   Record<ShareCompositionId, ShareCompositionSpec>
 > = {
-  selo: { id: 'selo', label: 'Selo', hint: 'O selo do momento e o número' },
-  resumo: { id: 'resumo', label: 'Resumo', hint: 'Números em linha e a lista do dia' },
-  lista: { id: 'lista', label: 'Lista', hint: 'O que saiu, com os dias da semana' },
-  anel: { id: 'anel', label: 'Anel', hint: 'Números em cima, o progresso desenhado' },
-  figura: { id: 'figura', label: 'Figura', hint: 'O desenho no centro, os números embaixo' },
   grade: { id: 'grade', label: 'Grade', hint: 'Quatro números, um em cada canto' },
   pilha: { id: 'pilha', label: 'Pilha', hint: 'Tudo centrado, um embaixo do outro' },
-  recap: { id: 'recap', label: 'Recap', hint: 'O número e a frase que o explica' },
 }
 
-export const DEFAULT_SHARE_COMPOSITION: ShareCompositionId = 'selo'
+export const DEFAULT_SHARE_COMPOSITION: ShareCompositionId = 'grade'
 
 /**
- * O que o gratuito leva: três arranjos e TODAS as cores, inclusive o PNG.
+ * O gratuito leva os dois arranjos.
  *
- * Três arranjos e não um, porque um card só não deixa ninguém descobrir que
- * existe escolha, e é a escolha que faz a pessoa voltar ao estúdio. As cores
- * são todas de graça: cor não é o que diferencia o PRO (arranjo, foto de fundo
- * e os toggles são), e um card preso no preto parecia castigo, não plano.
+ * Com dois arranjos, prender um atrás do plano deixaria o gratuito com um card
+ * só, e um card só não deixa ninguém descobrir que existe escolha. O que
+ * diferencia o PRO aqui é a foto de fundo e os toggles, não o arranjo.
  */
-export const FREE_SHARE_COMPOSITIONS: readonly ShareCompositionId[] = ['selo', 'resumo', 'pilha']
-export const FREE_SHARE_TEMPLATES: readonly ShareTemplateId[] = [...SHARE_TEMPLATES]
+export const FREE_SHARE_COMPOSITIONS: readonly ShareCompositionId[] = [...SHARE_COMPOSITIONS]
 
 /**
  * O que a EVOLUÇÃO libera, por cima do plano.
@@ -150,13 +141,12 @@ export const FREE_SHARE_TEMPLATES: readonly ShareTemplateId[] = [...SHARE_TEMPLA
  * mandando: o PRO já tem tudo, e o gratuito ganha arranjo por arranjo conforme
  * sobe de nível. Nada aqui tira o que o plano dá; só acrescenta.
  */
-const COMPOSITION_UNLOCKS: Readonly<Record<string, ShareCompositionId>> = {
-  share_lista: 'lista',
-  share_anel: 'anel',
-  share_figura: 'figura',
-}
-
-const TEMPLATE_UNLOCKS: Readonly<Record<string, ShareTemplateId>> = {}
+/*
+  Vazio desde que o estúdio ficou com dois arranjos: os dois são de todo mundo,
+  e não sobrou o que destravar por nível. Quando entrar um arranjo novo, ele
+  volta a ser o lugar de prometê-lo.
+*/
+const COMPOSITION_UNLOCKS: Readonly<Record<string, ShareCompositionId>> = {}
 
 export function compositionsAllowedFor(
   unlimited: boolean,
@@ -170,18 +160,23 @@ export function compositionsAllowedFor(
   return SHARE_COMPOSITIONS.filter((id) => FREE_SHARE_COMPOSITIONS.includes(id) || extra.includes(id))
 }
 
-export function templatesAllowedFor(
-  unlimited: boolean,
-  unlocked: ReadonlySet<string> = new Set(),
-): readonly ShareTemplateId[] {
-  if (unlimited) return SHARE_TEMPLATES
-  const extra = Object.entries(TEMPLATE_UNLOCKS)
-    .filter(([key]) => unlocked.has(key))
-    .map(([, id]) => id)
-  return SHARE_TEMPLATES.filter((id) => FREE_SHARE_TEMPLATES.includes(id) || extra.includes(id))
-}
+/*
+  `templatesAllowedFor`, `FREE_SHARE_TEMPLATES` e `TEMPLATE_UNLOCKS` saíram
+  junto com o seletor de cor: com uma cor só no estúdio, não existe o que
+  liberar, e uma função que sempre devolve a lista inteira é uma porta aberta
+  pra alguém achar que ela ainda decide alguma coisa.
+*/
 
 export const DEFAULT_SHARE_TEMPLATE: ShareTemplateId = 'dark'
+
+/**
+ * A cor do card do estúdio de progresso, e ela não se escolhe.
+ *
+ * Uma constante em vez de um estado porque pergunta com uma resposta só não é
+ * escolha: é o mesmo motivo que aposentou o seletor de formato quando sobrou
+ * o Stories. Se um dia voltar a haver duas, o seletor volta com elas.
+ */
+export const STUDIO_SHARE_TEMPLATE: ShareTemplateId = 'transparent'
 
 // ---------------------------------------------------------------------------
 // o que aparece no card
@@ -193,7 +188,7 @@ export const SHARE_FIELDS = [
   'completion',
   'objective',
   'duration',
-  /** Sequência de dias — o dado mais compartilhável que o app tem. */
+  /** Sequência de dias, o dado mais compartilhável que o app tem. */
   'streak',
   /** A área do evento: Leitura, Treino, ou a que a pessoa criou. */
   'axis',
@@ -245,7 +240,7 @@ export const SHARE_FIELD_SPECS: Readonly<Record<ShareField, ShareFieldSpec>> = {
     id: 'axis',
     label: 'Área',
     // Área de fábrica é genérica, mas a que a pessoa criou tem o nome que ela
-    // deu — "Terapia" conta uma história que ela pode não querer no Stories.
+    // deu, "Terapia" conta uma história que ela pode não querer no Stories.
     warning: 'A área aparece com o nome que você deu a ela.',
   },
   progress: { id: 'progress', label: 'Avanço do objetivo', warning: null },
@@ -360,13 +355,13 @@ export function availableFieldsForEvent(event: ShareFieldSource): readonly Share
  * Duas regras se somam aqui.
  *
  * Privacidade: nome do objetivo, lista de hábitos e nome da pessoa começam
- * desligados. São os três campos que carregam conteúdo escrito por ela — "Sair
- * da terapia", "Remédio 8h", o nome completo — e nenhum deles deveria ir pro
+ * desligados. São os três campos que carregam conteúdo escrito por ela, "Sair
+ * da terapia", "Remédio 8h", o nome completo, e nenhum deles deveria ir pro
  * Instagram por omissão.
  *
  * Estética: a frase do app ("Você avançou hoje.") também começa desligada. Ela
  * é a coisa mais "de aplicativo" do card, e o card que a pessoa quer postar é o
- * que parece dela — não o print de um dashboard. Quem quiser, liga.
+ * que parece dela, não o print de um dashboard. Quem quiser, liga.
  *
  * Número e percentual começam ligados: são o motivo do card existir e não dizem
  * nada sobre a vida de ninguém.
@@ -380,7 +375,7 @@ export function defaultFieldsFor(type: JourneyEventType): ShareFieldSet {
       Tudo que é NÚMERO nasce ligado: percentual, momentum, duração, volume,
       prazo, etapas, sequência, contagens, dias ativos e a lista do que foi
       feito. O card conta a história inteira do que aconteceu, e quem quiser um
-      card mais seco desliga o que sobra — que é uma decisão mais fácil de tomar
+      card mais seco desliga o que sobra, que é uma decisão mais fácil de tomar
       olhando o preview do que imaginando o que falta.
     */
     momentum: on('momentum', true),

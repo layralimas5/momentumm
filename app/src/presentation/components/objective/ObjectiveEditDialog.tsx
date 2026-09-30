@@ -20,7 +20,7 @@ import { usePlanner } from '@/presentation/planner/use-planner'
  *
  * Não dá pra trocar a área: o progresso é somado das atividades daquele eixo,
  * então mudar de área faria o número saltar sem nada ter acontecido. Quem
- * errou a área arquiva e cria de novo — é mais honesto que um progresso que
+ * errou a área arquiva e cria de novo, é mais honesto que um progresso que
  * mente.
  */
 export function ObjectiveEditDialog({

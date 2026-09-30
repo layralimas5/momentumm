@@ -11,7 +11,7 @@ import { DEMO_PEOPLE, DEMO_USER } from './demo-store'
  * É o teste mais próximo do que a tela faz: criar, convidar, aceitar, recusar,
  * publicar e encerrar, passando pelo mesmo repositório que o `container`
  * entrega à apresentação. Sem `localStorage` no ambiente de teste o store cai
- * em memória sozinho — que é justamente o caminho que o app usa quando o
+ * em memória sozinho, que é justamente o caminho que o app usa quando o
  * navegador bloqueia o armazenamento.
  */
 

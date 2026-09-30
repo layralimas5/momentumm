@@ -13,6 +13,11 @@ import type { CheckIn, NewCheckInInput } from '@/domain/entities/checkin'
 import type { DayKey } from '@/domain/entities/day'
 import type { Habit, HabitLog, HabitStatus, NewHabitInput } from '@/domain/entities/habit'
 import type {
+  NewRoutineItemInput,
+  RoutineItem,
+  RoutineOccurrence,
+} from '@/domain/entities/routine-item'
+import type {
   Challenge,
   ChallengeParticipant,
   NewChallengeInput,
@@ -55,6 +60,11 @@ import type {
 import type { CheckInRepository } from '@/domain/repositories/checkin-repository'
 import type { HabitRepository, HabitUpdate } from '@/domain/repositories/habit-repository'
 import type {
+  RoutineItemUpdate,
+  RoutineOccurrencePatch,
+  RoutineRepository,
+} from '@/domain/repositories/routine-repository'
+import type {
   AccountExport,
   ProfileRepository,
   ProfileUpdate,
@@ -69,6 +79,21 @@ import type {
   ChallengeUpdate,
 } from '@/domain/repositories/challenge-repository'
 import type { FriendshipRepository } from '@/domain/repositories/friendship-repository'
+import type { ReferralRepository } from '@/domain/repositories/referral-repository'
+import type { ClubRepository } from '@/domain/repositories/club-repository'
+import type { ClubInvitation, ClubInvitePreview } from '@/domain/entities/club-invite'
+import {
+  assertValidClubDescription,
+  assertValidClubName,
+  isClubRunning,
+  rankClubMembers,
+  type Club,
+  type ClubMember,
+  type ClubRankedMember,
+  type NewClubInput,
+} from '@/domain/entities/club'
+import type { DayPhotoRepository } from '@/domain/repositories/day-photo-repository'
+import type { DayPhoto, NewDayPhotoInput } from '@/domain/entities/day-photo'
 import type { JourneyEventRepository } from '@/domain/repositories/journey-event-repository'
 import type { WeeklyReviewRepository } from '@/domain/repositories/weekly-review-repository'
 import type { WinRepository } from '@/domain/repositories/win-repository'
@@ -85,7 +110,7 @@ import type { LegalAcceptanceRepository } from '@/domain/repositories/legal-acce
 import type { MediaRepository, StoredMedia } from '@/domain/repositories/media-repository'
 import type { EvolutionRepository } from '@/domain/repositories/evolution-repository'
 import type { EvolutionSnapshot } from '@/domain/entities/evolution'
-import { DEMO_USER, demoStore } from './demo-store'
+import { DEMO_PEOPLE, DEMO_USER, demoStore } from './demo-store'
 
 const SESSION_KEY = 'momentumm.demo.session'
 
@@ -125,7 +150,7 @@ export class DemoAuthService implements AuthService {
     Devolver um MFA de mentira aqui seria pior que não ter: a tela de
     segurança mostraria "verificação em duas etapas ativa" pra uma sessão que
     é um objeto no localStorage. Cada caminho de credencial abaixo diz, em
-    voz alta, que aquilo só existe com Supabase configurado — e a sessão demo
+    voz alta, que aquilo só existe com Supabase configurado, e a sessão demo
     nunca se apresenta como administrativa.
   */
   async currentSession(): Promise<SessionInfo | null> {
@@ -282,7 +307,7 @@ export class DemoPlanStageRepository implements PlanStageRepository {
 export class DemoProfileRepository implements ProfileRepository {
   /*
     No modo demo "a conta" é o conteúdo do localStorage. Apagar aqui é apagar
-    de verdade o que existe — a mesma promessa da tela, no alcance que este
+    de verdade o que existe, a mesma promessa da tela, no alcance que este
     modo tem.
   */
   async deleteAccount(): Promise<void> {
@@ -357,6 +382,37 @@ export class DemoHabitRepository implements HabitRepository {
     status: HabitStatus,
   ): Promise<HabitLog> {
     return demoStore.setHabitStatus(habitId, day, status)
+  }
+}
+
+export class DemoRoutineRepository implements RoutineRepository {
+  async listItems(): Promise<RoutineItem[]> {
+    return demoStore.routineItems()
+  }
+
+  async createItem(input: NewRoutineItemInput): Promise<RoutineItem> {
+    return demoStore.addRoutineItem(input)
+  }
+
+  async updateItem(id: string, _userId: string, changes: RoutineItemUpdate): Promise<RoutineItem> {
+    return demoStore.updateRoutineItem(id, changes)
+  }
+
+  async archiveItem(id: string): Promise<void> {
+    demoStore.archiveRoutineItem(id)
+  }
+
+  async listOccurrences(): Promise<RoutineOccurrence[]> {
+    return demoStore.routineOccurrences()
+  }
+
+  async setOccurrence(
+    _userId: string,
+    itemId: string,
+    day: DayKey,
+    patch: RoutineOccurrencePatch,
+  ): Promise<RoutineOccurrence> {
+    return demoStore.setRoutineOccurrence(itemId, day, patch)
   }
 }
 
@@ -466,7 +522,7 @@ export class DemoJourneyEventRepository implements JourneyEventRepository {
   }
 }
 
-/** Junta evento, autor e apoio — o mesmo formato que a consulta do Supabase devolve. */
+/** Junta evento, autor e apoio, o mesmo formato que a consulta do Supabase devolve. */
 function toFeedItems(events: readonly JourneyEvent[], userId: string): CircleFeedItem[] {
   const people = new Map(
     demoStore.people(events.map((event) => event.userId)).map((person) => [person.id, person]),
@@ -520,7 +576,7 @@ export class DemoFriendshipRepository implements FriendshipRepository {
  * O filtro por participação acontece aqui porque não existe RLS pra fazê-lo:
  * contra o Supabase é a política que decide o que a pessoa enxerga, e o
  * repositório de lá não filtra nada. Os dois chegam ao mesmo resultado por
- * caminhos diferentes, e é assim que tem que ser — a regra de acesso mora no
+ * caminhos diferentes, e é assim que tem que ser, a regra de acesso mora no
  * banco quando existe banco.
  */
 export class DemoChallengeRepository implements ChallengeRepository {
@@ -661,5 +717,249 @@ export class DemoMediaRepository implements MediaRepository {
     return [...this.files.values()]
       .map((entry) => entry.media)
       .filter((media) => media.kind === kind && media.path.startsWith(`${userId}/`))
+  }
+}
+
+/**
+ * A foto do dia, no modo demo.
+ *
+ * O `path` aqui é um data URL, não um caminho de bucket: sem servidor, a
+ * imagem mora na própria linha do armazenamento local. É a única diferença
+ * em relação ao Supabase, e ela é invisível pra quem chama, a tela pede a
+ * URL de exibição pro mesmo lugar nos dois casos.
+ */
+export class DemoDayPhotoRepository implements DayPhotoRepository {
+  async listBetween(_userId: string, from: DayKey, to: DayKey): Promise<DayPhoto[]> {
+    return demoStore.dayPhotos(from, to)
+  }
+
+  async save(input: NewDayPhotoInput): Promise<DayPhoto> {
+    return demoStore.saveDayPhoto(input)
+  }
+
+  async remove(_userId: string, day: DayKey): Promise<void> {
+    demoStore.removeDayPhoto(day)
+  }
+}
+
+/**
+ * O convite de amigo, no modo demo.
+ *
+ * Não existe outra conta pra ter convidado esta, então o registro nunca
+ * acontece e a contagem é zero. Fingir um convidado aqui inflaria o número que
+ * a tela mostra e ensinaria a pessoa a não confiar nele.
+ */
+export class DemoReferralRepository implements ReferralRepository {
+  async register(): Promise<boolean> {
+    return false
+  }
+
+  async countInvited(): Promise<number> {
+    return 0
+  }
+}
+
+/**
+ * Os clubes, no modo demo.
+ *
+ * A recusa por plano acontece AQUI porque não existe servidor pra recusar: no
+ * Supabase quem confere a assinatura é a função `create_club`, e o demo precisa
+ * dar a mesma resposta, senão a tela de convite ao PRO nunca apareceria pra
+ * quem está experimentando.
+ *
+ * O ranking soma os dias publicados nos desafios do clube, igual ao do
+ * servidor. Fora de uma base de verdade, ele quase sempre dá zero: os desafios
+ * da demo não pertencem a clube nenhum.
+ */
+export class DemoClubRepository implements ClubRepository {
+  async listMine(userId: string): Promise<Club[]> {
+    const meus = new Set(
+      demoStore
+        .clubMembers()
+        .filter((item) => item.userId === userId)
+        .map((item) => item.clubId),
+    )
+    return demoStore.clubs().filter((club) => meus.has(club.id))
+  }
+
+  async listOpen(limit = 20): Promise<Club[]> {
+    return demoStore
+      .clubs()
+      .filter((club) => club.privacy === 'aberto' && isClubRunning(club))
+      .slice(0, limit)
+  }
+
+  async findById(id: string): Promise<Club | null> {
+    return demoStore.clubs().find((club) => club.id === id) ?? null
+  }
+
+  async listMembers(clubId: string): Promise<ClubMember[]> {
+    return demoStore.clubMembers().filter((item) => item.clubId === clubId)
+  }
+
+  async ranking(clubId: string): Promise<ClubRankedMember[]> {
+    const doClube = new Set(
+      demoStore
+        .challenges()
+        .filter((challenge) => challenge.clubId === clubId)
+        .map((challenge) => challenge.id),
+    )
+
+    const rows = demoStore
+      .clubMembers()
+      .filter((item) => item.clubId === clubId)
+      .map((item) => {
+        const person = demoStore.people([item.userId])[0]
+        const days = demoStore
+          .challengeParticipants()
+          .filter(
+            (participant) =>
+              participant.userId === item.userId &&
+              doClube.has(participant.challengeId) &&
+              participant.status === 'ativo',
+          )
+          .reduce((sum, participant) => sum + participant.doneDays, 0)
+
+        return {
+          userId: item.userId,
+          name: person?.name ?? demoStore.profile().name,
+          avatarUrl: person?.avatarUrl ?? demoStore.profile().avatarUrl,
+          days,
+        }
+      })
+      .sort((a, b) => b.days - a.days || a.name.localeCompare(b.name))
+
+    return rankClubMembers(rows)
+  }
+
+  async create(input: NewClubInput): Promise<Club> {
+    assertValidClubName(input.name)
+    assertValidClubDescription(input.description)
+
+    if (demoStore.profile().plan !== 'pro') {
+      throw new DomainError('Criar clube faz parte do Momentumm PRO.')
+    }
+
+    return demoStore.addClub(input, demoStore.profile().id)
+  }
+
+  async update(id: string, changes: Partial<NewClubInput>): Promise<Club> {
+    if (changes.name !== undefined) assertValidClubName(changes.name)
+    if (changes.description !== undefined) assertValidClubDescription(changes.description)
+    return demoStore.updateClub(id, changes)
+  }
+
+  async archive(id: string): Promise<void> {
+    demoStore.archiveClub(id)
+  }
+
+  async join(clubId: string, userId: string): Promise<void> {
+    demoStore.joinClub(clubId, userId)
+  }
+
+  async leave(clubId: string, userId: string): Promise<void> {
+    demoStore.leaveClub(clubId, userId)
+  }
+
+  /*
+    Convidar exige PRO, igual ao Supabase: lá quem recusa é `invite_to_club`,
+    aqui é esta linha. A conta demo nasce no gratuito, então o caminho que ela
+    vê é o convite ao PRO, que é justamente o que precisa ser visto.
+  */
+  async invite(clubId: string, userId: string): Promise<void> {
+    if (demoStore.profile().plan !== 'pro') {
+      throw new DomainError('Convidar pro clube faz parte do Momentumm PRO.')
+    }
+    demoStore.inviteToClub(clubId, userId, demoStore.profile().id)
+  }
+
+  async listMyInvitations(): Promise<ClubInvitation[]> {
+    const eu = demoStore.profile().id
+    const clubes = demoStore.clubs()
+    const gente = [...DEMO_PEOPLE]
+
+    return demoStore
+      .clubInvitations()
+      .filter((convite) => convite.inviteeId === eu && convite.status === 'pendente')
+      .flatMap((convite) => {
+        const club = clubes.find((item) => item.id === convite.clubId)
+        const quem = gente.find((item) => item.id === convite.inviterId)
+        if (!club || club.archivedAt) return []
+
+        return [
+          {
+            id: convite.id,
+            clubId: club.id,
+            clubName: club.name,
+            clubCategory: club.category,
+            clubCover: club.cover,
+            inviterName: quem?.name ?? 'Alguém',
+            inviterAvatar: quem?.avatarUrl ?? null,
+            createdAt: convite.createdAt,
+          },
+        ]
+      })
+  }
+
+  async respondInvitation(invitationId: string, accept: boolean): Promise<void> {
+    demoStore.respondClubInvitation(invitationId, demoStore.profile().id, accept)
+  }
+
+  async inviteToken(clubId: string, rotate = false): Promise<string> {
+    if (demoStore.profile().plan !== 'pro') {
+      throw new DomainError('O link do clube faz parte do Momentumm PRO.')
+    }
+    return demoStore.clubInviteToken(clubId, rotate)
+  }
+
+  async previewInvite(token: string): Promise<ClubInvitePreview> {
+    const club = demoStore.clubByInviteToken(token)
+    const eu = demoStore.profile().id
+
+    if (!club) {
+      return {
+        status: 'invalido',
+        clubId: null,
+        name: null,
+        description: null,
+        category: null,
+        cover: null,
+        members: 0,
+        alreadyMember: false,
+        canJoin: false,
+      }
+    }
+
+    const membros = demoStore.clubMembers().filter((item) => item.clubId === club.id)
+
+    return {
+      status: club.archivedAt ? 'arquivado' : 'valido',
+      clubId: club.id,
+      name: club.name,
+      description: club.description,
+      category: club.category,
+      cover: club.cover,
+      members: membros.length,
+      alreadyMember: membros.some((item) => item.userId === eu),
+      canJoin: true,
+    }
+  }
+
+  async joinByToken(token: string): Promise<string> {
+    const club = demoStore.clubByInviteToken(token)
+    if (!club) throw new DomainError('Esse link não vale mais.')
+    if (club.archivedAt) throw new DomainError('Esse clube está arquivado.')
+
+    const eu = demoStore.profile().id
+    demoStore.joinClub(club.id, eu)
+
+    // Entrou pelo link: o convite nominal pendente pro mesmo clube perde o
+    // sentido, e deixá-lo pendente deixaria um aviso pedindo o que já aconteceu.
+    const pendente = demoStore
+      .clubInvitations()
+      .find((item) => item.clubId === club.id && item.inviteeId === eu && item.status === 'pendente')
+    if (pendente) demoStore.respondClubInvitation(pendente.id, eu, true)
+
+    return club.id
   }
 }

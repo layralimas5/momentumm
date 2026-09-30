@@ -9,8 +9,11 @@ import {
   type Friendship,
   type Relation,
 } from '@/domain/entities/friendship'
+import { assertWithinLimit, friendLimit } from '@/domain/entities/plan-usage'
+import { track } from '@/infrastructure/analytics/track'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
+import { usePlanner } from '@/presentation/planner/use-planner'
 import { toUserMessage } from '@/shared/errors'
 
 /**
@@ -51,6 +54,7 @@ export interface CircleState {
 
 export function useCircle(): CircleState {
   const { user } = useAuth()
+  const planner = usePlanner()
   const [friendships, setFriendships] = useState<readonly Friendship[]>([])
   const [people, setPeople] = useState<ReadonlyMap<string, CircleAuthor>>(new Map())
   const [feed, setFeed] = useState<readonly CircleFeedItem[]>([])
@@ -161,24 +165,43 @@ export function useCircle(): CircleState {
     [user],
   )
 
+  /*
+    O teto do círculo, aplicado nas DUAS portas.
+
+    Só no envio não bastaria: quem tem o círculo cheio ainda receberia pedidos,
+    aceitaria, e passaria do limite sem nunca ter enviado nada. E só no aceite
+    também não: a pessoa gastaria convites que nunca poderiam virar amizade.
+
+    Recusar continua livre em qualquer situação, nenhum limite comercial deve
+    impedir alguém de dizer não.
+  */
+  const assertRoom = useCallback(() => {
+    assertWithinLimit('circulo', friendLimit(planner.limits, friends.length))
+  }, [planner.limits, friends.length])
+
   const request = useCallback(
     async (personId: string) => {
       if (!user) return
       await act(async () => {
+        // Dentro do `act`: a recusa por limite é uma resposta pra pessoa, e
+        // tem que chegar como aviso na tela, não como exceção solta.
+        assertRoom()
         await container.friendships.request({ requesterId: user.id, addresseeId: personId })
       })
     },
-    [user, act],
+    [user, act, assertRoom],
   )
 
   const respond = useCallback(
     async (friendshipId: string, accept: boolean) => {
       if (!user) return
       await act(async () => {
+        if (accept) assertRoom()
         await container.friendships.respond(friendshipId, user.id, accept)
+        if (accept) track('friend_added', 'circulo', { count: friends.length + 1 })
       })
     },
-    [user, act],
+    [user, act, assertRoom, friends.length],
   )
 
   const remove = useCallback(

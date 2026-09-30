@@ -18,7 +18,7 @@ import { useAsyncAction } from '@/presentation/hooks/use-async-action'
  * outros dispositivos e apagar a conta.
  *
  * As três primeiras são o que transforma "fui invadida" em "resolvi". A
- * quarta é o que faz o produto respeitar quem quer sair — e ela apaga de
+ * quarta é o que faz o produto respeitar quem quer sair, e ela apaga de
  * verdade, incluindo os arquivos.
  */
 export function SecurityPanel() {
@@ -222,7 +222,7 @@ function MfaBlock({
 
         Quem exige o segundo fator é o banco: `is_admin()` só responde
         verdadeiro em sessão aal2, e `assert_admin()` recusa o resto. Esta
-        tela apenas conta isso — se a regra morasse no componente, bastaria
+        tela apenas conta isso, se a regra morasse no componente, bastaria
         chamar a API direto pra contorná-la.
       */}
       {auth.session?.isAdmin === false && active.length === 0 ? (

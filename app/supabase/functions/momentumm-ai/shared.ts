@@ -128,8 +128,23 @@ var aiEndpointRequestSchema = z.object({
 });
 var SHORT = z.string().trim().min(1).max(120);
 var SENTENCE = z.string().trim().min(1).max(400);
+var planStepSchema = z.object({
+  title: SHORT,
+  description: SENTENCE,
+  weight: z.number().int().min(5).max(70)
+});
 var planSuggestionSchema = z.object({
-  steps: z.array(SHORT).min(2).max(6),
+  /*
+      A etapa deixou de ser uma string.
+  
+      Com título só, o objetivo nascia sem descrição e com pesos iguais, e o
+      plano da IA perdia o que ela tinha pra dizer: que a primeira etapa é curta,
+      que o trabalho está no meio, e por quê. O peso não é validado como soma
+      aqui porque `refine` não tem representação em JSON Schema (é o que a saída
+      estruturada consome); quem fecha os 100 é `normalizeStepWeights`, no
+      domínio, depois de ler.
+    */
+  steps: z.array(planStepSchema).min(3).max(5),
   habits: z.array(
     z.object({
       name: SHORT,
@@ -142,7 +157,7 @@ var planSuggestionSchema = z.object({
       minimalTarget: z.number().positive(),
       rationale: SENTENCE
     })
-  ).max(3),
+  ).max(4),
   tasks: z.array(
     z.object({
       title: SHORT,
@@ -155,7 +170,7 @@ var planSuggestionSchema = z.object({
       order: z.number().int().min(0),
       stepIndex: z.number().int().min(0).nullable()
     })
-  ).min(1).max(12),
+  ).min(1).max(16),
   suggestedDeadline: dayKeySchema,
   reasoning: SENTENCE,
   warnings: z.array(SENTENCE).max(4)
@@ -238,6 +253,18 @@ var AI_OUTPUT_SCHEMAS = {
   recovery: recoveryPlanSchema,
   coach: coachNudgeSchema
 };
+var legacyStepSchema = SHORT.transform((title) => ({
+  title,
+  /* Sem descrição, o título vira a própria explicação: é o que havia. */
+  description: title,
+  weight: 0
+}));
+var AI_READ_SCHEMAS = {
+  ...AI_OUTPUT_SCHEMAS,
+  plan: planSuggestionSchema.extend({
+    steps: z.array(z.union([planStepSchema, legacyStepSchema])).min(1).max(6)
+  })
+};
 var AI_SYSTEM_PROMPT = `Voc\xEA \xE9 a Momentumm AI, a parte do app Momentumm que transforma objetivo em plano e l\xEA o progresso de uma pessoa.
 
 Regras que n\xE3o se negociam:
@@ -259,7 +286,7 @@ function renderContext(context) {
   const push = (line) => lines.push(line);
   push(`Hoje: ${context.today}`);
   push(
-    `Momentumm: ${context.momentum.value}/100 (${context.momentum.level}, ${signed(context.momentum.delta)} vs semana anterior)${context.momentum.hasEnoughData ? "" : " \u2014 ainda se formando, menos de 7 dias de hist\xF3ria"}`
+    `Momentumm: ${context.momentum.value}/100 (${context.momentum.level}, ${signed(context.momentum.delta)} vs semana anterior)${context.momentum.hasEnoughData ? "" : " \xB7 ainda se formando, menos de 7 dias de hist\xF3ria"}`
   );
   push(
     `Fatores: ${context.momentum.factors.map(
@@ -268,7 +295,7 @@ function renderContext(context) {
   );
   if (context.momentum.rawValue !== context.momentum.value) {
     push(
-      `Momentumm bruto (sem o limite di\xE1rio): ${context.momentum.rawValue}/100 \u2014 o exibido ainda vai ${context.momentum.rawValue > context.momentum.value ? "subir" : "cair"} at\xE9 l\xE1`
+      `Momentumm bruto (sem o limite di\xE1rio): ${context.momentum.rawValue}/100 \xB7 o exibido ainda vai ${context.momentum.rawValue > context.momentum.value ? "subir" : "cair"} at\xE9 l\xE1`
     );
   }
   if (context.momentum.drivers.length > 0) {
@@ -278,7 +305,7 @@ function renderContext(context) {
   }
   if (context.momentum.nextAction) {
     push(
-      `Pr\xF3xima a\xE7\xE3o com mais potencial: "${context.momentum.nextAction.title}" (${signed(context.momentum.nextAction.gain)} no score hoje) \u2014 ${context.momentum.nextAction.reason}`
+      `Pr\xF3xima a\xE7\xE3o com mais potencial: "${context.momentum.nextAction.title}" (${signed(context.momentum.nextAction.gain)} no score hoje) \xB7 ${context.momentum.nextAction.reason}`
     );
   }
   push(
@@ -292,12 +319,12 @@ function renderContext(context) {
     push("OBJETIVOS");
     for (const objective of context.objectives) {
       push(
-        `- [${objective.ref}] "${objective.title}" (${objective.axis}, ${objective.state}, prioridade ${objective.priority}) \u2014 ${objective.volume.done}/${objective.volume.target} ${objective.volume.unit}, prazo ${objective.deadline} (${objective.daysLeft} dias)${objective.planPercent === null ? ", sem etapas" : `, plano ${objective.planPercent}%`}`
+        `- [${objective.ref}] "${objective.title}" (${objective.axis}, ${objective.state}, prioridade ${objective.priority}) \xB7 ${objective.volume.done}/${objective.volume.target} ${objective.volume.unit}, prazo ${objective.deadline} (${objective.daysLeft} dias)${objective.planPercent === null ? ", sem etapas" : `, plano ${objective.planPercent}%`}`
       );
       if (objective.motive) push(`  Motivo: ${objective.motive}`);
       for (const stage of objective.stages) {
         push(
-          `  Etapa "${stage.title}" ${stage.weightPercent}% \u2014 ${stage.status}, ${stage.tasksDone}/${stage.tasksTotal} a\xE7\xF5es${stage.dueOn ? `, at\xE9 ${stage.dueOn}` : ""}`
+          `  Etapa "${stage.title}" ${stage.weightPercent}% \xB7 ${stage.status}, ${stage.tasksDone}/${stage.tasksTotal} a\xE7\xF5es${stage.dueOn ? `, at\xE9 ${stage.dueOn}` : ""}`
         );
       }
       if (objective.currentStage) push(`  Etapa atual: ${objective.currentStage}`);
@@ -313,7 +340,16 @@ function renderContext(context) {
     push("H\xC1BITOS");
     for (const habit of context.habits) {
       push(
-        `- [${habit.ref}] "${habit.name}" (${habit.axis}, ${habit.frequency}, ${habit.target} ${habit.unit}, m\xEDnimo ${habit.minimalTarget}) \u2014 ${habit.consistencyPercent}% em 14 dias, ${habit.doneLast7}x nos \xFAltimos 7${habit.objective ? `, sustenta "${habit.objective}"` : ""}${habit.scheduledToday ? habit.doneToday ? ", feito hoje" : ", pendente hoje" : ""}`
+        `- [${habit.ref}] "${habit.name}" (${habit.axis}, ${habit.frequency}, ${habit.target} ${habit.unit}, m\xEDnimo ${habit.minimalTarget}) \xB7 ${habit.consistencyPercent}% em 14 dias, ${habit.doneLast7}x nos \xFAltimos 7${habit.objective ? `, sustenta "${habit.objective}"` : ""}${habit.scheduledToday ? habit.doneToday ? ", feito hoje" : ", pendente hoje" : ""}`
+      );
+    }
+  }
+  if (context.routine.length > 0) {
+    push("");
+    push("ROTINA DE HOJE (o dia j\xE1 tem estas coisas dentro; n\xE3o proponha nada por cima)");
+    for (const item of context.routine) {
+      push(
+        `- ${item.time ? `${item.time} ` : ""}"${item.title}"${item.durationMin ? ` (${item.durationMin} min)` : ""}${item.ofObjective ? ", de um objetivo" : ""}${item.done ? " \xB7 feito" : ""}`
       );
     }
   }
@@ -362,6 +398,33 @@ function renderContext(context) {
   }
   return lines.join("\n");
 }
+var PLAN_RULES = [
+  "REGRAS DO PLANO",
+  '- O plano precisa fazer sentido PRO ASSUNTO. "Emagrecer" n\xE3o \xE9 um objetivo de treino: \xE9 treino, comida, sono e medi\xE7\xE3o, e um plano que s\xF3 fala de treino j\xE1 nasce errado. Antes de escrever, liste pra voc\xEA mesma o que esse objetivo exige que n\xE3o est\xE1 escrito no t\xEDtulo, e cubra isso.',
+  '- A\xE7\xE3o concreta \xE9 a que a pessoa sabe executar sem pensar mais: "Pesar e tirar as fotos do primeiro dia" \xE9 a\xE7\xE3o; "Come\xE7ar a cuidar da alimenta\xE7\xE3o" \xE9 inten\xE7\xE3o. Se a a\xE7\xE3o n\xE3o diz o que fazer, ela n\xE3o serve.',
+  '- Etapa \xE9 um degrau com nome pr\xF3prio, n\xE3o um r\xF3tulo de tempo. "Saber de onde voc\xEA parte" \xE9 etapa; "Fase 1" e "Entrar no ritmo" servem pra qualquer objetivo do mundo, ou seja, pra nenhum.',
+  "- Os pesos dizem onde est\xE1 o trabalho. Etapa de prepara\xE7\xE3o vale pouco; a que sustenta o resultado vale muito. Pesos iguais s\xE3o a resposta de quem n\xE3o olhou o assunto.",
+  "- Cada a\xE7\xE3o tem vers\xE3o m\xEDnima (minimalVersion), e ela \xE9 o que segura o dia ruim: uma vers\xE3o menor de verdade, n\xE3o a mesma coisa com outras palavras.",
+  "- NENHUMA prescri\xE7\xE3o de sa\xFAde, dieta, treino ou finan\xE7as. Nada de caloria, macro, carga em quilo, hora de sono como meta ou onde investir. Voc\xEA organiza COMPORTAMENTO: aparecer, registrar, medir, rever, preparar. Quando o assunto encosta em sa\xFAde ou dinheiro, diga em warnings que o app organiza a rotina e que o resto \xE9 com profissional.",
+  "- O tempo declarado \xE9 teto, nunca meta. Uma a\xE7\xE3o pontual pode levar mais que o dia (um simulado leva duas horas), mas h\xE1bito di\xE1rio nunca passa do teto.",
+  "- Leve em conta o que a pessoa j\xE1 tem: n\xE3o repita h\xE1bito que ela j\xE1 cumpre, e n\xE3o encha um dia que j\xE1 est\xE1 cheio."
+].join("\n");
+function renderBaseline(baseline) {
+  if (!baseline) {
+    return [
+      "ROTEIRO BASE",
+      "N\xE3o existe roteiro pronto pra esse assunto. Monte do zero, e traga o que o assunto exige."
+    ].join("\n");
+  }
+  return [
+    `ROTEIRO BASE ("${baseline.label}", montado pelo app)`,
+    "Use como ponto de partida: mantenha o que serve, troque o que n\xE3o serve PRA ESTA PESSOA e acrescente o que o objetivo escrito e o contexto dela pedem. N\xE3o copie sem olhar, e n\xE3o jogue fora sem motivo.",
+    ...baseline.steps.map((step) => `- Etapa "${step.title}": ${step.description}`),
+    baseline.habits.length > 0 ? `- H\xE1bitos: ${baseline.habits.join("; ")}` : null,
+    baseline.tasks.length > 0 ? `- A\xE7\xF5es: ${baseline.tasks.join("; ")}` : null,
+    baseline.caution ? `- Limite a repassar em warnings: ${baseline.caution}` : null
+  ].filter((line) => line !== null).join("\n");
+}
 function userPromptFor(endpointRequest) {
   const context = renderContext(endpointRequest.request.context);
   switch (endpointRequest.kind) {
@@ -377,8 +440,15 @@ function userPromptFor(endpointRequest) {
         `Tempo dispon\xEDvel: ${request.minutesPerDay} minutos por dia (teto)`,
         request.motive ? `Por que importa: ${request.motive}` : null,
         "",
-        "Devolva de 3 a 5 etapas em ordem (steps), at\xE9 2 h\xE1bitos que sustentem o objetivo e de 4 a 10 a\xE7\xF5es concretas, cada uma dentro de uma etapa (stepIndex \xE9 a posi\xE7\xE3o em steps, come\xE7ando em 0). A primeira a\xE7\xE3o \xE9 para hoje. Datas no formato AAAA-MM-DD, dentro do prazo. estimatedMin nunca acima do teto di\xE1rio. Se o alvo n\xE3o cabe no prazo com esse tempo, diga em warnings e proponha suggestedDeadline realista; sen\xE3o suggestedDeadline \xE9 o prazo pedido. reasoning \xE9 uma frase sobre a l\xF3gica do plano, n\xE3o motiva\xE7\xE3o.",
-        "Leve em conta o que a pessoa j\xE1 tem: n\xE3o repita h\xE1bito que ela j\xE1 cumpre, e n\xE3o sobrecarregue um dia que j\xE1 est\xE1 cheio.",
+        PLAN_RULES,
+        "",
+        renderBaseline(request.baseline),
+        "",
+        "FORMATO",
+        'steps: de 3 a 5 etapas em ordem, cada uma com title (o degrau, n\xE3o "Etapa 1"), description (o que acontece nela e por qu\xEA) e weight (quanto ela vale do objetivo, em porcentagem). Os pesos n\xE3o precisam somar 100 exatamente; a propor\xE7\xE3o entre eles \xE9 o que importa.',
+        "habits: at\xE9 4, o que se repete. target e minimalTarget na unidade da \xE1rea. Nenhum h\xE1bito pode pedir mais que o teto di\xE1rio.",
+        "tasks: de 4 a 16 a\xE7\xF5es concretas, cada uma dentro de uma etapa (stepIndex \xE9 a posi\xE7\xE3o em steps, come\xE7ando em 0). Pelo menos uma \xE9 para hoje. Datas AAAA-MM-DD dentro do prazo, e n\xE3o amontoe v\xE1rias a\xE7\xF5es pesadas no mesmo dia.",
+        "suggestedDeadline: o prazo pedido, ou um realista quando o alvo n\xE3o cabe (e a\xED diga em warnings). reasoning: uma frase sobre a l\xF3gica do plano, n\xE3o motiva\xE7\xE3o.",
         "",
         "CONTEXTO DA CONTA",
         context
@@ -450,7 +520,7 @@ function userPromptFor(endpointRequest) {
       return [
         'Voc\xEA \xE9 o coach da pessoa, no fim da tela de m\xE9tricas. Tom: AGRESSIVO e exigente, como um treinador que n\xE3o aceita desculpa. Isso significa direto, seco, cobrando com n\xFAmero. NUNCA significa ofensa pessoal, xingamento, humilha\xE7\xE3o, amea\xE7a ou coment\xE1rio sobre corpo, sa\xFAde mental ou vida pessoal. Sem "voc\xEA consegue", sem "parab\xE9ns", sem "continue assim", sem exclama\xE7\xE3o em s\xE9rie.',
         "",
-        `N\xFAmeros de agora: momentum ${request.momentum}/100 (${request.momentumLevel}); XP desta semana ${request.weekXp} contra ${request.previousWeekXp} na anterior; n\xEDvel ${request.level} (${request.levelName}), faltam ${request.xpToNext} XP pro pr\xF3ximo; sequ\xEAncia de ${request.streak} dias (recorde ${request.streakRecord}); ${request.activeDays} de ${request.windowDays} dias com movimento; ${request.overdueTasks} a\xE7\xF5es atrasadas; objetivos parados: ${request.stalledObjectives.length > 0 ? request.stalledObjectives.join("; ") : "nenhum"}; pr\xF3xima a\xE7\xE3o sugerida: ${request.nextAction ?? "nenhuma"}.`,
+        `N\xFAmeros de agora: Momentumm ${request.momentum}/100 (${request.momentumLevel}); XP desta semana ${request.weekXp} contra ${request.previousWeekXp} na anterior; n\xEDvel ${request.level} (${request.levelName}), faltam ${request.xpToNext} XP pro pr\xF3ximo; sequ\xEAncia de ${request.streak} dias (recorde ${request.streakRecord}); ${request.activeDays} de ${request.windowDays} dias com movimento; ${request.overdueTasks} a\xE7\xF5es atrasadas; objetivos parados: ${request.stalledObjectives.length > 0 ? request.stalledObjectives.join("; ") : "nenhum"}; pr\xF3xima a\xE7\xE3o sugerida: ${request.nextAction ?? "nenhuma"}.`,
         "",
         "punch: uma frase de impacto, at\xE9 12 palavras, segunda pessoa, sem n\xFAmero. truth: a verdade desconfort\xE1vel que os n\xFAmeros mostram, em at\xE9 2 frases, citando pelo menos um n\xFAmero de cima (o mais inc\xF4modo). Se a semana est\xE1 melhor que a anterior, diga que ainda \xE9 pouco pra onde ela quer chegar, com o XP que falta. order: UMA ordem concreta pra hoje, come\xE7ando com verbo no imperativo, usando a pr\xF3xima a\xE7\xE3o sugerida ou a a\xE7\xE3o atrasada mais antiga quando existir. Nada de travess\xE3o no texto.",
         "",
@@ -491,12 +561,19 @@ function signed(value) {
   return value > 0 ? `+${value}` : String(value);
 }
 
+// src/domain/entities/pair.ts
+var PAIR_DAYS = 7;
+var ENCOURAGEMENT_KINDS = ["bora", "mandou_bem", "to_contigo"];
+
 // src/domain/entities/plan.ts
 var UNLIMITED = Number.POSITIVE_INFINITY;
+var FREE_FRIENDS = 2;
+var PRO_FRIENDS = 30;
 var PLAN_LIMITS = {
   free: {
     tier: "free",
     activeObjectives: 2,
+    objectivesPerAxis: 1,
     activeHabits: 5,
     activePlans: 1,
     actionsPerDay: 5,
@@ -514,13 +591,19 @@ var PLAN_LIMITS = {
     shareTemplates: 3,
     shareCustomization: false,
     dataExport: false,
+    appSupport: false,
     remindersPerHabit: 1,
     themes: false,
-    aiCallsPerMonth: 0
+    aiCallsPerMonth: 0,
+    pairDays: 3,
+    pairEncouragementsPerDay: 1,
+    pairs: 1,
+    friends: FREE_FRIENDS
   },
   pro: {
     tier: "pro",
     activeObjectives: UNLIMITED,
+    objectivesPerAxis: UNLIMITED,
     activeHabits: UNLIMITED,
     activePlans: UNLIMITED,
     actionsPerDay: UNLIMITED,
@@ -538,9 +621,14 @@ var PLAN_LIMITS = {
     shareTemplates: UNLIMITED,
     shareCustomization: true,
     dataExport: true,
+    appSupport: true,
     remindersPerHabit: UNLIMITED,
     themes: true,
-    aiCallsPerMonth: 150
+    aiCallsPerMonth: 150,
+    pairDays: PAIR_DAYS,
+    pairEncouragementsPerDay: ENCOURAGEMENT_KINDS.length,
+    pairs: UNLIMITED,
+    friends: PRO_FRIENDS
   }
 };
 export {

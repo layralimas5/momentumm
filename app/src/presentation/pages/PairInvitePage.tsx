@@ -16,8 +16,8 @@ import { toUserMessage } from '@/shared/errors'
  *
  * Ela é PÚBLICA de propósito: quem recebe o link pode não ter conta, e mandar
  * essa pessoa pro login sem dizer do que se trata é perder a maior parte dos
- * convites. O que ela mostra antes do login é o mínimo — primeiro nome e
- * avatar de quem convidou — e quem decide isso é o servidor
+ * convites. O que ela mostra antes do login é o mínimo, primeiro nome e
+ * avatar de quem convidou, e quem decide isso é o servidor
  * (`pair_invite_preview`), não esta tela.
  *
  * Quem não tem sessão entra pelo fluxo normal e volta pra cá: o token fica na

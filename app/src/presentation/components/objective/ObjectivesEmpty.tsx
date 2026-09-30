@@ -6,7 +6,7 @@ import { Panel } from '@/presentation/components/ui/Surface'
  * A aba de Objetivos antes do primeiro objetivo.
  *
  * O estado vazio era uma caixa tracejada com duas frases e um botão. Honesto e
- * inerte: ele diz que não há nada, e a pessoa já sabia disso — foi ela que
+ * inerte: ele diz que não há nada, e a pessoa já sabia disso, foi ela que
  * chegou numa tela vazia.
  *
  * O que falta a quem nunca criou um objetivo não é o botão, é saber COMO é um.
@@ -65,7 +65,7 @@ export function ObjectivesEmpty({ onCreate }: { readonly onCreate: () => void })
 /**
  * Três exemplos de áreas diferentes, com número e prazo.
  *
- * Todos seguem a mesma forma — verbo, quantidade, prazo — porque é essa forma
+ * Todos seguem a mesma forma, verbo, quantidade, prazo, porque é essa forma
  * que o produto sabe transformar em plano. "Ler mais" não vira etapa nenhuma;
  * "ler 6 livros até dezembro" vira seis.
  */

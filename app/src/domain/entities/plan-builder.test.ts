@@ -12,6 +12,16 @@ import {
 
 const TODAY = parseDayKey('2026-08-13')
 
+/**
+ * Um objetivo que NÃO casa com nenhum roteiro de `plan-blueprint`.
+ *
+ * O título padrão destes testes é "Ler 6 livros", que hoje casa com o roteiro
+ * de leitura, e é o que se espera dele. Os testes abaixo que medem o caminho
+ * GENÉRICO (aritmética, gabarito por eixo, três degraus) precisam de um
+ * objetivo sem roteiro, senão passam a medir outra coisa sem avisar.
+ */
+const SEM_ROTEIRO = 'Terminar o projeto do cliente'
+
 function input(overrides: Partial<PlanInput> = {}): PlanInput {
   return {
     axis: 'leitura',
@@ -39,8 +49,25 @@ describe('buildPlan', () => {
     expect(plan.tasks.map((task) => task.title)).toContain('Fazer a primeira sessão de carreira')
   })
 
-  it('o plano não cria hábito: hábito é escolha da pessoa, não derivado do objetivo', () => {
-    expect('habits' in buildPlan(input())).toBe(false)
+  it('o plano genérico não cria hábito: seria o objetivo com outro nome', () => {
+    // A regra continua valendo onde ela nasceu. Um "Trabalhar pra <objetivo>"
+    // gerado por aritmética só duplicaria o objetivo na tela de Hábitos.
+    expect(buildPlan(input({ title: SEM_ROTEIRO })).habits).toEqual([])
+  })
+
+  it('o plano por assunto CRIA hábito, porque o assunto exige comportamento', () => {
+    /*
+      "Registrar o que comi" não é o objetivo com outro nome: é um
+      comportamento distinto, que emagrecer exige e que ninguém deduz de um
+      alvo e um prazo. É essa a diferença que abriu a exceção à regra acima.
+    */
+    const plan = buildPlan(input({ axis: 'treino', title: 'Emagrecer 8kg', target: 900 }))
+
+    expect(plan.blueprint?.key).toBe('emagrecer')
+    expect(plan.habits.length).toBeGreaterThan(0)
+    expect(plan.habits.map((habit) => habit.name)).toContain('Registrar o que comi')
+    // Todos no eixo do objetivo: hábito criando área nova encheria a Jornada.
+    expect(plan.habits.every((habit) => habit.axis === 'treino')).toBe(true)
   })
 
   it('divide o alvo pelas sessões que cabem no prazo', () => {
@@ -92,7 +119,7 @@ describe('buildPlan', () => {
   })
 
   it('eixo medido em minutos estima a ação pelo próprio tempo', () => {
-    const plan = buildPlan(input({ axis: 'treino', target: 900, daysPerWeek: 3 }))
+    const plan = buildPlan(input({ title: SEM_ROTEIRO, axis: 'treino', target: 900, daysPerWeek: 3 }))
     const [first] = plan.tasks
     expect(first?.estimatedMin).toBe(plan.perSession)
   })
@@ -314,7 +341,7 @@ describe('o plano nasce com caminho, não com lista', () => {
   })
 
   it('a conferência de ritmo cai na etapa do meio, não na de entrada', () => {
-    const plan = buildPlan(input())
+    const plan = buildPlan(input({ title: SEM_ROTEIRO }))
     const checkpoint = plan.tasks[plan.tasks.length - 1]
 
     expect(checkpoint?.stageIndex).toBe(1)

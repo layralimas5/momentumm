@@ -33,7 +33,7 @@ import { PageHeader } from './PageHeader'
  *
  * Quatro blocos, nessa ordem: o combinado, o teu avanço, quem está junto e a
  * manutenção (convidar, sair, encerrar). O teu avanço vem antes do dos outros
- * de propósito — a tela existe pra te dizer o que falta, e só depois quem mais
+ * de propósito, a tela existe pra te dizer o que falta, e só depois quem mais
  * está caminhando.
  */
 export function ChallengeDetailPage() {
@@ -220,6 +220,19 @@ function Participants({
         title="Quem está junto"
         icon="jornada"
         hint={`Grupo em ${Math.round(view.groupRatio * 100)}% do combinado.`}
+        action={
+          /*
+            A lista aqui é o resumo; o ranking inteiro, com pódio, tem tela
+            própria. É a parte que as pessoas abrem o app pra ver, e ela
+            estava no fim de uma página de regras e progresso.
+          */
+          <Link
+            to={`/app/desafios/${view.challenge.id}/ranking`}
+            className="rounded-md text-sm font-medium text-brand-hi transition-colors hover:text-brand-ink"
+          >
+            Ver ranking
+          </Link>
+        }
       />
 
       {/*

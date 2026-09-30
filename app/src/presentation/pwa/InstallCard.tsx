@@ -11,7 +11,7 @@ import { useInstallApp } from './use-install-app'
  * Só aparece quando existe instalação possível de verdade: Android com o
  * convite guardado, ou iPhone fora da tela de início. Quem já está com o app
  * instalado, quem fechou o convite e quem usa um navegador que não instala
- * não veem nada — oferecer o que não existe é a forma mais rápida de a pessoa
+ * não veem nada, oferecer o que não existe é a forma mais rápida de a pessoa
  * parar de acreditar no que o app diz.
  *
  * A promessa é a mesma dos dois lados, e ela é o motivo real de instalar:

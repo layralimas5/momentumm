@@ -25,11 +25,11 @@ import type { DayKey } from '@/domain/entities/day'
 import { PageHeader } from './PageHeader'
 
 /**
- * Juntos — as duplas.
+ * Juntos, as duplas.
  *
  * Cada dupla responde três perguntas, nessa ordem: como estamos hoje, o que
  * aconteceu nos últimos dias e o que eu posso mandar. Não existe quarta
- * pergunta — nem feed, nem histórico longo, nem perfil da outra pessoa.
+ * pergunta, nem feed, nem histórico longo, nem perfil da outra pessoa.
  *
  * O que a tela mostra sobre a outra pessoa é exatamente o que o servidor
  * devolve: nome curto, avatar e sete booleanos. Não há aqui nenhuma chamada
@@ -200,7 +200,7 @@ function PairCard({
           A faixa cortada não finge estar inteira.
 
           Sem essa linha o gratuito veria três pontos e concluiria que a dupla
-          só guarda três dias — o limite viraria defeito do produto.
+          só guarda três dias, o limite viraria defeito do produto.
         */}
         {limits.pairDays < PAIR_DAYS ? (
           <UpgradeHint
@@ -230,7 +230,7 @@ function PairCard({
             /*
               A vaga do dia já foi gasta em outro gesto.
 
-              Quem já mandou continua vendo "enviado" no botão dele — o que
+              Quem já mandou continua vendo "enviado" no botão dele, o que
               fecha é o resto. O gratuito escolhe QUAL dos três manda, e essa
               escolha é o que sobra de agência dentro do limite.
             */

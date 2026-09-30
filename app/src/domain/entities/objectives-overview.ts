@@ -6,7 +6,7 @@ import type { ObjectiveProgress } from './objective'
  * O `ratio` vem SEPARADO do progresso de propósito: a tela mostra o avanço do
  * PLANO quando existe plano, e o do volume quando não existe
  * (`ObjectiveView.ratio`). Ler `progress.ratio` aqui faria o topo dizer 5%
- * enquanto os cards logo abaixo dizem 33% e 0% — o app discordando de si
+ * enquanto os cards logo abaixo dizem 33% e 0%, o app discordando de si
  * mesmo na mesma tela, que é o jeito mais rápido de a pessoa parar de
  * acreditar nos números.
  */
@@ -20,7 +20,7 @@ export interface OverviewItem {
  * A tela de Objetivos em três números.
  *
  * A lista responde "como está cada um". Ela não responde "como estou", que é a
- * pergunta que faz alguém abrir a aba — e que hoje só se responde lendo três
+ * pergunta que faz alguém abrir a aba, e que hoje só se responde lendo três
  * cards inteiros e somando de cabeça.
  *
  * São os mesmos três números da tela Hoje (Momentum, Hoje, Foco), no mesmo

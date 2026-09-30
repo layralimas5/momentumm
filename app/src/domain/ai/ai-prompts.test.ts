@@ -3,6 +3,8 @@ import { SimulatedAiService } from '@/infrastructure/ai/simulated-ai-service'
 import { addDays, parseDayKey } from '@/domain/entities/day'
 import type { AiUserContext } from './ai-context'
 import {
+  AI_OUTPUT_SCHEMAS,
+  AI_READ_SCHEMAS,
   aiAdjustmentSchema,
   aiEndpointRequestSchema,
   dayPlanSchema,
@@ -62,6 +64,10 @@ const context: AiUserContext = {
       forecast: 'Mantendo esse ritmo, fecha 18 dias antes do prazo.',
       habitCount: 1,
     },
+  ],
+  routine: [
+    { title: 'Almoço', time: '12:00', durationMin: 60, done: false, ofObjective: false },
+    { title: 'Treino', time: '18:30', durationMin: 45, done: false, ofObjective: true },
   ],
   habits: [
     {
@@ -197,11 +203,89 @@ describe('renderContext', () => {
         deadline: addDays(TODAY, 60),
         minutesPerDay: 30,
         motive: null,
+        baseline: null,
       },
     })
     expect(prompt).toContain('"Aprender violão"')
     expect(prompt).toContain('30 minutos por dia (teto)')
     expect(prompt).toContain('CONTEXTO DA CONTA')
+  })
+
+  it('sem roteiro pro assunto, o prompt manda montar do zero', () => {
+    const prompt = userPromptFor({
+      kind: 'plan',
+      request: {
+        context,
+        title: 'Aprender violão',
+        axis: 'estudo',
+        target: 1200,
+        unitLabel: 'minutos',
+        startedOn: TODAY,
+        deadline: addDays(TODAY, 60),
+        minutesPerDay: 30,
+        motive: null,
+        baseline: null,
+      },
+    })
+    expect(prompt).toContain('Não existe roteiro pronto pra esse assunto')
+  })
+
+  it('com roteiro, o prompt manda personalizar em vez de reinventar', () => {
+    /*
+      É a diferença que faz o plano de "emagrecer" não mudar de estrutura a
+      cada chamada: em assunto conhecido a IA parte do que a biblioteca sabe e
+      gasta o raciocínio no que é desta pessoa.
+    */
+    const prompt = userPromptFor({
+      kind: 'plan',
+      request: {
+        context,
+        title: 'Emagrecer 8kg',
+        axis: 'treino',
+        target: 1200,
+        unitLabel: 'minutos',
+        startedOn: TODAY,
+        deadline: addDays(TODAY, 90),
+        minutesPerDay: 60,
+        motive: null,
+        baseline: {
+          label: 'Plano de emagrecimento',
+          steps: [{ title: 'Saber de onde você parte', description: 'Peso, medidas e a semana de hoje.' }],
+          habits: ['Treinar', 'Registrar o que comi'],
+          tasks: ['Pesar e tirar as fotos do primeiro dia'],
+          caution: 'O Momentumm organiza a rotina, não prescreve dieta.',
+        },
+      },
+    })
+
+    expect(prompt).toContain('ROTEIRO BASE ("Plano de emagrecimento"')
+    expect(prompt).toContain('mantenha o que serve')
+    expect(prompt).toContain('Saber de onde você parte')
+    expect(prompt).toContain('Limite a repassar em warnings')
+  })
+
+  it('o prompt cobra que o plano faça sentido pro assunto', () => {
+    const prompt = userPromptFor({
+      kind: 'plan',
+      request: {
+        context,
+        title: 'Emagrecer 8kg',
+        axis: 'treino',
+        target: 1200,
+        unitLabel: 'minutos',
+        startedOn: TODAY,
+        deadline: addDays(TODAY, 90),
+        minutesPerDay: 60,
+        motive: null,
+        baseline: null,
+      },
+    })
+
+    // As três regras que mudam o resultado, e a que protege a pessoa.
+    expect(prompt).toContain('precisa fazer sentido PRO ASSUNTO')
+    expect(prompt).toContain('Ação concreta')
+    expect(prompt).toContain('Os pesos dizem onde está o trabalho')
+    expect(prompt).toContain('NENHUMA prescrição de saúde')
   })
 })
 
@@ -218,6 +302,7 @@ describe('schemas de saída', () => {
       deadline: addDays(TODAY, 60),
       minutesPerDay: 30,
       motive: null,
+      baseline: null,
     })
     expect(planSuggestionSchema.safeParse(plan).success).toBe(true)
 
@@ -293,5 +378,74 @@ describe('schemas de saída', () => {
     expect(aiEndpointRequestSchema.safeParse({ kind: 'plan', request: { context } }).success).toBe(true)
     expect(aiEndpointRequestSchema.safeParse({ kind: 'chat', request: { context } }).success).toBe(false)
     expect(aiEndpointRequestSchema.safeParse({ kind: 'plan', request: {} }).success).toBe(false)
+  })
+})
+
+describe('o cliente novo contra o servidor antigo', () => {
+  /*
+    O app e a Edge Function sobem SEPARADOS, e entre um e outro existe uma
+    janela em que o cliente novo conversa com o servidor velho. Aconteceu de
+    verdade: o front foi publicado antes do `ai:deploy`, o servidor continuou
+    mandando `steps: string[]`, e o cliente recusava a resposta inteira.
+
+    Pedir o formato novo e aceitar os dois é a única postura que sobrevive a
+    isso, e é o que estes testes cobram.
+  */
+  const RESPOSTA_ANTIGA = {
+    steps: ['Entrar no ritmo', 'Chegar na metade', 'Fechar o objetivo'],
+    habits: [],
+    tasks: [
+      {
+        title: 'Fazer a primeira sessão',
+        description: null,
+        day: TODAY,
+        estimatedMin: 30,
+        effort: 'medio' as const,
+        priority: 'alta' as const,
+        minimalVersion: null,
+        order: 0,
+        stepIndex: 0,
+      },
+    ],
+    suggestedDeadline: addDays(TODAY, 60),
+    reasoning: 'Dividi o alvo pelas semanas.',
+    warnings: [],
+  }
+
+  it('a leitura aceita a etapa como string e devolve etapa inteira', () => {
+    const parsed = AI_READ_SCHEMAS.plan.safeParse(RESPOSTA_ANTIGA)
+
+    expect(parsed.success).toBe(true)
+    if (!parsed.success) return
+
+    expect(parsed.data.steps).toHaveLength(3)
+    expect(parsed.data.steps[0]?.title).toBe('Entrar no ritmo')
+    // Sem descrição, o título vira a própria explicação: é o que havia.
+    expect(parsed.data.steps[0]?.description).toBe('Entrar no ritmo')
+    expect(parsed.data.steps[0]?.weight).toBe(0)
+  })
+
+  it('e continua aceitando o formato novo, sem ambiguidade', () => {
+    const nova = {
+      ...RESPOSTA_ANTIGA,
+      steps: [
+        { title: 'Saber de onde você parte', description: 'Peso e medidas.', weight: 15 },
+        { title: 'Fazer a semana existir', description: 'Os treinos acontecendo.', weight: 45 },
+        { title: 'Sustentar', description: 'Manter por semanas.', weight: 40 },
+      ],
+    }
+
+    const parsed = AI_READ_SCHEMAS.plan.safeParse(nova)
+    expect(parsed.success).toBe(true)
+    if (!parsed.success) return
+
+    expect(parsed.data.steps[1]?.weight).toBe(45)
+    expect(parsed.data.steps[1]?.description).toBe('Os treinos acontecendo.')
+  })
+
+  it('o que o app PEDE continua estrito: string não passa', () => {
+    // O schema de saída vira JSON Schema pra o modelo. União ali faria ele
+    // escolher o formato mais fácil, que é justamente o que saiu de cena.
+    expect(AI_OUTPUT_SCHEMAS.plan.safeParse(RESPOSTA_ANTIGA).success).toBe(false)
   })
 })

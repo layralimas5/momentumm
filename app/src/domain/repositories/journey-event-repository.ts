@@ -11,7 +11,7 @@ export interface JourneyEventRepository {
   /**
    * O que os amigos escolheram mostrar.
    *
-   * A montagem do item — evento, autor e contagem de apoio — acontece na
+   * A montagem do item, evento, autor e contagem de apoio, acontece na
    * infraestrutura porque é lá que uma consulta só resolve o que seriam três
    * viagens ao banco. O filtro por tipo continua no domínio.
    */
@@ -22,7 +22,7 @@ export interface JourneyEventRepository {
 
   /**
    * Muda o alcance de um momento. É a ÚNICA porta pra um evento deixar de ser
-   * privado, e ela existe só onde a pessoa toca — nada aqui acontece sozinho.
+   * privado, e ela existe só onde a pessoa toca, nada aqui acontece sozinho.
    */
   setVisibility(id: string, userId: string, visibility: JourneyVisibility): Promise<JourneyEvent>
 

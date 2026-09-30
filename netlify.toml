@@ -7,14 +7,27 @@
 # `VITE_SUPABASE_ANON_KEY` ficam no painel do Netlify (Site configuration >
 # Environment variables), nunca aqui.
 
+# O `playwright install` existe pro passo de pre-render do build (ver
+# `app/scripts/prerender.mjs`): ele abre cada pagina publica num navegador de
+# verdade e grava o HTML com conteudo, que e o que os robos de resposta por IA
+# conseguem ler. Custa cerca de um minuto e 150MB por build.
+#
+# As duas quedas pro `||` e o `;` no fim sao de proposito: se o navegador nao
+# instalar, o pre-render se recusa sozinho e o site sai como SPA, que e
+# exatamente o que esta no ar hoje. Perder pre-render e um retrocesso de SEO;
+# perder o build e o site fora do ar.
 [build]
   base    = "app"
-  command = "npm run build"
+  command = "npx playwright install --with-deps chromium || npx playwright install chromium || true; npm run build"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "22"
 
+# O Netlify serve arquivo existente ANTES de aplicar redirect, entao
+# `/ferramentas` recebe `dist/ferramentas/index.html` (o pre-renderizado) e so
+# o que nao tem arquivo cai aqui. E o que faz a SPA continuar funcionando em
+# `/app/rotina` sem desfazer o pre-render das publicas.
 [[redirects]]
   from   = "/*"
   to     = "/index.html"

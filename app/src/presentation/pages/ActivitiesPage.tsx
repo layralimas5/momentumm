@@ -28,7 +28,7 @@ type Filter = ActivityTypeSlug | 'todos'
  * do histórico: há largura pra ver as duas coisas ao mesmo tempo.
  *
  * No celular não há. Lá a sequência ABRE a página, porque é a resposta que traz
- * a pessoa aqui — "eu não parei" — e no fim da rolagem, depois de semanas de
+ * a pessoa aqui, "eu não parei", e no fim da rolagem, depois de semanas de
  * histórico, ela simplesmente não é vista.
  */
 export function ActivitiesPage() {

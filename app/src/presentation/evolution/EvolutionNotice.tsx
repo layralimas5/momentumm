@@ -32,7 +32,7 @@ export function EvolutionNotice() {
       A conquista vira evento aqui porque é aqui que ela EXISTE pra pessoa: o
       XP é concedido por trigger no banco, e o app só descobre na releitura.
       Registrar do lado do servidor daria a hora do trigger, não a hora em que
-      alguém viu — e o que a métrica quer saber é se a conquista foi vista.
+      alguém viu, e o que a métrica quer saber é se a conquista foi vista.
     */
     for (const key of notice.achievements) {
       track('achievement_unlocked', 'evolucao', { kind: key })

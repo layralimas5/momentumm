@@ -32,11 +32,11 @@ export interface PlanLimits {
    * No gratuito é um, e era a regra de todo mundo até a 0057: dois objetivos no
    * mesmo eixo somam das mesmas atividades, então o progresso dos dois mede o
    * mesmo volume. No PRO não tem teto, porque "Projeto" é uma área e não um
-   * projeto — lançar o app, criar o curso e subir o faturamento são três
+   * projeto, lançar o app, criar o curso e subir o faturamento são três
    * objetivos com alvos e prazos próprios, e obrigar a arquivar um pra abrir
    * outro era o app decidindo pela pessoa quantas frentes ela pode ter.
    *
-   * Aqui "ativo" é o NÃO ARQUIVADO, incluindo pausado e concluído — janela
+   * Aqui "ativo" é o NÃO ARQUIVADO, incluindo pausado e concluído, janela
    * diferente de `activeObjectives`, que conta só o que está em andamento. A
    * diferença é deliberada e vem do que cada regra protege: a vaga do eixo
    * existe porque a soma das atividades continua ambígua com o objetivo parado,
@@ -74,8 +74,8 @@ export interface PlanLimits {
   /**
    * "Ajuda com o app": a categoria de suporte que existe por PRODUTO.
    *
-   * É a única do canal que é benefício de plano. As outras — exclusão de conta,
-   * exportação, privacidade, segurança, pagamento, acesso e denúncia — são
+   * É a única do canal que é benefício de plano. As outras, exclusão de conta,
+   * exportação, privacidade, segurança, pagamento, acesso e denúncia, são
    * DIREITO, e direito não entra em pacote: trancá-las atrás do PRO
    * transformaria obrigação legal em item de tabela de preços, e deixaria quem
    * está no gratuito sem caminho pra apagar a própria conta ou relatar um
@@ -101,7 +101,7 @@ export interface PlanLimits {
    * Incentivos que cabem num dia, somando os três gestos.
    *
    * No gratuito é um: a pessoa escolhe qual, e o dia fecha. O teto também é
-   * aplicado no servidor (migration 0052) — o botão desabilitado é cortesia,
+   * aplicado no servidor (migration 0052), o botão desabilitado é cortesia,
    * não fechadura.
    */
   readonly pairEncouragementsPerDay: number
@@ -117,9 +117,32 @@ export interface PlanLimits {
    * entrada: criar convite e aceitar convite.
    */
   readonly pairs: number
+  /**
+   * Gente no círculo, ao mesmo tempo.
+   *
+   * No gratuito são DUAS, e o número não é uma amostra arbitrária: é o tamanho
+   * em que a companhia ainda é companhia. Você e dois amigos é um grupo em que
+   * todo mundo se conhece e ninguém some no meio, e é o suficiente pra pessoa
+   * sentir a diferença entre tentar sozinha e tentar acompanhada, que é a
+   * única coisa que o gratuito precisa provar.
+   *
+   * No PRO o teto é trinta. Não é "ilimitado" de propósito: círculo é gente
+   * próxima, e uma lista de cem pessoas não é círculo, é plateia, quem quer
+   * plateia quer clube, que é outro recurso.
+   *
+   * O teto conta amizades ACEITAS. Pedido enviado e ainda sem resposta não
+   * ocupa vaga: seria dar a alguém o poder de encher o teu círculo sem tua
+   * permissão, só ignorando teu convite.
+   */
+  readonly friends: number
 }
 
 const UNLIMITED = Number.POSITIVE_INFINITY
+
+/** Você e mais dois: o menor grupo em que companhia ainda é companhia. */
+export const FREE_FRIENDS = 2
+/** Círculo é gente próxima. Acima disso é plateia, e plateia é outro recurso. */
+export const PRO_FRIENDS = 30
 
 export const PLAN_LIMITS: Readonly<Record<PlanTier, PlanLimits>> = {
   free: {
@@ -150,6 +173,7 @@ export const PLAN_LIMITS: Readonly<Record<PlanTier, PlanLimits>> = {
     pairDays: 3,
     pairEncouragementsPerDay: 1,
     pairs: 1,
+    friends: FREE_FRIENDS,
   },
   pro: {
     tier: 'pro',
@@ -179,6 +203,7 @@ export const PLAN_LIMITS: Readonly<Record<PlanTier, PlanLimits>> = {
     pairDays: PAIR_DAYS,
     pairEncouragementsPerDay: ENCOURAGEMENT_KINDS.length,
     pairs: UNLIMITED,
+    friends: PRO_FRIENDS,
   },
 }
 
@@ -255,7 +280,10 @@ export function planMatrix(): readonly PlanMatrixRow[] {
     { feature: 'Registros por voz', free: 'Não disponível', pro: 'Disponível com limite mensal' },
     { feature: 'Análises de IA', free: 'Não disponível', pro: 'Padrões, gargalos e recomendações' },
     { feature: 'Templates de objetivos', free: `Até ${free.objectiveTemplates} templates básicos`, pro: 'Biblioteca completa' },
-    { feature: 'Compartilhamento', free: `${free.shareTemplates} arranjos, todas as cores e PNG`, pro: 'Todos os modelos e personalização' },
+    // O estúdio tem uma cor só (PNG sem fundo) e dois arranjos, e os dois são
+    // de todo mundo. O que o PRO acrescenta é a foto de fundo e escolher o que
+    // entra no card, então é isso que a linha promete.
+    { feature: 'Compartilhamento', free: 'Card em PNG, com os dois arranjos', pro: 'Foto de fundo e o que aparece no card' },
     {
       feature: 'Duplas no Juntos',
       free: count(free.pairs, 'dupla', 'duplas'),

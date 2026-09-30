@@ -10,6 +10,7 @@ import { MobileTabBar } from '@/presentation/components/mobile/MobileTabBar'
 import { TrialBanner } from '@/presentation/plan/TrialBanner'
 import { SUBSCRIPTION_PATH } from '@/presentation/plan/subscription-path'
 import { MobileTopBar } from '@/presentation/components/mobile/MobileTopBar'
+import { useInviteCapture } from '@/presentation/circle/use-invite-capture'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { EvolutionNotice } from '@/presentation/evolution/EvolutionNotice'
 import { EvolutionProvider } from '@/presentation/evolution/EvolutionProvider'
@@ -19,6 +20,7 @@ import { ComposerProvider } from '@/presentation/planner/ComposerProvider'
 import { LegalGate } from '@/presentation/legal/LegalGate'
 import { PlannerProvider } from '@/presentation/planner/PlannerProvider'
 import { ShareStudioProvider } from '@/presentation/share/ShareStudioProvider'
+import { PostComposerProvider } from '@/presentation/social/PostComposerProvider'
 import { useDocumentTitle } from '@/presentation/hooks/use-document-title'
 import { useIsDesktop } from '@/presentation/hooks/use-media-query'
 import { offerSource, storedOffer } from '@/presentation/components/landing/offers'
@@ -40,7 +42,7 @@ const COLLAPSED_KEY = 'momentumm.sidebar.collapsed'
  *
  * A partir de `lg` a tela vira dashboard de verdade. Abaixo disso a coluna
  * única continua sendo o melhor uso do espaço, com a navegação na barra
- * inferior — o mesmo conteúdo, outra embalagem.
+ * inferior, o mesmo conteúdo, outra embalagem.
  */
 export function AppLayout() {
   return (
@@ -59,10 +61,18 @@ export function AppLayout() {
               dentro de um e em volta do outro.
             */}
             <ShareStudioProvider>
-              <LayoutShell />
-              <FocusSession />
-              <LegalGate />
-              <EvolutionNotice />
+              {/*
+                O criador de publicação fica aqui pelo mesmo motivo do Share
+                Studio: ele é aberto pelo "+" da barra (que mora na casca), pelo
+                Feed e pelo Perfil. Um criador por tela seria o começo de três
+                publicações com regras diferentes.
+              */}
+              <PostComposerProvider>
+                <LayoutShell />
+                <FocusSession />
+                <LegalGate />
+                <EvolutionNotice />
+              </PostComposerProvider>
             </ShareStudioProvider>
           </EvolutionProvider>
         </FocusProvider>
@@ -75,6 +85,16 @@ function LayoutShell() {
   const [collapsed, setCollapsed] = useState(readCollapsed)
   const isDesktop = useIsDesktop()
   const { pathname } = useLocation()
+  /*
+    Duas telas trazem a PRÓPRIA barra de cima no celular, e por isso a padrão
+    não entra nelas: o Perfil (marca, as três seções e a engrenagem) e o Feed
+    (marca, pedidos e avisos). Empilhar a barra padrão em cima de uma delas
+    daria duas logos e duas linhas de controle antes do conteúdo.
+  */
+  const ownsTopBar = pathname === '/app/perfil' || pathname === '/app/feed'
+
+  // O convite que trouxe a pessoa até aqui, gasto uma vez e esquecido.
+  useInviteCapture()
   useUsageEvents()
   /* Abriu por um aviso? Carimba a abertura e limpa o `?n=` da URL. */
   useNotificationOpen()
@@ -110,13 +130,13 @@ function LayoutShell() {
       <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {isDesktop ? <AppHeader /> : <MobileTopBar />}
+        {isDesktop ? <AppHeader /> : ownsTopBar ? null : <MobileTopBar />}
         <SystemNotice />
         <OfflineBanner />
 
         {/*
           O conteúdo ocupa a largura inteira do monitor. Quem cuida da leitura é
-          a grade de colunas e o teto de largura de cada bloco de texto — faixa
+          a grade de colunas e o teto de largura de cada bloco de texto, faixa
           central estreita em tela grande só produz margem morta dos dois lados.
         */}
         {/* pb-tabbar reserva a altura exata da barra inferior mais a área segura. */}
@@ -137,6 +157,12 @@ function LayoutShell() {
         </main>
       </div>
 
+      {/*
+        A barra inferior traz o "+" no meio, e é ela que abre a folha de criar.
+        Antes existia um "+" flutuante e contextual por cima do conteúdo
+        (`AddFab`): ele cobria o canto da tela em toda rolagem e oferecia listas
+        diferentes conforme a rota, então "criar" não tinha um lugar só.
+      */}
       {isDesktop ? null : <MobileTabBar />}
     </div>
   )
@@ -283,8 +309,8 @@ function SidebarContent({
           <div className={cn('flex items-center gap-3', collapsed && 'flex-col gap-2')}>
             {/*
               O bloco do perfil é a porta pro painel de evolução no desktop.
-              "Perfil" não entra na navegação principal — ela é o ciclo do
-              produto — mas a foto e o nome no rodapé são o lugar onde qualquer
+              "Perfil" não entra na navegação principal, ela é o ciclo do
+              produto, mas a foto e o nome no rodapé são o lugar onde qualquer
               pessoa procura pelo próprio perfil.
             */}
             <NavLink
@@ -363,7 +389,7 @@ function SidebarLink({ item, collapsed }: { item: AppNavItem; collapsed: boolean
  */
 /**
  * Os eventos de uso que a casca registra: a sessão começou, e qual recurso
- * a pessoa abriu. Só o nome do recurso sai — a rota com id de objetivo vira
+ * a pessoa abriu. Só o nome do recurso sai, a rota com id de objetivo vira
  * "objetivos", nunca o id. É a matéria-prima de "usuários ativos" e de
  * "recursos mais usados" no painel.
  */

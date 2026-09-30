@@ -6,7 +6,12 @@ import type { ChallengeRepository } from '@/domain/repositories/challenge-reposi
 import type { CheckInRepository } from '@/domain/repositories/checkin-repository'
 import type { GoalRepository } from '@/domain/repositories/goal-repository'
 import type { FriendshipRepository } from '@/domain/repositories/friendship-repository'
+import type { SocialRepository } from '@/domain/repositories/social-repository'
+import type { DayPhotoRepository } from '@/domain/repositories/day-photo-repository'
+import type { ReferralRepository } from '@/domain/repositories/referral-repository'
+import type { ClubRepository } from '@/domain/repositories/club-repository'
 import type { HabitRepository } from '@/domain/repositories/habit-repository'
+import type { RoutineRepository } from '@/domain/repositories/routine-repository'
 import type { JourneyEventRepository } from '@/domain/repositories/journey-event-repository'
 import type { ObjectiveRepository } from '@/domain/repositories/objective-repository'
 import type { PlanStageRepository } from '@/domain/repositories/plan-stage-repository'
@@ -16,6 +21,8 @@ import type { WeeklyReviewRepository } from '@/domain/repositories/weekly-review
 import type { WinRepository } from '@/domain/repositories/win-repository'
 import type { EvolutionRepository } from '@/domain/repositories/evolution-repository'
 import { SupabaseEvolutionRepository } from './supabase/supabase-evolution'
+import { SupabaseSocialRepository } from './supabase/supabase-social'
+import { DemoSocialRepository } from './demo/demo-social'
 import { SimulatedAiService } from './ai/simulated-ai-service'
 import type { LegalAcceptanceRepository } from '@/domain/repositories/legal-acceptance-repository'
 import type { MediaRepository } from '@/domain/repositories/media-repository'
@@ -45,7 +52,11 @@ import {
   DemoCheckInRepository,
   DemoGoalRepository,
   DemoFriendshipRepository,
+  DemoDayPhotoRepository,
+  DemoReferralRepository,
+  DemoClubRepository,
   DemoHabitRepository,
+  DemoRoutineRepository,
   DemoEvolutionRepository,
   DemoJourneyEventRepository,
   DemoObjectiveRepository,
@@ -65,7 +76,11 @@ import {
   SupabaseCheckInRepository,
   SupabaseGoalRepository,
   SupabaseFriendshipRepository,
+  SupabaseDayPhotoRepository,
+  SupabaseReferralRepository,
+  SupabaseClubRepository,
   SupabaseHabitRepository,
+  SupabaseRoutineRepository,
   SupabaseJourneyEventRepository,
   SupabaseObjectiveRepository,
   SupabasePlanStageRepository,
@@ -85,6 +100,7 @@ export interface Container {
   readonly planStages: PlanStageRepository
   readonly profiles: ProfileRepository
   readonly habits: HabitRepository
+  readonly routine: RoutineRepository
   readonly tasks: TaskRepository
   readonly checkIns: CheckInRepository
   readonly wins: WinRepository
@@ -92,7 +108,7 @@ export interface Container {
   /**
    * Os momentos da jornada: dia fechado, rotina cumprida, objetivo concluído.
    * É a camada que o Share Studio lê hoje e que o feed, o perfil e a comunidade
-   * vão ler depois — nenhum deles fala com hábito ou objetivo direto.
+   * vão ler depois, nenhum deles fala com hábito ou objetivo direto.
    */
   readonly journeyEvents: JourneyEventRepository
   /**
@@ -102,6 +118,23 @@ export interface Container {
   readonly evolution: EvolutionRepository
   /** O Círculo: amizades e a busca por gente. */
   readonly friendships: FriendshipRepository
+  /** A foto de cada dia, o vínculo dia -> arquivo. O arquivo em si é `media`. */
+  readonly dayPhotos: DayPhotoRepository
+  /**
+   * A camada social: publicação, story, comentário, curtida, laço e bloqueio.
+   *
+   * Uma injeção só porque quase toda tela dela usa mais de uma dessas coisas,
+   * e as seis respondem à MESMA pergunta de autorização (`can_view_content_of`,
+   * migration 0067). Três repositórios seriam três portas pra uma regra só.
+   */
+  readonly social: SocialRepository
+  /** De onde a conta veio. Atribuição de convite, sem recompensa nenhuma. */
+  readonly referrals: ReferralRepository
+  /**
+   * Os clubes. Criar exige PRO, e quem confere é o servidor, não a tela.
+   * Perder a assinatura tira a administração, nunca o clube.
+   */
+  readonly clubs: ClubRepository
   /**
    * Os desafios entre amigos e quem está em cada um. O progresso de cada
    * pessoa é publicado por ela mesma: aqui não se lê a rotina de ninguém.
@@ -136,7 +169,7 @@ export interface Container {
    */
   readonly push: PushSubscriptionRepository
   /**
-   * Juntos — a dupla de accountability. Seis chamadas de função e nenhum
+   * Juntos, a dupla de accountability. Seis chamadas de função e nenhum
    * `select` em tabela de outra pessoa: o contrato de privacidade é o próprio
    * tamanho desta superfície.
    */
@@ -155,6 +188,7 @@ export const container: Container = isDemoMode
       planStages: new DemoPlanStageRepository(),
       profiles: new DemoProfileRepository(),
       habits: new DemoHabitRepository(),
+      routine: new DemoRoutineRepository(),
       tasks: new DemoTaskRepository(),
       checkIns: new DemoCheckInRepository(),
       wins: new DemoWinRepository(),
@@ -162,6 +196,10 @@ export const container: Container = isDemoMode
       journeyEvents: new DemoJourneyEventRepository(),
       evolution: new DemoEvolutionRepository(),
       friendships: new DemoFriendshipRepository(),
+      dayPhotos: new DemoDayPhotoRepository(),
+      social: new DemoSocialRepository(),
+      referrals: new DemoReferralRepository(),
+      clubs: new DemoClubRepository(),
       challenges: new DemoChallengeRepository(),
       ai: new SimulatedAiService(),
       legal: new DemoLegalAcceptanceRepository(),
@@ -182,6 +220,7 @@ export const container: Container = isDemoMode
       planStages: new SupabasePlanStageRepository(),
       profiles: new SupabaseProfileRepository(),
       habits: new SupabaseHabitRepository(),
+      routine: new SupabaseRoutineRepository(),
       tasks: new SupabaseTaskRepository(),
       checkIns: new SupabaseCheckInRepository(),
       wins: new SupabaseWinRepository(),
@@ -189,6 +228,10 @@ export const container: Container = isDemoMode
       journeyEvents: new SupabaseJourneyEventRepository(),
       evolution: new SupabaseEvolutionRepository(),
       friendships: new SupabaseFriendshipRepository(),
+      dayPhotos: new SupabaseDayPhotoRepository(),
+      social: new SupabaseSocialRepository(),
+      referrals: new SupabaseReferralRepository(),
+      clubs: new SupabaseClubRepository(),
       challenges: new SupabaseChallengeRepository(),
       ai: new SupabaseAiService(),
       legal: new SupabaseLegalAcceptanceRepository(),

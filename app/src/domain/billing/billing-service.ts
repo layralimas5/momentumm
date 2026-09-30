@@ -43,7 +43,7 @@ export interface PixCharge {
  *
  * O app nunca fala com o Asaas: a chave da API mora no segredo da função, e
  * o que o app faz é pedir uma sessão de checkout, mandar a pessoa pra ela e
- * ler a assinatura que o webhook gravou. Nada de plano é escrito por aqui —
+ * ler a assinatura que o webhook gravou. Nada de plano é escrito por aqui,
  * `profiles.plan` segue `subscriptions` por trigger, e só o webhook grava
  * `subscriptions`.
  */

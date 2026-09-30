@@ -32,7 +32,7 @@ export interface PushSubscriptionRepository {
 
   /**
    * A pessoa avançou depois de ter aberto por um aviso. Só vale dentro de
-   * algumas horas — o avanço da noite não é crédito do aviso da manhã.
+   * algumas horas, o avanço da noite não é crédito do aviso da manhã.
    */
   markConverted(): Promise<void>
 }
