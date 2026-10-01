@@ -1,5 +1,5 @@
 import { DomainError } from '@/shared/errors'
-import { dayKeyOf, dayKeyToDate, type DayKey } from './day'
+import { addDays as addDaysKey, dayKeyOf, dayKeyToDate, type DayKey } from './day'
 import type { DayPart } from './habit'
 
 /**
@@ -547,4 +547,29 @@ export function routineTimeline(states: readonly RoutineDayState[], nowClock: st
   if (nowClock === null) return { timed, nowIndex: null, untimed }
   const next = timed.findIndex((state) => (state.time ?? '') > nowClock)
   return { timed, nowIndex: next === -1 ? timed.length : next, untimed }
+}
+
+/**
+ * Quanto da Rotina aconteceu de `from` a `to`, inclusive.
+ *
+ * `total` é o que a rotina pôs em cada dia (com o reagendado contando no
+ * destino), menos o pulado: pular é decisão, e a mesma régua vale pra ação
+ * cancelada no Progresso. `done` é o que foi feito.
+ */
+export function routineRateBetween(
+  items: readonly RoutineItem[],
+  occurrences: readonly RoutineOccurrence[],
+  from: DayKey,
+  to: DayKey,
+): { readonly done: number; readonly total: number } {
+  let done = 0
+  let total = 0
+  for (let day = from; day <= to; day = addDaysKey(day, 1)) {
+    for (const state of routineDayStates(items, occurrences, day)) {
+      if (state.status === 'pulado') continue
+      total += 1
+      if (isRoutineDone(state.status)) done += 1
+    }
+  }
+  return { done, total }
 }

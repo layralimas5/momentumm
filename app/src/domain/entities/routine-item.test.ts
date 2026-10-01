@@ -6,6 +6,7 @@ import {
   planOccurrenceMove,
   routineExecutionFor,
   routineTimeline,
+  routineRateBetween,
   routineDayStates,
   routineStatusOf,
   routineWeek,
@@ -395,5 +396,24 @@ describe('routineTimeline', () => {
 
   it('depois do último horário, o agora vai pro fim', () => {
     expect(routineTimeline(states, '23:00').nowIndex).toBe(2)
+  })
+})
+
+describe('routineRateBetween', () => {
+  const acordar = item('acordar')
+  const treino = item('treino')
+
+  it('conta o feito sobre o que a rotina pôs nos dias, sem o pulado', () => {
+    const logs = [
+      occurrence('acordar', '2026-09-28'),
+      occurrence('treino', '2026-09-28', { status: 'pulado' }),
+      occurrence('acordar', '2026-09-29'),
+    ]
+    // Dois dias × dois itens = 4, menos 1 pulado = 3. Feitos: 2.
+    expect(routineRateBetween([acordar, treino], logs, SEGUNDA, TERCA)).toEqual({ done: 2, total: 3 })
+  })
+
+  it('sem rotina, sem total', () => {
+    expect(routineRateBetween([], [], SEGUNDA, QUARTA)).toEqual({ done: 0, total: 0 })
   })
 })

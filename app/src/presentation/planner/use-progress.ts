@@ -25,6 +25,7 @@ import { mainPriorityOf, type Task } from '@/domain/entities/task'
 import { useMomentumInput } from './use-momentum-input'
 import { usePlanner } from './use-planner'
 import { useObjectives, type ObjectiveView } from './use-objectives'
+import { routineRateBetween } from '@/domain/entities/routine-item'
 
 /** Uma taxa e a mesma taxa no período anterior. É a comparação que dá sentido. */
 export interface Rate {
@@ -41,6 +42,8 @@ export interface PeriodTotals {
   readonly minutes: number
   readonly habits: Rate
   readonly tasks: Rate
+  /** A Rotina do período: o que a rotina pôs nos dias contra o que foi feito. */
+  readonly routine: Rate
 }
 
 export interface ProgressView {
@@ -275,6 +278,7 @@ function totalsFor(
     ),
     habits: rateOf(habitRate(input, start, end), habitRate(input, previousStart, previousEnd)),
     tasks: rateOf(taskRate(input, start, end), taskRate(input, previousStart, previousEnd)),
+    routine: rateOf(routineRate(input, start, end), routineRate(input, previousStart, previousEnd)),
   }
 
   return {
@@ -310,6 +314,10 @@ function habitRate(input: MomentumInput, start: DayKey, end: DayKey): Counted {
   ).length
 
   return { done, total }
+}
+
+function routineRate(input: MomentumInput, start: DayKey, end: DayKey): Counted {
+  return routineRateBetween(input.routineItems ?? [], input.routineOccurrences ?? [], start, end)
 }
 
 function taskRate(input: MomentumInput, start: DayKey, end: DayKey): Counted {
