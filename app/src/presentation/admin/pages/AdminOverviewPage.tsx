@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { PRO_PRICES, formatBRL } from '@/domain/billing/billing-plans'
+import { PRO_OFFER_TERMS, PRO_PRICES, formatBRL } from '@/domain/billing/billing-plans'
+import { useFeature } from '@/presentation/plan/use-feature'
 import { achievementSpec, ACHIEVEMENT_KEYS, levelSpecOf } from '@/domain/entities/evolution'
 import { container } from '@/infrastructure/container'
 import {
@@ -18,6 +19,7 @@ import { usePeriod } from '../use-period'
 
 export function AdminOverviewPage() {
   const { period } = usePeriod()
+  const founders = useFeature('foundersOffer')
   const query = useAdminQuery(() => container.admin.overview(period), `${period.from}|${period.to}`)
   const data = query.data
   const evolution = useAdminQuery(() => container.admin.evolutionMetrics(), 'evolution')
@@ -101,8 +103,29 @@ export function AdminOverviewPage() {
                         </li>
                       ))}
                     </ul>
+                    <p className="mt-3 text-xs text-ink-faint">Condições de entrada (só a primeira cobrança)</p>
+                    <ul className="mt-2 flex flex-col gap-1.5 text-sm text-ink">
+                      <li className="flex items-center justify-between gap-3">
+                        <span className="text-ink-muted">1º mês do mensal</span>
+                        <span className="tabular font-medium">
+                          {formatBRL(PRO_OFFER_TERMS.primeiro_mes.firstCents)}
+                          <span className="ml-2 text-xs text-ink-faint">sempre, pra quem nunca assinou</span>
+                        </span>
+                      </li>
+                      <li className="flex items-center justify-between gap-3">
+                        <span className="text-ink-muted">Fundadores, 1º ano</span>
+                        <span className="tabular font-medium">
+                          {formatBRL(PRO_OFFER_TERMS.fundadores.firstCents)}
+                          <span className={founders.enabled ? 'ml-2 text-xs text-positive' : 'ml-2 text-xs text-ink-faint'}>
+                            {founders.loading ? '…' : founders.enabled ? 'ligada' : 'desligada'}
+                          </span>
+                        </span>
+                      </li>
+                    </ul>
                     <p className="mt-3 text-xs text-ink-faint">
-                      O mesmo preço que a landing e o checkout usam. Mudar exige deploy, de propósito.
+                      O mesmo preço que a landing e o checkout usam. Mudar exige deploy, de propósito. Ligar o
+                      Fundadores: em Configurações, troque foundersOffer pra true em Disponibilidade de
+                      funcionalidades.
                     </p>
                   </div>
                 </div>
