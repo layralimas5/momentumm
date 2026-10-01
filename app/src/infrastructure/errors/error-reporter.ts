@@ -48,14 +48,24 @@ export function reportError(input: ReportInput): void {
   if (now - last < DEDUPE_MS) return
   recent.set(key, now)
 
+  /*
+    Só com sessão. `report_error` é fechado pro anônimo desde a 0024, pra que
+    ninguém de fora encha a central de erros. Sem esta checagem, cada visita
+    da landing mandava um aviso de CSP que voltava 401: uma chamada perdida e
+    um erro vermelho no console de quem só estava lendo a página.
+  */
   void supabase()
-    .rpc('report_error', {
-      p_code: code,
-      p_module: input.module ?? 'app',
-      p_message: message,
-      p_environment: currentEnvironment(),
-      p_app_version: APP_VERSION,
-      p_severity: input.severity ?? 'media',
+    .auth.getSession()
+    .then(({ data }) => {
+      if (!data.session) return
+      return supabase().rpc('report_error', {
+        p_code: code,
+        p_module: input.module ?? 'app',
+        p_message: message,
+        p_environment: currentEnvironment(),
+        p_app_version: APP_VERSION,
+        p_severity: input.severity ?? 'media',
+      })
     })
     .then(() => undefined, () => undefined)
 }
