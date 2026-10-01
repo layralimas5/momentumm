@@ -5,6 +5,7 @@ import {
   isRoutineDone,
   isRoutineResolved,
   routineDayStates,
+  routineRecurrenceLabel,
   ROUTINE_RECURRENCE_LABELS,
   type RoutineDayState,
   type RoutineItem,
@@ -19,6 +20,7 @@ import { usePlanner } from '@/presentation/planner/use-planner'
 import { RoutineItemDialog } from '@/presentation/routine/RoutineItemDialog'
 import { cn } from '@/shared/lib/cn'
 import { PageHeader } from './PageHeader'
+import { readRoutinePrefill, type RoutinePrefill } from '@/presentation/routine/routine-prefill'
 
 /**
  * Rotina: como os seus dias normalmente funcionam.
@@ -63,6 +65,7 @@ export function RoutinePage() {
     URL, é o que permite limpar a URL na hora sem perder a escolha.
   */
   const [presetRecurrence, setPresetRecurrence] = useState<RoutineRecurrence | null>(null)
+  const [presetFromPlan, setPresetFromPlan] = useState<RoutinePrefill | null>(null)
 
   /*
     O "+" da barra de baixo abre esta tela já com o formulário aberto
@@ -73,6 +76,7 @@ export function RoutinePage() {
     if (params.get('novo') === '1') {
       setEditing(null)
       setPresetRecurrence(params.get('tipo') === 'compromisso' ? 'unica' : null)
+      setPresetFromPlan(readRoutinePrefill(params))
       setDialogOpen(true)
       setParams({}, { replace: true })
       return
@@ -85,6 +89,7 @@ export function RoutinePage() {
     if (item) {
       setEditing(item)
       setPresetRecurrence(null)
+      setPresetFromPlan(null)
       setDialogOpen(true)
     }
     setParams({}, { replace: true })
@@ -272,9 +277,11 @@ export function RoutinePage() {
         editing={editing}
         presetDay={picked}
         presetRecurrence={presetRecurrence}
+        presetFromPlan={presetFromPlan}
         onClose={() => {
           setDialogOpen(false)
           setEditing(null)
+          setPresetFromPlan(null)
         }}
       />
 
@@ -508,7 +515,7 @@ function RoutineItemRow({
       <div className="min-w-0 flex-1">
         <p className="text-[0.95rem] font-medium text-pretty text-ink">{item.title}</p>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-faint">
-          <span>{recurrenceLabel(item)}</span>
+          <span>{routineRecurrenceLabel(item)}</span>
           {item.durationMin ? (
             <>
               <span aria-hidden="true">·</span>
@@ -531,22 +538,6 @@ function RoutineItemRow({
       </div>
     </li>
   )
-}
-
-/**
- * "Segunda, quarta e sexta" em vez de "Dias específicos".
- *
- * O rótulo genérico obriga a abrir o item pra saber em que dias ele cai, e a
- * pergunta que esta lista existe pra responder é justamente essa.
- */
-function recurrenceLabel(item: RoutineItem): string {
-  if (item.recurrence !== 'dias-semana') return ROUTINE_RECURRENCE_LABELS[item.recurrence]
-
-  const nomes = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
-  const dias = item.weekdays.map((day) => nomes[day]).filter(Boolean)
-  if (dias.length === 0) return ROUTINE_RECURRENCE_LABELS[item.recurrence]
-  if (dias.length === 1) return `Toda ${dias[0]}`
-  return dias.join(', ')
 }
 
 /** Sem horário vai pro fim: a lista é lida como uma linha do tempo. */
