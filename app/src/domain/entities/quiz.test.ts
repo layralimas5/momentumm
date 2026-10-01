@@ -6,7 +6,9 @@ import {
   EMPTY_QUIZ_ANSWERS,
   horizonOf,
   isQuizComplete,
+  areasInOrder,
   QUIZ_QUESTION_COUNT,
+  quizAreaContext,
   QUIZ_SCREENS,
   quizBlocker,
   quizIntro,
@@ -169,5 +171,28 @@ describe('quiz: ponte pro gerador', () => {
   it('o tema muda só a introdução', () => {
     expect(quizIntro(null).title).toBe('Transforme sua meta em um plano possível.')
     expect(quizIntro('procrastinacao').title).not.toBe(quizIntro(null).title)
+  })
+})
+
+describe('quiz: a área guia as perguntas', () => {
+  it('a primeira área marcada decide como o quiz fala', () => {
+    const study = quizAreaContext({ ...EMPTY_QUIZ_ANSWERS, areas: ['estudos', 'saude'] })
+    expect(study.practice).toBe('estudar')
+    expect(study.goalExamples).toContain('Passar numa prova')
+    expect(quizAreaContext({ ...EMPTY_QUIZ_ANSWERS, areas: ['saude', 'estudos'] }).practice).toBe('cuidar da saúde')
+  })
+
+  it('\'Outra\' usa o nome que a pessoa escreveu', () => {
+    const music = quizAreaContext({ ...EMPTY_QUIZ_ANSWERS, areas: ['outra'], customArea: 'Música' })
+    expect(music.label).toBe('Música')
+    expect(music.practice).toBe('se dedicar a música')
+    expect(quizAreaContext({ ...EMPTY_QUIZ_ANSWERS, areas: ['outra'] }).practice).toBe('se dedicar à sua meta')
+  })
+
+  it('as áreas aparecem na ordem do toque', () => {
+    expect(areasInOrder({ ...EMPTY_QUIZ_ANSWERS, areas: ['estudos'] })).toBe('Estudos')
+    expect(areasInOrder({ ...EMPTY_QUIZ_ANSWERS, areas: ['estudos', 'carreira', 'saude'] })).toBe(
+      'Estudos, depois Carreira e Saúde',
+    )
   })
 })

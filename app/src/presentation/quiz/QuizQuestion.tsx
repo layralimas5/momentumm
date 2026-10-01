@@ -4,7 +4,6 @@ import {
   MAX_GOAL_LENGTH,
   QUIZ_AREA_LABELS,
   QUIZ_AREAS,
-  QUIZ_GOAL_EXAMPLES,
   QUIZ_HISTORIES,
   QUIZ_HISTORY_LABELS,
   QUIZ_HORIZON_LABELS,
@@ -15,10 +14,13 @@ import {
   QUIZ_STYLES,
   QUIZ_TIME_LABELS,
   QUIZ_TIMES,
+  areasInOrder,
   primaryObstacle,
+  quizAreaContext,
   quizScreenAt,
   WEEKDAY_SHORT,
   type QuizAnswers,
+  type QuizAreaContext,
   type QuizAreaKey,
   type QuizIntro,
   type QuizObstacleKey,
@@ -62,6 +64,9 @@ export function QuizQuestion({
 }: QuizQuestionProps) {
   const reduced = useReducedMotion()
   const screen = quizScreenAt(step)
+  // A primeira área marcada guia a frase de todas as perguntas seguintes.
+  const area = quizAreaContext(answers)
+  const goal = answers.goal.trim()
 
   return (
     <AnimatePresence mode="wait" initial={false} custom={direction}>
@@ -80,11 +85,13 @@ export function QuizQuestion({
             <AreaQuestion answers={answers} onChange={onChange} onToggle={onToggleArea} />
           </>
         ) : null}
-        {screen === 'goal' ? <GoalQuestion answers={answers} onChange={onChange} onSubmit={onSubmit} /> : null}
-        {screen === 'trust' ? <TrustScreen /> : null}
+        {screen === 'goal' ? (
+          <GoalQuestion answers={answers} area={area} onChange={onChange} onSubmit={onSubmit} />
+        ) : null}
+        {screen === 'trust' ? <TrustScreen area={area} /> : null}
         {screen === 'history' ? (
           <OptionQuestion
-            title="Quantas vezes você já começou e parou?"
+            title={`Quantas vezes você já começou a ${area.practice} e parou?`}
             hint="Não existe resposta errada. É só pra entender de onde você está partindo."
             options={QUIZ_HISTORIES.map((key) => ({ value: key, label: QUIZ_HISTORY_LABELS[key] }))}
             value={answers.history}
@@ -94,7 +101,7 @@ export function QuizQuestion({
         {screen === 'recap' ? <RecapScreen answers={answers} /> : null}
         {screen === 'obstacles' ? (
           <MultiQuestion
-            title="O que mais dificulta sua constância hoje?"
+            title={`O que mais atrapalha ${area.subject} hoje?`}
             hint="Marca todas que acontecem. A primeira que você tocar é a principal."
             options={QUIZ_OBSTACLES.map((key) => ({ value: key, label: QUIZ_OBSTACLE_LABELS[key] }))}
             values={answers.obstacles}
@@ -103,7 +110,7 @@ export function QuizQuestion({
         ) : null}
         {screen === 'time' ? (
           <OptionQuestion
-            title="Quanto tempo você realmente consegue dedicar por dia?"
+            title={`Quanto tempo por dia você consegue reservar pra ${area.practice}?`}
             hint="O plano nunca vai pedir mais que isso."
             options={QUIZ_TIMES.map((key) => ({ value: key, label: QUIZ_TIME_LABELS[key] }))}
             value={answers.time}
@@ -113,7 +120,7 @@ export function QuizQuestion({
         ) : null}
         {screen === 'horizon' ? (
           <OptionQuestion
-            title="Em quanto tempo você gostaria de alcançar esse objetivo?"
+            title={goal ? `Em quanto tempo você quer chegar em “${goal}”?` : 'Em quanto tempo você gostaria de alcançar esse objetivo?'}
             hint="Pode ser aproximado. Dá pra mudar depois."
             options={QUIZ_HORIZONS.map((key) => ({ value: key, label: QUIZ_HORIZON_LABELS[key] }))}
             value={answers.horizon}
@@ -121,11 +128,13 @@ export function QuizQuestion({
             columns
           />
         ) : null}
-        {screen === 'weekdays' ? <WeekdaysQuestion answers={answers} onToggle={onToggleWeekday} /> : null}
+        {screen === 'weekdays' ? (
+          <WeekdaysQuestion answers={answers} area={area} onToggle={onToggleWeekday} />
+        ) : null}
         {screen === 'style' ? (
           <OptionQuestion
             title="Como você prefere começar?"
-            hint="Isso muda o formato do plano, não o objetivo."
+            hint={`Isso muda o formato do seu plano de ${area.label.toLowerCase()}, não o objetivo.`}
             options={QUIZ_STYLES.map((key) => ({ value: key, label: QUIZ_STYLE_LABELS[key] }))}
             value={answers.style}
             onChange={(style) => onChange({ style })}
@@ -171,10 +180,12 @@ function Opening({ intro }: { readonly intro: QuizIntro }) {
 
 function GoalQuestion({
   answers,
+  area,
   onChange,
   onSubmit,
 }: {
   readonly answers: QuizAnswers
+  readonly area: QuizAreaContext
   readonly onChange: (changes: Partial<QuizAnswers>) => void
   readonly onSubmit: () => void
 }) {
@@ -183,7 +194,7 @@ function GoalQuestion({
   return (
     <div>
       <Title hint="Com as suas palavras. Um exemplo abaixo serve pra começar.">
-        O que você mais quer conquistar agora?
+        {area.goalQuestion}
       </Title>
 
       <label htmlFor={id} className="sr-only">
@@ -199,7 +210,7 @@ function GoalQuestion({
             onSubmit()
           }
         }}
-        placeholder="Ex.: lançar meu projeto"
+        placeholder={area.goalPlaceholder}
         autoComplete="off"
         enterKeyHint="next"
         autoFocus
@@ -208,7 +219,7 @@ function GoalQuestion({
 
       <p className="mt-5 text-xs font-medium tracking-wide text-ink-faint uppercase">Exemplos</p>
       <ul className="mt-2 flex flex-wrap gap-2" aria-label="Exemplos de objetivo">
-        {QUIZ_GOAL_EXAMPLES.map((example) => {
+        {area.goalExamples.map((example) => {
           const selected = answers.goal.trim() === example
           return (
             <li key={example}>
@@ -441,25 +452,34 @@ function OptionQuestion<T extends string>({
  * (`buildQuizPlan`, versão mínima, Modo Retomada). Nada de contador
  * inventado. Quando houver número real, ele entra em cima dessas regras.
  */
-const PLAN_RULES: readonly { readonly icon: IconName; readonly title: string; readonly text: string }[] = [
-  {
-    icon: 'relogio',
-    title: 'Do tamanho do seu tempo',
-    text: 'O plano nunca pede mais minutos do que você disser que tem. Se não couber, ele se ajusta e te avisa.',
-  },
-  {
-    icon: 'minimo',
-    title: 'Versão mínima em todo passo',
-    text: 'No dia apertado, o passo encolhe e o dia ainda conta.',
-  },
-  {
-    icon: 'desfazer',
-    title: 'Nada zera',
-    text: 'Se você sumir uns dias, volta de onde parou, sem compensar o que passou.',
-  },
-]
+interface PlanRule {
+  readonly icon: IconName
+  readonly title: string
+  readonly text: string
+}
 
-function TrustScreen() {
+function planRules(area: QuizAreaContext): readonly PlanRule[] {
+  return [
+    {
+      icon: 'relogio',
+      title: 'Do tamanho do seu tempo',
+      text: `O plano nunca pede mais minutos pra ${area.practice} do que você disser que tem. Se não couber, ele se ajusta e te avisa.`,
+    },
+    {
+      icon: 'minimo',
+      title: 'Versão mínima em todo passo',
+      text: `No dia apertado, o passo encolhe (algo como ${area.minimalExample}) e o dia ainda conta.`,
+    },
+    {
+      icon: 'desfazer',
+      title: 'Nada zera',
+      text: 'Se você sumir uns dias, volta de onde parou, sem compensar o que passou.',
+    },
+  ]
+}
+
+function TrustScreen({ area }: { readonly area: QuizAreaContext }) {
+  const rules = planRules(area)
   return (
     <div>
       <p className="text-xs font-medium tracking-wide text-brand-ink uppercase">Antes de continuar</p>
@@ -467,7 +487,7 @@ function TrustScreen() {
         Como o seu plano é montado
       </Title>
       <ul className="flex flex-col gap-2.5">
-        {PLAN_RULES.map((rule) => (
+        {rules.map((rule) => (
           <li key={rule.title} className="flex items-start gap-3 rounded-2xl border border-line bg-surface/60 p-3.5">
             <span className="grid size-8 shrink-0 place-items-center rounded-full border border-brand/30 bg-brand-dim/50 text-brand-ink">
               <Icon name={rule.icon} className="size-4" />
@@ -495,6 +515,7 @@ function RecapScreen({ answers }: { readonly answers: QuizAnswers }) {
   const days = answers.weekdays.length
   const time = answers.time ? QUIZ_TIME_LABELS[answers.time].toLowerCase() : null
   const rows = [
+    { label: answers.areas.length > 1 ? 'Suas áreas, nessa ordem' : 'Sua área', value: areasInOrder(answers) },
     { label: 'Seu objetivo', value: answers.goal.trim() },
     { label: 'O que mais trava', value: QUIZ_OBSTACLE_LABELS[primaryObstacle(answers)] },
     {
@@ -506,7 +527,7 @@ function RecapScreen({ answers }: { readonly answers: QuizAnswers }) {
   return (
     <div>
       <p className="text-xs font-medium tracking-wide text-brand-ink uppercase">O que já sabemos</p>
-      <Title hint="Com o que você respondeu até aqui, três coisas já ficaram claras.">
+      <Title hint="Com o que você respondeu até aqui, o seu plano já tem forma.">
         Dá pra montar algo que cabe no seu dia
       </Title>
       <dl className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-surface/60">
@@ -528,15 +549,17 @@ function RecapScreen({ answers }: { readonly answers: QuizAnswers }) {
 
 function WeekdaysQuestion({
   answers,
+  area,
   onToggle,
 }: {
   readonly answers: QuizAnswers
+  readonly area: QuizAreaContext
   readonly onToggle: (day: number) => void
 }) {
   return (
     <div>
       <Title hint="Marca quantos quiser. O plano só usa esses dias.">
-        Em quais dias você consegue se dedicar?
+        {`Em quais dias você consegue ${area.practice}?`}
       </Title>
 
       <div role="group" aria-label="Dias da semana" className="grid grid-cols-4 gap-2 sm:grid-cols-7">

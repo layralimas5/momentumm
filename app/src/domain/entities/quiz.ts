@@ -140,14 +140,167 @@ export const QUIZ_HISTORY_LABELS: Readonly<Record<QuizHistoryKey, string>> = {
   mantive_e_parei: 'Mantive por um tempo e parei',
 }
 
-/** Exemplos que a pergunta do objetivo mostra. Tocar num deles preenche o campo. */
-export const QUIZ_GOAL_EXAMPLES: readonly string[] = [
-  'Criar uma rotina de exercícios',
-  'Lançar meu projeto',
-  'Estudar para uma prova',
-  'Organizar minha vida',
-  'Melhorar minha saúde',
-]
+// ---------------------------------------------------------------------------
+// a área guia o resto do quiz
+// ---------------------------------------------------------------------------
+
+/**
+ * Como o quiz fala de cada área. A primeira área marcada é a do plano, e a
+ * partir dela as perguntas seguintes deixam de ser genéricas: quem tocou em
+ * Estudos lê "quanto tempo por dia você consegue reservar pra estudar?", com
+ * exemplos de objetivo de estudo. As chaves das respostas não mudam; muda só
+ * a frase, então diagnóstico e plano continuam saindo do mesmo gerador.
+ */
+export interface QuizAreaContext {
+  /** O nome da área, como a pessoa marcou: "Estudos", ou o que escreveu em "Outra". */
+  readonly label: string
+  /** O verbo depois de "pra" e "consegue": "estudar", "cuidar da saúde". */
+  readonly practice: string
+  /** A área como assunto da frase: "seus estudos", "sua saúde". */
+  readonly subject: string
+  readonly goalQuestion: string
+  readonly goalPlaceholder: string
+  /** Tocar num exemplo preenche o campo do objetivo. */
+  readonly goalExamples: readonly string[]
+  /** Um passo mínimo típico da área, pra tela de confiança mostrar o que é "versão mínima". */
+  readonly minimalExample: string
+}
+
+type AreaCopy = Omit<QuizAreaContext, 'label'>
+
+const AREA_COPY: Readonly<Record<Exclude<QuizAreaKey, 'outra'>, AreaCopy>> = {
+  saude: {
+    practice: 'cuidar da saúde',
+    subject: 'sua saúde',
+    goalQuestion: 'O que você quer conquistar na sua saúde?',
+    goalPlaceholder: 'Ex.: voltar a treinar 3 vezes por semana',
+    goalExamples: [
+      'Criar uma rotina de exercícios',
+      'Voltar a correr',
+      'Dormir melhor',
+      'Melhorar minha alimentação',
+      'Perder peso com calma',
+    ],
+    minimalExample: 'uma caminhada de 10 minutos',
+  },
+  carreira: {
+    practice: 'avançar na carreira',
+    subject: 'sua carreira',
+    goalQuestion: 'O que você quer conquistar na sua carreira?',
+    goalPlaceholder: 'Ex.: conseguir uma promoção este ano',
+    goalExamples: [
+      'Conseguir uma promoção',
+      'Mudar de área',
+      'Aprender uma nova habilidade',
+      'Montar meu portfólio',
+      'Tirar uma certificação',
+    ],
+    minimalExample: '15 minutos de um curso',
+  },
+  estudos: {
+    practice: 'estudar',
+    subject: 'seus estudos',
+    goalQuestion: 'O que você quer conquistar nos estudos?',
+    goalPlaceholder: 'Ex.: passar na prova de março',
+    goalExamples: [
+      'Passar numa prova',
+      'Estudar para o ENEM',
+      'Aprender inglês',
+      'Terminar a faculdade',
+      'Ler 12 livros no ano',
+    ],
+    minimalExample: 'reler as anotações por 5 minutos',
+  },
+  financas: {
+    practice: 'organizar as finanças',
+    subject: 'suas finanças',
+    goalQuestion: 'O que você quer conquistar nas suas finanças?',
+    goalPlaceholder: 'Ex.: montar uma reserva de emergência',
+    goalExamples: [
+      'Montar uma reserva de emergência',
+      'Sair das dívidas',
+      'Organizar meus gastos',
+      'Começar a investir',
+      'Juntar para uma viagem',
+    ],
+    minimalExample: 'anotar os gastos do dia',
+  },
+  pessoal: {
+    practice: 'se desenvolver',
+    subject: 'seu desenvolvimento',
+    goalQuestion: 'O que você quer desenvolver em você?',
+    goalPlaceholder: 'Ex.: ler um livro por mês',
+    goalExamples: [
+      'Ler mais',
+      'Meditar todo dia',
+      'Criar o hábito de escrever',
+      'Acordar mais cedo',
+      'Organizar minha vida',
+    ],
+    minimalExample: 'ler 5 páginas',
+  },
+  relacionamentos: {
+    practice: 'cuidar dos seus relacionamentos',
+    subject: 'seus relacionamentos',
+    goalQuestion: 'O que você quer conquistar nos seus relacionamentos?',
+    goalPlaceholder: 'Ex.: jantar com a família toda semana',
+    goalExamples: [
+      'Passar mais tempo com a família',
+      'Ver mais os amigos',
+      'Ter mais tempo a dois',
+      'Conhecer gente nova',
+    ],
+    minimalExample: 'mandar uma mensagem pra quem importa',
+  },
+  projeto: {
+    practice: 'tocar seu projeto',
+    subject: 'seu projeto',
+    goalQuestion: 'O que você quer tirar do papel?',
+    goalPlaceholder: 'Ex.: lançar meu projeto até dezembro',
+    goalExamples: [
+      'Lançar meu projeto',
+      'Tirar uma ideia do papel',
+      'Publicar meu site',
+      'Escrever um livro',
+      'Gravar meu primeiro vídeo',
+    ],
+    minimalExample: '15 minutos no próximo pedaço do projeto',
+  },
+}
+
+/** "Outra" fala com o nome que a pessoa escreveu, ou com "sua meta" quando ela não escreveu nada. */
+function otherAreaCopy(customArea: string): AreaCopy {
+  const name = customArea.trim()
+  const lower = name.toLowerCase()
+  return {
+    practice: name ? `se dedicar a ${lower}` : 'se dedicar à sua meta',
+    subject: name ? `a sua rotina com ${lower}` : 'a sua meta',
+    goalQuestion: name ? `O que você quer conquistar com ${lower}?` : 'O que você mais quer conquistar agora?',
+    goalPlaceholder: 'Ex.: lançar meu projeto',
+    goalExamples: ['Criar uma rotina', 'Tirar uma ideia do papel', 'Aprender algo novo', 'Organizar minha vida'],
+    minimalExample: '5 minutos no que importa',
+  }
+}
+
+export function quizAreaContext(answers: QuizAnswers): QuizAreaContext {
+  const area = primaryArea(answers)
+  if (area === 'outra') {
+    return { label: answers.customArea.trim() || QUIZ_AREA_LABELS.outra, ...otherAreaCopy(answers.customArea) }
+  }
+  return { label: QUIZ_AREA_LABELS[area], ...AREA_COPY[area] }
+}
+
+/** As áreas na ordem do toque, em frase: "Estudos, depois Carreira e Saúde". */
+export function areasInOrder(answers: QuizAnswers): string {
+  const labels = answers.areas.map((key) =>
+    key === 'outra' ? answers.customArea.trim() || QUIZ_AREA_LABELS.outra : QUIZ_AREA_LABELS[key],
+  )
+  const [first, ...rest] = labels
+  if (!first) return ''
+  if (rest.length === 0) return first
+  const tail = rest.length === 1 ? rest[0] : `${rest.slice(0, -1).join(', ')} e ${rest[rest.length - 1]}`
+  return `${first}, depois ${tail}`
+}
 
 /**
  * As telas do quiz, na ordem. Segue a estrutura de quiz de funil: abertura
