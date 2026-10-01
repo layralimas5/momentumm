@@ -17,12 +17,17 @@ import { useSiteCta } from './use-site-cta'
  * pra linha de apoio, onde ela confirma a promessa em vez de abrir a página
  * com um conceito.
  *
- * ## Por que é tudo centralizado e sem recorte do produto
+ * ## A tela do produto vem embaixo, não ao lado
  *
- * O hero é dor, solução e botão, nessa ordem, em qualquer tela. Um card da
- * tela Hoje ao lado disputava o olhar com o título, e o produto já aparece
- * inteiro mais abaixo, na seção da tela de todo dia.
+ * O hero é dor, solução, botão e o produto, nessa ordem, em qualquer tela.
+ * Um card ao lado do título disputava o olhar com ele; embaixo, a tela real
+ * do plano confirma a promessa sem competir. É uma captura do app, nunca
+ * ilustração: quem chega precisa ver em cinco segundos o que vai receber.
  */
+const HERO_SCREEN = {
+  src: '/telas/passo-2-plano.webp',
+  alt: 'Plano gerado pelo Momentumm: a meta "ler 12 livros até dezembro" dividida em três marcos com prazo e uma rotina de 3 dias por semana, 20 minutos por vez.',
+} as const
 
 /** A copy padrão. Com `?oferta=` no link, a oferta em teste assume (ver `offers.ts`). */
 const DEFAULT_LINES = ['Pare de recomeçar', 'toda segunda-feira.'] as const
@@ -102,6 +107,27 @@ export function Hero() {
             <span className="text-brand-hi">Ação vira progresso.</span>
           </motion.p>
         </div>
+
+        <motion.figure {...intro(0.5, 24)} className="relative mx-auto mt-12 max-w-[340px] sm:mt-16">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 top-10 h-72 rounded-full bg-brand/25 blur-3xl"
+          />
+          <div className="relative h-[420px] overflow-hidden rounded-t-[2.5rem] border border-b-0 border-line-hi bg-surface p-2.5 pb-0 shadow-2xl shadow-black/40 sm:h-[480px]">
+            <img
+              src={HERO_SCREEN.src}
+              alt={HERO_SCREEN.alt}
+              width={780}
+              height={1688}
+              decoding="async"
+              className="block w-full rounded-t-[2rem]"
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-canvas to-transparent"
+            />
+          </div>
+        </motion.figure>
       </div>
     </section>
   )

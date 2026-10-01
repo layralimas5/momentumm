@@ -6,7 +6,17 @@ import { trackLanding } from './landing-analytics'
 import { NAV_DIRECT, NAV_GROUPS } from './nav-items'
 import { useSiteCta } from './use-site-cta'
 
-export function SiteHeader() {
+interface SiteHeaderProps {
+  /**
+   * A landing usa o topo enxuto: logo sem link (a pessoa já está na home),
+   * a porta de login e o CTA da página. Sem menu: quem chega de um anúncio ou
+   * de um carrossel não precisa de cinco saídas antes de ver o produto. As
+   * páginas de ferramentas e legais continuam com o menu completo.
+   */
+  readonly minimal?: boolean
+}
+
+export function SiteHeader({ minimal = false }: SiteHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [openGroup, setOpenGroup] = useState<string | null>(null)
   const [scrolled, setScrolled] = useState(false)
@@ -54,16 +64,23 @@ export function SiteHeader() {
       >
         <div className="grid h-14 grid-cols-[auto_1fr_auto] items-center gap-3 pl-4 pr-2 sm:h-16 sm:pl-5 sm:pr-2.5 md:grid-cols-[1fr_auto_1fr]">
           {/* No celular só o símbolo cabe ao lado do menu e do CTA. */}
-          <Link
-            to="/"
-            aria-label="Momentumm, ir para o início"
-            className="shrink-0 justify-self-start"
-          >
-            <LogoMark className="size-7 md:hidden" />
-            <Wordmark decorative className="hidden md:block md:w-36 lg:w-40" />
-          </Link>
+          {minimal ? (
+            <span className="shrink-0 justify-self-start">
+              <LogoMark decorative={false} className="size-7 sm:hidden" />
+              <Wordmark className="hidden sm:block sm:w-36 lg:w-40" />
+            </span>
+          ) : (
+            <Link
+              to="/"
+              aria-label="Momentumm, ir para o início"
+              className="shrink-0 justify-self-start"
+            >
+              <LogoMark className="size-7 md:hidden" />
+              <Wordmark decorative className="hidden md:block md:w-36 lg:w-40" />
+            </Link>
+          )}
 
-          <div ref={navRef} className="hidden justify-self-center md:block">
+          <div ref={navRef} className={cn('hidden justify-self-center', !minimal && 'md:block')}>
             <nav aria-label="Navegação principal">
               <ul className="flex items-center gap-0.5">
                 {NAV_GROUPS.map((group) => {
@@ -157,6 +174,7 @@ export function SiteHeader() {
             </Link>
             <button
               type="button"
+              hidden={minimal}
               onClick={() => setMobileOpen((value) => !value)}
               aria-expanded={mobileOpen}
               aria-controls="menu-mobile"
