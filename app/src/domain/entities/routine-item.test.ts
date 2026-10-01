@@ -5,6 +5,7 @@ import {
   isRoutineScheduledOn,
   planOccurrenceMove,
   routineExecutionFor,
+  routineTimeline,
   routineDayStates,
   routineStatusOf,
   routineWeek,
@@ -371,5 +372,28 @@ describe('routineExecutionFor', () => {
       occurrence('t', '2026-09-29'),
     ]
     expect(routineExecutionFor('correr', [treino], logs, SEGUNDA, TERCA)[0]?.done).toBe(1)
+  })
+})
+
+describe('routineTimeline', () => {
+  const acordar = item('acordar', { timeOfDay: '07:00' })
+  const treino = item('treino', { timeOfDay: '18:30' })
+  const ler = item('ler')
+  const states = routineDayStates([acordar, treino, ler], [], SEGUNDA)
+
+  it('separa o que tem horário do que fica pra algum momento', () => {
+    const timeline = routineTimeline(states, null)
+    expect(timeline.timed.map((s) => s.item.id)).toEqual(['acordar', 'treino'])
+    expect(timeline.untimed.map((s) => s.item.id)).toEqual(['ler'])
+    expect(timeline.nowIndex).toBeNull()
+  })
+
+  it('o agora entra antes do primeiro item que ainda não chegou', () => {
+    expect(routineTimeline(states, '12:00').nowIndex).toBe(1)
+    expect(routineTimeline(states, '06:00').nowIndex).toBe(0)
+  })
+
+  it('depois do último horário, o agora vai pro fim', () => {
+    expect(routineTimeline(states, '23:00').nowIndex).toBe(2)
   })
 })
