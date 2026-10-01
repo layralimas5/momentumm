@@ -12,7 +12,8 @@ import { type DayPart, type HabitIcon } from './habit'
 import { MIN_OBJECTIVE_DAYS } from './objective'
 
 /**
- * O quiz de entrada: sete perguntas respondidas ANTES de existir conta.
+ * O quiz de entrada: oito perguntas e duas telas de apoio, respondidas
+ * ANTES de existir conta.
  *
  * Ele não tem gerador próprio. As respostas viram as mesmas
  * `ActivationAnswers` que o onboarding usa, e o plano sai do mesmo
@@ -125,7 +126,21 @@ export const QUIZ_STYLE_LABELS: Readonly<Record<QuizStyleKey, string>> = {
   momentumm_decide: 'Quero que o Momentumm decida por mim',
 }
 
-/** Exemplos que a primeira pergunta mostra. Tocar num deles preenche o campo. */
+/**
+ * Quantas vezes a pessoa já começou e parou. Não muda o plano: muda a
+ * conversa do diagnóstico, que tira a culpa da pessoa e põe no método antigo.
+ */
+export const QUIZ_HISTORIES = ['primeira', 'algumas', 'perdi_a_conta', 'mantive_e_parei'] as const
+export type QuizHistoryKey = (typeof QUIZ_HISTORIES)[number]
+
+export const QUIZ_HISTORY_LABELS: Readonly<Record<QuizHistoryKey, string>> = {
+  primeira: 'É a primeira vez',
+  algumas: 'Duas ou três vezes',
+  perdi_a_conta: 'Já perdi a conta',
+  mantive_e_parei: 'Mantive por um tempo e parei',
+}
+
+/** Exemplos que a pergunta do objetivo mostra. Tocar num deles preenche o campo. */
 export const QUIZ_GOAL_EXAMPLES: readonly string[] = [
   'Criar uma rotina de exercícios',
   'Lançar meu projeto',
@@ -134,7 +149,53 @@ export const QUIZ_GOAL_EXAMPLES: readonly string[] = [
   'Melhorar minha saúde',
 ]
 
-export const QUIZ_QUESTION_COUNT = 7
+/**
+ * As telas do quiz, na ordem. Segue a estrutura de quiz de funil: abertura
+ * com um toque fácil (a área, sem digitar nada), identificação (o objetivo
+ * nas palavras da pessoa), dor, uma tela de confiança antes das perguntas
+ * mais pesadas, histórico, compromisso (tempo, prazo e dias), a devolutiva
+ * com o que ela já respondeu e a última pergunta. Depois vêm a análise, o
+ * contato e o resultado com a oferta (`use-quiz.ts`).
+ *
+ * `trust` e `recap` não são perguntas: não pedem resposta e não contam no
+ * total que a página promete ("responda 8 perguntas").
+ */
+export const QUIZ_SCREENS = [
+  'area',
+  'goal',
+  'obstacles',
+  'trust',
+  'history',
+  'time',
+  'horizon',
+  'weekdays',
+  'recap',
+  'style',
+] as const
+export type QuizScreen = (typeof QUIZ_SCREENS)[number]
+
+const INFO_SCREENS: readonly QuizScreen[] = ['trust', 'recap']
+
+export const QUIZ_SCREEN_COUNT = QUIZ_SCREENS.length
+export const QUIZ_QUESTION_COUNT = QUIZ_SCREENS.filter((screen) => !INFO_SCREENS.includes(screen)).length
+
+/** Rótulo curto de cada tela, pro painel do funil ler o abandono por etapa. */
+export const QUIZ_SCREEN_LABELS: Readonly<Record<QuizScreen, string>> = {
+  area: 'Área',
+  goal: 'Objetivo',
+  obstacles: 'O que trava',
+  trust: 'Tela de confiança',
+  history: 'Histórico',
+  time: 'Tempo por dia',
+  horizon: 'Prazo',
+  weekdays: 'Dias da semana',
+  recap: 'Devolutiva',
+  style: 'Como começar',
+}
+
+export function quizScreenAt(step: number): QuizScreen {
+  return QUIZ_SCREENS[Math.min(Math.max(step, 0), QUIZ_SCREEN_COUNT - 1)] ?? 'area'
+}
 export const MIN_GOAL_LENGTH = 3
 export const MAX_GOAL_LENGTH = 120
 
@@ -151,6 +212,8 @@ export interface QuizAnswers {
   /** Dias da semana (0 = domingo). */
   readonly weekdays: readonly number[]
   readonly style: QuizStyleKey | null
+  /** Null em respostas salvas antes da pergunta existir: o plano não depende dela. */
+  readonly history: QuizHistoryKey | null
 }
 
 export const EMPTY_QUIZ_ANSWERS: QuizAnswers = {
@@ -162,6 +225,7 @@ export const EMPTY_QUIZ_ANSWERS: QuizAnswers = {
   horizon: null,
   weekdays: [],
   style: null,
+  history: null,
 }
 
 /** As respostas com todas as perguntas fechadas: só assim existe diagnóstico. */
@@ -172,28 +236,31 @@ export interface CompleteQuizAnswers extends QuizAnswers {
 }
 
 /**
- * O que falta pra sair da pergunta `step` (base zero). Null quando dá pra
+ * O que falta pra sair da tela `step` (base zero). Null quando dá pra
  * avançar. É a única validação do quiz, e a tela só a repete.
  */
 export function quizBlocker(step: number, answers: QuizAnswers): string | null {
-  switch (step) {
-    case 0:
+  switch (quizScreenAt(step)) {
+    case 'area':
+      return answers.areas.length === 0 ? 'Escolhe pelo menos uma área.' : null
+    case 'goal':
       return answers.goal.trim().length < MIN_GOAL_LENGTH
         ? 'Escreve o que você quer conquistar.'
         : null
-    case 1:
-      return answers.areas.length === 0 ? 'Escolhe pelo menos uma área.' : null
-    case 2:
+    case 'obstacles':
       return answers.obstacles.length === 0 ? 'Escolhe pelo menos uma.' : null
-    case 3:
+    case 'history':
+      return answers.history === null ? 'Escolhe a que mais parece com você.' : null
+    case 'time':
       return answers.time === null ? 'Escolhe o tempo que cabe de verdade.' : null
-    case 4:
+    case 'horizon':
       return answers.horizon === null ? 'Escolhe um prazo, mesmo que aproximado.' : null
-    case 5:
+    case 'weekdays':
       return answers.weekdays.length === 0 ? 'Marca pelo menos um dia.' : null
-    case 6:
+    case 'style':
       return answers.style === null ? 'Escolhe como você prefere começar.' : null
-    default:
+    case 'trust':
+    case 'recap':
       return null
   }
 }
@@ -208,11 +275,15 @@ export function primaryObstacle(answers: QuizAnswers): QuizObstacleKey {
   return answers.obstacles[0] ?? 'procrastino'
 }
 
+/**
+ * Completo é ter o que o PLANO precisa. O histórico fica de fora de
+ * propósito: um plano pendente salvo antes dessa pergunta existir continua
+ * ativando depois do cadastro, em vez de sumir no meio do caminho.
+ */
 export function isQuizComplete(answers: QuizAnswers): answers is CompleteQuizAnswers {
-  for (let step = 0; step < QUIZ_QUESTION_COUNT; step += 1) {
-    if (quizBlocker(step, answers) !== null) return false
-  }
-  return true
+  return QUIZ_SCREENS.every(
+    (screen, step) => screen === 'history' || quizBlocker(step, answers) === null,
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -291,6 +362,8 @@ export interface QuizDiagnosis {
   readonly styleLabel: string
   /** A explicação curta, montada com as respostas. */
   readonly explanation: string
+  /** O que o histórico diz, sem culpa. Null quando a pergunta não foi respondida. */
+  readonly historyNote: string | null
 }
 
 interface ObstacleReading {
@@ -376,7 +449,24 @@ export function buildDiagnosis(answers: CompleteQuizAnswers): QuizDiagnosis {
       minutes: minutesLabel(answers.time),
       days: answers.weekdays.length,
     }),
+    historyNote: answers.history ? HISTORY_NOTES[answers.history] : null,
   }
+}
+
+/**
+ * O histórico prepara o mecanismo: quem já tentou e parou acha que o
+ * problema é ela. A frase registra sem julgar e aponta pro método antigo,
+ * e só promete o que o app faz (versão mínima, retomada, nada zera).
+ */
+const HISTORY_NOTES: Readonly<Record<QuizHistoryKey, string>> = {
+  primeira:
+    'Começar pela primeira vez com um plano do tamanho da sua rotina é o jeito mais simples de não entrar no ciclo de recomeçar.',
+  algumas:
+    'Ter começado outras vezes não diz nada sobre a sua capacidade. Diz que o plano antigo não cabia na sua semana real.',
+  perdi_a_conta:
+    'Perder a conta de recomeços é sinal de plano rígido, não de falta de força. Aqui um dia perdido não zera nada, e você volta de onde parou.',
+  mantive_e_parei:
+    'Você já provou que consegue manter. O que faltou foi um jeito de voltar quando a rotina saiu do eixo, e é isso que o Modo Retomada faz.',
 }
 
 /** "Lançar meu projeto" vira "lançar meu projeto" no meio de uma frase. */

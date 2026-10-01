@@ -12,7 +12,7 @@ import {
   buildQuizPlan,
   EMPTY_QUIZ_ANSWERS,
   isQuizComplete,
-  QUIZ_QUESTION_COUNT,
+  QUIZ_SCREEN_COUNT,
   quizBlocker,
   quizIntro,
   type QuizAnswers,
@@ -43,29 +43,26 @@ import { clearQuizDraft, loadQuizDraft, savePendingQuizPlan, saveQuizDraft } fro
 /**
  * O quiz como estado, separado do desenho.
  *
- * Seis fases numa linha: intro → perguntas → contato → processando →
- * diagnóstico → plano.
+ * Quatro fases numa linha: perguntas → processando → contato → resultado.
  *
- * O contato fica ANTES do diagnóstico de propósito. Depois do plano a
- * pessoa já teve o que veio buscar e não tem motivo nenhum pra deixar
- * e-mail; antes dele, o plano pronto é o motivo. É o único ponto do funil
- * onde dá pra alcançar quem não vai criar conta hoje. As respostas ficam no `localStorage` a cada mudança (a página
- * atualizada volta na mesma pergunta) e vão pro servidor a cada avanço,
- * junto do evento do funil. O plano é calculado aqui, no navegador, pelo
- * mesmo gerador do onboarding: não existe chamada de rede entre a última
- * resposta e a prévia, e é por isso que o "processando" é curto.
+ * Não há tela de intro: a primeira pergunta É a abertura, com o título da
+ * campanha em cima, porque o primeiro clique barato é responder, não apertar
+ * "começar". A análise vem antes do contato e o contato antes do resultado:
+ * com o plano calculado e prometido, deixar o e-mail vira o caminho pra ver
+ * o resultado, e é o único ponto do funil onde dá pra alcançar quem não vai
+ * criar conta hoje. O resultado junta diagnóstico, plano e oferta numa tela
+ * só: resultado e oferta separados viram duas conversas.
+ *
+ * As respostas ficam no `localStorage` a cada mudança (a página atualizada
+ * volta na mesma tela) e vão pro servidor a cada avanço, junto do evento do
+ * funil. O plano é calculado aqui, no navegador, pelo mesmo gerador do
+ * onboarding: não existe chamada de rede entre a última resposta e a prévia,
+ * e é por isso que a análise é curta.
  */
 
 export const QUIZ_PATH = '/criar-meu-plano'
 
-export const QUIZ_PHASES = [
-  'intro',
-  'perguntas',
-  'contato',
-  'processando',
-  'diagnostico',
-  'plano',
-] as const
+export const QUIZ_PHASES = ['perguntas', 'processando', 'contato', 'resultado'] as const
 export type QuizPhase = (typeof QUIZ_PHASES)[number]
 
 /** O tempo da animação de processamento. Curto de propósito: o plano já está pronto. */
@@ -77,8 +74,6 @@ export interface QuizController {
   readonly answers: QuizAnswers
   readonly intro: QuizIntro
   readonly attribution: QuizAttribution
-  /** Já respondeu alguma coisa: o botão da intro vira "continuar". */
-  readonly started: boolean
   /** O que falta responder pra sair da pergunta. Null quando dá pra avançar. */
   readonly blocker: string | null
   /**
@@ -99,14 +94,11 @@ export interface QuizController {
   toggleArea(area: QuizAreaKey): void
   toggleObstacle(obstacle: QuizObstacleKey): void
   toggleWeekday(day: number): void
-  start(): void
   next(): void
   back(): void
   setLead(changes: Partial<QuizLead>): void
-  /** Guarda o contato e segue pro diagnóstico. */
+  /** Guarda o contato e mostra o resultado. */
   submitLead(): void
-  /** Do diagnóstico pra prévia. */
-  showPlan(): void
   /** Ajustar as respostas: volta pra primeira pergunta com tudo preenchido. */
   review(): void
   /** Ativar o plano: guarda o plano pendente; a tela navega pro cadastro. */
@@ -124,7 +116,7 @@ export function useQuiz(): QuizController {
   }, [codigo, params])
 
   const stored = useMemo(() => loadQuizDraft(), [])
-  const [phase, setPhase] = useState<QuizPhase>('intro')
+  const [phase, setPhase] = useState<QuizPhase>('perguntas')
   const [lead, setLeadState] = useState<QuizLead>(EMPTY_QUIZ_LEAD)
   const [leadAttempted, setLeadAttempted] = useState(false)
   const [savingLead, setSavingLead] = useState(false)
@@ -209,17 +201,10 @@ export function useQuiz(): QuizController {
     }))
   }, [])
 
-  const start = useCallback(() => {
-    trackFunnel('quiz_started', 0, attribution)
-    setPhase('perguntas')
-  }, [attribution])
-
-  const finish = useCallback(() => {
+  /** A análise: o plano já está pronto, a espera é só pra ler as etapas. */
+  const analyze = useCallback(() => {
     setPhase('processando')
-    window.setTimeout(() => {
-      setPhase('diagnostico')
-      trackFunnel('diagnosis_viewed', null)
-    }, PROCESSING_MS)
+    window.setTimeout(() => setPhase('contato'), PROCESSING_MS)
   }, [])
 
   const next = useCallback(() => {
@@ -227,29 +212,35 @@ export function useQuiz(): QuizController {
       setAttempted(true)
       return
     }
+    // Sem intro, começar é responder a abertura.
+    if (step === 0) trackFunnel('quiz_started', 0, attribution)
     trackFunnel('quiz_question_answered', step)
     saveQuizAnswers(answers, null, step + 1)
 
-    if (step >= QUIZ_QUESTION_COUNT - 1) {
-      trackFunnel('quiz_completed', QUIZ_QUESTION_COUNT)
-      saveQuizAnswers(answers, isQuizComplete(answers) ? buildDiagnosis(answers) : null, QUIZ_QUESTION_COUNT)
-      setPhase('contato')
+    if (step >= QUIZ_SCREEN_COUNT - 1) {
+      trackFunnel('quiz_completed', QUIZ_SCREEN_COUNT)
+      saveQuizAnswers(answers, isQuizComplete(answers) ? buildDiagnosis(answers) : null, QUIZ_SCREEN_COUNT)
+      analyze()
       return
     }
     setStep(step + 1)
-  }, [blocker, step, answers])
+  }, [blocker, step, answers, attribution, analyze])
 
   const back = useCallback(() => {
     if (phase === 'contato') {
       setPhase('perguntas')
       return
     }
-    if (step === 0) {
-      setPhase('intro')
-      return
-    }
-    setStep(step - 1)
+    if (step > 0) setStep(step - 1)
   }, [phase, step])
+
+  const showResult = useCallback(() => {
+    flushPendingLead()
+    setPhase('resultado')
+    // Diagnóstico e prévia agora são a mesma tela: os dois eventos saem juntos.
+    trackFunnel('diagnosis_viewed', null)
+    trackFunnel('plan_preview_viewed', null)
+  }, [])
 
   const setLead = useCallback((changes: Partial<QuizLead>) => {
     setLeadState((current) => ({ ...current, ...changes }))
@@ -269,16 +260,10 @@ export function useQuiz(): QuizController {
     setSavingLead(true)
     void saveQuizLead(normalizeLead(lead)).then((saved) => {
       setSavingLead(false)
-      if (saved) trackFunnel('lead_captured', QUIZ_QUESTION_COUNT)
-      finish()
+      if (saved) trackFunnel('lead_captured', QUIZ_SCREEN_COUNT)
+      showResult()
     })
-  }, [lead, finish])
-
-  const showPlan = useCallback(() => {
-    flushPendingLead()
-    setPhase('plano')
-    trackFunnel('plan_preview_viewed', null)
-  }, [])
+  }, [lead, showResult])
 
   const review = useCallback(() => {
     setStep(0)
@@ -298,7 +283,6 @@ export function useQuiz(): QuizController {
     answers,
     intro,
     attribution,
-    started: hasStarted(answers),
     blocker,
     warning: attempted ? blocker : null,
     canAdvance: blocker === null,
@@ -311,12 +295,10 @@ export function useQuiz(): QuizController {
     toggleArea,
     toggleObstacle,
     toggleWeekday,
-    start,
     next,
     back,
     setLead,
     submitLead,
-    showPlan,
     review,
     activate,
   }

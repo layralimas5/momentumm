@@ -1,5 +1,5 @@
 import { FUNNEL_STAGES } from '@/domain/analytics/funnel-events'
-import { QUIZ_QUESTION_COUNT, QUIZ_INTROS, isQuizTheme } from '@/domain/entities/quiz'
+import { QUIZ_INTROS, QUIZ_SCREEN_COUNT, QUIZ_SCREEN_LABELS, isQuizTheme, quizScreenAt } from '@/domain/entities/quiz'
 import { useSearchParams } from 'react-router-dom'
 import { container } from '@/infrastructure/container'
 import { Select } from '@/presentation/components/ui/Field'
@@ -124,7 +124,10 @@ export function AdminFunnelPage() {
 function stepLabel(key: string): string {
   const step = Number(key)
   if (!Number.isFinite(step) || step < 0) return 'Sem passo'
-  return step >= QUIZ_QUESTION_COUNT ? 'Depois das perguntas' : `Pergunta ${step + 1}`
+  // Desde 01/10/2026 o passo é a tela do quiz (10 telas); antes eram 7 perguntas em outra ordem.
+  return step >= QUIZ_SCREEN_COUNT
+    ? 'Depois das perguntas'
+    : `${step + 1}. ${QUIZ_SCREEN_LABELS[quizScreenAt(step)]}`
 }
 
 function themeLabel(key: string): string {
