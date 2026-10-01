@@ -1,5 +1,7 @@
 {
   "imports": {
-    "nodemailer": "npm:nodemailer@6.9.16"
+    "nodemailer": "npm:nodemailer@6.9.16",
+    "zod": "npm:zod@3.25.76",
+    "zod/v4": "npm:zod@3.25.76/v4"
   }
 }
