@@ -1,5 +1,5 @@
 import { DomainError } from '@/shared/errors'
-import { dayKeyOf, dayKeyToDate, type DayKey } from './day'
+import { addDays as addDaysKey, dayKeyOf, dayKeyToDate, type DayKey } from './day'
 import type { DayPart } from './habit'
 
 /**
@@ -524,4 +524,52 @@ export function routineRecurrenceLabel(item: Pick<RoutineItem, 'recurrence' | 'w
   if (dias.length === 0) return ROUTINE_RECURRENCE_LABELS[item.recurrence]
   if (dias.length === 1) return `Toda ${dias[0]}`
   return dias.join(', ')
+}
+
+/**
+ * O dia da rotina como linha do tempo.
+ *
+ * O que tem horário vai em ordem e, no dia de hoje, ganha o marcador de
+ * "agora" antes do primeiro item que ainda não chegou. O que não tem horário
+ * não finge ter: vai pro grupo "Em algum momento" (§13), em vez de cair no
+ * fim da lista como se fosse o último compromisso da noite.
+ */
+export interface RoutineTimeline {
+  readonly timed: readonly RoutineDayState[]
+  /** Onde entra o "agora" em `timed`. `null` fora de hoje. `timed.length` quando tudo já passou. */
+  readonly nowIndex: number | null
+  readonly untimed: readonly RoutineDayState[]
+}
+
+export function routineTimeline(states: readonly RoutineDayState[], nowClock: string | null): RoutineTimeline {
+  const timed = states.filter((state) => state.time !== null)
+  const untimed = states.filter((state) => state.time === null)
+  if (nowClock === null) return { timed, nowIndex: null, untimed }
+  const next = timed.findIndex((state) => (state.time ?? '') > nowClock)
+  return { timed, nowIndex: next === -1 ? timed.length : next, untimed }
+}
+
+/**
+ * Quanto da Rotina aconteceu de `from` a `to`, inclusive.
+ *
+ * `total` é o que a rotina pôs em cada dia (com o reagendado contando no
+ * destino), menos o pulado: pular é decisão, e a mesma régua vale pra ação
+ * cancelada no Progresso. `done` é o que foi feito.
+ */
+export function routineRateBetween(
+  items: readonly RoutineItem[],
+  occurrences: readonly RoutineOccurrence[],
+  from: DayKey,
+  to: DayKey,
+): { readonly done: number; readonly total: number } {
+  let done = 0
+  let total = 0
+  for (let day = from; day <= to; day = addDaysKey(day, 1)) {
+    for (const state of routineDayStates(items, occurrences, day)) {
+      if (state.status === 'pulado') continue
+      total += 1
+      if (isRoutineDone(state.status)) done += 1
+    }
+  }
+  return { done, total }
 }

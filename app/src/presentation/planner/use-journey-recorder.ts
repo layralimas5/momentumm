@@ -3,6 +3,7 @@ import { totalMinutes } from '@/domain/entities/activity'
 import { countsAsDone } from '@/domain/entities/habit'
 import { eventsToRecord, type RecorderInput } from '@/domain/entities/journey-recorder'
 import { reachedMilestones, type MilestoneTotals } from '@/domain/entities/milestone'
+import { isRoutineDone, routineDayStates } from '@/domain/entities/routine-item'
 import { usePlanner } from './use-planner'
 import type { DashboardView } from './use-dashboard'
 
@@ -20,7 +21,8 @@ import type { DashboardView } from './use-dashboard'
  */
 export function useJourneyRecorder(view: DashboardView): void {
   const planner = usePlanner()
-  const { today, habitLogs, activities, streak, journeyEvents, objectives } = planner
+  const { today, habitLogs, activities, streak, journeyEvents, objectives, routineItems, routineOccurrences } =
+    planner
   // Só a função, não o contexto inteiro: o valor do planner muda a cada
   // escrita, e depender dele faria o efeito reavaliar em toda tecla apertada.
   const { recordJourneyEvent } = planner
@@ -37,6 +39,16 @@ export function useJourneyRecorder(view: DashboardView): void {
     [habitLogs, activities, streak, objectives],
   )
 
+  const routine = useMemo(
+    () =>
+      routineDayStates(routineItems, routineOccurrences, today).map((state) => ({
+        id: state.item.id,
+        title: state.item.title,
+        done: isRoutineDone(state.status),
+      })),
+    [routineItems, routineOccurrences, today],
+  )
+
   const input = useMemo<RecorderInput>(
     () => ({
       today,
@@ -48,6 +60,7 @@ export function useJourneyRecorder(view: DashboardView): void {
         dayPart: state.habit.dayPart,
         done: countsAsDone(state.status),
       })),
+      routine,
       dayComplete: view.dayComplete,
       dayDone: view.dayProgress.done,
       dayTotal: view.dayProgress.total,
@@ -63,7 +76,7 @@ export function useJourneyRecorder(view: DashboardView): void {
       milestones: reachedMilestones(totals),
       existing: journeyEvents,
     }),
-    [today, view, totals, journeyEvents],
+    [today, view, totals, journeyEvents, routine],
   )
 
   useEffect(() => {

@@ -15,8 +15,8 @@ Branch de trabalho: `feat/nova-navegacao-e-rotina`, já mergeada na `main`
 | 1. Auditoria | **Feito e conferido.** 66 migrations, 63 tabelas, 40 páginas |
 | 2. Navegação | **Feito e conferido.** Em produção |
 | 3. Hoje | **Feito e conferido**, menos o teste da §81 na composição exata |
-| 4. Rotina | **Validado em 30/09: parcial.** Lista, não timeline; ver "Lacunas das fases 4 e 5" |
-| 5. Integração | **Parcial.** Falta plano → rotina e a rotina no progresso do objetivo; ver "Lacunas das fases 4 e 5" |
+| 4. Rotina | **Feito em 01/10.** Linha do tempo com "agora", grupo "Em algum momento", check animado, menu único por linha |
+| 5. Integração | **Feito em 01/10**, menos o teste de integração ponta a ponta (item 6 das lacunas) |
 | 6. Reagendamento | **Feito e em produção desde 29/09** |
 | 7. Modelo social + RLS | **Escrito e provado, NÃO aplicado em produção.** Migrations 0067 e 0068 |
 | 8. Perfis e follows | **Escrito.** Perfil público/fechado, pedido com aprovação, listas |
@@ -80,16 +80,15 @@ O que falta, em ordem:
    em cada etapa (`StagePanel`) e no objetivo abre o formulário da Rotina com
    título e objetivo preenchidos e "dias específicos" marcado
    (`routine-prefill.ts`).
-2. **Rotina no progresso do objetivo: parcial.** O objetivo ganhou o painel
-   "Na rotina" (`ObjectiveRoutinePanel`, `routineExecutionFor`) com quantas
-   vezes cada item foi feito em 4 semanas. Falta: `ProgressPage` e o evento
-   "Rotina concluída" (`journey-recorder.ts`), que ainda só olha hábito.
-3. **Timeline de verdade.** Hoje é lista: sem trilho nem marcador de agora,
+2. ~~**Rotina fora do progresso do objetivo.**~~ **Feito em 01/10:** painel
+   "Na rotina" no objetivo, "Rotina" nos últimos 7 dias do Progresso
+   (`routineRateBetween`) e "Rotina concluída" também pros itens de rotina.
+3. ~~**Timeline de verdade.**~~ **Feito em 01/10** (`routineTimeline`). Hoje é lista: sem trilho nem marcador de agora,
    check sem animação (o Hoje já anima), sem grupo "Em algum momento" (o
    `dayPart` é ignorado na Rotina).
-4. **Peso por linha.** Editar e apagar em toda linha; objetivo na única cor
+4. ~~**Peso por linha.**~~ **Feito em 01/10.** Editar e apagar em toda linha; objetivo na única cor
    forte.
-5. **Acertos pequenos.** "Pulado hoje" aparece em dia que não é hoje; em dia
+5. ~~**Acertos pequenos.**~~ **Feito em 01/10.** "Pulado hoje" aparece em dia que não é hoje; em dia
    passado o check trava mas editar/apagar não.
 6. **Teste de integração do caminho da §16**, no demo ou no PGlite.
 

@@ -166,7 +166,7 @@ export function ProgressPage() {
               hint={progress.week.conclusion}
             />
             <WeekChart series={progress.series} />
-            <div className="mt-4 grid grid-cols-3 gap-3 border-t border-line pt-4">
+            <div className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-4 sm:grid-cols-4">
               <Stat
                 label="Dias ativos"
                 value={`${progress.last7.activeDays}/7`}
@@ -185,6 +185,11 @@ export function ProgressPage() {
                 label="Ações"
                 value={rateText(progress.last7.tasks)}
                 hint={compareText(progress.last7.tasks)}
+              />
+              <Stat
+                label="Rotina"
+                value={rateText(progress.last7.routine)}
+                hint={compareText(progress.last7.routine)}
               />
             </div>
           </Panel>

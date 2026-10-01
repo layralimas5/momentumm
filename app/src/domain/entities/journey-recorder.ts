@@ -33,6 +33,11 @@ export interface RecorderInput {
   readonly momentum: { readonly value: number; readonly delta: number }
   /** Hábitos programados pra hoje, com o estado de cada um. */
   readonly habits: readonly RecorderHabit[]
+  /**
+   * Os itens da Rotina de hoje (acordar, treino, almoço). Opcional pra quem
+   * monta a entrada sem rotina, como os testes antigos: ausente é "nenhum".
+   */
+  readonly routine?: readonly RecorderRoutineItem[]
   readonly dayComplete: boolean
   readonly dayDone: number
   readonly dayTotal: number
@@ -52,6 +57,12 @@ export interface RecorderHabit {
   readonly name: string
   readonly axis: ActivityTypeSlug
   readonly dayPart: string
+  readonly done: boolean
+}
+
+export interface RecorderRoutineItem {
+  readonly id: string
+  readonly title: string
   readonly done: boolean
 }
 
@@ -123,6 +134,32 @@ export function eventsToRecord(input: RecorderInput): RecordableEvent[] {
         metadata: {
           items: group.map((habit) => ({ label: habit.name, done: true })),
           habitsDone: group.length,
+        },
+        ...momentumOf(input),
+      },
+      key('routine_completed', sourceId),
+      true,
+    )
+  }
+
+  /*
+    A Rotina do dia inteira feita também é "Rotina concluída". Antes só os
+    hábitos contavam, e quem fechava acordar, treino e almoço pela aba Rotina
+    não via isso em lugar nenhum da jornada. Mesmo piso de dois itens, pelo
+    mesmo motivo dos hábitos, e uma linha por dia, separada das dos hábitos.
+  */
+  const routine = input.routine ?? []
+  if (routine.length >= 2 && routine.every((item) => item.done)) {
+    const sourceId = `${input.today}:rotina`
+    push(
+      {
+        type: 'routine_completed',
+        sourceType: 'routine',
+        sourceId,
+        title: 'Rotina do dia',
+        completionPercentage: 1,
+        metadata: {
+          items: routine.map((item) => ({ label: item.title, done: true })),
         },
         ...momentumOf(input),
       },

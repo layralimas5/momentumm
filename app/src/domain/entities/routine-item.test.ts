@@ -5,6 +5,8 @@ import {
   isRoutineScheduledOn,
   planOccurrenceMove,
   routineExecutionFor,
+  routineTimeline,
+  routineRateBetween,
   routineDayStates,
   routineStatusOf,
   routineWeek,
@@ -371,5 +373,47 @@ describe('routineExecutionFor', () => {
       occurrence('t', '2026-09-29'),
     ]
     expect(routineExecutionFor('correr', [treino], logs, SEGUNDA, TERCA)[0]?.done).toBe(1)
+  })
+})
+
+describe('routineTimeline', () => {
+  const acordar = item('acordar', { timeOfDay: '07:00' })
+  const treino = item('treino', { timeOfDay: '18:30' })
+  const ler = item('ler')
+  const states = routineDayStates([acordar, treino, ler], [], SEGUNDA)
+
+  it('separa o que tem horário do que fica pra algum momento', () => {
+    const timeline = routineTimeline(states, null)
+    expect(timeline.timed.map((s) => s.item.id)).toEqual(['acordar', 'treino'])
+    expect(timeline.untimed.map((s) => s.item.id)).toEqual(['ler'])
+    expect(timeline.nowIndex).toBeNull()
+  })
+
+  it('o agora entra antes do primeiro item que ainda não chegou', () => {
+    expect(routineTimeline(states, '12:00').nowIndex).toBe(1)
+    expect(routineTimeline(states, '06:00').nowIndex).toBe(0)
+  })
+
+  it('depois do último horário, o agora vai pro fim', () => {
+    expect(routineTimeline(states, '23:00').nowIndex).toBe(2)
+  })
+})
+
+describe('routineRateBetween', () => {
+  const acordar = item('acordar')
+  const treino = item('treino')
+
+  it('conta o feito sobre o que a rotina pôs nos dias, sem o pulado', () => {
+    const logs = [
+      occurrence('acordar', '2026-09-28'),
+      occurrence('treino', '2026-09-28', { status: 'pulado' }),
+      occurrence('acordar', '2026-09-29'),
+    ]
+    // Dois dias × dois itens = 4, menos 1 pulado = 3. Feitos: 2.
+    expect(routineRateBetween([acordar, treino], logs, SEGUNDA, TERCA)).toEqual({ done: 2, total: 3 })
+  })
+
+  it('sem rotina, sem total', () => {
+    expect(routineRateBetween([], [], SEGUNDA, QUARTA)).toEqual({ done: 0, total: 0 })
   })
 })

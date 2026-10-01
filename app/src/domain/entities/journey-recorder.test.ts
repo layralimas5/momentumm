@@ -226,3 +226,28 @@ describe('regras de marco', () => {
     expect(maxed.some((milestone) => milestone.id.startsWith('objetivos:'))).toBe(false)
   })
 })
+
+describe('rotina do dia', () => {
+  const item = (id: string, done: boolean) => ({ id, title: `Item ${id}`, done })
+
+  it('a Rotina inteira feita vira "Rotina concluída"', () => {
+    const events = eventsToRecord(input({ routine: [item('acordar', true), item('treino', true)] }))
+    const routine = events.filter((event) => event.type === 'routine_completed')
+    expect(routine).toHaveLength(1)
+    expect(routine[0]?.sourceId).toBe(`${today}:rotina`)
+    expect(routine[0]?.metadata?.items).toEqual([
+      { label: 'Item acordar', done: true },
+      { label: 'Item treino', done: true },
+    ])
+  })
+
+  it('faltando um item, ainda não é rotina concluída', () => {
+    const events = eventsToRecord(input({ routine: [item('acordar', true), item('treino', false)] }))
+    expect(events.some((event) => event.type === 'routine_completed')).toBe(false)
+  })
+
+  it('um item só é item, não rotina', () => {
+    const events = eventsToRecord(input({ routine: [item('acordar', true)] }))
+    expect(events.some((event) => event.type === 'routine_completed')).toBe(false)
+  })
+})
