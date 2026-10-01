@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { activityType } from '@/domain/entities/activity-type'
 import { formatDayLabel } from '@/domain/entities/day'
 import type { PlanProgress, StageProgress } from '@/domain/entities/plan-progress'
@@ -20,6 +21,7 @@ import { SortableList } from '@/presentation/components/ui/SortableList'
 import { IconButton, Panel, PanelHeader, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
 import { usePlanner } from '@/presentation/planner/use-planner'
+import { routinePrefillPath } from '@/presentation/routine/routine-prefill'
 import { cn } from '@/shared/lib/cn'
 import { moveItem } from '@/shared/lib/move-item'
 import { StageDialog } from './StageDialog'
@@ -228,6 +230,7 @@ function StageBlock({
   readonly onAddTask: () => void
 }) {
   const planner = usePlanner()
+  const navigate = useNavigate()
   // Aberta por padrão só a etapa atual: o resto é contexto, não trabalho de hoje.
   const [open, setOpen] = useState(isCurrent)
 
@@ -323,6 +326,11 @@ function StageBlock({
 
         <div className="flex shrink-0 items-center gap-1 self-end sm:self-start">
           <IconButton icon="mais" label={`Nova ação em ${stage.title}`} onClick={onAddTask} />
+          <IconButton
+            icon="relogio"
+            label={`Levar ${stage.title} pra rotina`}
+            onClick={() => navigate(routinePrefillPath({ objectiveId: stage.objectiveId, title: stage.title }))}
+          />
           <IconButton icon="editar" label={`Editar a etapa ${stage.title}`} onClick={onEdit} />
           <IconButton icon="lixeira" label={`Apagar a etapa ${stage.title}`} onClick={onRemove} />
         </div>

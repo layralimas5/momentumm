@@ -4,6 +4,7 @@ import {
   createRoutineItem,
   isRoutineScheduledOn,
   planOccurrenceMove,
+  routineExecutionFor,
   routineDayStates,
   routineStatusOf,
   routineWeek,
@@ -341,5 +342,34 @@ describe('planOccurrenceMove', () => {
 
   it('recusa horário malformado', () => {
     expect(() => planOccurrenceMove({ ...base, to: QUARTA, time: '25:00' })).toThrow(DomainError)
+  })
+})
+
+describe('routineExecutionFor', () => {
+  const treino = item('t', { objectiveId: 'correr', timeOfDay: '18:30', recurrence: 'dias-semana', weekdays: [1, 3, 5] })
+  const alongar = item('a', { objectiveId: 'correr' })
+  const outro = item('x', { objectiveId: 'ler' })
+
+  it('conta só o feito do objetivo, dentro da janela', () => {
+    const logs = [
+      occurrence('t', '2026-09-28'),
+      occurrence('t', '2026-09-30'),
+      occurrence('t', '2026-09-27', { status: 'pulado' }),
+      occurrence('x', '2026-09-28'),
+      occurrence('t', '2026-10-03'),
+    ]
+    const result = routineExecutionFor('correr', [treino, alongar, outro], logs, SEGUNDA, QUARTA)
+    expect(result.map((row) => [row.itemId, row.done])).toEqual([
+      ['t', 2],
+      ['a', 0],
+    ])
+  })
+
+  it('reagendado conta no dia em que foi feito', () => {
+    const logs = [
+      occurrence('t', '2026-09-28', { status: 'reagendado', movedToDay: '2026-09-29' }),
+      occurrence('t', '2026-09-29'),
+    ]
+    expect(routineExecutionFor('correr', [treino], logs, SEGUNDA, TERCA)[0]?.done).toBe(1)
   })
 })

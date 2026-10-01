@@ -14,6 +14,7 @@ import { Icon } from '@/presentation/components/ui/Icon'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
+import type { RoutinePrefill } from './routine-prefill'
 
 /**
  * Criar e editar um item da rotina.
@@ -58,6 +59,7 @@ export function RoutineItemDialog({
   editing,
   presetDay,
   presetRecurrence,
+  presetFromPlan = null,
   onClose,
 }: {
   readonly open: boolean
@@ -73,6 +75,12 @@ export function RoutineItemDialog({
    * desfazer a escolha que acabou de fazer.
    */
   readonly presetRecurrence: RoutineRecurrence | null
+  /**
+   * O item que nasce de uma etapa do plano: título e objetivo já vêm, e a
+   * recorrência abre em "dias da semana", que é o "3x por semana" do plano
+   * virando seg, qua e sex. Os dias ficam pra pessoa marcar.
+   */
+  readonly presetFromPlan?: RoutinePrefill | null
   readonly onClose: () => void
 }) {
   const planner = usePlanner()
@@ -100,22 +108,22 @@ export function RoutineItemDialog({
 
   useEffect(() => {
     if (!open) return
-    setTitle(editing?.title ?? '')
+    setTitle(editing?.title ?? presetFromPlan?.title ?? '')
     setTime(editing?.timeOfDay ?? '')
-    setRecurrence(editing?.recurrence ?? presetRecurrence ?? 'diario')
+    setRecurrence(editing?.recurrence ?? presetRecurrence ?? (presetFromPlan ? 'dias-semana' : 'diario'))
     setWeekdays(editing?.weekdays ?? [])
     setDay(editing?.day ?? presetDay ?? planner.today)
     setDurationMin(editing?.durationMin ? String(editing.durationMin) : '')
     setCategory(editing?.category ?? '')
-    setObjectiveId(editing?.objectiveId ?? '')
+    setObjectiveId(editing?.objectiveId ?? presetFromPlan?.objectiveId ?? '')
     setReminderMin(editing?.reminderMin ?? null)
     setNote(editing?.note ?? '')
     // Editando, os detalhes abrem quando existe algum preenchido: fechá-los
     // esconderia o que a pessoa já escreveu.
     setDetails(
-      Boolean(editing?.durationMin || editing?.category || editing?.objectiveId || editing?.note),
+      Boolean(editing?.durationMin || editing?.category || editing?.objectiveId || editing?.note || presetFromPlan),
     )
-  }, [open, editing, presetRecurrence, presetDay, planner.today])
+  }, [open, editing, presetRecurrence, presetFromPlan, presetDay, planner.today])
 
   const objetivos = planner.objectives.filter(isRunning)
   const clean = title.trim()
