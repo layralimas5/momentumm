@@ -458,3 +458,70 @@ export function planOccurrenceMove(input: {
 
   return { kind: 'outro-dia', day: input.to, time: time && time !== input.ruleTime ? time : null }
 }
+
+/** O que a rotina fez por um objetivo numa janela de dias. */
+export interface RoutineExecution {
+  readonly itemId: string
+  readonly title: string
+  readonly timeOfDay: string | null
+  readonly recurrence: RoutineRecurrence
+  readonly weekdays: readonly number[]
+  readonly done: number
+}
+
+/**
+ * A rotina de um objetivo, com quantas vezes cada item foi feito de `from` a
+ * `to`, inclusive. É o PROGRESSO da §16: o treino de seg/qua/sex aparece no
+ * objetivo "Correr 5 km", não só como ponto no score.
+ *
+ * Conta a ocorrência pelo dia em que ela foi feita. Item reagendado conta no
+ * destino, que é onde a linha `feito` mora.
+ */
+export function routineExecutionFor(
+  objectiveId: string,
+  items: readonly RoutineItem[],
+  occurrences: readonly RoutineOccurrence[],
+  from: DayKey,
+  to: DayKey,
+): RoutineExecution[] {
+  return items
+    .filter((item) => item.objectiveId === objectiveId && item.archivedAt === null)
+    .map((item) => ({
+      itemId: item.id,
+      title: item.title,
+      timeOfDay: item.timeOfDay,
+      recurrence: item.recurrence,
+      weekdays: item.weekdays,
+      done: occurrences.filter(
+        (occurrence) =>
+          occurrence.itemId === item.id &&
+          occurrence.status === 'feito' &&
+          occurrence.day >= from &&
+          occurrence.day <= to,
+      ).length,
+    }))
+    .sort(byExecutionClock)
+}
+
+function byExecutionClock(a: RoutineExecution, b: RoutineExecution): number {
+  if (a.timeOfDay && b.timeOfDay) return a.timeOfDay.localeCompare(b.timeOfDay)
+  if (a.timeOfDay) return -1
+  if (b.timeOfDay) return 1
+  return a.title.localeCompare(b.title)
+}
+
+const WEEKDAY_SHORT_NAMES = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'] as const
+
+/**
+ * "seg, qua, sex" em vez de "Dias específicos".
+ *
+ * O rótulo genérico obriga a abrir o item pra saber em que dias ele cai, e a
+ * pergunta que a lista existe pra responder é justamente essa.
+ */
+export function routineRecurrenceLabel(item: Pick<RoutineItem, 'recurrence' | 'weekdays'>): string {
+  if (item.recurrence !== 'dias-semana') return ROUTINE_RECURRENCE_LABELS[item.recurrence]
+  const dias = item.weekdays.map((day) => WEEKDAY_SHORT_NAMES[day]).filter(Boolean)
+  if (dias.length === 0) return ROUTINE_RECURRENCE_LABELS[item.recurrence]
+  if (dias.length === 1) return `Toda ${dias[0]}`
+  return dias.join(', ')
+}

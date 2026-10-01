@@ -11,6 +11,7 @@ import { HabitGlyph, Icon } from '@/presentation/components/ui/Icon'
 import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { Panel, PanelHeader, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
 import { ObjectiveEditDialog } from '@/presentation/components/objective/ObjectiveEditDialog'
+import { ObjectiveRoutinePanel } from '@/presentation/components/objective/ObjectiveRoutinePanel'
 import { ForecastPanel } from '@/presentation/components/plan/ForecastPanel'
 import { StagePanel } from '@/presentation/components/plan/StagePanel'
 import { goalCompletedEvent, goalProgressEvent } from '@/domain/share/journey-event-builders'
@@ -216,6 +217,8 @@ export function ObjectiveDetailPage() {
 
         <div className="flex flex-col gap-5">
           <ForecastPanel view={view} />
+
+          <ObjectiveRoutinePanel objectiveId={objective.id} objectiveTitle={objective.title} />
 
           <Panel>
             <PanelHeader

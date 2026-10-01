@@ -76,12 +76,14 @@ de 27/09. O essencial das seções usadas:
 
 O que falta, em ordem:
 
-1. **Plano → rotina não existe.** `routine_items` não liga a etapa, e nada no
-   plano cria item de rotina. Ideia: "Levar pra rotina" na etapa/atividade.
-2. **Rotina fora do progresso do objetivo.** O score conta a ocorrência
-   feita (`momentum.ts`), mas `ObjectiveDetailPage` e `ProgressPage` não leem
-   a rotina, e o evento "Rotina concluída" (`journey-recorder.ts`) só olha
-   hábito.
+1. ~~**Plano → rotina não existe.**~~ **Feito em 01/10:** "Levar pra rotina"
+   em cada etapa (`StagePanel`) e no objetivo abre o formulário da Rotina com
+   título e objetivo preenchidos e "dias específicos" marcado
+   (`routine-prefill.ts`).
+2. **Rotina no progresso do objetivo: parcial.** O objetivo ganhou o painel
+   "Na rotina" (`ObjectiveRoutinePanel`, `routineExecutionFor`) com quantas
+   vezes cada item foi feito em 4 semanas. Falta: `ProgressPage` e o evento
+   "Rotina concluída" (`journey-recorder.ts`), que ainda só olha hábito.
 3. **Timeline de verdade.** Hoje é lista: sem trilho nem marcador de agora,
    check sem animação (o Hoje já anima), sem grupo "Em algum momento" (o
    `dayPart` é ignorado na Rotina).
