@@ -11,7 +11,7 @@ export const LEGAL_DOCUMENTS = ['termos', 'privacidade'] as const
 export type LegalDocument = (typeof LEGAL_DOCUMENTS)[number]
 
 export const LEGAL_VERSIONS: Readonly<Record<LegalDocument, string>> = {
-  termos: '2026-09-11',
+  termos: '2026-09-30',
   privacidade: '2026-09-23',
 }
 

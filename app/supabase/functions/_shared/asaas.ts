@@ -216,3 +216,18 @@ export function getPixQrCode(paymentId: string): Promise<AsaasPixQrCode> {
 export async function deleteSubscription(id: string): Promise<void> {
   await call<{ deleted: boolean }>('DELETE', `/subscriptions/${encodeURIComponent(id)}`)
 }
+
+/**
+ * Troca o valor da assinatura dali pra frente.
+ *
+ * É como a oferta de entrada vira preço de tabela: a primeira cobrança sai
+ * com o valor da oferta e, confirmado o pagamento, a assinatura sobe pro
+ * preço cheio. `updatePendingPayments` leva junto a cobrança seguinte que o
+ * Asaas já tenha gerado, senão ela sairia ainda com o valor da oferta.
+ */
+export function updateSubscriptionValue(id: string, value: number): Promise<AsaasSubscription> {
+  return call<AsaasSubscription>('PUT', `/subscriptions/${encodeURIComponent(id)}`, {
+    value,
+    updatePendingPayments: true,
+  })
+}

@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
+import { servedPrerendered } from '@/presentation/seo/prerender-snapshot'
 import { cn } from '@/shared/lib/cn'
+import { HeroBackdrop } from './HeroBackdrop'
 import { trackLanding } from './landing-analytics'
 import { CTA } from './site'
 import { useOffer } from './use-offer'
@@ -34,16 +36,24 @@ export function Hero() {
   const offer = useOffer()
   const lines = offer?.lines ?? DEFAULT_LINES
   const subtitle = offer?.subtitle ?? DEFAULT_SUBTITLE
+  // Sem entrada animada pra quem pediu menos movimento, nem quando o HTML
+  // pré-renderizado já mostrou o hero pronto.
+  const skipIntro = useReducedMotion() === true || servedPrerendered()
+  const intro = (delay: number, y = 0) =>
+    skipIntro
+      ? { initial: false as const }
+      : {
+          initial: { opacity: 0, y },
+          animate: { opacity: 1, y: 0 },
+          transition: { duration: 0.5, delay, ease: EASE },
+        }
   const reassurance = cta.signedIn
     ? 'Você já tem conta. O plano de hoje te espera.'
     : CTA.reassurance
 
   return (
-    <section id="home" className="relative overflow-hidden">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-40 left-1/2 size-[48rem] -translate-x-1/2 rounded-full bg-brand/15 blur-[120px]"
-      />
+    <section id="home" className="relative">
+      <HeroBackdrop />
 
       <div className="relative mx-auto max-w-6xl px-4 pb-12 pt-28 sm:px-8 sm:pt-36 lg:pb-20 xl:pt-40">
         <div className="mx-auto max-w-3xl text-center">
@@ -51,9 +61,7 @@ export function Hero() {
             {lines.map((line, index) => (
               <motion.span
                 key={line}
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.08, ease: EASE }}
+                {...intro(index * 0.08, 14)}
                 className={cn('block', index === lines.length - 1 && 'text-brand-hi')}
               >
                 {line}
@@ -62,18 +70,14 @@ export function Hero() {
           </h1>
 
           <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
+            {...intro(0.3)}
             className="mx-auto mt-6 max-w-[560px] text-pretty text-lg text-ink-muted"
           >
             {subtitle}
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
+            {...intro(0.4, 8)}
             className="mt-9 flex flex-col items-center justify-center gap-3"
           >
             <Link
@@ -91,9 +95,7 @@ export function Hero() {
 
           {/* A explicação do produto, agora como apoio: confirma a promessa sem disputar o título. */}
           <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
+            {...intro(0.6)}
             className="mt-8 text-pretty text-sm font-medium tracking-wide text-ink-muted sm:text-base"
           >
             Objetivo vira plano. Plano vira ação.{' '}

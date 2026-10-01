@@ -3,9 +3,34 @@
 // src/domain/billing/billing-plans.ts
 var BILLING_CYCLES = ["mensal", "anual"];
 var PRO_PRICES = {
-  mensal: { cycle: "mensal", amountCents: 3990, strikeCents: 7990, providerCycle: "MONTHLY", months: 1 },
-  anual: { cycle: "anual", amountCents: 12990, strikeCents: 47880, providerCycle: "YEARLY", months: 12 }
+  mensal: { cycle: "mensal", amountCents: 2490, strikeCents: 2490, providerCycle: "MONTHLY", months: 1 },
+  anual: { cycle: "anual", amountCents: 9990, strikeCents: 29880, providerCycle: "YEARLY", months: 12 }
 };
+var PRO_OFFER_TERMS = {
+  primeiro_mes: { offer: "primeiro_mes", cycle: "mensal", firstCents: 990 },
+  fundadores: { offer: "fundadores", cycle: "anual", firstCents: 6990 }
+};
+function quotePro(cycle, context) {
+  const renewalCents = PRO_PRICES[cycle].amountCents;
+  const offer = offerFor(cycle, context);
+  return {
+    cycle,
+    offer,
+    firstCents: offer ? PRO_OFFER_TERMS[offer].firstCents : renewalCents,
+    renewalCents
+  };
+}
+function offerFor(cycle, context) {
+  if (!context.firstSubscription) return null;
+  if (cycle === "mensal") return "primeiro_mes";
+  return context.foundersActive ? "fundadores" : null;
+}
+function offerOfCharge(cycle, amountCents) {
+  for (const terms of Object.values(PRO_OFFER_TERMS)) {
+    if (terms.cycle === cycle && terms.firstCents === amountCents) return terms.offer;
+  }
+  return null;
+}
 var PRO_PRODUCT_NAME = "Momentumm PRO";
 function isBillingCycle(value) {
   return typeof value === "string" && BILLING_CYCLES.includes(value);
@@ -20,6 +45,16 @@ function cycleFromProvider(providerCycle) {
     if (price.providerCycle === providerCycle) return price.cycle;
   }
   return null;
+}
+function cyclePeriod(cycle) {
+  return cycle === "anual" ? "ano" : "m\xEAs";
+}
+function quoteSentence(quote) {
+  const period = cyclePeriod(quote.cycle);
+  const renewal = `${formatBRL(quote.renewalCents)} por ${period}`;
+  if (quote.firstCents === quote.renewalCents) return `${renewal}.`;
+  const first = quote.cycle === "anual" ? "no primeiro ano" : "no primeiro m\xEAs";
+  return `${formatBRL(quote.firstCents)} ${first}, depois ${renewal}.`;
 }
 
 // src/domain/billing/asaas-events.ts
@@ -153,17 +188,22 @@ function checkDigit(numbers, length) {
 }
 export {
   BILLING_CYCLES,
+  PRO_OFFER_TERMS,
   PRO_PRICES,
   PRO_PRODUCT_NAME,
   asaasWebhookEventSchema,
   cycleFromProvider,
+  cyclePeriod,
   decideBillingEvent,
   formatBRL,
   intervalOfProviderSubscription,
   isBillingCycle,
   isValidCpf,
   normalizeCpf,
+  offerOfCharge,
   periodEndAfter,
+  quotePro,
+  quoteSentence,
   toCents,
   transitionFor
 };

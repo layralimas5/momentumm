@@ -1,12 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { trackFunnelIfLinked } from '@/infrastructure/analytics/funnel'
 import { Link, useSearchParams } from 'react-router-dom'
-import { formatBRL, isBillingCycle, monthlyEquivalentCents, PRO_PRICES, type BillingCycle } from '@/domain/billing/billing-plans'
+import {
+  cyclePeriod,
+  formatBRL,
+  isBillingCycle,
+  monthlyEquivalentCents,
+  quoteSentence,
+  type BillingCycle,
+  type ProOffer,
+  type ProQuote,
+} from '@/domain/billing/billing-plans'
 import type { PixCharge, PixCustomer } from '@/domain/billing/billing-service'
-import { isWindingDown, SUBSCRIPTION_STATUS_LABELS, type Subscription } from '@/domain/billing/subscription'
+import {
+  isWindingDown,
+  SUBSCRIPTION_STATUS_LABELS,
+  subscriptionBilling,
+  type Subscription,
+} from '@/domain/billing/subscription'
 import { planAccessOf, trialDaysLeft, type PlanTrial } from '@/domain/billing/trial'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
+import { useProQuotes } from '@/presentation/billing/use-pro-quotes'
 import { CycleToggle } from '@/presentation/components/landing/CycleToggle'
 import { Button, buttonClass } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
@@ -55,7 +70,7 @@ export function SubscriptionPage() {
   const returned = readReturnStatus(params.get('assinatura'))
   const requestedCycle = params.get('ciclo')
 
-  const [cycle, setCycle] = useState<BillingCycle>(isBillingCycle(requestedCycle) ? requestedCycle : 'anual')
+  const [cycle, setCycle] = useState<BillingCycle>(isBillingCycle(requestedCycle) ? requestedCycle : 'mensal')
   const [subscription, setSubscription] = useState<Subscription | null | 'loading'>('loading')
   const [loadError, setLoadError] = useState<string | null>(null)
 
@@ -72,6 +87,9 @@ export function SubscriptionPage() {
   useEffect(() => {
     void load()
   }, [load])
+
+  // Sem nenhuma assinatura, nem cancelada: é a primeira, e o mensal entra pela oferta.
+  const { quotes } = useProQuotes(subscription === null)
 
   const [method, setMethod] = useState<PaymentMethod | null>(null)
   const [pixCharge, setPixCharge] = useState<PixCharge | null>(null)
@@ -165,7 +183,7 @@ export function SubscriptionPage() {
       ) : null}
 
       {!container.billing.available ? (
-        <Offer cycle={cycle} onCycleChange={setCycle} demo />
+        <Offer quote={quotes[cycle]} foundersActive={quotes.anual.offer === 'fundadores'} onCycleChange={setCycle} demo />
       ) : hasPaidPro && subscription ? (
         <CurrentSubscription subscription={subscription} onChanged={() => void load()} />
       ) : access === 'courtesy' ? (
@@ -174,7 +192,8 @@ export function SubscriptionPage() {
         </Panel>
       ) : (
         <Offer
-          cycle={cycle}
+          quote={quotes[cycle]}
+          foundersActive={quotes.anual.offer === 'fundadores'}
           onCycleChange={setCycle}
           method={method}
           onMethodChange={setMethod}
@@ -226,7 +245,8 @@ function TrialNote({ trial }: { readonly trial: PlanTrial }) {
  * já nasceu com aquele valor.
  */
 function Offer({
-  cycle,
+  quote,
+  foundersActive,
   onCycleChange,
   method = null,
   onMethodChange,
@@ -239,7 +259,9 @@ function Offer({
   error = null,
   demo = false,
 }: {
-  readonly cycle: BillingCycle
+  readonly quote: ProQuote
+  /** O anual desta pessoa está na campanha Fundadores. */
+  readonly foundersActive: boolean
   readonly onCycleChange: (cycle: BillingCycle) => void
   readonly method?: PaymentMethod | null
   readonly onMethodChange?: (method: PaymentMethod | null) => void
@@ -252,8 +274,7 @@ function Offer({
   readonly error?: string | null
   readonly demo?: boolean
 }) {
-  const price = PRO_PRICES[cycle]
-  const perMonth = monthlyEquivalentCents(cycle)
+  const { cycle } = quote
   const cycleLocked = pixCharge !== null
 
   return (
@@ -264,22 +285,23 @@ function Offer({
             <Icon name="raio" className="size-3.5" />
             PRO
           </p>
-          {cycleLocked ? null : <CycleToggle value={cycle} onChange={onCycleChange} />}
+          {cycleLocked ? null : (
+            <CycleToggle
+              value={cycle}
+              onChange={onCycleChange}
+              {...(foundersActive ? { annualHint: 'Fundadores' } : {})}
+            />
+          )}
         </div>
 
-        <div aria-live="polite">
-          <p className="flex flex-wrap items-baseline gap-x-1.5">
-            <span className="tabular text-4xl font-semibold text-ink">{formatBRL(price.amountCents)}</span>
-            <span className="text-sm text-ink-muted">{cycle === 'anual' ? '/ano' : '/mês'}</span>
-            <span className="sr-only">, de</span>
-            <s className="tabular ml-1 text-sm text-ink-faint">{formatBRL(price.strikeCents)}</s>
-          </p>
-          <p className="tabular mt-1 text-sm text-ink-muted">
-            {cycle === 'anual'
-              ? `Equivale a ${formatBRL(perMonth)} por mês, cobrado uma vez por ano.`
-              : 'Cobrado todo mês. Cancela quando quiser.'}
+        <div>
+          <h2 className="text-xl font-semibold text-balance text-ink">Continue avançando com o Momentumm PRO</h2>
+          <p className="mt-1 text-sm text-pretty text-ink-muted">
+            Transforme suas metas em ações, acompanhe sua evolução e mantenha sua constância.
           </p>
         </div>
+
+        <QuotePrice quote={quote} />
 
         <ul className="grid gap-2 sm:grid-cols-2">
           {PRO_BENEFITS.map((benefit) => (
@@ -306,11 +328,11 @@ function Offer({
             </Link>
           </div>
         ) : pixCharge ? (
-          <PixChargePanel charge={pixCharge} amountCents={price.amountCents} state={pixState} />
+          <PixChargePanel charge={pixCharge} amountCents={pixCharge.amountCents ?? quote.firstCents} state={pixState} />
         ) : method === 'pix' ? (
           <PixCustomerForm
             initialName={customerName}
-            submitLabel={`Gerar Pix de ${formatBRL(price.amountCents)}`}
+            submitLabel={`Gerar Pix de ${formatBRL(quote.firstCents)}`}
             loading={loading}
             error={error}
             onSubmit={(customer) => onPix?.(customer)}
@@ -320,7 +342,7 @@ function Offer({
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Button size="lg" loading={loading} onClick={onCardCheckout} className="w-full sm:w-fit">
               <Icon name="raio" className="size-4" />
-              Assinar com cartão
+              {cycle === 'anual' ? 'Escolher anual no cartão' : 'Começar com PRO no cartão'}
             </Button>
             <Button
               size="lg"
@@ -333,6 +355,10 @@ function Offer({
             </Button>
           </div>
         )}
+
+        <p className="text-sm text-ink">
+          <span className="font-medium">Antes de pagar:</span> {quoteSentence(quote)}
+        </p>
 
         <p className="text-xs text-ink-faint">
           {pixCharge
@@ -359,6 +385,61 @@ function Offer({
   )
 }
 
+const OFFER_LABELS: Readonly<Record<ProOffer, string>> = {
+  primeiro_mes: 'primeiro mês promocional',
+  fundadores: 'Oferta Fundadores',
+}
+
+/**
+ * O preço da oferta, com a renovação sempre na mesma vista.
+ *
+ * O anual é o que a tela quer que a pessoa escolha, e ele diz isso com um
+ * selo só. Nada de contador, nada de "últimas vagas".
+ */
+function QuotePrice({ quote }: { readonly quote: ProQuote }) {
+  const period = cyclePeriod(quote.cycle)
+  const founders = quote.offer === 'fundadores'
+  const intro = quote.offer === 'primeiro_mes'
+
+  return (
+    <div aria-live="polite">
+      {quote.cycle === 'anual' ? (
+        <p className="mb-2 inline-flex rounded-full bg-positive/15 px-2.5 py-1 text-xs font-medium text-positive">
+          {founders ? 'Oferta Fundadores' : 'Melhor custo-benefício'}
+        </p>
+      ) : (
+        <p className="mb-2 inline-flex rounded-full bg-brand px-2.5 py-1 text-xs font-medium text-white">Recomendado</p>
+      )}
+      <p className="flex flex-wrap items-baseline gap-x-1.5">
+        {founders ? (
+          <>
+            <s className="tabular text-lg text-ink-faint">{formatBRL(quote.renewalCents)}</s>
+            <span className="sr-only">, agora </span>
+          </>
+        ) : null}
+        <span className="tabular text-4xl font-semibold text-ink">{formatBRL(quote.firstCents)}</span>
+        <span className="text-sm text-ink-muted">
+          {founders ? 'no primeiro ano' : intro ? 'no primeiro mês' : `/${period}`}
+        </span>
+      </p>
+      <p className="tabular mt-1 text-sm text-ink-muted">
+        {founders
+          ? `Depois, ${formatBRL(quote.renewalCents)}/ano, pelo preço anual vigente.`
+          : intro
+            ? `Depois, ${formatBRL(quote.renewalCents)}/mês. Cancela quando quiser.`
+            : quote.cycle === 'anual'
+              ? `Equivale a ${formatBRL(monthlyEquivalentCents('anual', quote.firstCents))} por mês, cobrado uma vez por ano.`
+              : 'Cobrado todo mês. Cancela quando quiser.'}
+      </p>
+      {founders ? (
+        <p className="mt-2 text-sm text-ink-muted">
+          Entre agora e aproveite a condição especial dos primeiros usuários do Momentumm.
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
 function CurrentSubscription({
   subscription,
   onChanged,
@@ -368,6 +449,9 @@ function CurrentSubscription({
 }) {
   const windingDown = isWindingDown(subscription)
   const periodEnd = subscription.currentPeriodEnd
+  const billing = subscriptionBilling(subscription)
+  const period = cyclePeriod(subscription.interval)
+  const offerSpan = subscription.interval === 'anual' ? 'no primeiro ano' : 'no primeiro mês'
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
@@ -389,19 +473,54 @@ function CurrentSubscription({
 
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
           <div>
-            <dt className="text-ink-faint">Valor</dt>
-            <dd className="tabular text-ink">
-              {formatBRL(subscription.amountCents)} por {subscription.interval === 'anual' ? 'ano' : 'mês'}
+            <dt className="text-ink-faint">Plano atual</dt>
+            <dd className="text-ink">
+              PRO {subscription.interval}
+              {billing.inOffer && subscription.offer ? `, ${OFFER_LABELS[subscription.offer]}` : ''}
             </dd>
           </div>
           <div>
-            <dt className="text-ink-faint">{windingDown ? 'PRO até' : 'Próxima renovação'}</dt>
-            <dd className="text-ink">{periodEnd ? formatDate(periodEnd) : 'a confirmar'}</dd>
+            <dt className="text-ink-faint">Valor atual</dt>
+            <dd className="tabular text-ink">
+              {formatBRL(billing.currentCents)} {billing.inOffer ? offerSpan : `por ${period}`}
+            </dd>
           </div>
+          {billing.nextCharge ? (
+            <>
+              <div>
+                <dt className="text-ink-faint">Próxima cobrança</dt>
+                <dd className="tabular text-ink">
+                  {formatBRL(billing.nextCharge.amountCents)} em {formatDate(billing.nextCharge.at)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-ink-faint">Renovação</dt>
+                <dd className="tabular text-ink">
+                  {formatBRL(billing.nextCharge.amountCents)} por {period}
+                </dd>
+              </div>
+            </>
+          ) : (
+            <div>
+              <dt className="text-ink-faint">{windingDown ? 'PRO até' : 'Próxima cobrança'}</dt>
+              <dd className="text-ink">
+                {windingDown && periodEnd ? `${formatDate(periodEnd)}, sem nova cobrança` : 'a confirmar'}
+              </dd>
+            </div>
+          )}
           <div>
             <dt className="text-ink-faint">Assinante desde</dt>
             <dd className="text-ink">{formatDate(subscription.startedAt)}</dd>
           </div>
+          {billing.inOffer && billing.nextCharge ? (
+            <div className="sm:col-span-2">
+              <dt className="sr-only">Sobre a renovação</dt>
+              <dd className="text-ink-muted">
+                A condição de entrada vale só {offerSpan}. A partir de {formatDate(billing.nextCharge.at)}, o valor
+                passa a ser {formatBRL(billing.nextCharge.amountCents)} por {period}.
+              </dd>
+            </div>
+          ) : null}
           {subscription.status === 'inadimplente' ? (
             <div className="sm:col-span-2">
               <dt className="sr-only">Aviso</dt>

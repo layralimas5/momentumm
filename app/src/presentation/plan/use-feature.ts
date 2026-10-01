@@ -9,7 +9,16 @@ import { container } from '@/infrastructure/container'
  * aceita qualquer chave em `features` (é um `record<string, boolean>`), então
  * `useFeature('juntoss')` responderia `false` pra sempre, calado.
  */
-export type FeatureKey = 'juntos' | 'ai' | 'share' | 'circle' | 'challenges' | 'recovery' | 'adaptiveDay'
+export type FeatureKey =
+  | 'juntos'
+  | 'ai'
+  | 'share'
+  | 'circle'
+  | 'challenges'
+  | 'recovery'
+  | 'adaptiveDay'
+  /** A campanha Fundadores do anual. É comercial, não visual: no demo só liga com `?oferta=fundadores`. */
+  | 'foundersOffer'
 
 /**
  * Uma leitura por carga de página, compartilhada.

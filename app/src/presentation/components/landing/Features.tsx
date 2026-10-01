@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { cn } from '@/shared/lib/cn'
+import { AppTourVideo } from './AppTourVideo'
 import { PhoneMockup } from './PhoneMockup'
 import { Reveal } from './Reveal'
 import { Section, SectionHeading } from './Section'
@@ -7,10 +9,10 @@ import { Section, SectionHeading } from './Section'
 /**
  * O que o app faz, numa seção só.
  *
- * A tela Hoje no centro é uma captura real do app (`/telas/hoje.webp`), não
- * um desenho: quando o front mudar, basta trocar o arquivo. Os recursos ficam
- * três de cada lado no desktop e embaixo do celular no resto, sempre
- * centralizados.
+ * No centro, um vídeo curto do app de verdade (`AppTourVideo`): do quiz ao
+ * plano, do plano ao dia, e do dia pro Círculo. Os recursos ficam três de
+ * cada lado no desktop e embaixo do celular no resto, sempre centralizados,
+ * flutuando devagar e fora de fase, pra seção ter o mesmo movimento do vídeo.
  *
  * Cada recurso é uma frase sobre o que muda no dia da pessoa, não o nome da
  * função. Só entra aqui o que o app já faz.
@@ -85,15 +87,7 @@ export function Features() {
               className="pointer-events-none absolute inset-x-6 top-1/2 h-64 -translate-y-1/2 rounded-full bg-brand/25 blur-3xl"
             />
             <PhoneMockup className="relative" tall flush>
-              <img
-                src="/telas/hoje.webp"
-                alt=""
-                width={600}
-                height={1298}
-                loading="lazy"
-                decoding="async"
-                className="block h-auto w-full"
-              />
+              <AppTourVideo />
             </PhoneMockup>
           </div>
         </Reveal>
@@ -114,29 +108,42 @@ function FeatureList({
   readonly className?: string
   readonly delay?: number
 }) {
+  const reduced = useReducedMotion()
+
   return (
     <ul className={cn('grid gap-8 sm:grid-cols-3 sm:gap-6 lg:grid-cols-1 lg:gap-10', className)}>
       {features.map((feature, index) => (
         <li key={feature.title}>
-          <Reveal delay={delay + index * 0.06} className="flex flex-col items-center text-center">
-            <span
-              aria-hidden="true"
-              className="grid size-11 place-items-center rounded-xl border border-brand/30 bg-brand-dim/40 text-brand-hi"
+          <Reveal delay={delay + index * 0.06}>
+            <motion.div
+              animate={reduced ? {} : { y: [0, -10, 0] }}
+              transition={{
+                duration: 4 + index * 0.6,
+                delay: delay * 8 + index * 0.9,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+              className="flex flex-col items-center text-center"
             >
-              <svg
-                viewBox="0 0 24 24"
-                className="size-5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+              <span
+                aria-hidden="true"
+                className="grid size-11 place-items-center rounded-xl border border-brand/30 bg-brand-dim/40 text-brand-hi"
               >
-                {feature.icon}
-              </svg>
-            </span>
-            <h3 className="mt-4 font-semibold text-ink">{feature.title}</h3>
-            <p className="mt-1.5 max-w-xs text-pretty text-sm text-ink-muted">{feature.description}</p>
+                <svg
+                  viewBox="0 0 24 24"
+                  className="size-5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  {feature.icon}
+                </svg>
+              </span>
+              <h3 className="mt-4 font-semibold text-ink">{feature.title}</h3>
+              <p className="mt-1.5 max-w-xs text-pretty text-sm text-ink-muted">{feature.description}</p>
+            </motion.div>
           </Reveal>
         </li>
       ))}

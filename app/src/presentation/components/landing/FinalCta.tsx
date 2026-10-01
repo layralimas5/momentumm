@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { TRIAL_DAYS } from '@/domain/billing/trial'
 import { Reveal } from './Reveal'
 import { trackLanding } from './landing-analytics'
 import { CTA, TRIAL_LINE, TRIAL_PROMISE_VERIFIED } from './site'
@@ -35,9 +36,15 @@ export function FinalCta() {
                 )}
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-pretty text-lg text-ink-muted">
-                Transforme sua meta em um plano possível, encontre seu próximo passo e veja seu
-                progresso acontecer.
+                Deixar pra próxima segunda é exatamente o recomeço que você quer parar de fazer.
+                Monte o plano agora e o primeiro passo ainda cabe no dia de hoje.
               </p>
+              {TRIAL_PROMISE_VERIFIED && !cta.signedIn ? (
+                <p className="mx-auto mt-3 max-w-xl text-pretty text-sm text-ink-muted">
+                  E os {TRIAL_DAYS} dias de PRO começam hoje: dá tempo de ver a IA ajustar o
+                  plano na sua primeira semana de verdade.
+                </p>
+              ) : null}
 
               <div className="mt-9 flex flex-col items-center gap-4">
                 <Link

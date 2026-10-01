@@ -14,9 +14,10 @@ interface Question {
 
 /**
  * As objeções de quem já quer, mas ainda não confia: "já tentei e larguei",
- * "não tenho tempo", quanto custa, e as de risco (teste, privacidade,
- * cancelamento). É a última coisa que a pessoa lê antes de decidir, por isso
- * as respostas cabem em duas frases.
+ * "não tenho tempo", "minha meta serve?", "minha rotina muda", "já uso outro
+ * app", quanto custa, e as de risco (teste, privacidade, cancelamento). É a
+ * última coisa que a pessoa lê antes de decidir, por isso as respostas cabem
+ * em duas frases.
  *
  * Trial, cobrança, privacidade e cancelamento só afirmam o que está
  * implementado. A pergunta do teste some junto com a promessa quando
@@ -32,6 +33,36 @@ const BASE: readonly Question[] = [
     question: 'Não tenho tempo pra planejar nada.',
     answer:
       'Você não planeja: responde o quiz e o plano sai pronto, por etapas e do tamanho do tempo que você tem. Depois é abrir o app e fazer um passo por dia.',
+  },
+  {
+    question: 'Quanto tempo por dia eu preciso ter?',
+    answer:
+      'A partir de 10 minutos. O quiz pergunta quanto você tem de verdade (10, 20, 30 minutos, uma hora ou "depende do dia") e o plano sai desse tamanho. Em dia apertado, vale a versão mínima.',
+  },
+  {
+    question: 'Serve pra que tipo de meta?',
+    answer:
+      'Pra meta pessoal com prazo: ler mais, estudar pra uma prova, treinar, meditar, tirar um projeto do papel. Cada objetivo vira etapas, ações e hábitos no mesmo lugar.',
+  },
+  {
+    question: 'E se a minha rotina mudar no meio do caminho?',
+    answer:
+      'O plano muda junto. Você ajusta prazo e ritmo quando quiser, e o Dia Adaptável encolhe o passo em dia apertado. No PRO, a Momentumm AI lê o seu progresso e sugere o ajuste pronto pra aplicar.',
+  },
+  {
+    question: 'Já uso um app de hábitos. Por que trocar?',
+    answer:
+      'App de hábito conta repetição. O Momentumm liga cada hábito a um objetivo com prazo e diz qual passo empurra a meta hoje. E um dia perdido não zera o seu progresso.',
+  },
+  {
+    question: 'Preciso usar a parte social?',
+    answer:
+      'Não. O app funciona inteiro com uma pessoa só: plano, dia, Score e review. Chamar alguém pro Juntos é opcional, e tudo o que você registra nasce privado.',
+  },
+  {
+    question: 'Preciso instalar alguma coisa?',
+    answer:
+      'Não. O Momentumm roda no navegador do celular e do computador. Se quiser, dá pra adicionar à tela inicial e abrir como um app.',
   },
   {
     question: 'Qual a diferença entre o gratuito e o PRO?',

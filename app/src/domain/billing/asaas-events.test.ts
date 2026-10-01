@@ -155,10 +155,10 @@ describe('período e preços', () => {
   })
 
   it('o preço da landing sai do mesmo número do checkout', () => {
-    expect(formatBRL(PRO_PRICES.mensal.amountCents)).toBe('R$ 39,90')
-    expect(formatBRL(PRO_PRICES.anual.amountCents)).toBe('R$ 129,90')
-    expect(formatBRL(PRO_PRICES.anual.strikeCents)).toBe('R$ 478,80')
-    expect(formatBRL(monthlyEquivalentCents('anual'))).toBe('R$ 10,83')
+    expect(formatBRL(PRO_PRICES.mensal.amountCents)).toBe('R$ 24,90')
+    expect(formatBRL(PRO_PRICES.anual.amountCents)).toBe('R$ 99,90')
+    expect(formatBRL(PRO_PRICES.anual.strikeCents)).toBe('R$ 298,80')
+    expect(formatBRL(monthlyEquivalentCents('anual'))).toBe('R$ 8,33')
     expect(formatBRL(100000)).toBe('R$ 1.000,00')
   })
 })

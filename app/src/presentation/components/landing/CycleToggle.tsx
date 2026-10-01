@@ -1,7 +1,7 @@
 import { useId } from 'react'
 import { formatBRL, monthlyEquivalentCents } from '@/domain/billing/billing-plans'
 import { cn } from '@/shared/lib/cn'
-import type { BillingCycle } from './plans'
+import type { BillingCycle } from '@/domain/billing/billing-plans'
 
 /**
  * Botões de verdade com `aria-pressed`, não um switch: as duas opções têm
@@ -10,9 +10,12 @@ import type { BillingCycle } from './plans'
 export function CycleToggle({
   value,
   onChange,
+  annualHint = `${formatBRL(monthlyEquivalentCents('anual'))}/mês`,
 }: {
   value: BillingCycle
   onChange: (cycle: BillingCycle) => void
+  /** A dica ao lado de "Anual". Com a campanha Fundadores, é o nome dela no lugar da conta por mês. */
+  annualHint?: string
 }) {
   const id = useId()
   const options: readonly {
@@ -21,7 +24,7 @@ export function CycleToggle({
     readonly hint?: string
   }[] = [
     { cycle: 'mensal', label: 'Mensal' },
-    { cycle: 'anual', label: 'Anual', hint: `${formatBRL(monthlyEquivalentCents('anual'))}/mês` },
+    { cycle: 'anual', label: 'Anual', hint: annualHint },
   ]
 
   return (

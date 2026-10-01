@@ -1,7 +1,7 @@
 import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { BillingError, isBillingErrorCode } from '@/domain/billing/billing-error'
-import { BILLING_CYCLES } from '@/domain/billing/billing-plans'
+import { BILLING_CYCLES, PRO_OFFERS } from '@/domain/billing/billing-plans'
 import {
   BILLING_FUNCTION_NAME,
   type BillingEndpointRequest,
@@ -36,6 +36,12 @@ const subscriptionRowSchema = z.object({
   started_at: z.string(),
   current_period_end: z.string().nullable(),
   canceled_at: z.string().nullable(),
+  /*
+    Colunas da 0072. Opcionais porque o app pode subir antes da migration,
+    e a leitura com `*` não pode quebrar por coluna que ainda não existe.
+  */
+  renewal_amount_cents: z.number().int().nonnegative().nullish(),
+  offer: z.enum(PRO_OFFERS).nullish(),
 })
 
 const checkoutResponseSchema = z.object({ url: z.string().url() })
@@ -52,6 +58,7 @@ const settleResponseSchema = z.object({
 })
 
 const pixResponseSchema = z.object({
+  amountCents: z.number().int().positive().nullish().transform((value) => value ?? null),
   paymentId: z.string().min(1),
   qrCodeImage: z.string().min(1),
   qrCodePayload: z.string().min(1),
@@ -92,7 +99,7 @@ export class SupabaseBillingService implements BillingService {
   async mySubscription(): Promise<Subscription | null> {
     const { data, error } = await supabase()
       .from('subscriptions')
-      .select('id, provider, interval, status, amount_cents, started_at, current_period_end, canceled_at')
+      .select('*')
       .order('created_at', { ascending: false })
       .limit(5)
     if (error) throw new InfrastructureError('Não consegui ler a assinatura.', error)
@@ -105,6 +112,8 @@ export class SupabaseBillingService implements BillingService {
       interval: chosen.interval,
       status: chosen.status,
       amountCents: chosen.amount_cents,
+      renewalAmountCents: chosen.renewal_amount_cents ?? null,
+      offer: chosen.offer ?? null,
       startedAt: new Date(chosen.started_at),
       currentPeriodEnd: chosen.current_period_end ? new Date(chosen.current_period_end) : null,
       canceledAt: chosen.canceled_at ? new Date(chosen.canceled_at) : null,

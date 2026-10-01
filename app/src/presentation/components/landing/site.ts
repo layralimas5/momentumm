@@ -35,6 +35,8 @@ export const SITE = {
 export const CTA = {
   primary: { label: 'Criar meu plano', to: quizPathFor('lp-hero') },
   reassurance: 'Grátis e sem cartão.',
+  /** O quiz tem `QUIZ_QUESTION_COUNT` perguntas e devolve o plano antes de pedir conta. */
+  timeToStart: 'Seu plano pronto em menos de 2 minutos.',
 } as const
 
 /**

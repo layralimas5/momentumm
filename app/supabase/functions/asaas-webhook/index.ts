@@ -24,12 +24,14 @@
 //   supabase secrets set ASAAS_WEBHOOK_TOKEN=<32+ caracteres>
 
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.116.0'
-import { AsaasError, getCustomer, getSubscription } from '../_shared/asaas.ts'
+import { AsaasError, getCustomer, getSubscription, updateSubscriptionValue } from '../_shared/asaas.ts'
 import {
   asaasWebhookEventSchema,
   decideBillingEvent,
   intervalOfProviderSubscription,
+  offerOfCharge,
   periodEndAfter,
+  PRO_PRICES,
   toCents,
   transitionFor,
   type BillingDecision,
@@ -168,7 +170,7 @@ async function applySubscriptionDecision(
 
   const { data: existing } = await admin
     .from('subscriptions')
-    .select('id, status, interval, current_period_end')
+    .select('id, status, interval, current_period_end, offer')
     .eq('provider', PROVIDER)
     .eq('provider_subscription_id', decision.providerSubscriptionId)
     .maybeSingle()
@@ -186,6 +188,16 @@ async function applySubscriptionDecision(
     if (!interval) return `ciclo desconhecido: ${remote.cycle}`
     const periodEnd = periodEndAfter(decision.dueDate, interval).toISOString()
 
+    /*
+      A cobrança paga foi de oferta (R$ 9,90 no mensal, R$ 69,90 no
+      Fundadores)? Então a próxima já é preço de tabela. É reconhecida pelo
+      VALOR pago, e não pelo valor da assinatura: o PAYMENT_RECEIVED chega
+      dias depois do CONFIRMED, quando a assinatura já subiu, e precisa dar a
+      mesma resposta. Subir de novo um valor que já subiu não muda nada.
+    */
+    const offer = offerOfCharge(interval, decision.amountCents)
+    const renewalCents = offer ? PRO_PRICES[interval].amountCents : toCents(remote.value)
+
     let subscriptionId: string
     if (existing) {
       const { error } = await admin
@@ -193,7 +205,9 @@ async function applySubscriptionDecision(
         .update({
           status: transition.status,
           interval,
-          amount_cents: toCents(remote.value),
+          amount_cents: decision.amountCents,
+          renewal_amount_cents: renewalCents,
+          offer: offer ?? existing.offer ?? null,
           current_period_end: periodEnd,
           canceled_at: null,
           ended_at: null,
@@ -212,7 +226,9 @@ async function applySubscriptionDecision(
           plan: 'pro',
           interval,
           status: transition.status,
-          amount_cents: toCents(remote.value),
+          amount_cents: decision.amountCents,
+          renewal_amount_cents: renewalCents,
+          offer,
           current_period_end: periodEnd,
         })
         .select('id')
@@ -227,8 +243,24 @@ async function applySubscriptionDecision(
       type: transition.eventType,
       amount_cents: decision.amountCents,
       to_interval: interval,
-      metadata: { due_date: decision.dueDate },
+      metadata: offer ? { due_date: decision.dueDate, offer } : { due_date: decision.dueDate },
     })
+
+    /*
+      Depois de gravar, nunca antes: se o Asaas falhar aqui, a pessoa que
+      pagou já tem o PRO, e o que sobra é um ajuste de valor, registrado no
+      resultado do evento pra reprocessar. O contrário deixaria alguém que
+      pagou sem acesso por causa de uma chamada que nem é dela.
+    */
+    if (offer && toCents(remote.value) !== renewalCents) {
+      try {
+        await updateSubscriptionValue(decision.providerSubscriptionId, renewalCents / 100)
+      } catch (error) {
+        const detail = error instanceof AsaasError ? `${error.status}` : error instanceof Error ? error.message : String(error)
+        console.error('asaas update value', decision.providerSubscriptionId, detail)
+        return `ok, mas o valor da renovação não subiu no Asaas (${detail}): reprocessar`
+      }
+    }
     return 'ok'
   }
 

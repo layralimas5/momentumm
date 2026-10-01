@@ -25,7 +25,7 @@
 //   npm run billing:deploy
 //   supabase secrets set ASAAS_API_KEY=... ASAAS_ENV=sandbox|production
 
-import { createClient } from 'npm:@supabase/supabase-js@2.116.0'
+import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.116.0'
 import {
   AsaasError,
   asaasConfigured,
@@ -39,13 +39,16 @@ import {
   updateCustomer,
 } from '../_shared/asaas.ts'
 import {
-  formatBRL,
   isBillingCycle,
   isValidCpf,
   normalizeCpf,
   PRO_PRICES,
   PRO_PRODUCT_NAME,
+  quotePro,
+  quoteSentence,
+  type BillingCycle,
   type BillingErrorCode,
+  type ProQuote,
 } from '../_shared/billing.ts'
 import { PRODUCT_IMAGE_BASE64 } from '../_shared/product-image.ts'
 
@@ -105,6 +108,28 @@ function appOrigin(request: Request): string {
   return 'https://www.momentumm.com.br'
 }
 
+/**
+ * Quanto ESTA pessoa paga agora e na renovação.
+ *
+ * Decidido aqui, nunca pelo que o app mandou: quem já pagou uma assinatura
+ * não ganha o primeiro mês de novo, e o Fundadores só vale com a campanha
+ * ligada no painel (`features.foundersOffer`). Erro de leitura não vira
+ * desconto: a função para em vez de adivinhar.
+ */
+async function quoteFor(admin: SupabaseClient, userId: string, cycle: BillingCycle): Promise<ProQuote> {
+  const [paid, settings] = await Promise.all([
+    admin.from('subscriptions').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+    admin.from('product_settings').select('value').eq('key', 'features').maybeSingle(),
+  ])
+  if (paid.error) throw new Error(`subscriptions count: ${paid.error.message}`)
+  if (settings.error) throw new Error(`product_settings: ${settings.error.message}`)
+  const features = (settings.data?.value ?? {}) as Record<string, unknown>
+  return quotePro(cycle, {
+    firstSubscription: (paid.count ?? 0) === 0,
+    foundersActive: features.foundersOffer === true,
+  })
+}
+
 function readJson(request: Request): Promise<unknown> {
   return request.json().catch(() => null)
 }
@@ -157,14 +182,16 @@ Deno.serve(async (request) => {
       }
       const returnTo = typeof body.returnTo === 'string' && RETURN_PATH.test(body.returnTo) ? body.returnTo : '/app/assinatura'
       const origin = appOrigin(request)
-      const price = PRO_PRICES[body.cycle]
+      const quote = await quoteFor(admin, user.id, body.cycle)
 
+      // A assinatura nasce com o valor da PRIMEIRA cobrança. Confirmado o
+      // pagamento, o webhook sobe pro preço de tabela.
       const checkout = await createCheckout({
         externalReference: user.id,
-        cycle: price.providerCycle,
-        value: price.amountCents / 100,
+        cycle: PRO_PRICES[body.cycle].providerCycle,
+        value: quote.firstCents / 100,
         itemName: PRO_PRODUCT_NAME,
-        itemDescription: `${PRO_PRODUCT_NAME} ${body.cycle}: ${formatBRL(price.amountCents)} por ${body.cycle === 'anual' ? 'ano' : 'mês'}.`,
+        itemDescription: `${PRO_PRODUCT_NAME} ${body.cycle}: ${quoteSentence(quote)}`,
         imageBase64: PRODUCT_IMAGE_BASE64,
         successUrl: `${origin}${returnTo}?assinatura=sucesso`,
         cancelUrl: `${origin}${returnTo}?assinatura=cancelado`,
@@ -177,7 +204,7 @@ Deno.serve(async (request) => {
         provider: 'asaas',
         provider_checkout_id: checkout.id,
         interval: body.cycle,
-        amount_cents: price.amountCents,
+        amount_cents: quote.firstCents,
       })
       if (insertError) {
         console.error('billing_checkouts insert', insertError.message)
@@ -194,7 +221,7 @@ Deno.serve(async (request) => {
       if (current) {
         return fail(409, 'already_subscribed', 'Essa conta já tem uma assinatura PRO. Recarrega a página.')
       }
-      const price = PRO_PRICES[body.cycle]
+      const quote = await quoteFor(admin, user.id, body.cycle)
       const customerInput = { ...customer, email: user.email, externalReference: user.id }
 
       const { data: linked } = await admin
@@ -222,16 +249,22 @@ Deno.serve(async (request) => {
       const open = (await listActiveSubscriptions(asaasCustomer.id)).filter(
         (item) => item.billingType === 'PIX' && item.externalReference === user.id,
       )
-      let subscription = open.find((item) => item.cycle === price.providerCycle) ?? null
+      // Só volta a mesma se o valor ainda for o de agora: uma pendente aberta
+      // com o preço antigo, ou antes de a campanha mudar, sai e nasce outra.
+      let subscription =
+        open.find(
+          (item) =>
+            item.cycle === PRO_PRICES[body.cycle].providerCycle && Math.round(item.value * 100) === quote.firstCents,
+        ) ?? null
       for (const stale of open) {
         if (stale.id !== subscription?.id) await deleteSubscription(stale.id)
       }
       subscription ??= await createPixSubscription({
         customerId: asaasCustomer.id,
         externalReference: user.id,
-        cycle: price.providerCycle,
-        value: price.amountCents / 100,
-        description: `${PRO_PRODUCT_NAME} ${body.cycle}`,
+        cycle: PRO_PRICES[body.cycle].providerCycle,
+        value: quote.firstCents / 100,
+        description: `${PRO_PRODUCT_NAME} ${body.cycle}: ${quoteSentence(quote)}`,
       })
       const first = (await listSubscriptionPayments(subscription.id)).find((payment) => payment.status === 'PENDING')
       if (!first) {
@@ -241,6 +274,8 @@ Deno.serve(async (request) => {
       const qr = await getPixQrCode(first.id)
 
       return reply(200, {
+        amountCents: quote.firstCents,
+        summary: quoteSentence(quote),
         paymentId: first.id,
         qrCodeImage: qr.encodedImage,
         qrCodePayload: qr.payload,

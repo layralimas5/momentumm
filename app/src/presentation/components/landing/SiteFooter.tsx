@@ -6,6 +6,7 @@ import { SITE } from './site'
 
 const PRODUCT = [
   { label: 'O app', href: '/#funcionalidades' },
+  { label: 'Como funciona', href: '/#como-funciona' },
   { label: 'Planos', href: '/#planos' },
   { label: 'Dúvidas', href: '/#faq' },
 ] as const

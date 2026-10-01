@@ -28,6 +28,8 @@ export interface PixCustomer {
  * por e-mail, a cada ciclo, geradas pelo Asaas.
  */
 export interface PixCharge {
+  /** O valor desta primeira cobrança. `null` quando a função ainda é a anterior aos preços novos. */
+  readonly amountCents: number | null
   readonly paymentId: string
   /** PNG em base64, sem o prefixo `data:`. */
   readonly qrCodeImage: string

@@ -8,10 +8,17 @@ export {
   BILLING_CYCLES,
   cycleFromProvider,
   formatBRL,
+  cyclePeriod,
   isBillingCycle,
+  offerOfCharge,
+  PRO_OFFER_TERMS,
   PRO_PRICES,
   PRO_PRODUCT_NAME,
+  quotePro,
+  quoteSentence,
   type BillingCycle,
+  type ProOffer,
+  type ProQuote,
 } from './billing-plans'
 export {
   asaasWebhookEventSchema,
