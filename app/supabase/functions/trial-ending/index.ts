@@ -68,7 +68,7 @@ function emailFor(row: DueRow): { subject: string; html: string; text: string } 
   const text = [
     `${name}eu teste do PRO vai até ${day}.`,
     '',
-    'Depois disso a conta volta pro gratuito. Nada é apagado: teus objetivos, teu plano, teus hábitos e teu histórico continuam onde estão. O que sai de cena é o Momentumm AI, o histórico completo e as estatísticas longas.',
+    'Depois disso a conta volta pro gratuito. Nada é apagado: seus objetivos, seu plano, seus hábitos e seu histórico continuam onde estão. O que sai de cena é o Momentumm AI, o histórico completo e as estatísticas longas.',
     '',
     `Pra seguir com tudo: ${SIGNATURE_URL}`,
     '',
@@ -97,11 +97,11 @@ function emailFor(row: DueRow): { subject: string; html: string; text: string } 
               </td>
             </tr>
             <tr>
-              <td style="font-size:22px;line-height:1.3;font-weight:700;color:#f4f4f5;padding-bottom:12px;">Teu PRO de teste vai até ${day}</td>
+              <td style="font-size:22px;line-height:1.3;font-weight:700;color:#f4f4f5;padding-bottom:12px;">Seu PRO de teste vai até ${day}</td>
             </tr>
             <tr>
               <td style="font-size:15px;line-height:1.6;color:#a1a1aa;padding-bottom:16px;">
-                Depois disso a conta volta pro gratuito. <strong style="color:#f4f4f5;">Nada é apagado</strong>: teus objetivos, teu plano, teus hábitos e teu histórico continuam onde estão.
+                Depois disso a conta volta pro gratuito. <strong style="color:#f4f4f5;">Nada é apagado</strong>: seus objetivos, seu plano, seus hábitos e seu histórico continuam onde estão.
               </td>
             </tr>
             <tr>
