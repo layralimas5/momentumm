@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { isRunning } from '@/domain/entities/objective'
-import { Button, buttonClass } from '@/presentation/components/ui/Button'
+import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { PRO_TAGLINE } from '@/presentation/plan/pro-benefits'
 import type { QuizActivationLimit } from './quiz-activation'
+import { QuizProPlans } from './QuizProPlans'
 
 interface QuizActivationLimitViewProps {
   readonly limit: QuizActivationLimit
@@ -83,16 +83,10 @@ export function QuizActivationLimitView({ limit, onRetry }: QuizActivationLimitV
 
       <section className="mt-6" aria-labelledby="sem-limite">
         <h2 id="sem-limite" className="text-xs font-semibold tracking-wide text-ink-faint uppercase">
-          Ou tire o limite do caminho
+          {canFreeSpace ? 'Ou tire o limite do caminho com o PRO' : 'Tire o limite do caminho com o PRO'}
         </h2>
-        <p className="mt-1.5 text-sm text-ink-muted">{PRO_TAGLINE}</p>
-        <Link
-          to="/app/assinatura"
-          className={buttonClass({ size: 'lg', className: 'mt-3 w-full' })}
-        >
-          <Icon name="raio" className="size-4" />
-          Assinar o PRO
-        </Link>
+        <p className="mt-1.5 mb-3 text-sm text-ink-muted">{PRO_TAGLINE}</p>
+        <QuizProPlans />
       </section>
 
       <Button variant="ghost" className="mt-2 w-full" onClick={onRetry}>
