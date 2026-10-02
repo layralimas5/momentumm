@@ -532,6 +532,43 @@ interface DiagnosisContext {
   readonly days: number
 }
 
+/**
+ * A resposta do plano pra cada dificuldade, na tela de confiança: a pessoa
+ * acabou de dizer o que a trava, e a tela seguinte mostra o que muda pra
+ * aquilo. Cada frase é a mesma promessa que o diagnóstico faz depois
+ * (`READINGS`), em versão curta, e só fala do que o app faz de verdade.
+ */
+export interface ObstacleAnswer {
+  readonly key: QuizObstacleKey
+  readonly label: string
+  readonly answer: string
+}
+
+const OBSTACLE_ANSWERS: Readonly<Record<QuizObstacleKey, string>> = {
+  procrastino:
+    'O primeiro passo já vem escolhido e pequeno o bastante pra caber hoje. Não sobra decisão pra adiar.',
+  abandono:
+    'O progresso é medido por semana, com marcos curtos, e um dia perdido não apaga o que você já fez.',
+  pouco_tempo:
+    'Cada passo cabe nos minutos que você disser que tem. No dia apertado, vale a versão mínima.',
+  sem_comeco: 'A meta vira três marcos com prazo, e a primeira ação já sai escolhida.',
+  rotina_muda:
+    'Todo passo tem versão mínima, e dá pra trocar o dia sem quebrar o plano nem a sequência.',
+  tudo_ao_mesmo_tempo:
+    'Uma meta e uma prioridade por dia. O resto entra quando o primeiro marco fechar.',
+  motivacao:
+    'Vitórias pequenas desde o primeiro dia, pra você ver progresso antes de a empolgação acabar.',
+}
+
+/** As dificuldades marcadas, na ordem do toque, cada uma com a resposta do plano. Até três. */
+export function obstacleAnswers(answers: QuizAnswers): readonly ObstacleAnswer[] {
+  return answers.obstacles.slice(0, 3).map((key) => ({
+    key,
+    label: QUIZ_OBSTACLE_LABELS[key],
+    answer: OBSTACLE_ANSWERS[key],
+  }))
+}
+
 const READINGS: Readonly<Record<QuizObstacleKey, ObstacleReading>> = {
   procrastino: {
     profile: ['Sabe o que quer, trava na largada', 'Tem tempo, trava na largada'],
