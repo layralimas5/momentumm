@@ -35,9 +35,9 @@ export function QuizPlanPreviewView({ preview, today }: QuizPlanPreviewProps) {
     <div className="flex flex-col gap-3 py-1">
       <motion.header {...enter(0)}>
         <p className="text-xs font-medium tracking-wide text-brand-ink uppercase">Seu plano</p>
-        <h1 className="mt-1.5 text-xl font-semibold tracking-tight text-balance text-ink sm:text-2xl">
+        <h2 className="mt-1.5 text-xl font-semibold tracking-tight text-balance text-ink sm:text-2xl">
           {plan.objectiveTitle} em {days} dias.
-        </h1>
+        </h2>
         <div className="mt-3 flex flex-wrap gap-1.5">
           <Tag tone="brand">{plan.areaLabel}</Tag>
           <Tag>
@@ -155,10 +155,10 @@ function Block({
           : 'rounded-xl border border-line bg-surface/60 p-3.5'
       }
     >
-      <h2 className="flex items-center gap-2 text-xs font-medium tracking-wide text-ink-faint uppercase">
+      <h3 className="flex items-center gap-2 text-xs font-medium tracking-wide text-ink-faint uppercase">
         <Icon name={icon} className="size-4 text-brand-ink" />
         {title}
-      </h2>
+      </h3>
       <div className="mt-2.5">{children}</div>
     </section>
   )

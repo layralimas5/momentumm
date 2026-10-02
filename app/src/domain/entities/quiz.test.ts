@@ -6,6 +6,10 @@ import {
   EMPTY_QUIZ_ANSWERS,
   horizonOf,
   isQuizComplete,
+  areasInOrder,
+  QUIZ_QUESTION_COUNT,
+  quizAreaContext,
+  QUIZ_SCREENS,
   quizBlocker,
   quizIntro,
   suggestHabit,
@@ -24,21 +28,39 @@ const answers: CompleteQuizAnswers = {
   horizon: '90',
   weekdays: [1, 3, 5],
   style: 'momentumm_decide',
+  history: 'algumas',
 }
+
+const stepOf = (screen: (typeof QUIZ_SCREENS)[number]) => QUIZ_SCREENS.indexOf(screen)
 
 describe('quiz: validação', () => {
   it('cada pergunta bloqueia enquanto não é respondida', () => {
-    expect(quizBlocker(0, EMPTY_QUIZ_ANSWERS)).not.toBeNull()
-    expect(quizBlocker(0, { ...EMPTY_QUIZ_ANSWERS, goal: 'ab' })).not.toBeNull()
-    expect(quizBlocker(0, { ...EMPTY_QUIZ_ANSWERS, goal: 'Correr' })).toBeNull()
-    expect(quizBlocker(5, { ...EMPTY_QUIZ_ANSWERS, weekdays: [] })).not.toBeNull()
-    expect(quizBlocker(5, { ...EMPTY_QUIZ_ANSWERS, weekdays: [2] })).toBeNull()
+    expect(quizBlocker(stepOf('area'), EMPTY_QUIZ_ANSWERS)).not.toBeNull()
+    expect(quizBlocker(stepOf('goal'), { ...EMPTY_QUIZ_ANSWERS, goal: 'ab' })).not.toBeNull()
+    expect(quizBlocker(stepOf('goal'), { ...EMPTY_QUIZ_ANSWERS, goal: 'Correr' })).toBeNull()
+    expect(quizBlocker(stepOf('history'), EMPTY_QUIZ_ANSWERS)).not.toBeNull()
+    expect(quizBlocker(stepOf('weekdays'), { ...EMPTY_QUIZ_ANSWERS, weekdays: [] })).not.toBeNull()
+    expect(quizBlocker(stepOf('weekdays'), { ...EMPTY_QUIZ_ANSWERS, weekdays: [2] })).toBeNull()
   })
 
-  it('completo só com as sete respondidas', () => {
+  it('a abertura é um toque, não um campo de texto', () => {
+    expect(QUIZ_SCREENS[0]).toBe('area')
+  })
+
+  it('as telas de confiança e devolutiva não pedem resposta nem contam como pergunta', () => {
+    expect(quizBlocker(stepOf('trust'), EMPTY_QUIZ_ANSWERS)).toBeNull()
+    expect(quizBlocker(stepOf('recap'), EMPTY_QUIZ_ANSWERS)).toBeNull()
+    expect(QUIZ_QUESTION_COUNT).toBe(QUIZ_SCREENS.length - 2)
+  })
+
+  it('completo com tudo que o plano precisa', () => {
     expect(isQuizComplete(EMPTY_QUIZ_ANSWERS)).toBe(false)
     expect(isQuizComplete(answers)).toBe(true)
     expect(isQuizComplete({ ...answers, style: null })).toBe(false)
+  })
+
+  it('plano salvo antes da pergunta de histórico continua ativando', () => {
+    expect(isQuizComplete({ ...answers, history: null })).toBe(true)
   })
 })
 
@@ -50,6 +72,11 @@ describe('quiz: diagnóstico', () => {
     expect(diagnosis.explanation).toContain('3 dias')
     expect(diagnosis.explanation).toContain('lançar meu projeto')
     expect(diagnosis.obstacle).toBe('Tenho pouco tempo')
+  })
+
+  it('o histórico vira uma frase sem culpa, e some quando não foi respondido', () => {
+    expect(buildDiagnosis(answers).historyNote).toContain('plano antigo')
+    expect(buildDiagnosis({ ...answers, history: null }).historyNote).toBeNull()
   })
 
   it('"o Momentumm decide" resolve pro estilo recomendado pelo obstáculo', () => {
@@ -144,5 +171,28 @@ describe('quiz: ponte pro gerador', () => {
   it('o tema muda só a introdução', () => {
     expect(quizIntro(null).title).toBe('Transforme sua meta em um plano possível.')
     expect(quizIntro('procrastinacao').title).not.toBe(quizIntro(null).title)
+  })
+})
+
+describe('quiz: a área guia as perguntas', () => {
+  it('a primeira área marcada decide como o quiz fala', () => {
+    const study = quizAreaContext({ ...EMPTY_QUIZ_ANSWERS, areas: ['estudos', 'saude'] })
+    expect(study.practice).toBe('estudar')
+    expect(study.goalExamples).toContain('Passar numa prova')
+    expect(quizAreaContext({ ...EMPTY_QUIZ_ANSWERS, areas: ['saude', 'estudos'] }).practice).toBe('cuidar da saúde')
+  })
+
+  it('\'Outra\' usa o nome que a pessoa escreveu', () => {
+    const music = quizAreaContext({ ...EMPTY_QUIZ_ANSWERS, areas: ['outra'], customArea: 'Música' })
+    expect(music.label).toBe('Música')
+    expect(music.practice).toBe('se dedicar a música')
+    expect(quizAreaContext({ ...EMPTY_QUIZ_ANSWERS, areas: ['outra'] }).practice).toBe('se dedicar à sua meta')
+  })
+
+  it('as áreas aparecem na ordem do toque', () => {
+    expect(areasInOrder({ ...EMPTY_QUIZ_ANSWERS, areas: ['estudos'] })).toBe('Estudos')
+    expect(areasInOrder({ ...EMPTY_QUIZ_ANSWERS, areas: ['estudos', 'carreira', 'saude'] })).toBe(
+      'Estudos, depois Carreira e Saúde',
+    )
   })
 })

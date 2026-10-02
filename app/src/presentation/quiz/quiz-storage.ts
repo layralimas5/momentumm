@@ -30,18 +30,31 @@ export interface QuizDraft {
   readonly attribution: QuizAttribution
 }
 
+/**
+ * A versão da ordem das telas. Quando a ordem muda, o número do passo de um
+ * rascunho antigo aponta pra outra tela: as respostas continuam valendo, o
+ * passo volta pro começo.
+ */
+const DRAFT_SCREENS_VERSION = 2
+
+interface StoredDraft extends QuizDraft {
+  readonly version?: number
+}
+
 export function loadQuizDraft(): QuizDraft | null {
-  const value = read<Partial<QuizDraft>>(DRAFT_KEY)
+  const value = read<Partial<StoredDraft>>(DRAFT_KEY)
   if (!value?.answers) return null
+  const sameOrder = value.version === DRAFT_SCREENS_VERSION
   return {
-    step: typeof value.step === 'number' ? value.step : 0,
+    step: sameOrder && typeof value.step === 'number' ? value.step : 0,
     answers: { ...EMPTY_QUIZ_ANSWERS, ...value.answers },
     attribution: { ...EMPTY_ATTRIBUTION, ...(value.attribution ?? {}) },
   }
 }
 
 export function saveQuizDraft(draft: QuizDraft): void {
-  write(DRAFT_KEY, draft)
+  const stored: StoredDraft = { ...draft, version: DRAFT_SCREENS_VERSION }
+  write(DRAFT_KEY, stored)
 }
 
 export function clearQuizDraft(): void {

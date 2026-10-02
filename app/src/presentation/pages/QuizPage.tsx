@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { dayKeyOf } from '@/domain/entities/day'
-import { QUIZ_QUESTION_COUNT } from '@/domain/entities/quiz'
+import { QUIZ_SCREEN_COUNT } from '@/domain/entities/quiz'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { QuizContact } from '@/presentation/quiz/QuizContact'
 import { QuizDiagnosisView } from '@/presentation/quiz/QuizDiagnosis'
-import { QuizIntro } from '@/presentation/quiz/QuizIntro'
+import { QuizOffer } from '@/presentation/quiz/QuizOffer'
 import { QuizPlanPreviewView } from '@/presentation/quiz/QuizPlanPreview'
 import { QuizProcessing } from '@/presentation/quiz/QuizProcessing'
 import { QuizQuestion } from '@/presentation/quiz/QuizQuestion'
@@ -18,8 +18,9 @@ import { QUIZ_ACTIVATION_PATH } from '@/presentation/quiz/quiz-activation'
 /**
  * `/criar-meu-plano`: a entrada do funil, pública.
  *
- * A pessoa responde tudo sem conta. Só "Ativar meu plano no Momentumm"
- * leva pro cadastro, e o plano vai junto (`quiz-storage`): depois do login,
+ * Perguntas, análise, contato e resultado, nessa ordem (`use-quiz.ts`). A
+ * pessoa responde tudo sem conta. Só "Ativar meu plano no Momentumm" leva
+ * pro cadastro, e o plano vai junto (`quiz-storage`): depois do login,
  * `/app/ativar` grava exatamente o que a prévia mostrou.
  */
 export function QuizPage() {
@@ -45,32 +46,28 @@ export function QuizPage() {
     navigate('/entrar?intent=plano', { state: { from: QUIZ_ACTIVATION_PATH } })
   }
 
-  if (quiz.phase === 'intro') {
-    return (
-      <QuizShell>
-        <QuizIntro copy={quiz.intro} started={quiz.started} onStart={quiz.start} />
-      </QuizShell>
-    )
-  }
-
   if (quiz.phase === 'perguntas') {
+    const last = quiz.step === QUIZ_SCREEN_COUNT - 1
     return (
       <QuizShell
-        progress={(quiz.step + 1) / QUIZ_QUESTION_COUNT}
-        progressLabel={`${quiz.step + 1} de ${QUIZ_QUESTION_COUNT}`}
+        progress={(quiz.step + 1) / QUIZ_SCREEN_COUNT}
+        progressLabel={`${quiz.step + 1} de ${QUIZ_SCREEN_COUNT}`}
         footer={
           <>
-            <Button variant="ghost" className="shrink-0" onClick={quiz.back}>
-              <Icon name="setaEsq" className="size-4" />
-              Voltar
-            </Button>
+            {/* Na abertura não há pra onde voltar: ela é a primeira tela. */}
+            {quiz.step > 0 ? (
+              <Button variant="ghost" className="shrink-0" onClick={quiz.back}>
+                <Icon name="setaEsq" className="size-4" />
+                Voltar
+              </Button>
+            ) : null}
             <div className="min-w-0 flex-1">
               {/*
                 O botão fica clicável mesmo faltando resposta: botão apagado
                 não explica nada, e quem toca e lê o aviso entende o que falta.
               */}
               <Button className="w-full" onClick={quiz.next}>
-                {quiz.step === QUIZ_QUESTION_COUNT - 1 ? 'Ver meu plano' : 'Continuar'}
+                {last ? 'Montar meu plano' : 'Continuar'}
                 <Icon name="seta" className="size-4" />
               </Button>
             </div>
@@ -80,6 +77,7 @@ export function QuizPage() {
         <QuizQuestion
           step={quiz.step}
           answers={quiz.answers}
+          intro={quiz.intro}
           direction={direction}
           onChange={quiz.set}
           onToggleArea={quiz.toggleArea}
@@ -90,6 +88,14 @@ export function QuizPage() {
         <p aria-live="polite" className="mt-4 min-h-5 text-sm text-ink-faint">
           {quiz.warning ?? ''}
         </p>
+      </QuizShell>
+    )
+  }
+
+  if (quiz.phase === 'processando') {
+    return (
+      <QuizShell>
+        <QuizProcessing />
       </QuizShell>
     )
   }
@@ -107,7 +113,7 @@ export function QuizPage() {
             </Button>
             <div className="min-w-0 flex-1">
               <Button className="w-full" onClick={quiz.submitLead} loading={quiz.savingLead}>
-                Ver meu diagnóstico
+                Ver meu plano
                 <Icon name="seta" className="size-4" />
               </Button>
             </div>
@@ -124,7 +130,7 @@ export function QuizPage() {
     )
   }
 
-  if (quiz.phase === 'processando' || !quiz.diagnosis || !quiz.preview) {
+  if (!quiz.diagnosis || !quiz.preview) {
     return (
       <QuizShell>
         <QuizProcessing />
@@ -132,23 +138,14 @@ export function QuizPage() {
     )
   }
 
-  if (quiz.phase === 'diagnostico') {
-    return (
-      <QuizShell
-        footer={
-          <Button className="w-full" onClick={quiz.showPlan}>
-            Ver meu plano
-            <Icon name="seta" className="size-4" />
-          </Button>
-        }
-      >
-        <QuizDiagnosisView diagnosis={quiz.diagnosis} />
-      </QuizShell>
-    )
-  }
-
+  /*
+    O resultado e a oferta são a mesma tela: o diagnóstico diz o que trava,
+    o plano responde ponto a ponto, e o botão de ativar fica embaixo dos
+    dois, com o que acontece depois do teste escrito antes do clique.
+  */
   return (
     <QuizShell
+      tallFooter
       footer={
         <div className="flex w-full flex-col gap-2">
           <Button className="w-full" onClick={activate}>
@@ -161,10 +158,11 @@ export function QuizPage() {
         </div>
       }
     >
-      <QuizPlanPreviewView preview={quiz.preview} today={today} />
-      <p className="mt-4 text-center text-xs text-ink-faint">
-        Grátis pra começar, sem cartão. Sua conta nasce com 7 dias de PRO.
-      </p>
+      <QuizDiagnosisView diagnosis={quiz.diagnosis} />
+      <div className="mt-6 border-t border-line pt-6">
+        <QuizPlanPreviewView preview={quiz.preview} today={today} />
+      </div>
+      <QuizOffer />
     </QuizShell>
   )
 }
