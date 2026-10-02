@@ -15,7 +15,6 @@ import {
   QUIZ_TIME_LABELS,
   QUIZ_TIMES,
   areasInOrder,
-  obstacleAnswers,
   primaryObstacle,
   quizAreaContext,
   quizScreenAt,
@@ -27,8 +26,9 @@ import {
   type QuizObstacleKey,
 } from '@/domain/entities/quiz'
 import { TextInput } from '@/presentation/components/ui/Field'
-import { Icon, type IconName } from '@/presentation/components/ui/Icon'
+import { Icon } from '@/presentation/components/ui/Icon'
 import { cn } from '@/shared/lib/cn'
+import { QuizTrust } from './QuizTrust'
 
 /**
  * Uma tela por vez. Opção é botão grande de tocar com o polegar, e o grupo
@@ -89,7 +89,7 @@ export function QuizQuestion({
         {screen === 'goal' ? (
           <GoalQuestion answers={answers} area={area} onChange={onChange} onSubmit={onSubmit} />
         ) : null}
-        {screen === 'trust' ? <TrustScreen area={area} answers={answers} /> : null}
+        {screen === 'trust' ? <QuizTrust area={area} answers={answers} /> : null}
         {screen === 'history' ? (
           <OptionQuestion
             title={`Quantas vezes você já começou a ${area.practice} e parou?`}
@@ -438,128 +438,6 @@ function OptionQuestion<T extends string>({
           )
         })}
       </div>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// confiança: como o plano é feito
-// ---------------------------------------------------------------------------
-
-/**
- * A pausa no meio das perguntas, antes das mais pesadas.
- *
- * Ela vem logo depois de "o que mais atrapalha", então abre respondendo
- * exatamente isso: cada dificuldade marcada ganha a resposta do plano
- * (`obstacleAnswers`). Depois, as três regras que valem pra qualquer plano,
- * já com a área da pessoa, e uma linha de segurança.
- *
- * A estrutura pede prova aqui. Enquanto não houver número real de usuários
- * nem depoimento, a prova é o MECANISMO, e nada de contador inventado. O
- * número real entra em `QUIZ_PROOF` quando existir, e aparece sozinho.
- */
-const QUIZ_PROOF: readonly { readonly value: string; readonly label: string }[] = []
-
-interface PlanRule {
-  readonly id: 'tempo' | 'minima' | 'zera'
-  readonly icon: IconName
-  readonly title: string
-  readonly text: string
-}
-
-/** A regra que a resposta de uma dificuldade já contou: não aparece de novo embaixo. */
-const RULES_ANSWERED_BY: Partial<Record<QuizObstacleKey, readonly PlanRule['id'][]>> = {
-  pouco_tempo: ['tempo'],
-  rotina_muda: ['minima'],
-  abandono: ['zera'],
-}
-
-function planRules(area: QuizAreaContext): readonly PlanRule[] {
-  return [
-    {
-      id: 'tempo',
-      icon: 'relogio',
-      title: 'Do tamanho do seu tempo',
-      text: `O plano nunca pede mais minutos pra ${area.practice} do que você disser que tem. Se não couber, ele se ajusta e te avisa.`,
-    },
-    {
-      id: 'minima',
-      icon: 'minimo',
-      title: 'Versão mínima em todo passo',
-      text: `No dia apertado, o passo encolhe (algo como ${area.minimalExample}) e o dia ainda conta.`,
-    },
-    {
-      id: 'zera',
-      icon: 'desfazer',
-      title: 'Nada zera',
-      text: 'Se você sumir uns dias, volta de onde parou, sem compensar o que passou.',
-    },
-  ]
-}
-
-function TrustScreen({ area, answers }: { readonly area: QuizAreaContext; readonly answers: QuizAnswers }) {
-  const marked = obstacleAnswers(answers)
-  const answered = new Set(marked.flatMap((item) => RULES_ANSWERED_BY[item.key] ?? []))
-  const rules = planRules(area).filter((rule) => !answered.has(rule.id))
-
-  return (
-    <div>
-      <p className="text-xs font-medium tracking-wide text-brand-ink uppercase">Antes de continuar</p>
-      <Title
-        hint={
-          marked.length > 1
-            ? 'Você marcou o que te trava. Olha o que o seu plano faz com cada uma:'
-            : 'Você marcou o que te trava. Olha o que o seu plano faz com isso:'
-        }
-      >
-        O seu plano já sabe o que te trava
-      </Title>
-
-      <ul className="flex flex-col gap-2.5">
-        {marked.map((item) => (
-          <li key={item.key} className="rounded-2xl border border-brand/40 bg-brand-dim/30 p-3.5">
-            <p className="text-xs font-medium text-brand-ink">“{item.label}”</p>
-            <p className="mt-1 text-sm text-pretty text-ink">{item.answer}</p>
-          </li>
-        ))}
-      </ul>
-
-      {QUIZ_PROOF.length > 0 ? (
-        <dl className="mt-5 grid grid-cols-2 gap-2.5">
-          {QUIZ_PROOF.map((item) => (
-            <div key={item.label} className="rounded-2xl border border-line bg-surface/60 p-3.5">
-              <dt className="text-xs text-ink-faint">{item.label}</dt>
-              <dd className="mt-0.5 text-lg font-semibold text-ink tabular-nums">{item.value}</dd>
-            </div>
-          ))}
-        </dl>
-      ) : null}
-
-      {rules.length > 0 ? (
-        <>
-          <h2 className="mt-6 text-xs font-medium tracking-wide text-ink-faint uppercase">
-            E o que vale pra todo plano
-          </h2>
-          <ul className="mt-2.5 flex flex-col divide-y divide-line rounded-2xl border border-line bg-surface/60">
-            {rules.map((rule) => (
-              <li key={rule.id} className="flex items-start gap-3 p-3.5">
-                <span className="grid size-8 shrink-0 place-items-center rounded-full border border-brand/30 bg-brand-dim/50 text-brand-ink">
-                  <Icon name={rule.icon} className="size-4" />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-ink">{rule.title}</p>
-                  <p className="mt-0.5 text-sm text-pretty text-ink-muted">{rule.text}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </>
-      ) : null}
-
-      <p className="mt-4 flex items-start gap-2 text-xs text-pretty text-ink-faint">
-        <Icon name="cadeado" className="mt-px size-3.5 shrink-0" />
-        Grátis pra começar e sem cartão. Nada é salvo numa conta até você decidir ativar o plano.
-      </p>
     </div>
   )
 }
