@@ -13,84 +13,59 @@ interface Question {
 }
 
 /**
- * As objeções de quem já quer, mas ainda não confia: "já tentei e larguei",
- * "não tenho tempo", "minha meta serve?", "minha rotina muda", "já uso outro
- * app", quanto custa, e as de risco (teste, privacidade, cancelamento). É a
- * última coisa que a pessoa lê antes de decidir, por isso as respostas cabem
- * em duas frases.
+ * As objeções que aparecem ANTES de pagar, escritas como a pessoa pergunta
+ * em voz alta: "já tentei e larguei", tempo, pra que meta serve, preço,
+ * teste e cancelamento, privacidade e pra quem não serve. Sete no máximo:
+ * é a última coisa que a pessoa lê antes de decidir, e pergunta demais vira
+ * rolagem. Por isso as respostas cabem em duas ou três frases.
  *
- * Trial, cobrança, privacidade e cancelamento só afirmam o que está
- * implementado. A pergunta do teste some junto com a promessa quando
- * `TRIAL_PROMISE_VERIFIED` está desligada.
+ * Teste, cobrança, privacidade e cancelamento só afirmam o que está
+ * implementado. Com `TRIAL_PROMISE_VERIFIED` desligada, a pergunta do teste
+ * vira só a do cancelamento.
  */
-const BASE: readonly Question[] = [
+const RISK: Question = TRIAL_PROMISE_VERIFIED
+  ? {
+      question: 'Como funciona o teste? E se eu quiser cancelar?',
+      answer: `Toda conta nova começa com ${TRIAL_DAYS} dias de PRO, sem cartão e sem cobrança automática; no fim, a conta volta pro gratuito sozinha. Se assinar, cancela em Configurações quando quiser, sem fidelidade, e nada do que você criou é apagado.`,
+    }
+  : {
+      question: 'Posso cancelar quando quiser?',
+      answer:
+        'Sim, sem fidelidade: cancela em Configurações e o PRO vale até o fim do período já pago. Depois a conta volta pro gratuito com tudo que você criou.',
+    }
+
+const QUESTIONS: readonly Question[] = [
   {
     question: 'Já tentei app de metas e larguei. Por que esse seria diferente?',
     answer:
       'Porque ele foi feito pro dia em que você falha. Com pouco tempo, o passo de hoje encolhe pra versão mínima; depois de dias parados, você volta de onde parou e o Momentumm Score não zera.',
   },
   {
-    question: 'Não tenho tempo pra planejar nada.',
-    answer:
-      'Você não planeja: responde o quiz e o plano sai pronto, por etapas e do tamanho do tempo que você tem. Depois é abrir o app e fazer um passo por dia.',
-  },
-  {
     question: 'Quanto tempo por dia eu preciso ter?',
     answer:
-      'A partir de 10 minutos. O quiz pergunta quanto você tem de verdade (10, 20, 30 minutos, uma hora ou "depende do dia") e o plano sai desse tamanho. Em dia apertado, vale a versão mínima.',
+      'A partir de 10 minutos. Você não planeja nada: o quiz pergunta quanto tempo você tem de verdade e o plano já sai desse tamanho. Em dia apertado, vale a versão mínima.',
   },
   {
     question: 'Serve pra que tipo de meta?',
     answer:
-      'Pra meta pessoal com prazo: ler mais, estudar pra uma prova, treinar, meditar, tirar um projeto do papel. Cada objetivo vira etapas, ações e hábitos no mesmo lugar.',
-  },
-  {
-    question: 'E se a minha rotina mudar no meio do caminho?',
-    answer:
-      'O plano muda junto. Você ajusta prazo e ritmo quando quiser, e o Dia Adaptável encolhe o passo em dia apertado. No PRO, a Momentumm AI lê o seu progresso e sugere o ajuste pronto pra aplicar.',
-  },
-  {
-    question: 'Já uso um app de hábitos. Por que trocar?',
-    answer:
-      'App de hábito conta repetição. O Momentumm liga cada hábito a um objetivo com prazo e diz qual passo empurra a meta hoje. E um dia perdido não zera o seu progresso.',
-  },
-  {
-    question: 'Preciso usar a parte social?',
-    answer:
-      'Não. O app funciona inteiro com uma pessoa só: plano, dia, Score e review. Chamar alguém pro Juntos é opcional, e tudo o que você registra nasce privado.',
-  },
-  {
-    question: 'Preciso instalar alguma coisa?',
-    answer:
-      'Não. O Momentumm roda no navegador do celular e do computador. Se quiser, dá pra adicionar à tela inicial e abrir como um app.',
+      'Pra meta pessoal com prazo: ler mais, estudar pra uma prova, treinar, meditar, tirar um projeto do papel. Roda no navegador do celular e do computador, sem instalar nada.',
   },
   {
     question: 'Qual a diferença entre o gratuito e o PRO?',
-    answer: `O gratuito roda o ciclo inteiro com limites: ${free.activeObjectives} objetivos, ${free.activeHabits} hábitos, ${free.activePlans} plano por etapas, ${free.actionsPerDay} ações por dia, ${free.historyDays} dias de histórico e ${free.pairs} dupla no Juntos. O PRO tira os limites e abre o histórico completo, o review semanal e a Momentumm AI.`,
+    answer: `O gratuito roda o ciclo inteiro com limites: ${free.activeObjectives} objetivos, ${free.activeHabits} hábitos, ${free.activePlans} plano por etapas, ${free.actionsPerDay} ações por dia e ${free.historyDays} dias de histórico. O PRO tira os limites e abre o histórico completo, o review semanal e a Momentumm AI.`,
   },
-]
-
-const TRIAL_QUESTION: Question = {
-  question: 'Como funciona o período de teste?',
-  answer: `Toda conta nova começa com ${TRIAL_DAYS} dias de PRO, sem cartão e sem cobrança automática. No fim do prazo a conta volta pro gratuito sozinha e nada do que você criou é apagado.`,
-}
-
-const CLOSING: readonly Question[] = [
+  RISK,
   {
     question: 'Meus dados ficam privados?',
     answer:
-      'Tudo nasce privado, e a regra de quem vê o quê é aplicada no banco, não só na tela. Compartilhar é uma escolha item por item, e você exporta tudo o que é seu, ou apaga a conta, quando quiser.',
+      'Tudo nasce privado, e a regra de quem vê o quê é aplicada no banco, não só na tela. Você exporta tudo o que é seu, ou apaga a conta, quando quiser.',
   },
   {
-    question: 'Posso cancelar quando quiser?',
+    question: 'Pra quem o Momentumm não serve?',
     answer:
-      'Sim, sem fidelidade: cancela em Configurações e o PRO vale até o fim do período já pago. Depois a conta volta pro gratuito com tudo que você criou.',
+      'Pra quem procura agenda de tarefas do trabalho ou da equipe, ou um app que cobre e castigue. Ele é pra metas pessoais, e o passo de cada dia continua sendo seu.',
   },
 ]
-
-const QUESTIONS: readonly Question[] = TRIAL_PROMISE_VERIFIED
-  ? [...BASE, TRIAL_QUESTION, ...CLOSING]
-  : [...BASE, ...CLOSING]
 
 export function Faq() {
   return (
