@@ -71,7 +71,8 @@ editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
 ### Interface 3S (03/10/2026, branch `feat/redesign-3s`)
 
 A interface inteira foi trocada pela "nova geração 3S" (Simples, Sexy,
-Surpreendente). Claro como tema principal (escuro continua como escolha),
+Surpreendente). Escuro com brilho roxo como padrão, igual à landing (o claro
+continua como escolha no Perfil),
 fonte Plus Jakarta Sans hospedada no próprio app (a CSP não deixa Google
 Fonts), cards flutuantes com sombra suave e roxo só onde há ação.
 

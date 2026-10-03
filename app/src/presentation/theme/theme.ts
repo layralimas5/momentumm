@@ -3,8 +3,8 @@ export type Theme = (typeof THEMES)[number]
 
 export const THEME_KEY = 'momentumm.theme.v1'
 
-/** O claro é a versão principal do 3S; o escuro é escolha. Sem preferência salva, fica o claro. */
-export const DEFAULT_THEME: Theme = 'light'
+/** O escuro com brilho roxo é a identidade; o claro é escolha. Sem preferência salva, fica o escuro. */
+export const DEFAULT_THEME: Theme = 'dark'
 
 export function readStoredTheme(): Theme {
   try {

@@ -568,6 +568,15 @@
     letter-spacing: -0.005em;
   }
 
+  /* No escuro o fundo do app tem o mesmo brilho roxo do topo da landing: é a
+     identidade do Momentumm, preto profundo com a marca acesa por trás. */
+  :root:not([data-theme='light']) .app-3s {
+    background-image:
+      radial-gradient(110% 55% at 50% -8%, color-mix(in oklab, var(--color-brand) 30%, transparent) 0%, transparent 70%),
+      radial-gradient(70% 40% at 100% 100%, color-mix(in oklab, var(--color-brand) 12%, transparent) 0%, transparent 70%);
+    background-attachment: fixed;
+  }
+
   .card {
     background-color: var(--color-surface);
     border-radius: 1.75rem;
