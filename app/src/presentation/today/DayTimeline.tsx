@@ -47,7 +47,7 @@ export function DayTimeline({ agenda }: { readonly agenda: DayAgenda }) {
         title="Seu Dia"
         aside={`${timed.length} ${timed.length === 1 ? 'bloco programado' : 'blocos programados'}`}
       />
-      <Card className="py-4 pr-4 pl-2">
+      <Card padded={false} className="py-4 pr-4 pl-2">
         <ol>
           {timed.map((item, index) => {
             const state = timelineStateOf(item, nowKey)

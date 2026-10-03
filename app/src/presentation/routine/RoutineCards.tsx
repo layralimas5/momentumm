@@ -272,7 +272,7 @@ export function WeeklyRoutineCard({
   const sorted = [...items].sort((a, b) => (a.timeOfDay ?? '99').localeCompare(b.timeOfDay ?? '99'))
 
   return (
-    <Card className="p-2">
+    <Card padded={false} className="p-2">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}

@@ -89,6 +89,11 @@ Fonts), cards flutuantes com sombra suave e roxo só onde há ação.
   dias, semana corrente, Recovery Rate, horário de pico e melhor dia. Tudo
   sobre o mesmo `creditOfDay` do Momentum.
 - **Círculo** junta feed, clubes e pessoas em pílulas (`/app/feed` redireciona).
+- **Plano por período** (`domain/entities/period-plan.ts`): em Objetivos, cada
+  objetivo destrinchado em esta semana, resto do mês, meses seguintes e o que
+  sobra até o prazo. Cada período mostra etapa em foco, marcos que vencem, ações
+  marcadas e, se o objetivo é por volume, quanto somar. Período sem ação vira
+  "Sem ações" (laranja só quando uma etapa vence nele).
 - Nada de dado inventado na tela: relíquia é conquista real do motor de
   evolução, sem "edição numerada" nem "chave criptográfica".
 

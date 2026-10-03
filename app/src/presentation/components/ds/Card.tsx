@@ -6,6 +6,8 @@ type CardProps<T extends ElementType> = {
   readonly as?: T
   /** `float` é o degrau acima: prioridade, sheet, o card que pede ação. */
   readonly tone?: 'flat' | 'float'
+  /** Falso quando o card define o próprio espaçamento (lista colada na borda, por exemplo). */
+  readonly padded?: boolean
   readonly className?: string
   readonly children: ReactNode
 } & Omit<ComponentPropsWithoutRef<T>, 'as' | 'className' | 'children'>
@@ -13,13 +15,14 @@ type CardProps<T extends ElementType> = {
 export function Card<T extends ElementType = 'section'>({
   as,
   tone = 'flat',
+  padded = true,
   className,
   children,
   ...rest
 }: CardProps<T>) {
   const Tag = as ?? 'section'
   return (
-    <Tag className={cn(tone === 'float' ? 'card-float' : 'card', 'p-5 sm:p-6', className)} {...rest}>
+    <Tag className={cn(tone === 'float' ? 'card-float' : 'card', padded && 'p-5 sm:p-6', className)} {...rest}>
       {children}
     </Tag>
   )

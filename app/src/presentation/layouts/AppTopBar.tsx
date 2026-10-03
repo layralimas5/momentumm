@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/presentation/auth/use-auth'
-import { LogoMark } from '@/presentation/components/brand/Logo'
 import { StreakBadge } from '@/presentation/components/ds/Badges'
 import { Avatar } from '@/presentation/components/ui/Avatar'
 import { BottomSheet } from '@/presentation/components/ui/BottomSheet'
@@ -39,11 +38,7 @@ export function AppTopBar() {
     <>
       <header className="sticky top-0 z-30 bg-canvas/60 pt-safe backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-2xl items-center gap-3 px-4 py-3 sm:px-6">
-          {root ? (
-            <Link to="/app" className="chip grid size-10 shrink-0 place-items-center overflow-hidden rounded-xl" aria-label="Momentumm, ir para Hoje">
-              <LogoMark className="size-10 scale-[1.45]" />
-            </Link>
-          ) : (
+          {root ? null : (
             <button
               type="button"
               onClick={goBack}

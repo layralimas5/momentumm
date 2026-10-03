@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { addDays, dayKeyOf, startOfMonth } from '@/domain/entities/day'
 import { OBJECTIVE_STATUS_LABELS } from '@/domain/entities/objective'
 import { planRatioAt } from '@/domain/entities/plan-progress'
@@ -11,6 +12,7 @@ import { Icon } from '@/presentation/components/ui/Icon'
 import { ErrorNote } from '@/presentation/components/ui/States'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
 import { useObjectives, type ObjectiveView } from '@/presentation/planner/use-objectives'
+import { PeriodPlanCard } from '@/presentation/objectives/PeriodPlanCard'
 import { usePlanner } from '@/presentation/planner/use-planner'
 
 const PRIORITY_RANK = { alta: 0, media: 1, baixa: 2 } as const
@@ -102,7 +104,7 @@ export function ObjectivesPage() {
           <ul className="flex flex-col gap-3">
             {others.map((view) => (
               <li key={view.progress.objective.id}>
-                <GoalCard goal={toCard(view)} />
+                <GoalWithPlan view={view} card={toCard(view)} />
               </li>
             ))}
           </ul>
@@ -165,6 +167,8 @@ function MainObjective({ view, card }: { readonly view: ObjectiveView; readonly 
         </Card>
       ) : null}
 
+      <PeriodPlanCard view={view} />
+
       {links.length > 0 ? (
         <Card aria-labelledby="conectado">
           <h3 id="conectado" className="eyebrow text-[0.72rem] text-ink-muted">
@@ -194,5 +198,26 @@ function MainObjective({ view, card }: { readonly view: ObjectiveView; readonly 
         </Card>
       ) : null}
     </section>
+  )
+}
+
+/** Objetivo secundário: o card e, sob demanda, o plano por período dele. */
+function GoalWithPlan({ view, card }: { readonly view: ObjectiveView; readonly card: GoalCardData }) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div className="flex flex-col gap-2">
+      <GoalCard goal={card} />
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        className="inline-flex min-h-10 items-center gap-1 self-start px-2 text-sm font-medium text-brand-hi"
+      >
+        {open ? 'Fechar plano' : 'Ver plano por período'}
+        <Icon name={open ? 'acima' : 'abaixo'} className="size-4" />
+      </button>
+      {open ? <PeriodPlanCard view={view} /> : null}
+    </div>
   )
 }

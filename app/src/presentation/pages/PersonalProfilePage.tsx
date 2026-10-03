@@ -204,14 +204,14 @@ export function PersonalProfilePage() {
 
       <section aria-labelledby="jornada" className="flex flex-col gap-3">
         <SectionHeader id="jornada" title="Sua jornada" icon="calendarioGrade" caps />
-        <Card className="p-4">
+        <Card padded={false} className="p-4">
           <ProfileJourney userId={profile.id} today={planner.today} movedDays={movedDays} owner />
         </Card>
       </section>
 
       <section aria-labelledby="preferencias" className="flex flex-col gap-3">
         <SectionHeader id="preferencias" title="Preferências" caps />
-        <Card as="div" className="p-0">
+        <Card as="div" padded={false}>
           <ul className="divide-y divide-line">
             {circleOpen ? (
               <PreferenceRow
