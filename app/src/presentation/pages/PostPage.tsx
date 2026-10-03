@@ -102,14 +102,14 @@ export function PostPage() {
           onToggleLike={() => void toggleLike()}
           onToggleSave={() => void toggleSave()}
           onChanged={setPost}
-          onRemoved={() => navigate('/app/feed', { replace: true })}
+          onRemoved={() => navigate('/app/circulo', { replace: true })}
         />
       ) : (
         <EmptyState
           title="Esta publicação não está disponível"
           description="Ela pode ter sido apagada, ou ser de um perfil que você não acompanha."
           action={
-            <Button variant="secondary" size="sm" onClick={() => navigate('/app/feed')}>
+            <Button variant="secondary" size="sm" onClick={() => navigate('/app/circulo')}>
               Ir para o feed
             </Button>
           }

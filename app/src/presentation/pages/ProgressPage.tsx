@@ -1,537 +1,145 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { activityType } from '@/domain/entities/activity-type'
-import { dayKeyToDate } from '@/domain/entities/day'
-import {
-  heldBackNote,
-  MOMENTUM_LEVEL_LABELS,
-  type DayDot,
-  type MomentumFactor,
-} from '@/domain/entities/momentum'
-import { EvolutionTeaser } from '@/presentation/evolution/EvolutionTeaser'
-import { MomentumNextAction } from '@/presentation/components/dashboard/MomentumNextAction'
-import { MomentumRules } from '@/presentation/components/dashboard/MomentumRules'
-import { deltaLabel } from '@/domain/entities/week'
-import { Button, buttonClass } from '@/presentation/components/ui/Button'
-import { Icon } from '@/presentation/components/ui/Icon'
-import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
-import { Panel, PanelHeader, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
-import { AiCoachPanel } from '@/presentation/ai/AiCoachPanel'
 import { AiProgressPanel } from '@/presentation/ai/AiProgressPanel'
 import { useAi } from '@/presentation/ai/use-ai'
-import { ProGate } from '@/presentation/plan/ProGate'
+import { Eyebrow } from '@/presentation/components/ds/Card'
+import { StatusTag } from '@/presentation/components/ds/Badges'
+import { DashboardSkeleton } from '@/presentation/components/dashboard/DashboardSkeleton'
+import { Icon } from '@/presentation/components/ui/Icon'
+import { ErrorNote } from '@/presentation/components/ui/States'
+import { useEvolution } from '@/presentation/evolution/use-evolution'
 import { usePlanner } from '@/presentation/planner/use-planner'
-import { useAsyncAction } from '@/presentation/hooks/use-async-action'
-import { useInsightActions } from '@/presentation/planner/use-insight-actions'
-import { useProgress, type PeriodTotals, type Rate } from '@/presentation/planner/use-progress'
-import { cn } from '@/shared/lib/cn'
-import { PageHeader } from './PageHeader'
+import { useProgress } from '@/presentation/planner/use-progress'
+import {
+  ConsistencyCard,
+  NoticedSection,
+  RecordCard,
+  RecoveryRateCard,
+  TelemetryScoreCard,
+  WeekCard,
+  type PatternInsight,
+} from '@/presentation/progress/ProgressCards'
+import { useTelemetry } from '@/presentation/progress/use-telemetry'
 
 /**
- * Progresso.
- *
- * O número existe pra virar decisão. Por isso o Momentumm aparece aberto em
- * fatores logo abaixo do total: um score fechado é um oráculo, e ninguém muda
- * de comportamento por causa de um oráculo.
+ * Progresso: o cockpit. Ao terminar de rolar a pessoa sabe como está, se está
+ * evoluindo, a constância, o padrão, as quedas, a volta e o próximo recorde,
+ * sem ler um relatório. Cada card é um número ou um desenho; texto só onde o
+ * número sozinho não diz o que fazer.
  */
 export function ProgressPage() {
   const planner = usePlanner()
   const progress = useProgress()
-
-  /*
-    A mesma execução do dashboard e da tela de Insights. Descrever o risco e
-    não oferecer o ajuste é o que faz a pessoa ler três telas e não mudar
-    nada no dia seguinte.
-  */
-  const actions = useInsightActions(progress.insightContext)
-  const applyAdjustment = useAsyncAction(actions.apply)
-
-  // Ação concluída é movimento: o Momentumm conta ela, então a tela que mostra
-  // o Momentumm não pode dizer "nada pra medir" no dia em que a pessoa fechou
-  // a primeira prioridade da conta.
-  const hasData =
-    planner.activities.length > 0 ||
-    planner.habitLogs.length > 0 ||
-    planner.tasks.some((task) => task.status === 'feita')
-
-  // Analisar é o PRO. O gratuito vê a pontuação de hoje e os objetivos; o
-  // resto da tela é a parte que cruza períodos, e ela não tem versão menor.
-  const metrics = planner.limits.metrics
-
-  // "Interpretar meu momento": a IA lê o mesmo estado da tela e devolve o
-  // diagnóstico com os ajustes aplicáveis. Só existe onde a IA existe (PRO).
+  const telemetry = useTelemetry()
+  const evolution = useEvolution()
   const ai = useAi()
 
+  const insights = useMemo<PatternInsight[]>(() => {
+    const list: PatternInsight[] = []
+    const { peak, bestDay } = telemetry
+
+    if (peak) {
+      list.push({
+        id: 'pico',
+        icon: peak.startHour < 12 ? 'sol' : peak.startHour < 18 ? 'relogio' : 'lua',
+        title: peak.startHour < 12 ? 'Pico Matinal' : peak.startHour < 18 ? 'Pico da Tarde' : 'Pico Noturno',
+        body: (
+          <>
+            Você conclui <strong className="font-semibold text-ink">{liftLabel(peak.lift)} mais tarefas e hábitos</strong>{' '}
+            entre as {hour(peak.startHour)} e as {hour(peak.endHour)}.
+          </>
+        ),
+        cta: 'Aproveite para foco profundo',
+      })
+    }
+
+    if (bestDay) {
+      list.push({
+        id: 'melhor-dia',
+        icon: 'raio',
+        title: 'Melhor Dia',
+        body: (
+          <>
+            <strong className="font-semibold text-ink">{bestDay.name}</strong> é o seu dia de maior momentum: rende{' '}
+            {liftLabel(bestDay.lift)} acima dos outros.
+          </>
+        ),
+        cta: 'Ritmo exemplar',
+      })
+    }
+
+    if (progress.nextAdjustment) {
+      list.push({
+        id: progress.nextAdjustment.id,
+        icon: 'ia',
+        title: progress.nextAdjustment.title,
+        body: progress.nextAdjustment.recommendation,
+        cta: progress.nextAdjustment.actionLabel,
+      })
+    }
+
+    return list
+  }, [telemetry, progress.nextAdjustment])
+
+  if (planner.loading) return <DashboardSkeleton mobile />
+
+  const level = evolution.summary.progress
+  const metrics = planner.limits.metrics
+
   return (
-    <div className="flex flex-col gap-5">
-      <PageHeader
-        title="Progresso"
-        description="Se o teu ritmo está de pé e o que ajustar."
-      />
+    <div className="flex flex-col gap-6 pb-2">
+      {planner.error ? <ErrorNote message={planner.error} onRetry={() => void planner.reload()} /> : null}
 
-      {planner.error ? (
-        <ErrorNote message={planner.error} onRetry={() => void planner.reload()} />
-      ) : null}
-
-      {planner.loading && !hasData ? (
-        <LoadingBlock label="Calculando o progresso" />
-      ) : !hasData ? (
-        <EmptyState
-          title="Ainda não há o que medir"
-          description="Marca um hábito ou conclui uma ação e volta aqui."
-          action={
-            <Link to="/app" className={buttonClass()}>
-              <Icon name="hoje" className="size-4" />
-              Ir pro meu dia
-            </Link>
-          }
-        />
-      ) : (
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <Panel tone="brand" className="xl:col-span-2">
-            <PanelHeader title="Momentumm" icon="raio" />
-
-            <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <p className="tabular text-5xl font-semibold tracking-tight text-ink">
-                  {progress.momentum.value}
-                  <span className="text-2xl text-ink-faint">/100</span>
-                </p>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <Tag tone="brand">{MOMENTUM_LEVEL_LABELS[progress.momentum.level]}</Tag>
-                  {metrics ? (
-                    <Tag tone={progress.momentum.delta >= 0 ? 'positive' : 'neutral'}>
-                      {progress.momentum.delta > 0 ? '+' : ''}
-                      {progress.momentum.delta} vs. semana anterior
-                    </Tag>
-                  ) : null}
-                </div>
-              </div>
-
-              <p className="max-w-md text-pretty text-sm text-ink-muted">
-                {progress.momentum.explanation}
-                {heldBackNote(progress.momentum) ? ` ${heldBackNote(progress.momentum)}` : ''}
-              </p>
-            </div>
-
-            {metrics ? (
-              <div className="mt-6 border-t border-line pt-5">
-              <h3 className="text-sm font-semibold tracking-wide text-ink-muted uppercase">
-                De onde vieram os pontos
-              </h3>
-              <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                {progress.factors.map((factor) => (
-                  <FactorBar
-                    key={factor.key}
-                    factor={factor}
-                    weakest={progress.weakest?.key === factor.key}
-                  />
-                ))}
-              </ul>
-
-              {progress.weakest ? (
-                <p className="mt-4 text-sm text-ink-muted">
-                  <span className="text-ink-faint">Onde há mais espaço: </span>
-                  {progress.weakest.label.toLowerCase()}, com{' '}
-                  {progress.weakest.maxPoints - progress.weakest.points} pontos na mesa.
-                </p>
-              ) : null}
-
-              {/*
-                A próxima ação vem do MESMO cálculo do número: é o item em
-                aberto que mais sobe o score se sair hoje. "Onde há espaço"
-                diz o fator; isto diz o que fazer.
-              */}
-              <MomentumNextAction action={progress.nextAction} className="mt-4" />
-
-              <MomentumRules className="mt-4" />
-              </div>
-            ) : null}
-          </Panel>
-
-          {/*
-            Logo abaixo do Momentumm: os dois números do app ficam um embaixo do
-            outro, e a diferença entre estado de hoje e patrimonio acumulado
-            aparece sem precisar de explicação.
-          */}
-          <EvolutionTeaser />
-
-          {ai.enabled ? <AiProgressPanel ai={ai} className="xl:col-span-2" /> : null}
-
-          {metrics ? (
-            <>
-              <Panel>
-            <PanelHeader
-              title="Últimos 7 dias"
-              icon="progresso"
-              hint={progress.week.conclusion}
-            />
-            <WeekChart series={progress.series} />
-            <div className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-4 sm:grid-cols-4">
-              <Stat
-                label="Dias ativos"
-                value={`${progress.last7.activeDays}/7`}
-                hint={deltaLabel(
-                  progress.week.current.activeDays,
-                  progress.week.previous.activeDays,
-                  'dias',
-                )}
-              />
-              <Stat
-                label="Hábitos"
-                value={rateText(progress.last7.habits)}
-                hint={compareText(progress.last7.habits)}
-              />
-              <Stat
-                label="Ações"
-                value={rateText(progress.last7.tasks)}
-                hint={compareText(progress.last7.tasks)}
-              />
-              <Stat
-                label="Rotina"
-                value={rateText(progress.last7.routine)}
-                hint={compareText(progress.last7.routine)}
-              />
-            </div>
-          </Panel>
-
-          <Panel>
-            <PanelHeader title="Este mês" icon="calendario" />
-            <div className="mt-4 flex flex-col gap-4">
-              <PeriodBlock totals={progress.month} />
-              <div className="grid grid-cols-2 gap-3 border-t border-line pt-4">
-                <Stat label="Objetivos ativos" value={String(progress.activeObjectives)} />
-                <Stat label="Objetivos concluídos" value={String(progress.completedObjectives)} />
-              </div>
-            </div>
-          </Panel>
-
-          <Panel>
-            <PanelHeader title="Onde você avançou" icon="trofeu" />
-            {progress.gains.length === 0 ? (
-              <p className="mt-4 text-sm text-ink-muted">
-                Ainda não há avanço mensurável nessa janela. Não é o mesmo que estar parado: é
-                que uma semana é pouco pra mostrar tendência.
-              </p>
-            ) : (
-              <ul className="mt-4 flex flex-col gap-3">
-                {progress.gains.map((gain) => (
-                  <li key={gain} className="flex gap-2.5 text-sm text-ink-muted">
-                    <Icon name="check" className="mt-0.5 size-4 shrink-0 text-positive" />
-                    <span className="text-pretty">{gain}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Panel>
-
-          <Panel>
-            <PanelHeader title="O que precisa de atenção" icon="sino" />
-            {progress.risks.length === 0 ? (
-              <p className="mt-4 text-sm text-ink-muted">
-                Nada travado por aqui. Segue como está.
-              </p>
-            ) : (
-              <ul className="mt-4 flex flex-col gap-3">
-                {progress.risks.map((risk) => (
-                  <li key={risk} className="flex gap-2.5 text-sm text-ink-muted">
-                    <Icon name="raio" className="mt-0.5 size-4 shrink-0 text-flame" />
-                    <span className="text-pretty">{risk}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            {/*
-              O ajuste vem colado no risco de propósito.
-
-              Uma lista do que está travado e um link pra outra tela devolvem
-              o trabalho pra pessoa. Aqui o botão executa a recomendação, a
-              mesma que o dashboard executa, pelo mesmo hook.
-            */}
-            {progress.nextAdjustment ? (
-              <div className="mt-4 rounded-xl border border-brand/25 bg-brand-dim/25 px-3.5 py-3">
-                <p className="text-xs font-medium tracking-wide text-brand-ink uppercase">
-                  O próximo ajuste
-                </p>
-                <p className="mt-1.5 text-sm font-medium text-balance text-ink">
-                  {progress.nextAdjustment.title}
-                </p>
-                <p className="mt-1 text-sm text-ink-muted">
-                  {progress.nextAdjustment.recommendation}
-                </p>
-
-                {progress.nextAdjustment.action === 'nenhuma' ? null : (
-                  <Button
-                    size="sm"
-                    className="mt-3"
-                    loading={applyAdjustment.running}
-                    onClick={() => {
-                      if (progress.nextAdjustment) void applyAdjustment.run(progress.nextAdjustment)
-                    }}
-                  >
-                    {progress.nextAdjustment.actionLabel}
-                  </Button>
-                )}
-
-                <div aria-live="polite" className="min-h-5">
-                  {applyAdjustment.error ? (
-                    <p className="mt-1 text-sm text-danger">{applyAdjustment.error}</p>
-                  ) : null}
-                </div>
-              </div>
-            ) : null}
-
-            <Link
-              to="/app/insights"
-              className="mt-4 inline-flex items-center gap-1.5 text-sm text-brand-ink transition-colors hover:text-brand-hi"
-            >
-              Ver todas as leituras do ritmo
-              <Icon name="seta" className="size-4" />
-            </Link>
-
-            {progress.stalled.length > 0 ? (
-              <Link
-                to="/app/objetivos"
-                className="mt-4 inline-flex items-center gap-1.5 text-sm text-brand-ink transition-colors hover:text-brand-hi"
-              >
-                Rever objetivos parados
-                <Icon name="seta" className="size-4" />
-              </Link>
-            ) : null}
-          </Panel>
-            </>
-          ) : (
-            <ProGate
-              className="xl:col-span-2"
-              title="Métricas detalhadas"
-              description="Últimos 7 dias, o mês inteiro, onde você avançou e o que precisa de atenção, com o ajuste pronto pra aplicar."
-            />
-          )}
-
-          {/*
-            Objetivo por objetivo, com etapa, previsão e gargalo.
-
-            Cada bloco responde as quatro perguntas da tela pro objetivo
-            específico: onde estou, o que está travando, quando isso fecha e
-            qual é o próximo passo. Uma barra sozinha responderia zero delas.
-          */}
-          <Panel className="xl:col-span-2">
-            <PanelHeader
-              title="Objetivos"
-              icon="objetivo"
-            />
-            {progress.objectives.length === 0 ? (
-              <p className="mt-4 text-sm text-ink-muted">Nenhum objetivo criado ainda.</p>
-            ) : (
-              <ul className="mt-4 flex flex-col gap-5">
-                {progress.objectives.map((view) => {
-                  const axis = activityType(view.progress.objective.axis)
-                  const objective = view.progress.objective
-
-                  return (
-                    <li
-                      key={objective.id}
-                      className="flex flex-col gap-2 rounded-xl border border-line bg-surface-hi/40 p-4"
-                    >
-                      <div className="flex items-baseline justify-between gap-3">
-                        <Link
-                          to={`/app/objetivos/${objective.id}`}
-                          className="truncate text-sm font-medium text-ink transition-colors hover:text-brand-ink"
-                        >
-                          {objective.title}
-                        </Link>
-                        <span className="tabular shrink-0 text-sm text-ink-muted">
-                          {Math.round(view.ratio * 100)}%
-                        </span>
-                      </div>
-
-                      <ProgressBar
-                        value={view.ratio}
-                        label={`Progresso de ${objective.title}`}
-                        color={axis.colorToken}
-                      />
-
-                      {/* As etapas em miniatura: é a leitura que mostra ONDE o
-                          progresso está preso, e não só que ele está. */}
-                      {view.plan.hasPlan ? (
-                        <ul className="mt-1 flex flex-col gap-1.5">
-                          {view.plan.stages.map((stage) => (
-                            <li key={stage.stage.id} className="flex items-center gap-2.5">
-                              <span className="w-28 shrink-0 truncate text-xs text-ink-muted">
-                                {stage.stage.title}
-                              </span>
-                              <ProgressBar
-                                className="flex-1"
-                                value={stage.ratio}
-                                label={`Etapa ${stage.stage.title} de ${objective.title}`}
-                                color={
-                                  view.plan.bottleneck?.stage.id === stage.stage.id
-                                    ? 'var(--color-flame)'
-                                    : axis.colorToken
-                                }
-                              />
-                              <span className="tabular w-16 shrink-0 text-right text-xs text-ink-faint">
-                                {stage.stage.weight}% · {Math.round(stage.ratio * 100)}%
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-xs text-ink-faint">
-                          Sem etapas: a barra mede volume registrado, não execução.
-                        </p>
-                      )}
-
-                      <p className="text-xs text-ink-faint">{view.forecast.message}</p>
-
-                      <div className="flex flex-wrap items-center gap-2">
-                        {view.plan.bottleneck ? (
-                          <Tag tone="warn">Gargalo: {view.plan.bottleneck.stage.title}</Tag>
-                        ) : null}
-                        {view.plan.overdueCount > 0 ? (
-                          <Tag tone="warn">
-                            {view.plan.overdueCount}{' '}
-                            {view.plan.overdueCount === 1 ? 'ação atrasada' : 'ações atrasadas'}
-                          </Tag>
-                        ) : null}
-                        {view.plan.habits.length > 0 ? (
-                          <Tag>
-                            {view.plan.habits.length}{' '}
-                            {view.plan.habits.length === 1 ? 'hábito de apoio' : 'hábitos de apoio'}
-                          </Tag>
-                        ) : null}
-                      </div>
-
-                      {view.plan.nextTask ? (
-                        <p className="text-xs text-ink-muted">
-                          <span className="text-ink-faint">Próxima ação: </span>
-                          {view.plan.nextTask.title}
-                        </p>
-                      ) : null}
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-          </Panel>
+      <header className="flex items-end justify-between gap-3 px-1">
+        <div className="min-w-0">
+          <Eyebrow dot>Cockpit telemetria</Eyebrow>
+          <h2 className="mt-1 text-[1.75rem] leading-tight font-bold tracking-tight text-ink">Evolução Pessoal</h2>
         </div>
-      )}
+        <StatusTag className="mb-1">{planner.online ? (planner.syncing ? 'Sincronizando' : 'Sincronizado') : 'Offline'}</StatusTag>
+      </header>
 
-      {/* Por último, de propósito: o coach fala depois de a pessoa ver os números. */}
-      <AiCoachPanel ai={ai} />
-    </div>
-  )
-}
-
-function FactorBar({
-  factor,
-  weakest,
-}: {
-  readonly factor: MomentumFactor
-  readonly weakest: boolean
-}) {
-  return (
-    <li>
-      <div className="flex items-baseline justify-between gap-2">
-        <span className={cn('text-xs', weakest ? 'text-flame' : 'text-ink-faint')}>
-          {factor.label}
-        </span>
-        <span className="tabular text-xs text-ink-muted">
-          {factor.points}/{factor.maxPoints}
-        </span>
-      </div>
-      <ProgressBar
-        className="mt-1.5"
-        value={factor.value}
-        label={`${factor.label}: ${factor.points} de ${factor.maxPoints} pontos`}
-        color={weakest ? 'var(--color-flame)' : 'var(--color-brand)'}
+      <TelemetryScoreCard
+        momentum={progress.momentum}
+        levelLabel={`Nível ${level.level} ${level.name}`}
+        factors={progress.factors}
+        detailed={planner.limits.momentumDetail}
       />
-    </li>
-  )
-}
 
-/**
- * A semana em barras. Sem eixo, sem grade e sem legenda: sete barras e os dias
- * embaixo já respondem "onde eu caí", e qualquer coisa além disso é decoração
- * que rouba espaço da leitura.
- */
-function WeekChart({ series }: { readonly series: readonly DayDot[] }) {
-  return (
-    <ol className="mt-4 flex items-end gap-1.5" aria-label="Intensidade dos últimos 7 dias">
-      {series.map((dot) => {
-        const label = dayKeyToDate(dot.day).toLocaleDateString('pt-BR', { weekday: 'narrow' })
-        const height = Math.max(4, Math.round(dot.intensity * 100))
+      <WeekCard week={telemetry.week} streak={planner.streak} />
 
-        return (
-          <li key={dot.day} className="flex flex-1 flex-col items-center gap-1.5">
-            <span className="flex h-24 w-full items-end">
-              <span
-                aria-hidden="true"
-                className={cn(
-                  'w-full rounded-t-md transition-[height] duration-500',
-                  dot.intensity > 0 ? 'bg-brand' : 'bg-surface-top',
-                )}
-                style={{ height: `${height}%` }}
-              />
-            </span>
-            <span className="text-xs text-ink-faint">{label}</span>
-            <span className="sr-only">
-              {dot.day}: {dot.minutes} minutos, {dot.habitsDone} hábitos, {dot.tasksDone} ações
-            </span>
-          </li>
-        )
-      })}
-    </ol>
-  )
-}
+      {metrics ? <ConsistencyCard map={telemetry.map} /> : null}
 
-function PeriodBlock({ totals }: { readonly totals: PeriodTotals }) {
-  return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <Stat label="Dias ativos" value={`${totals.activeDays}/${totals.days}`} />
-      <Stat label="Minutos" value={String(totals.minutes)} />
-      <Stat label="Hábitos" value={rateText(totals.habits)} />
-      <Stat label="Ações" value={rateText(totals.tasks)} />
+      <RecoveryRateCard recovery={telemetry.recovery} />
+
+      <NoticedSection insights={insights} locked={!metrics} />
+
+      <RecordCard streak={planner.streak} />
+
+      {ai.enabled ? <AiProgressPanel ai={ai} /> : null}
+
+      <nav aria-label="Mais leituras" className="grid grid-cols-2 gap-3">
+        <MoreLink to="/app/review" icon="calendarioGrade" label="Review semanal" />
+        <MoreLink to="/app/evolucao" icon="estrela" label="XP e conquistas" />
+      </nav>
     </div>
   )
 }
 
-/**
- * O número do período como peça, não como linha de texto.
- *
- * Rótulo pequeno em cima, número grande embaixo, cada um na sua caixa: é o que
- * faz "5/7 dias ativos" ser lido de relance, sem o olho ter que separar onde
- * termina um dado e começa o outro. A comparação com o período anterior fica
- * embaixo, menor, porque é contexto e não o número em si.
- */
-function Stat({
-  label,
-  value,
-  hint,
-}: {
-  readonly label: string
-  readonly value: string
-  readonly hint?: string | undefined
-}) {
+function MoreLink({ to, icon, label }: { readonly to: string; readonly icon: 'calendarioGrade' | 'estrela'; readonly label: string }) {
   return (
-    <div className="rounded-xl border border-line bg-surface-hi/40 px-3.5 py-3">
-      <p className="text-xs text-ink-faint">{label}</p>
-      <p className="tabular mt-1 text-2xl leading-none font-semibold tracking-tight text-ink">
-        {value}
-      </p>
-      {hint ? <p className="mt-1.5 text-xs text-ink-faint">{hint}</p> : null}
-    </div>
+    <Link to={to} className="card press flex min-h-14 items-center gap-2.5 rounded-[1.4rem] px-4 text-sm font-medium text-ink">
+      <Icon name={icon} className="size-5 text-brand-hi" />
+      {label}
+    </Link>
   )
 }
 
-function rateText(rate: Rate): string {
-  if (rate.total === 0) return 'sem dado'
-  return `${Math.round(rate.ratio * 100)}%`
+/** Até o dobro, em porcentagem ("38%"); acima disso, em vezes ("6,2x"), que é como se lê. */
+function liftLabel(lift: number): string {
+  if (lift < 1) return `${Math.round(lift * 100)}%`
+  return `${(lift + 1).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}x`
 }
 
-function compareText(rate: Rate): string | undefined {
-  if (rate.total === 0) return undefined
-  const delta = Math.round((rate.ratio - rate.previousRatio) * 100)
-  if (delta === 0) return 'igual ao período anterior'
-  return `${delta > 0 ? '+' : ''}${delta} pontos vs. anterior`
+function hour(value: number): string {
+  return `${String(value).padStart(2, '0')}h`
 }

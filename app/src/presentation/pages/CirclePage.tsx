@@ -1,223 +1,186 @@
-import { Link } from 'react-router-dom'
-import { Avatar } from '@/presentation/components/ui/Avatar'
-import { Button } from '@/presentation/components/ui/Button'
-import { ConfirmDialog } from '@/presentation/components/ui/ConfirmDialog'
+import { Link, useSearchParams } from 'react-router-dom'
+import { CirclePeople } from '@/presentation/circle/CirclePeople'
+import { ClubCard } from '@/presentation/clubs/ClubCard'
+import { useClubs } from '@/presentation/clubs/use-clubs'
+import { IconWell } from '@/presentation/components/ds/Card'
+import { FilterPills } from '@/presentation/components/ds/Controls'
 import { Icon } from '@/presentation/components/ui/Icon'
-import { ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
-import { Panel, PanelHeader } from '@/presentation/components/ui/Surface'
-import { FriendSearch } from '@/presentation/circle/FriendSearch'
-import { InviteFriendCard } from '@/presentation/circle/InviteFriendCard'
-import { friendLimit } from '@/domain/entities/plan-usage'
-import { useCircle, type CirclePerson } from '@/presentation/circle/use-circle'
+import { EmptyState, ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { usePlanner } from '@/presentation/planner/use-planner'
-import { useState } from 'react'
-import { PageHeader } from './PageHeader'
+import { FeedSentinel } from '@/presentation/social/FeedSentinel'
+import { PostCard } from '@/presentation/social/PostCard'
+import { PostSkeleton } from '@/presentation/social/PostSkeleton'
+import { StoriesTray } from '@/presentation/social/StoriesTray'
+import { SuggestedProfiles } from '@/presentation/social/SuggestedProfiles'
+import { useFollowRequests } from '@/presentation/social/use-follow-requests'
+import { useFeed } from '@/presentation/social/use-post-list'
+
+type CircleTab = 'feed' | 'clubes' | 'pessoas'
+
+const TABS: readonly { readonly value: CircleTab; readonly label: string }[] = [
+  { value: 'feed', label: 'Meu Círculo' },
+  { value: 'clubes', label: 'Clubes' },
+  { value: 'pessoas', label: 'Pessoas' },
+]
 
 /**
- * Círculo.
- *
- * O oposto de um feed genérico: só entra quem foi aceito dos dois lados, e só
- * aparece o que a pessoa marcou explicitamente pra mostrar. Sem seguidor, sem
- * sugestão de quem seguir, sem contagem de audiência e sem comentário, o
- * único gesto é o apoio.
- *
- * A ordem da página segue a urgência: pedido esperando resposta primeiro (é a
- * única coisa aqui que outra pessoa está aguardando), depois o que os amigos
- * compartilharam, e por último a manutenção do círculo, buscar e listar.
+ * Círculo: uma comunidade de execução, não uma rede aberta. O feed valoriza a
+ * conquista; clubes e pessoas são as outras duas pílulas da mesma tela.
  */
 export function CirclePage() {
-  const circle = useCircle()
-  const planner = usePlanner()
-  const [removing, setRemoving] = useState<CirclePerson | null>(null)
-
-  /*
-    O teto do círculo conta amizade ACEITA, e é ele que decide entre oferecer o
-    convite ou oferecer o PRO. Pedido sem resposta não ocupa vaga: seria deixar
-    alguém encher o círculo de outra pessoa só ignorando o convite dela.
-  */
-  const friendCheck = friendLimit(planner.limits, circle.friends.length)
-
-  if (circle.loading) return <LoadingBlock label="Carregando teu círculo" />
+  const [params, setParams] = useSearchParams()
+  const requests = useFollowRequests()
+  const raw = params.get('aba')
+  const tab: CircleTab = raw === 'clubes' || raw === 'pessoas' ? raw : 'feed'
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 lg:gap-6">
-      <PageHeader
-        title="Círculo"
-        description="Quem você acompanha, e o que decidiram mostrar."
-      />
+    <div className="flex flex-col gap-5 pb-2">
+      <div className="flex items-center gap-2">
+        <FilterPills
+          label="Seção do Círculo"
+          options={TABS.map((entry) => ({
+            ...entry,
+            label: entry.value === 'pessoas' && requests.list.length > 0 ? `Pessoas · ${requests.list.length}` : entry.label,
+          }))}
+          value={tab}
+          onChange={(next) => setParams(next === 'feed' ? {} : { aba: next }, { replace: true })}
+          className="min-w-0 flex-1"
+        />
+        <Link to="/app/desafios" className="chip press grid size-11 shrink-0 place-items-center rounded-full text-ink-muted">
+          <Icon name="trofeu" className="size-5" />
+          <span className="sr-only">Desafios e ranking</span>
+        </Link>
+      </div>
 
-      {circle.error ? <ErrorNote message={circle.error} /> : null}
+      {tab === 'feed' ? <CircleFeed /> : null}
+      {tab === 'clubes' ? <CircleClubs /> : null}
+      {tab === 'pessoas' ? <CirclePeople /> : null}
+    </div>
+  )
+}
 
-      {circle.incoming.length > 0 ? (
-        <Panel tone="brand">
-          <PanelHeader
-            title={circle.incoming.length === 1 ? 'Um pedido esperando' : 'Pedidos esperando'}
-            icon="sino"
+function CircleFeed() {
+  const planner = usePlanner()
+  const feed = useFeed()
+
+  return (
+    <>
+      <StoriesTray />
+
+      {feed.error ? <ErrorNote message={feed.error} onRetry={feed.reload} /> : null}
+
+      {feed.loading ? (
+        <div role="status" aria-live="polite" className="flex flex-col gap-5">
+          <span className="sr-only">Carregando o Círculo</span>
+          <PostSkeleton />
+          <PostSkeleton />
+        </div>
+      ) : feed.posts.length === 0 ? (
+        <div className="flex flex-col gap-5">
+          <EmptyState
+            title="Seu Círculo começa aqui"
+            description="Quando alguém do seu círculo provar o que fez, aparece nesta tela. O que você provar aparece também."
           />
-          <ul className="mt-4 flex flex-col gap-2">
-            {circle.incoming.map((item) => (
-              <li
-                key={item.friendship.id}
-                className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface/60 px-3.5 py-2.5"
-              >
-                <Avatar name={item.person.name} src={item.person.avatarUrl} className="size-10" />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium text-ink">
-                    {item.person.name}
-                  </span>
-                  <span className="block truncate text-xs text-ink-faint">
-                    @{item.person.handle}
-                  </span>
-                </span>
-                <span className="flex shrink-0 gap-2">
-                  <Button
-                    size="sm"
-                    disabled={circle.acting}
-                    onClick={() => void circle.respond(item.friendship.id, true)}
-                  >
-                    Aceitar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={circle.acting}
-                    onClick={() => void circle.respond(item.friendship.id, false)}
-                  >
-                    Recusar
-                  </Button>
-                </span>
+          <SuggestedProfiles />
+        </div>
+      ) : (
+        <>
+          <section aria-label="Publicações" className="flex flex-col gap-5">
+            {feed.posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                today={planner.today}
+                onToggleLike={() => feed.toggleLike(post.id)}
+                onToggleSave={() => feed.toggleSave(post.id)}
+                onChanged={feed.replace}
+                onRemoved={() => feed.drop(post.id)}
+              />
+            ))}
+          </section>
+
+          {feed.loadingMore ? <PostSkeleton /> : null}
+          <FeedSentinel onReach={feed.loadMore} disabled={!feed.hasMore || feed.loadingMore} />
+
+          {feed.hasMore && !feed.loadingMore ? (
+            <button type="button" onClick={feed.loadMore} className="min-h-11 self-center text-sm font-medium text-brand-hi">
+              Ver mais publicações
+            </button>
+          ) : (
+            <div className="card flex items-center gap-3.5 p-4">
+              <IconWell name="escudo" />
+              <div className="min-w-0">
+                <p className="eyebrow text-[0.75rem] text-ink">✓ Você está em dia</p>
+                <p className="mt-0.5 text-sm text-ink-faint">Você viu tudo o que o seu Círculo provou. O resto acontece fora do app.</p>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </>
+  )
+}
+
+function CircleClubs() {
+  const clubs = useClubs()
+
+  if (clubs.loading) return <LoadingBlock label="Carregando os clubes" />
+
+  return (
+    <div className="flex flex-col gap-5">
+      {clubs.error ? <ErrorNote message={clubs.error} onRetry={() => void clubs.reload()} /> : null}
+
+      <section aria-labelledby="meus-clubes" className="flex flex-col gap-3">
+        <div className="flex items-center justify-between px-1">
+          <h2 id="meus-clubes" className="eyebrow text-[0.78rem] text-ink">
+            Seus clubes ({clubs.mine.length})
+          </h2>
+          <Link to="/app/clubes" className="text-sm font-medium text-brand-hi">
+            {clubs.canCreate ? 'Criar ou ver todos' : 'Ver todos'}
+          </Link>
+        </div>
+        {clubs.mine.length === 0 ? (
+          <p className="well rounded-[1.4rem] px-4 py-5 text-sm text-pretty text-ink-muted">
+            Clube é um grupo com ranking em volta de uma disciplina. Entre em um abaixo ou crie o seu.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {clubs.mine.map((club) => (
+              <li key={club.id}>
+                <ClubCard club={club} to={`/app/clubes/${club.id}`} />
               </li>
             ))}
           </ul>
-        </Panel>
-      ) : null}
+        )}
+      </section>
 
-      {/*
-        O que os amigos mostraram mora no Feed, e não aqui.
-
-        Eram a mesma página, em duas colunas: o conteúdo de um lado, a lista de
-        amigos, os pedidos e a busca do outro. Num celular as duas colunas viram
-        uma rolagem só, e o conteúdo perdia, porque ele é o que fica embaixo.
-        Nada deixou de existir, o feed mudou de endereço e ganhou aba própria.
-      */}
-      <Link
-        to="/app/feed"
-        className="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 transition-colors active:bg-surface-hi"
-      >
-        <Icon name="globo" className="size-5 shrink-0 text-brand-ink" />
-        <span className="min-w-0 flex-1 text-sm text-ink">
-          O que o teu círculo compartilhou agora fica no Feed.
-        </span>
-        <Icon name="seta" className="size-4 shrink-0 text-ink-faint" />
-      </Link>
-
-      <div className="flex flex-col gap-5 lg:gap-6">
-        <div className="flex flex-col gap-5 lg:gap-6">
-          {/*
-            O círculo com os lugares vazios vem ANTES da busca: procurar alguém
-            pelo @ só funciona pra quem já tem gente conhecida aqui dentro, e
-            quem está começando precisa primeiro de um jeito de chamar.
-          */}
-          <InviteFriendCard friends={circle.friends} limit={friendCheck} />
-
-          <Panel>
-            <PanelHeader title="Adicionar ao círculo" icon="busca" />
-            <div className="mt-4">
-              <FriendSearch circle={circle} />
-            </div>
-          </Panel>
-
-          <Panel>
-            <PanelHeader
-              title={`Amigos${circle.friends.length > 0 ? ` · ${circle.friends.length}` : ''}`}
-              icon="jornada"
-            />
-
-            {circle.friends.length === 0 ? (
-              <p className="mt-4 text-sm text-ink-muted">
-                Ninguém no círculo ainda. Amizade aqui é combinada dos dois lados.
-              </p>
-            ) : (
-              <ul className="mt-4 flex flex-col divide-y divide-line">
-                {circle.friends.map((item) => (
-                  <li key={item.friendship.id} className="flex items-center gap-3 py-2.5">
-                    <Link
-                      to={`/app/circulo/${item.person.id}`}
-                      className="flex min-w-0 flex-1 items-center gap-3"
-                    >
-                      <Avatar
-                        name={item.person.name}
-                        src={item.person.avatarUrl}
-                        className="size-10"
-                      />
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm font-medium text-ink">
-                          {item.person.name}
-                        </span>
-                        <span className="block truncate text-xs text-ink-faint">
-                          @{item.person.handle}
-                        </span>
-                      </span>
-                    </Link>
+      {clubs.discover.length > 0 ? (
+        <section aria-labelledby="descobrir-clubes" className="flex flex-col gap-3">
+          <h2 id="descobrir-clubes" className="eyebrow px-1 text-[0.78rem] text-ink-muted">
+            Para entrar
+          </h2>
+          <ul className="flex flex-col gap-3">
+            {clubs.discover.map((club) => (
+              <li key={club.id}>
+                <ClubCard
+                  club={club}
+                  to={`/app/clubes/${club.id}`}
+                  action={
                     <button
                       type="button"
-                      onClick={() => setRemoving(item)}
-                      className="grid size-10 shrink-0 place-items-center rounded-lg text-ink-faint transition-colors hover:bg-surface-hi hover:text-ink"
+                      disabled={clubs.acting}
+                      onClick={() => void clubs.join(club.id)}
+                      className="chip press rounded-full px-3.5 py-2 text-sm font-semibold text-brand-hi"
                     >
-                      <Icon name="fechar" className="size-4" />
-                      <span className="sr-only">Remover {item.person.name} do círculo</span>
+                      Entrar
                     </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            {circle.outgoing.length > 0 ? (
-              <div className="mt-4 border-t border-line pt-4">
-                <p className="text-xs tracking-wide text-ink-faint uppercase">Pedidos enviados</p>
-                <ul className="mt-2 flex flex-col gap-2">
-                  {circle.outgoing.map((item) => (
-                    <li key={item.friendship.id} className="flex items-center gap-3">
-                      <Avatar
-                        name={item.person.name}
-                        src={item.person.avatarUrl}
-                        className="size-8"
-                      />
-                      <span className="min-w-0 flex-1 truncate text-sm text-ink-muted">
-                        {item.person.name}
-                      </span>
-                      <button
-                        type="button"
-                        disabled={circle.acting}
-                        onClick={() => void circle.remove(item.friendship.id)}
-                        className="shrink-0 rounded-md px-1 text-sm text-ink-faint transition-colors hover:text-ink"
-                      >
-                        Cancelar
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-          </Panel>
-        </div>
-      </div>
-
-      <ConfirmDialog
-        open={removing !== null}
-        title="Remover do círculo?"
-        description={
-          removing
-            ? `${removing.person.name} deixa de ver o que você compartilha, e você deixa de ver o que ${removing.person.name.split(' ')[0]} compartilha. Dá pra adicionar de novo depois.`
-            : ''
-        }
-        confirmLabel="Remover"
-        onConfirm={() => {
-          if (removing) void circle.remove(removing.friendship.id)
-          setRemoving(null)
-        }}
-        onClose={() => setRemoving(null)}
-      />
+                  }
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </div>
   )
 }

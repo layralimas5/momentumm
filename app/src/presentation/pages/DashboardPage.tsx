@@ -1,654 +1,176 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { Insight } from '@/domain/entities/insight'
-import { addDays } from '@/domain/entities/day'
-import type { AdaptiveItem } from '@/domain/entities/adaptive-day'
-import { shrinkToMinimal } from '@/domain/entities/task'
-import type { RecoveryStep } from '@/domain/entities/recovery'
-import type { Task } from '@/domain/entities/task'
 import { useAuth } from '@/presentation/auth/use-auth'
-import { AdaptiveDayCard } from '@/presentation/components/dashboard/AdaptiveDayCard'
-import { AdaptiveDayReview } from '@/presentation/components/dashboard/AdaptiveDayReview'
-import { CheckInCard } from '@/presentation/components/dashboard/CheckInCard'
-import { DayHeader } from '@/presentation/components/dashboard/DayHeader'
+import { XPBadge } from '@/presentation/components/ds/Badges'
 import { DashboardSkeleton } from '@/presentation/components/dashboard/DashboardSkeleton'
-import { FocusCard } from '@/presentation/components/dashboard/FocusCard'
-import { GoalsInMotionCard } from '@/presentation/components/dashboard/GoalsInMotionCard'
-import { InsightCard } from '@/presentation/components/dashboard/InsightCard'
-import { MomentumStrip } from '@/presentation/components/dashboard/MomentumStrip'
-import { NextUpCard } from '@/presentation/components/dashboard/NextUpCard'
-import { ObjectivesCard } from '@/presentation/components/dashboard/ObjectivesCard'
-import { ResumeActivationCard } from '@/presentation/components/dashboard/ResumeActivationCard'
-import { FirstWinCard } from '@/presentation/quiz/FirstWinCard'
-import { useFirstWin } from '@/presentation/quiz/use-first-win'
-import { PriorityCard } from '@/presentation/components/dashboard/PriorityCard'
+import { DayCompleteBanner } from '@/presentation/components/dashboard/DayCompleteBanner'
 import { RecoveryCard } from '@/presentation/components/dashboard/RecoveryCard'
-import { WeeklyProgressCard } from '@/presentation/components/dashboard/WeeklyProgressCard'
-import { Section } from '@/presentation/components/dashboard/Section'
-import { DayAgendaCard } from '@/presentation/components/dashboard/DayAgendaCard'
-import { TodayFocusCard } from '@/presentation/components/dashboard/TodayFocusCard'
-import { WinsCard } from '@/presentation/components/dashboard/WinsCard'
+import { ResumeActivationCard } from '@/presentation/components/dashboard/ResumeActivationCard'
 import { ErrorNote } from '@/presentation/components/ui/States'
+import { AiEntry } from '@/presentation/ai/AiBits'
+import { useEvolution } from '@/presentation/evolution/use-evolution'
+import { AddSheet } from '@/presentation/layouts/AddSheet'
+import { ReminderCard } from '@/presentation/notifications/ReminderCard'
 import { useComposer } from '@/presentation/planner/ComposerProvider'
 import { ACTIVATION_PATH, useActivation } from '@/presentation/planner/use-activation'
-import { useInsightActions } from '@/presentation/planner/use-insight-actions'
-import { useAdaptiveDay } from '@/presentation/planner/use-adaptive-day'
-import { useDashboard, type GoalInMotion } from '@/presentation/planner/use-dashboard'
-import { useRecovery } from '@/presentation/planner/use-recovery'
+import type { FocusItem } from '@/presentation/planner/use-dashboard'
+import { useDayControls } from '@/presentation/planner/use-day-controls'
 import { useJourneyRecorder } from '@/presentation/planner/use-journey-recorder'
 import { usePlanner } from '@/presentation/planner/use-planner'
-import { DayCompleteBanner } from '@/presentation/components/dashboard/DayCompleteBanner'
-import { CompletionNotice } from '@/presentation/components/dashboard/CompletionNotice'
-import { useCompletionNotice } from '@/presentation/planner/use-completion-notice'
-import { MobileDashboard } from '@/presentation/components/mobile/MobileDashboard'
-import { ShareInvite } from '@/presentation/share/ShareInvite'
-import { ShareMomentsRow } from '@/presentation/share/ShareMomentsRow'
-import { QuoteCard } from '@/presentation/components/dashboard/QuoteCard'
-import { ReminderCard } from '@/presentation/notifications/ReminderCard'
 import { InstallCard } from '@/presentation/pwa/InstallCard'
-import { useIsDesktop } from '@/presentation/hooks/use-media-query'
-import { AiDayDialog } from '@/presentation/ai/AiDayDialog'
-import { AiRecoveryDialog } from '@/presentation/ai/AiRecoveryDialog'
-import { AiEntry } from '@/presentation/ai/AiBits'
-import { useAi } from '@/presentation/ai/use-ai'
+import { FirstWinCard } from '@/presentation/quiz/FirstWinCard'
+import { useFirstWin } from '@/presentation/quiz/use-first-win'
+import { DayTimeline } from '@/presentation/today/DayTimeline'
+import { EnergyCard } from '@/presentation/today/EnergyCard'
+import { MomentumScoreCard } from '@/presentation/today/MomentumScoreCard'
+import { PriorityNowCard } from '@/presentation/today/PriorityNowCard'
+import { TodayChecklist } from '@/presentation/today/TodayChecklist'
 
 /**
- * "Hoje", o dashboard.
+ * "Hoje", a central do Momentumm. VER → ENTENDER → AGIR, nessa ordem:
  *
- * A tela tem TRÊS níveis de atenção, e a diferença entre eles é deliberada:
+ *   1. como estou (o score, sem explicação: a explicação mora em "Ver análise");
+ *   2. o que importa agora (uma prioridade, um botão);
+ *   3. o dia, em lista e em linha do tempo;
+ *   4. a saída pra dia ruim, no fim, sempre à mão.
  *
- *   1. A abertura do dia, e ela tem uma ordem exata:
- *
- *        estado -> frase -> energia -> o dia.
- *
- *      Primeiro a pessoa vê o que ficou pra trás: a linha do dia, as ações
- *      atrasadas e, quando ele existe, o Modo Retomada. Depois a frase, que é
- *      o gás pra encarar o que ela acabou de ver. Depois o check-in, que é
- *      onde ela diz com que energia chegou. E só então o dia, já montado em
- *      cima dessa resposta.
- *
- *      A ordem é do produto, não de conveniência de layout: o Momentumm não
- *      serve o mesmo dia pra quem chegou sem energia e pra quem chegou em
- *      alta, e perguntar isso DEPOIS de mostrar o dia inverteria a única
- *      pergunta que muda o que a tela oferece.
- *   2. Objetivos, hábitos e insight, responde "estou avançando".
- *   3. Semana, check-in, foco cronometrado, metas e vitórias, consulta.
- *
- * O que mudou em relação à versão anterior, e por quê: eram doze cards com o
- * mesmo peso visual, e uma tela onde tudo grita é uma tela onde nada é lido. Só
- * o foco de hoje continua sendo card de destaque, porque é o único bloco em que
- * a pessoa ATUA. O resto virou seção, título, espaçamento e uma saída pra tela
- * completa do assunto.
- *
- * A largura é limitada mesmo sobrando tela. Em 1920px o conteúdo chegava a
- * 1648px de largura: linha de texto longa demais pra ler e barra de progresso
- * atravessando o monitor.
+ * Os avisos que só existem às vezes (retomada, primeira vitória, instalar o
+ * app) entram entre o topo e o score, e somem quando resolvidos.
  */
 export function DashboardPage() {
   const { profile } = useAuth()
   const planner = usePlanner()
-  const view = useDashboard()
   const composer = useComposer()
   const navigate = useNavigate()
-  const isDesktop = useIsDesktop()
-
-  /*
-    Os dois recursos que reagem ao estado do dia em vez de esperarem um clique
-    no lugar certo. O Dia Adaptável responde "tenho pouco tempo"; o Modo
-    Retomada responde "sumi por uns dias". Os dois desembocam na MESMA revisão
-, reorganizar o dia é uma operação só, e duas telas fazendo isso seriam
-    duas contas discordando na primeira mudança de regra.
-  */
-  const adaptive = useAdaptiveDay(view)
-  const recovery = useRecovery(view)
-
-  /*
-    As duas portas da IA no Hoje: "Reorganizar meu dia" ao lado do Dia
-    Adaptável e "Criar plano de retorno" dentro do Modo Retomada. A IA lê o
-    mesmo estado que a aritmética, e devolve propostas que a pessoa confirma
-    uma a uma, nunca uma gravação direta.
-  */
-  const ai = useAi()
-  const [aiDayOpen, setAiDayOpen] = useState(false)
-  const [aiRecoveryOpen, setAiRecoveryOpen] = useState(false)
-
-  /*
-    O onboarding mora em `/app/comecar` e a casca do app leva a conta vazia
-    pra lá. Aqui só existe a porta de volta pra quem deixou pra depois: o
-    estado de "onde parei" é do hook, não desta tela.
-  */
+  const evolution = useEvolution()
+  const day = useDayControls()
+  const { view } = day
   const activation = useActivation()
-
-  /* Quem chegou pelo quiz: a ação de hoje em destaque até virar a primeira vitória. */
   const firstWin = useFirstWin()
+  const [adding, setAdding] = useState(false)
 
-  /*
-    Começar uma ação, encolher pra versão mínima e aplicar a recomendação são
-    os mesmos verbos em qualquer tela que mostre um insight. Eles moravam aqui
-    dentro, e por isso a tela de Insights só sabia descrever.
-  */
-  const { apply, startFocus, shrinkTask } = useInsightActions(view)
-
-  /*
-    O dia de hoje virando registro: hábito concluído, rotina fechada, dia
-    cumprido, retomada, recorde de momentum, objetivo cruzando uma faixa e
-    marco alcançado.
-
-    Mora no dashboard porque é a tela que a pessoa abre todo dia. A decisão do
-    QUE gravar é uma função pura (`eventsToRecord`), aqui não há regra, só a
-    chamada.
-  */
   useJourneyRecorder(view)
 
-  /*
-    A resposta a uma conclusão. Fica na página porque as duas árvores (celular
-    e monitor) concluem pelos mesmos caminhos e precisam do mesmo retorno.
-  */
-  const completion = useCompletionNotice(view)
-
-  const completeTask = useCallback(
-    async (task: Task) => {
-      await planner.updateTask(task.id, {
-        status: 'feita',
-        completedAt: new Date(),
-      })
-    },
-    [planner],
-  )
-
-  const postponeTask = useCallback(
-    async (task: Task) => {
-      const base = task.day < planner.today ? planner.today : task.day
-      await planner.updateTask(task.id, { day: addDays(base, 1), isMainPriority: false })
-    },
-    [planner],
-  )
-
-  /**
-   * A ação do plano entrando no dia.
-   *
-   * É o passo que faltava entre "o plano diz que é isso" e "hoje eu faço
-   * isso": sem ele a única saída era editar a ação num diálogo pra trocar a
-   * data, e um fluxo que depende de abrir o editor é um fluxo que ninguém faz.
-   */
-  const bringToToday = useCallback(
-    async (task: Task) => {
-      await planner.updateTask(task.id, { day: planner.today })
-    },
-    [planner],
-  )
-
-  /** O tempo informado vira uma proposta de dia, nunca uma gravação direta. */
-  const adaptDay = useCallback(
-    (availableMin: number) => adaptive.open({ availableMin }),
-    [adaptive],
-  )
-
-  /**
-   * O passo de retomada escolhido.
-   *
-   * Ele é protegido, entra no dia mesmo vindo de outra data e vira a
-   * prioridade principal, e é aí que mora a recompensa: prioridade concluída
-   * vale o triplo de uma tarefa comum no Momentumm, e fechar a pausa de hoje é
-   * o que o fator de retomada mede.
-   */
-  const chooseRecoveryStep = useCallback(
-    (step: RecoveryStep) => {
-      const isTask = step.kind === 'acao'
-
-      adaptive.open({
-        availableMin: recovery.budgetFor(step),
-        protectIds: [step.id],
-        fromRecovery: true,
-        intro: `Passo escolhido: ${step.title}. O resto do dia se reorganiza em volta dele, e nada do que ficou pra trás foi somado aqui.`,
-        ...(isTask && step.fromAnotherDay ? { bringId: step.id } : {}),
-        ...(isTask ? { promoteId: step.id } : {}),
-        ...(isTask && step.minimal ? { minimalId: step.id } : {}),
-      })
-    },
-    [adaptive, recovery],
-  )
-
-  const confirmAdaptive = useCallback(async () => {
-    const fromRecovery = adaptive.request?.fromRecovery === true
-    const applied = await adaptive.confirm()
-    // Escolheu o passo: o recado de retomada já foi respondido por hoje.
-    if (applied && fromRecovery) recovery.dismiss()
-    return applied
-  }, [adaptive, recovery])
-
-  /**
-   * Confirmar a revisão do dia e já começar, no tamanho escolhido.
-   *
-   * O encolhimento acontece ANTES do cronômetro porque é ele que define o que
-   * a sessão está medindo: começar a versão inteira e encolher depois
-   * deixaria um registro de 45 minutos numa ação que virou de 10.
-   */
-  const startFromReview = useCallback(
-    async (item: AdaptiveItem, size: 'completa' | 'minima') => {
-      const applied = await confirmAdaptive()
-      if (!applied) return
-
-      const task = planner.tasks.find((candidate) => candidate.id === item.id)
-      if (!task) return
-
-      if (size === 'minima' && task.minimalVersion) {
-        await shrinkTask(task)
-        const smaller = shrinkToMinimal(task)
-        startFocus({ ...task, ...smaller }, smaller.estimatedMin)
-        return
-      }
-
-      startFocus(task, task.estimatedMin)
-    },
-    [confirmAdaptive, planner.tasks, shrinkTask, startFocus],
-  )
-
-  /**
-   * Título de cada etapa por id. O dia inteiro lê daqui pra dizer a que ponto
-   * do plano cada linha pertence, é o que separa "Finalizar onboarding" de
-   * "Finalizar onboarding · Etapa: MVP · Objetivo: Lançar meu SaaS".
-   */
   const stageTitles = useMemo(
     () => new Map(planner.planStages.map((stage) => [stage.id, stage.title])),
     [planner.planStages],
   )
 
-  /**
-   * "Aplicar sugestão": o insight precisa mudar o dia, não só aconselhar.
-   *
-   * Dispensar depois de aplicar é decisão DESTA tela: aqui aparece um insight
-   * por vez, e repetir o que a pessoa acabou de resolver seria ruído. Na tela
-   * de Insights a lista se atualiza sozinha, a regra para de casar porque o
-   * dado mudou, que é o único motivo honesto pra um insight sumir.
-   */
-  const applyInsight = useCallback(
-    async (insight: Insight) => {
-      await apply(insight)
-      view.dismissInsight(insight.id)
-    },
-    [apply, view],
-  )
+  if (planner.loading) return <DashboardSkeleton mobile />
 
-  const continueGoal = useCallback(
-    (goal: GoalInMotion) => {
-      if (goal.nextTask) startFocus(goal.nextTask)
-    },
-    [startFocus],
-  )
+  const openPriority = view.mainPriority && view.mainPriority.status !== 'feita' ? view.mainPriority : null
+  const priority = openPriority ?? view.nextUp?.task ?? null
+  const priorityObjective = view.objectives.find((item) => item.progress.objective.id === priority?.objectiveId)
 
-  const reviewLayer = (
-    <>
-      <CompletionNotice notice={completion.notice} onDismiss={completion.dismiss} />
-      <AdaptiveDayReview
-        plan={adaptive.plan}
-        intro={adaptive.request?.intro}
-        applying={adaptive.applying}
-        error={adaptive.error}
-        onConfirm={() => void confirmAdaptive()}
-        onStart={(item, size) => void startFromReview(item, size)}
-        onClose={adaptive.close}
-      />
-      <AiDayDialog
-        open={aiDayOpen}
-        ai={ai}
-        defaultAvailableMin={view.capacity.suggestedFocusMin * view.capacity.suggestedActions}
-        plannedMin={adaptive.load.minutes}
-        onClose={() => setAiDayOpen(false)}
-      />
-      {recovery.state ? (
-        <AiRecoveryDialog
-          open={aiRecoveryOpen}
-          ai={ai}
-          state={recovery.state}
-          onApplied={recovery.dismiss}
-          onClose={() => setAiRecoveryOpen(false)}
-        />
-      ) : null}
-    </>
-  )
-
-  const aiDayEntry = (
-    <AiEntry
-      enabled={ai.enabled}
-      label="Reorganizar meu dia"
-      hint="a IA lê o dia, os próximos sete e os prazos, e propõe o menor conjunto de ajustes que faz o dia caber."
-      onClick={() => setAiDayOpen(true)}
-    />
-  )
-
-  const aiRecoveryEntry = (
-    <AiEntry
-      enabled={ai.enabled}
-      label="Criar plano de retorno"
-      hint="a IA monta até três passos pequenos pra hoje, lidos do que já estava no teu plano."
-      onClick={() => setAiRecoveryOpen(true)}
-    />
-  )
-
-  if (planner.loading) return <DashboardSkeleton mobile={!isDesktop} />
-
-  /* Pulou o onboarding: o dashboard aparece, e com ele a porta de volta. */
-  const resumeCard =
-    planner.isNewUser && activation.skipped ? (
-      <ResumeActivationCard
-        step={activation.step}
-        started={activation.started}
-        onResume={() => {
-          activation.resume()
-          navigate(ACTIVATION_PATH)
-        }}
-      />
-    ) : null
-
-  const firstWinCard =
-    firstWin.task || firstWin.justCompleted ? (
-      <FirstWinCard
-        task={firstWin.task}
-        justCompleted={firstWin.justCompleted}
-        nextUp={view.nextUp}
-        onComplete={completeTask}
-        onStartFocus={startFocus}
-        onDismiss={firstWin.dismiss}
-      />
-    ) : null
-
-  /*
-    Duas árvores, não uma encolhida: o celular reordena o dia inteiro em torno
-    de "registrar, decidir, começar" e manda a análise pra depois. Os dados, as
-    regras e as ações são exatamente os mesmos.
-  */
-  if (!isDesktop) {
-    return (
-      <div className="flex flex-col gap-6">
-        {planner.error ? (
-          <ErrorNote message={planner.error} onRetry={() => void planner.reload()} />
-        ) : null}
-        {/*
-          No celular o atraso virou cartão de alerta dentro do dashboard, com a
-          saída junto: repetir a mesma contagem aqui em cima seria a mesma frase
-          duas vezes antes da primeira decisão. Sobra a nota de retomada, que o
-          cartão não cobre.
-        */}
-        <DayHeader
-          compact
-          name={profile?.name.split(' ')[0] ?? null}
-          headline={view.headline}
-          resumeNote={view.resumeNote}
-        />
-        {resumeCard}
-        {firstWinCard}
-        <InstallCard />
-        <ReminderCard />
-        <RecoveryCard
-          state={recovery.state}
-          budgetFor={recovery.budgetFor}
-          onChoose={chooseRecoveryStep}
-          onDismiss={recovery.dismiss}
-          aiEntry={aiRecoveryEntry}
-        />
-        <MobileDashboard
-          view={view}
-          dayLoad={adaptive.load}
-          onAdaptDay={adaptDay}
-          aiDayEntry={aiDayEntry}
-          onStartFocus={startFocus}
-          onCompleteTask={completeTask}
-          onPostponeTask={postponeTask}
-          onBringToToday={bringToToday}
-          onShrinkTask={shrinkTask}
-        />
-        {reviewLayer}
-      </div>
-    )
+  const openItem = (item: FocusItem) => {
+    if (item.task) composer.open('acao', { editing: item.task })
+    else if (item.habitState) composer.open('habito', { editingHabit: item.habitState.habit })
   }
 
-  const mainGoal =
-    planner.goals.find((goal) => goal.id === view.mainPriority?.goalId) ?? null
-
   const firstName = profile?.name.split(' ')[0] ?? null
+  const now = new Date()
 
   return (
-    /*
-      Container centralizado com teto de largura. `max-w-5xl` mantém a linha de
-      texto na faixa legível e impede que a tela vire uma régua de ponta a ponta
-      no monitor grande.
-    */
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
-      {planner.error ? (
-          <ErrorNote message={planner.error} onRetry={() => void planner.reload()} />
-        ) : null}
+    <div className="flex flex-col gap-6 pb-2">
+      {planner.error ? <ErrorNote message={planner.error} onRetry={() => void planner.reload()} /> : null}
 
-      {/* ------------------------------------------------------------------
-          Primeiro nível: como estou e o que faço agora.
-         ------------------------------------------------------------------ */}
-      <div className="flex flex-col gap-4">
-        <DayHeader
-          name={firstName}
-          headline={view.headline}
-          resumeNote={view.resumeNote}
-          overdue={view.overdueCount}
-          onReviewOverdue={() => navigate('/app/plano')}
-        />
-
-        {resumeCard}
-
-        {firstWinCard}
-
-        <InstallCard />
-        <ReminderCard />
-
-        <RecoveryCard
-          state={recovery.state}
-          budgetFor={recovery.budgetFor}
-          onChoose={chooseRecoveryStep}
-          onDismiss={recovery.dismiss}
-          aiEntry={aiRecoveryEntry}
-        />
-
-        {view.dayComplete ? <DayCompleteBanner win={view.todayWin} /> : null}
-
-        {/* O gás pra encarar o que veio acima, antes da pergunta que monta o
-            dia. */}
-        <QuoteCard today={planner.today} />
-
-        {/*
-          A pergunta que muda o resto da tela. Ela vem antes do dia porque é
-          dela que sai o tamanho do dia: energia baixa encolhe a sessão, muda a
-          sugestão de foco e faz a versão mínima aparecer na frente.
-        */}
-        <CheckInCard
-          checkIn={view.checkIn}
-          capacity={view.capacity}
-          textLogs={planner.limits.textLogs}
-          onSave={(input) => planner.saveCheckIn({ ...input, day: planner.today })}
-        />
-
-        <AdaptiveDayCard
-          plannedMin={adaptive.load.minutes}
-          openItems={adaptive.load.items}
-          capacity={view.capacity}
-          onAdapt={adaptDay}
-          aiEntry={aiDayEntry}
-        />
-
-        {/* O dia, montado em cima do que ela acabou de responder. A prioridade
-            só ganha bloco próprio enquanto está aberta: concluída, ela aparece
-            riscada na lista do foco logo abaixo. */}
-        {view.mainPriority && view.mainPriority.status !== 'feita' ? (
-          <PriorityCard
-            task={view.mainPriority}
-            stageTitle={stageTitles.get(view.mainPriority?.stageId ?? '') ?? null}
-            goal={mainGoal}
-            objective={planner.objectives.find(
-              (item) => item.id === view.mainPriority?.objectiveId,
-            )}
-            capacity={view.capacity}
-            dayComplete={view.dayComplete}
-            onStartFocus={startFocus}
-            onComplete={completeTask}
-            onShrink={shrinkTask}
-            onReorganize={() =>
-              view.mainPriority
-                ? composer.open('acao', { editing: view.mainPriority })
-                : composer.open('acao')
-            }
-            onCreate={() => composer.open('acao')}
-          />
-        ) : null}
-
-        {/*
-          O foco recorta; a agenda logo abaixo não esconde nada.
-
-          "Ver tudo do dia" levava pra `/app/plano`, outra tela, e era a
-          fricção que este bloco existe pra acabar: agora ele rola até a
-          agenda, que está na mesma página.
-        */}
-        <TodayFocusCard
-          focus={view.focus}
-          onStartFocus={startFocus}
-          onSeeAll={() =>
-            document.getElementById('seu-dia')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-          }
-          onPlanDay={() => composer.open('acao')}
-        />
-
-        <div id="seu-dia" className="scroll-mt-24">
-          <DayAgendaCard
-            agenda={view.agenda}
-            onStartFocus={startFocus}
-            onAdd={() => composer.open('acao')}
-            onOpenRoutine={() => navigate('/app/rotina')}
-            onEditTask={(task) => composer.open('acao', { editing: task })}
-            onEditRoutine={(itemId) => navigate(`/app/rotina?editar=${itemId}`)}
-            onEditHabit={(habitId) => {
-              const habit = planner.habits.find((entry) => entry.id === habitId)
-              if (habit) composer.open('habito', { editingHabit: habit })
-            }}
-          />
+      <header className="flex items-start justify-between gap-3 px-1 pt-1">
+        <div className="min-w-0">
+          <h2 className="truncate text-[1.65rem] leading-tight font-bold tracking-tight text-ink">
+            {greeting(now)}
+            {firstName ? `, ${firstName}` : ''}
+          </h2>
+          <p className="mt-0.5 text-sm text-ink-faint">{formatToday(now)}</p>
         </div>
+        <XPBadge amount={evolution.summary.progress.xpTotal} total className="mt-1" />
+      </header>
 
-        {/* Entre a lista e o que vem depois: o convite chega logo abaixo do
-            item que a pessoa acabou de marcar. */}
-        <ShareInvite view={view} />
-
-        <NextUpCard
-          nextUp={view.nextUp}
-          mainPriority={view.mainPriority}
-          today={planner.today}
-          onStartFocus={startFocus}
-          onBringToToday={(task) => void bringToToday(task)}
+      {planner.isNewUser && activation.skipped ? (
+        <ResumeActivationCard
+          step={activation.step}
+          started={activation.started}
+          onResume={() => {
+            activation.resume()
+            navigate(ACTIVATION_PATH)
+          }}
         />
-
-        {/* O momentum vem depois do que precisa sair: é leitura, não ação. */}
-        <MomentumStrip
-          momentum={view.momentum}
-          history={view.momentumSeries}
-          today={planner.today}
-          streak={planner.streak}
-          recommendation={view.recommendation}
-          detail={planner.limits.momentumDetail}
-          nextAction={view.nextAction}
-        />
-      </div>
-
-      {/* ------------------------------------------------------------------
-          Segundo nível: estou avançando?
-
-          Duas colunas com proporção controlada, execução à esquerda, contexto
-          à direita. Nada de sticky: coluna que acompanha a rolagem compete com
-          o conteúdo principal durante a tela inteira.
-         ------------------------------------------------------------------ */}
-      {/*
-        "Hábitos de hoje" saiu daqui.
-
-        Todo hábito agendado pra hoje já aparece na agenda, com o check na
-        própria linha. Manter o card era mostrar a mesma lista duas vezes na
-        mesma tela, e a segunda cópia é sempre a que fica desatualizada na
-        cabeça de quem lê. A gestão dos hábitos continua em `/app/habitos`,
-        alcançável pelo rodapé da agenda e pelos atalhos.
-      */}
-      <Section title="Objetivos em andamento" to="/app/objetivos" toLabel="Ver todos">
-        <ObjectivesCard
-          bare
-          limit={3}
-          objectives={view.objectives.filter(
-            (item) => item.progress.state === 'em-andamento' || item.progress.state === 'nao-iniciado',
-          )}
-          onCreate={() => composer.open('objetivo')}
-          onOpenReview={() => navigate('/app/review')}
-        />
-      </Section>
-
-      {view.insight ? (
-        <Section
-          title="Seu Momentumm"
-          to="/app/insights"
-          toLabel="Ver todas as leituras"
-        >
-          <InsightCard
-            insight={view.insight}
-            limits={planner.limits}
-            onApply={applyInsight}
-            onDismiss={view.dismissInsight}
-          />
-        </Section>
       ) : null}
 
-      {/* ------------------------------------------------------------------
-          Terceiro nível: consulta. Vem depois e com título menor de propósito,
-          gráfico e histórico não podem disputar com o dia.
-         ------------------------------------------------------------------ */}
-      <div className="flex flex-col gap-6 border-t border-line pt-8">
-        <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-          <Section title="Sua semana" level={3} to="/app/progresso" toLabel="Ver progresso">
-            <WeeklyProgressCard week={view.week} limits={planner.limits} />
-          </Section>
+      {firstWin.task || firstWin.justCompleted ? (
+        <FirstWinCard
+          task={firstWin.task}
+          justCompleted={firstWin.justCompleted}
+          nextUp={view.nextUp}
+          onComplete={day.completeTask}
+          onStartFocus={day.startFocus}
+          onDismiss={firstWin.dismiss}
+        />
+      ) : null}
 
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-          <Section title="Sessão de foco" level={3} to="/app/foco" toLabel="Abrir">
-            <FocusCard
-              task={view.mainPriority}
-              capacity={view.capacity}
-              minutesToday={view.focusMinutesToday}
-            />
-          </Section>
-
-          <Section title="Metas em movimento" level={3} to="/app/metas">
-            <GoalsInMotionCard
-              goals={view.goalsInMotion}
-              onContinue={continueGoal}
-              onCreateTask={(goal) =>
-                composer.open('acao', { presetGoalId: goal.progress.goal.id })
-              }
-              onManage={() => navigate('/app/metas')}
-              onCreateGoal={() => composer.open('meta')}
-            />
-          </Section>
-        </div>
-
-        <Section title="Vitória do dia" level={3}>
-          <WinsCard
-            wins={planner.wins}
-            todayWin={view.todayWin}
-            today={planner.today}
-            onSave={(text) => planner.saveWin({ day: planner.today, text })}
+      <RecoveryCard
+        state={day.recovery.state}
+        budgetFor={day.recovery.budgetFor}
+        onChoose={day.chooseRecoveryStep}
+        onDismiss={day.recovery.dismiss}
+        aiEntry={
+          <AiEntry
+            enabled={day.aiEnabled}
+            label="Criar plano de retorno"
+            hint="a IA monta até três passos pequenos pra hoje, lidos do que já estava no teu plano."
+            onClick={day.openAiRecovery}
           />
-        </Section>
+        }
+      />
 
-        {/*
-          O card de progresso fecha a tela: ele é o que a pessoa guarda depois
-          de fazer, não o que a ajuda a decidir. A frase ficou lá em cima, onde
-          ela serve de impulso.
-        */}
-        <Section title="Pra levar com você" level={3}>
-          <ShareMomentsRow view={view} />
-        </Section>
-      </div>
+      {view.dayComplete ? <DayCompleteBanner win={view.todayWin} /> : null}
 
-      {reviewLayer}
+      <MomentumScoreCard
+        momentum={view.momentum}
+        series={view.momentumSeries.map((point) => point.value)}
+        showTrend={planner.limits.momentumDetail}
+      />
+
+      <PriorityNowCard
+        task={priority}
+        goal={
+          priorityObjective
+            ? { title: priorityObjective.progress.objective.title, ratio: priorityObjective.ratio }
+            : null
+        }
+        stageTitle={priority?.stageId ? (stageTitles.get(priority.stageId) ?? null) : null}
+        onStartFocus={(task) => day.startFocus(task)}
+        onChoose={() => composer.open('acao')}
+      />
+
+      <TodayChecklist focus={view.focus} onAdd={() => setAdding(true)} onOpen={openItem} />
+
+      <DayTimeline agenda={view.agenda} />
+
+      <EnergyCard
+        active={day.lowEnergy}
+        onActivate={() => void day.startLowEnergy()}
+        onUndo={() => void day.endLowEnergy()}
+        {...(day.aiEnabled ? { onAi: day.openAiDay } : {})}
+      />
+
+      <InstallCard />
+      <ReminderCard />
+
+      <AddSheet open={adding} onClose={() => setAdding(false)} />
+      {day.layer}
     </div>
   )
+}
+
+function greeting(now: Date): string {
+  const hour = now.getHours()
+  if (hour < 5) return 'Boa madrugada'
+  if (hour < 12) return 'Bom dia'
+  if (hour < 18) return 'Boa tarde'
+  return 'Boa noite'
+}
+
+function formatToday(now: Date): string {
+  const label = now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
+  return label.charAt(0).toUpperCase() + label.slice(1)
 }

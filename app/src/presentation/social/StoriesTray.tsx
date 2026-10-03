@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { StoryRing } from '@/domain/entities/story'
-import { useAuth } from '@/presentation/auth/use-auth'
+import { StreakBadge } from '@/presentation/components/ds/Badges'
+import { usePlanner } from '@/presentation/planner/use-planner'
 import { Avatar } from '@/presentation/components/ui/Avatar'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { cn } from '@/shared/lib/cn'
@@ -30,8 +31,8 @@ import { useStoryTray } from './use-stories'
  * conteúdo.
  */
 export function StoriesTray() {
-  const { profile } = useAuth()
   const composer = usePostComposer()
+  const planner = usePlanner()
   const tray = useStoryTray()
   const [openAt, setOpenAt] = useState<number | null>(null)
 
@@ -40,9 +41,9 @@ export function StoriesTray() {
 
   if (tray.loading) {
     return (
-      <div aria-hidden="true" className="-mx-4 flex gap-4 overflow-hidden px-4 py-1">
-        {[0, 1, 2, 3].map((index) => (
-          <span key={index} className="size-16 shrink-0 animate-pulse rounded-full bg-surface-hi" />
+      <div aria-hidden="true" className="flex gap-4 overflow-hidden py-1">
+        {[0, 1, 2, 3, 4].map((index) => (
+          <span key={index} className="size-[4.5rem] shrink-0 animate-pulse rounded-full bg-surface-hi" />
         ))}
       </div>
     )
@@ -50,40 +51,38 @@ export function StoriesTray() {
 
   return (
     <>
-      <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 py-1">
-        {tray.mine ? (
-          <Ring
-            ring={tray.mine}
-            label="Teu story"
-            onOpen={() => setOpenAt(0)}
-            onAdd={() => composer.openStory()}
-            showAdd
-          />
-        ) : (
-          <AddStory
-            name={profile?.name ?? ''}
-            avatar={profile?.avatarUrl ?? null}
+      <div className="-mx-4 flex snap-x gap-3.5 overflow-x-auto px-4 pt-1 pb-2 no-scrollbar sm:-mx-6 sm:px-6">
+        {/* "+ Provar": publicar a prova do dia é a primeira bolinha, sempre. */}
+        <div className="flex w-[4.5rem] shrink-0 snap-start flex-col items-center gap-1.5">
+          <button
+            type="button"
             onClick={() => composer.openStory()}
-          />
-        )}
+            className="well press grid size-[4.5rem] place-items-center rounded-full text-brand-hi"
+          >
+            <Icon name="camera" className="size-6" />
+            <span className="sr-only">Provar: publicar um story do que você fez</span>
+          </button>
+          <span aria-hidden="true" className="text-xs font-medium text-ink-muted">
+            + Provar
+          </span>
+        </div>
+
+        {tray.mine ? (
+          <Ring ring={tray.mine} label="Você" streak={planner.streak.current} onOpen={() => setOpenAt(0)} />
+        ) : null}
 
         {tray.rings.map((ring, index) => (
           <Ring
             key={ring.userId}
             ring={ring}
-            label={ring.name}
+            label={ring.name.split(' ')[0] ?? ring.name}
             onOpen={() => setOpenAt(tray.mine ? index + 1 : index)}
           />
         ))}
       </div>
 
       {openAt !== null ? (
-        <StoryViewer
-          rings={order}
-          startAt={openAt}
-          onClose={() => setOpenAt(null)}
-          onSeen={tray.markSeen}
-        />
+        <StoryViewer rings={order} startAt={openAt} onClose={() => setOpenAt(null)} onSeen={tray.markSeen} />
       ) : null}
     </>
   )
@@ -92,78 +91,40 @@ export function StoriesTray() {
 function Ring({
   ring,
   label,
+  streak,
   onOpen,
-  onAdd,
-  showAdd = false,
 }: {
   readonly ring: StoryRing
   readonly label: string
+  /** Só a própria sequência é conhecida aqui: a dos outros não vem no story. */
+  readonly streak?: number
   readonly onOpen: () => void
-  readonly onAdd?: () => void
-  readonly showAdd?: boolean
 }) {
   const unseen = ring.unseen > 0
 
   return (
-    <div className="flex w-16 shrink-0 snap-start flex-col items-center gap-1.5">
-      <div className="relative">
-        <button
-          type="button"
-          onClick={onOpen}
-          className={cn(
-            'grid size-16 place-items-center rounded-full p-[2px] transition-colors',
-            unseen ? 'bg-brand' : 'bg-line-hi',
-          )}
-        >
-          <span className="grid size-full place-items-center rounded-full bg-canvas p-[2px]">
-            <Avatar name={ring.name} src={ring.avatarUrl} className="size-full" textClassName="text-base" />
-          </span>
-          <span className="sr-only">
-            {unseen ? `Ver o story de ${label}, tem coisa nova` : `Rever o story de ${label}`}
-          </span>
-        </button>
-
-        {/* O "+" sobre o próprio anel: a pessoa que já tem story ainda precisa
-            de um caminho pra somar outro, e ele não pode ser "toque e procure". */}
-        {showAdd && onAdd ? (
-          <button
-            type="button"
-            onClick={onAdd}
-            className="absolute -bottom-0.5 -right-0.5 grid size-6 place-items-center rounded-full border-2 border-canvas bg-brand text-white"
-          >
-            <Icon name="mais" className="size-3.5" strokeWidth={3} />
-            <span className="sr-only">Adicionar outro story</span>
-          </button>
-        ) : null}
-      </div>
-
-      <span className="w-full truncate text-center text-[0.6875rem] text-ink-muted">{label}</span>
-    </div>
-  )
-}
-
-function AddStory({
-  name,
-  avatar,
-  onClick,
-}: {
-  readonly name: string
-  readonly avatar: string | null
-  readonly onClick: () => void
-}) {
-  return (
-    <div className="flex w-16 shrink-0 snap-start flex-col items-center gap-1.5">
-      <button type="button" onClick={onClick} className="relative">
-        <Avatar name={name} src={avatar} className="size-16" textClassName="text-base" />
-        <span
-          aria-hidden="true"
-          className="absolute -bottom-0.5 -right-0.5 grid size-6 place-items-center rounded-full border-2 border-canvas bg-brand text-white"
-        >
-          <Icon name="mais" className="size-3.5" strokeWidth={3} />
+    <div className="flex w-[4.5rem] shrink-0 snap-start flex-col items-center gap-1.5">
+      <button
+        type="button"
+        onClick={onOpen}
+        className={cn(
+          'relative grid size-[4.5rem] place-items-center rounded-full p-[3px]',
+          unseen ? 'bg-gradient-to-br from-brand to-brand-deep' : 'bg-line-hi',
+        )}
+      >
+        <span className="grid size-full place-items-center rounded-full bg-surface p-[2px]">
+          <Avatar name={ring.name} src={ring.avatarUrl} className="size-full" textClassName="text-base" />
         </span>
-        <span className="sr-only">Adicionar um story</span>
+        {streak !== undefined && streak > 0 ? (
+          <StreakBadge days={streak} size="sm" className="chip absolute -bottom-1.5 left-1/2 -translate-x-1/2" />
+        ) : null}
+        <span className="sr-only">
+          {unseen ? `Ver o story de ${label}, tem coisa nova` : `Rever o story de ${label}`}
+        </span>
       </button>
-      <span className="w-full truncate text-center text-[0.6875rem] text-ink-muted">Teu story</span>
+      <span aria-hidden="true" className="w-full truncate text-center text-xs text-ink-muted">
+        {label}
+      </span>
     </div>
   )
 }

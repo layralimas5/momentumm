@@ -1,78 +1,44 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { motion, useReducedMotion } from 'framer-motion'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { addDays, dayKeyToDate, formatDayLong, startOfWeek, type DayKey } from '@/domain/entities/day'
-import {
-  isRoutineDone,
-  isRoutineResolved,
-  routineDayStates,
-  routineRecurrenceLabel,
-  routineTimeline,
-  type RoutineDayState,
-  type RoutineItem,
-  type RoutineRecurrence,
-} from '@/domain/entities/routine-item'
-import { Button } from '@/presentation/components/ui/Button'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import type { AgendaItem } from '@/domain/entities/day-agenda'
+import type { RoutineItem, RoutineRecurrence } from '@/domain/entities/routine-item'
+import { InsightCard } from '@/presentation/components/ds/InsightCard'
+import { DashboardSkeleton } from '@/presentation/components/dashboard/DashboardSkeleton'
 import { ConfirmDialog } from '@/presentation/components/ui/ConfirmDialog'
 import { Icon } from '@/presentation/components/ui/Icon'
-import { EmptyState } from '@/presentation/components/ui/States'
-import { BottomSheet, SheetAction } from '@/presentation/components/ui/BottomSheet'
-import { IconButton, Panel, ProgressBar, Tag } from '@/presentation/components/ui/Surface'
+import { ErrorNote } from '@/presentation/components/ui/States'
+import { AddSheet } from '@/presentation/layouts/AddSheet'
+import { useComposer } from '@/presentation/planner/ComposerProvider'
+import { useDayControls } from '@/presentation/planner/use-day-controls'
 import { usePlanner } from '@/presentation/planner/use-planner'
+import { EnergyAdjustCard, RoutineHero, RoutineTimeline, WeeklyRoutineCard } from '@/presentation/routine/RoutineCards'
 import { RoutineItemDialog } from '@/presentation/routine/RoutineItemDialog'
-import { cn } from '@/shared/lib/cn'
-import { PageHeader } from './PageHeader'
 import { readRoutinePrefill, type RoutinePrefill } from '@/presentation/routine/routine-prefill'
+import { useDayToggle } from '@/presentation/today/day-items'
 
 /**
- * Rotina: como os seus dias normalmente funcionam.
- *
- * A separação que sustenta a tela inteira:
- *
- *   HOJE    responde "o que eu preciso fazer agora". É execução, e mistura
- *           ação, hábito e rotina porque é assim que o dia é vivido.
- *   ROTINA  responde "como eu organizei meus dias". É desenho, e é aqui que se
- *           cria, edita, pausa e apaga.
- *
- * Por isso esta tela mostra SÓ os itens de rotina, e não a agenda inteira: se
- * ela repetisse o Hoje, seriam duas telas com a mesma lista e nenhuma das duas
- * com um papel claro. O que ela compartilha com o Hoje é o ESTADO: marcar aqui
- * marca lá, porque é a mesma ocorrência, não uma cópia.
- *
- * A visão semanal existe pra uma pergunta que o dia não responde: "como está a
- * minha semana?". Ela não é um calendário: são sete dias, um toque abre o dia.
+ * Rotina: o dia como protocolo. O quanto já saiu (anel), a saída pra dia
+ * pesado (energia e retomada), a leitura do ritmo (insight) e a linha do
+ * tempo inteira. A rotina semanal, que se mexe pouco, fica recolhida no fim.
  */
 export function RoutinePage() {
   const planner = usePlanner()
-  const navigate = useNavigate()
+  const composer = useComposer()
+  const day = useDayControls()
+  const { view } = day
+  const { busyKey, toggleAgenda } = useDayToggle()
   const [params, setParams] = useSearchParams()
 
-  const [picked, setPicked] = useState<DayKey>(planner.today)
-  /*
-    Quem estava olhando o dia de hoje continua olhando hoje depois da
-    meia-noite. Quem escolheu outro dia fica nele: a escolha foi dela.
-  */
-  const [shownToday, setShownToday] = useState(planner.today)
-  if (shownToday !== planner.today) {
-    setShownToday(planner.today)
-    if (picked === shownToday) setPicked(planner.today)
-  }
-  const [view, setView] = useState<'dia' | 'semana' | 'todos'>('dia')
+  const [adding, setAdding] = useState(false)
   const [editing, setEditing] = useState<RoutineItem | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [removing, setRemoving] = useState<RoutineItem | null>(null)
-  /*
-    "Compromisso" e "item da rotina" abrem o MESMO formulário: o que muda é a
-    recorrência com que ele nasce. Guardar isso aqui, e não no parâmetro da
-    URL, é o que permite limpar a URL na hora sem perder a escolha.
-  */
   const [presetRecurrence, setPresetRecurrence] = useState<RoutineRecurrence | null>(null)
   const [presetFromPlan, setPresetFromPlan] = useState<RoutinePrefill | null>(null)
 
   /*
-    O "+" da barra de baixo abre esta tela já com o formulário aberto
-    (`/app/rotina?novo=1`). O parâmetro é consumido na hora: sem isso, voltar
-    pra cá pelo histórico do navegador reabriria o diálogo do nada.
+    `?novo=1` abre o formulário (vem do "Adicionar"); `?editar=<id>` abre um
+    item. Os dois são consumidos na hora: voltar pelo histórico não reabre nada.
   */
   useEffect(() => {
     if (params.get('novo') === '1') {
@@ -84,10 +50,9 @@ export function RoutinePage() {
       return
     }
 
-    // "Editar" no menu de uma linha do Hoje: a tela abre já no item certo.
-    const alvo = params.get('editar')
-    if (!alvo) return
-    const item = planner.routineItems.find((entry) => entry.id === alvo)
+    const target = params.get('editar')
+    if (!target) return
+    const item = planner.routineItems.find((entry) => entry.id === target)
     if (item) {
       setEditing(item)
       setPresetRecurrence(null)
@@ -97,182 +62,85 @@ export function RoutinePage() {
     setParams({}, { replace: true })
   }, [params, setParams, planner.routineItems])
 
-  const week = useMemo(() => {
-    const first = startOfWeek(planner.today)
-    return Array.from({ length: 7 }, (_, index) => addDays(first, index))
-  }, [planner.today])
+  if (planner.loading) return <DashboardSkeleton mobile />
 
-  const states = useMemo(
-    () => routineDayStates(planner.routineItems, planner.routineOccurrences, picked),
-    [planner.routineItems, planner.routineOccurrences, picked],
-  )
-
-  const done = states.filter((state) => isRoutineDone(state.status)).length
-  const vazia = planner.routineItems.length === 0
-
-  const abrirNovo = () => {
-    setEditing(null)
-    setPresetRecurrence(null)
-    setDialogOpen(true)
+  const openItem = (item: AgendaItem) => {
+    if (item.task) composer.open('acao', { editing: item.task })
+    else if (item.habitState) composer.open('habito', { editingHabit: item.habitState.habit })
+    else if (item.routineState) {
+      setEditing(item.routineState.item)
+      setDialogOpen(true)
+    }
   }
 
+  const openBlocks = view.agenda.items.filter((item) => !item.done && !item.skipped).length
+  const dateLabel = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })
+
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Rotina"
-        description="Como os seus dias normalmente funcionam. O que estiver programado pra hoje aparece sozinho na tela Hoje."
-        action={
-          <Button onClick={abrirNovo}>
-            <Icon name="mais" className="size-4" />
-            Adicionar
-          </Button>
-        }
+    <div className="flex flex-col gap-6 pb-2">
+      {planner.error ? <ErrorNote message={planner.error} onRetry={() => void planner.reload()} /> : null}
+
+      <RoutineHero agenda={view.agenda} />
+
+      <EnergyAdjustCard
+        aiEnabled={day.aiEnabled}
+        lowEnergy={day.lowEnergy}
+        openBlocks={openBlocks}
+        recovery={day.recovery.state}
+        onLowEnergy={() => void day.startLowEnergy()}
+        onUndoLowEnergy={() => void day.endLowEnergy()}
+        onChooseRecovery={day.chooseRecoveryStep}
+        onAiRecovery={day.openAiRecovery}
       />
 
-      {vazia ? (
-        <EmptyState
-          title="Vamos organizar seu dia?"
-          description="Adiciona as coisas que fazem parte da sua rotina e o Momentumm mostra o que importa a cada dia, sem você precisar procurar."
-          action={
-            <Button onClick={abrirNovo}>
-              <Icon name="mais" className="size-4" />
-              Criar minha rotina
-            </Button>
-          }
+      {view.insight ? (
+        <InsightCard
+          label="Insight preditivo"
+          tag="Oportunidade"
+          message={view.insight.recommendation}
+          detail={view.insight.reason}
+          actionLabel={view.insight.actionLabel}
+          onAction={() => {
+            if (view.insight) void day.applyInsight(view.insight)
+          }}
+          onDismiss={() => {
+            if (view.insight) view.dismissInsight(view.insight.id)
+          }}
         />
-      ) : (
-        <>
-          {/* Duas visões, um seletor. "Semana" é leitura; "dia" é onde se mexe. */}
-          <div role="tablist" aria-label="Visão da rotina" className="flex gap-1.5">
-            {(['dia', 'semana', 'todos'] as const).map((option) => (
-              <button
-                key={option}
-                type="button"
-                role="tab"
-                aria-selected={view === option}
-                onClick={() => setView(option)}
-                className={cn(
-                  'min-h-11 rounded-xl border px-4 text-sm font-medium transition-colors',
-                  view === option
-                    ? 'border-brand bg-brand-dim/70 text-brand-ink'
-                    : 'border-line text-ink-muted active:bg-surface-hi',
-                )}
-              >
-                {TAB_LABELS[option]}
-              </button>
-            ))}
-          </div>
-
-          {view === 'semana' ? (
-            <WeekStrip
-              week={week}
-              today={planner.today}
-              picked={picked}
-              onPick={(day) => {
-                setPicked(day)
-                setView('dia')
-              }}
-              countOf={(day) =>
-                routineDayStates(planner.routineItems, planner.routineOccurrences, day).length
-              }
-            />
-          ) : null}
-
-          {view === 'dia' ? (
-            <Panel tone="raised" aria-labelledby="rotina-dia">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h2 id="rotina-dia" className="text-lg font-semibold tracking-tight text-ink">
-                    {picked === planner.today ? 'Hoje' : nomeDoDia(picked)}
-                  </h2>
-                  <p className="mt-0.5 text-sm text-ink-muted">
-                    {formatDayLong(picked, planner.today)}
-                  </p>
-                </div>
-
-                {states.length > 0 ? (
-                  <div className="w-full sm:w-40">
-                    <div className="flex items-baseline justify-between gap-2 text-xs text-ink-faint">
-                      <span>Concluído</span>
-                      <span className="tabular text-ink-muted">
-                        {done} de {states.length}
-                      </span>
-                    </div>
-                    <ProgressBar
-                      className="mt-1.5"
-                      value={states.length === 0 ? 0 : done / states.length}
-                      label={`Rotina do dia: ${done} de ${states.length}`}
-                    />
-                  </div>
-                ) : null}
-              </div>
-
-              {states.length === 0 ? (
-                <p className="mt-5 rounded-xl border border-dashed border-line-hi px-4 py-6 text-center text-sm text-ink-muted">
-                  Nada na rotina desse dia. Descanso também é organização.
-                </p>
-              ) : (
-                <RoutineDayTimeline
-                  states={states}
-                  day={picked}
-                  today={planner.today}
-                  onEdit={(item) => {
-                    setEditing(item)
-                    setDialogOpen(true)
-                  }}
-                  onRemove={(item) => setRemoving(item)}
-                />
-              )}
-
-              <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-line pt-4">
-                <Button size="sm" variant="secondary" onClick={abrirNovo}>
-                  <Icon name="mais" className="size-4" />
-                  Adicionar
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => navigate('/app')}>
-                  Ver o dia inteiro
-                  <Icon name="seta" className="size-3.5" />
-                </Button>
-              </div>
-            </Panel>
-          ) : null}
-        </>
-      )}
-
-      {/* Com a rotina vazia o convite já ocupa a tela: "0 itens" embaixo dele
-          seria a mesma notícia duas vezes, e a segunda em tom de relatório. */}
-      {!vazia && view === 'todos' ? (
-        <Panel tone="raised" aria-labelledby="rotina-todos">
-          <h2 id="rotina-todos" className="text-lg font-semibold tracking-tight text-ink">
-            Tudo que está na sua rotina
-          </h2>
-          <p className="mt-0.5 text-sm text-ink-muted">
-            {planner.routineItems.length}{' '}
-            {planner.routineItems.length === 1 ? 'item' : 'itens'}, em todos os dias da semana.
-          </p>
-
-          <ul className="mt-4 flex flex-col">
-            {[...planner.routineItems]
-              .sort(byTimeThenTitle)
-              .map((item) => (
-                <RoutineItemRow
-                  key={item.id}
-                  item={item}
-                  onEdit={() => {
-                    setEditing(item)
-                    setDialogOpen(true)
-                  }}
-                  onRemove={() => setRemoving(item)}
-                />
-              ))}
-          </ul>
-        </Panel>
       ) : null}
+
+      <RoutineTimeline
+        agenda={view.agenda}
+        busyKey={busyKey}
+        onToggle={(item) => void toggleAgenda(item)}
+        onOpen={openItem}
+        dateLabel={`Hoje · ${dateLabel}`}
+      />
+
+      <button
+        type="button"
+        onClick={() => setAdding(true)}
+        className="press flex min-h-14 items-center justify-center gap-2 rounded-[1.4rem] border-2 border-dashed border-brand/25 text-[0.95rem] font-semibold text-brand-hi"
+      >
+        <Icon name="mais" className="size-5" strokeWidth={2.25} />
+        Adicionar Bloco ou Conectar a Objetivo
+      </button>
+
+      <WeeklyRoutineCard
+        items={planner.routineItems}
+        onEdit={(item) => {
+          setEditing(item)
+          setDialogOpen(true)
+        }}
+        onRemove={setRemoving}
+      />
+
+      <AddSheet open={adding} onClose={() => setAdding(false)} />
 
       <RoutineItemDialog
         open={dialogOpen}
         editing={editing}
-        presetDay={picked}
+        presetDay={planner.today}
         presetRecurrence={presetRecurrence}
         presetFromPlan={presetFromPlan}
         onClose={() => {
@@ -286,9 +154,7 @@ export function RoutinePage() {
         open={removing !== null}
         title="Tirar da rotina?"
         description={
-          removing
-            ? `"${removing.title}" sai dos próximos dias. O que já foi marcado continua no histórico.`
-            : ''
+          removing ? `"${removing.title}" sai dos próximos dias. O que já foi marcado continua no histórico.` : ''
         }
         confirmLabel="Tirar da rotina"
         onConfirm={async () => {
@@ -297,407 +163,8 @@ export function RoutinePage() {
         }}
         onClose={() => setRemoving(null)}
       />
+
+      {day.layer}
     </div>
   )
-}
-
-/**
- * A semana em sete colunas.
- *
- * Não é calendário: não tem mês, não tem navegação, não tem evento arrastável.
- * Ela responde uma pergunta só, "como está a minha semana", e o toque leva pro
- * dia. Um calendário completo aqui seria o produto virando agenda profissional,
- * que é exatamente o que a Rotina não é.
- */
-function WeekStrip({
-  week,
-  today,
-  picked,
-  onPick,
-  countOf,
-}: {
-  readonly week: readonly DayKey[]
-  readonly today: DayKey
-  readonly picked: DayKey
-  readonly onPick: (day: DayKey) => void
-  readonly countOf: (day: DayKey) => number
-}) {
-  return (
-    <div className="grid grid-cols-7 gap-1.5">
-      {week.map((day) => {
-        const total = countOf(day)
-        const isToday = day === today
-        return (
-          <button
-            key={day}
-            type="button"
-            onClick={() => onPick(day)}
-            aria-current={day === picked ? 'date' : undefined}
-            className={cn(
-              'flex min-h-20 flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2 transition-colors',
-              day === picked
-                ? 'border-brand bg-brand-dim/70'
-                : 'border-line active:bg-surface-hi',
-            )}
-          >
-            <span
-              className={cn(
-                'text-[0.625rem] font-medium tracking-[0.1em] uppercase',
-                isToday ? 'text-brand-ink' : 'text-ink-faint',
-              )}
-            >
-              {nomeCurto(day)}
-            </span>
-            <span className={cn('tabular text-sm font-semibold', isToday ? 'text-ink' : 'text-ink-muted')}>
-              {dayKeyToDate(day).getDate()}
-            </span>
-            <span className="text-[0.625rem] text-ink-faint">
-              {total === 0 ? 'livre' : `${total} ${total === 1 ? 'item' : 'itens'}`}
-            </span>
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
-/** "07:40", no relógio local. É o que decide onde o "agora" entra na linha do tempo. */
-function clockNow(): string {
-  const now = new Date()
-  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-}
-
-/**
- * O dia como linha do tempo (§10, §57).
- *
- * Em ordem de horário, com o "agora" marcado só no dia de hoje, e o que não tem
- * horário num grupo próprio no fim, com nome. O marcador é recalculado a cada
- * render, e a tela renderiza de novo a cada marcação: não precisa de relógio
- * próprio pra ficar honesto ao longo do dia.
- */
-function RoutineDayTimeline({
-  states,
-  day,
-  today,
-  onEdit,
-  onRemove,
-}: {
-  readonly states: readonly RoutineDayState[]
-  readonly day: DayKey
-  readonly today: DayKey
-  readonly onEdit: (item: RoutineItem) => void
-  readonly onRemove: (item: RoutineItem) => void
-}) {
-  const timeline = routineTimeline(states, day === today ? clockNow() : null)
-  const row = (state: RoutineDayState) => (
-    <RoutineRow
-      key={state.item.id}
-      state={state}
-      day={day}
-      today={today}
-      onEdit={() => onEdit(state.item)}
-      onRemove={() => onRemove(state.item)}
-    />
-  )
-
-  return (
-    <div className="mt-4">
-      {timeline.timed.length > 0 ? (
-        <ul className="flex flex-col">
-          {timeline.timed.map((state, index) => (
-            <FragmentWithNow key={state.item.id} showNow={timeline.nowIndex === index}>
-              {row(state)}
-            </FragmentWithNow>
-          ))}
-          {timeline.nowIndex === timeline.timed.length ? <NowMarker /> : null}
-        </ul>
-      ) : null}
-
-      {timeline.untimed.length > 0 ? (
-        <section aria-labelledby="rotina-algum-momento" className={timeline.timed.length > 0 ? 'mt-4' : ''}>
-          <h3
-            id="rotina-algum-momento"
-            className="text-[0.6875rem] font-medium tracking-wide text-ink-faint uppercase"
-          >
-            Em algum momento
-          </h3>
-          <ul className="mt-1 flex flex-col">{timeline.untimed.map(row)}</ul>
-        </section>
-      ) : null}
-    </div>
-  )
-}
-
-function FragmentWithNow({ showNow, children }: { readonly showNow: boolean; readonly children: ReactNode }) {
-  return (
-    <>
-      {showNow ? <NowMarker /> : null}
-      {children}
-    </>
-  )
-}
-
-function NowMarker() {
-  return (
-    <li aria-label={`Agora, ${clockNow()}`} className="flex items-center gap-3 py-1">
-      <span className="tabular w-10 shrink-0 text-right text-[0.6875rem] font-semibold text-brand-hi">
-        {clockNow()}
-      </span>
-      <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-brand-hi" />
-      <span aria-hidden="true" className="h-px flex-1 bg-brand/40" />
-    </li>
-  )
-}
-
-function RoutineRow({
-  state,
-  day,
-  today,
-  onEdit,
-  onRemove,
-}: {
-  readonly state: RoutineDayState
-  readonly day: DayKey
-  readonly today: DayKey
-  readonly onEdit: () => void
-  readonly onRemove: () => void
-}) {
-  const planner = usePlanner()
-  const reduceMotion = useReducedMotion()
-  const [menuOpen, setMenuOpen] = useState(false)
-  const { item } = state
-  const done = isRoutineDone(state.status)
-  const resolved = isRoutineResolved(state.status)
-  /*
-    Dia passado é leitura: reescrever ontem é como o histórico deixa de valer.
-    Valia pro check e não valia pro resto, e editar a regra a partir de um dia
-    que já foi é o jeito mais fácil de mudar o futuro achando que mexeu no
-    passado. Gerenciar a regra continua na aba "Todos" e nos dias de hoje em
-    diante.
-  */
-  const editable = day >= today
-
-  const objective = planner.objectives.find((entry) => entry.id === item.objectiveId)
-
-  const toggle = () => {
-    void planner.setRoutineStatus(
-      item.id,
-      { status: done ? 'pendente' : 'feito', plannedTime: state.time },
-      day,
-    )
-  }
-
-  return (
-    <li className="flex items-start gap-3 border-t border-line py-2.5 first:border-t-0">
-      <span
-        className={cn(
-          'tabular mt-0.5 w-10 shrink-0 text-right text-[0.6875rem] leading-5',
-          done ? 'text-ink-faint' : 'text-ink-muted',
-        )}
-      >
-        {state.time ?? <span aria-hidden="true">·</span>}
-        {state.time ? null : <span className="sr-only">Sem horário definido</span>}
-      </span>
-
-      <motion.button
-        type="button"
-        disabled={!editable}
-        onClick={toggle}
-        {...(reduceMotion || !editable ? {} : { whileTap: { scale: 0.88 } })}
-        aria-label={done ? `Desfazer ${item.title}` : `Concluir ${item.title}`}
-        title={editable ? undefined : 'Dia passado fica como registro'}
-        className={cn(
-          'relative mt-0.5 grid size-6 shrink-0 place-items-center rounded-md border transition-colors',
-          // 44px de alvo real sem mexer no desenho: o quadrado continua com 24px
-          // e a área de toque cresce por fora dele.
-          "before:absolute before:-inset-2.5 before:content-['']",
-          done
-            ? 'border-positive bg-positive/20 text-positive'
-            : 'border-line-hi text-transparent hover:border-brand',
-          !editable && 'opacity-40',
-        )}
-      >
-        <motion.span
-          key={done ? 'feito' : 'pendente'}
-          {...(reduceMotion ? {} : { initial: { scale: 0.4, opacity: 0 }, animate: { scale: 1, opacity: 1 } })}
-          transition={{ type: 'spring', stiffness: 520, damping: 26 }}
-          className="grid place-items-center"
-        >
-          <Icon name="check" className="size-4" strokeWidth={2.5} />
-        </motion.span>
-      </motion.button>
-
-      <div className="min-w-0 flex-1">
-        <p
-          className={cn(
-            'text-[0.95rem] font-medium text-pretty',
-            resolved ? 'text-ink-faint line-through' : 'text-ink',
-          )}
-        >
-          {item.title}
-        </p>
-
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-faint">
-          <span>{routineRecurrenceLabel(item)}</span>
-          {item.durationMin ? (
-            <>
-              <span aria-hidden="true">·</span>
-              <span>{item.durationMin} min</span>
-            </>
-          ) : null}
-          {item.category ? (
-            <>
-              <span aria-hidden="true">·</span>
-              <span>{item.category}</span>
-            </>
-          ) : null}
-          {/* O objetivo em cor neutra: a única cor forte da linha é o check. */}
-          {objective ? (
-            <>
-              <span aria-hidden="true">·</span>
-              <span className="text-ink-muted">{objective.title}</span>
-            </>
-          ) : null}
-          {state.status === 'pulado' ? (
-            <>
-              <span aria-hidden="true">·</span>
-              {/* Pular é decisão, não falha, e a palavra na tela precisa dizer isso. */}
-              <span>{day === today ? 'Pulado hoje' : 'Pulado'}</span>
-            </>
-          ) : null}
-          {state.movedFrom ? (
-            <>
-              <span aria-hidden="true">·</span>
-              <span>Veio de {formatDayLong(state.movedFrom, day)}</span>
-            </>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="flex shrink-0 items-center gap-1">
-        {item.pausedAt ? <Tag>Pausado</Tag> : null}
-        {editable ? (
-          <button
-            type="button"
-            onClick={() => setMenuOpen(true)}
-            aria-haspopup="dialog"
-            className="-mr-1 grid size-11 place-items-center rounded-full text-ink-faint transition-colors hover:text-ink active:bg-surface-hi"
-          >
-            <span aria-hidden="true" className="text-xl leading-none">
-              ⋯
-            </span>
-            <span className="sr-only">Opções de {item.title}</span>
-          </button>
-        ) : null}
-      </div>
-
-      <BottomSheet
-        open={menuOpen}
-        title={item.title}
-        description="Vale pra todos os dias daqui pra frente"
-        onClose={() => setMenuOpen(false)}
-      >
-        <div className="flex flex-col gap-1">
-          <SheetAction
-            icon={<Icon name="editar" className="size-5" />}
-            label="Editar na rotina"
-            hint="Horário, dias, objetivo e lembrete"
-            onClick={() => {
-              setMenuOpen(false)
-              onEdit()
-            }}
-          />
-          <SheetAction
-            icon={<Icon name="lixeira" className="size-5" />}
-            label="Tirar da rotina"
-            hint="O que já foi feito continua no histórico"
-            tone="danger"
-            onClick={() => {
-              setMenuOpen(false)
-              onRemove()
-            }}
-          />
-        </div>
-      </BottomSheet>
-    </li>
-  )
-}
-
-const TAB_LABELS: Readonly<Record<'dia' | 'semana' | 'todos', string>> = {
-  dia: 'Dia',
-  semana: 'Semana',
-  todos: 'Todos',
-}
-
-/**
- * A lista completa.
- *
- * Ela existe porque a visão de dia não alcança o que não cai hoje: um item de
- * "dias úteis" é invisível num domingo, e um item que ninguém consegue ver é um
- * item que ninguém consegue editar nem tirar. Gerenciar é o papel desta tela, e
- * não dá pra gerenciar o que a tela esconde.
- *
- * Aqui não há check: marcar acontece no dia, e um check numa lista sem data
- * responderia "marquei em qual dia?" com silêncio.
- */
-function RoutineItemRow({
-  item,
-  onEdit,
-  onRemove,
-}: {
-  readonly item: RoutineItem
-  readonly onEdit: () => void
-  readonly onRemove: () => void
-}) {
-  return (
-    <li className="flex items-start gap-3 border-t border-line py-2.5 first:border-t-0">
-      <span className="tabular mt-0.5 w-10 shrink-0 text-right text-[0.6875rem] leading-5 text-ink-muted">
-        {item.timeOfDay ?? <span aria-hidden="true">·</span>}
-      </span>
-
-      <div className="min-w-0 flex-1">
-        <p className="text-[0.95rem] font-medium text-pretty text-ink">{item.title}</p>
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-faint">
-          <span>{routineRecurrenceLabel(item)}</span>
-          {item.durationMin ? (
-            <>
-              <span aria-hidden="true">·</span>
-              <span>{item.durationMin} min</span>
-            </>
-          ) : null}
-          {item.category ? (
-            <>
-              <span aria-hidden="true">·</span>
-              <span>{item.category}</span>
-            </>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="flex shrink-0 items-center gap-1">
-        {item.pausedAt ? <Tag>Pausado</Tag> : null}
-        <IconButton icon="editar" label={`Editar ${item.title}`} onClick={onEdit} />
-        <IconButton icon="lixeira" label={`Tirar ${item.title} da rotina`} onClick={onRemove} />
-      </div>
-    </li>
-  )
-}
-
-/** Sem horário vai pro fim: a lista é lida como uma linha do tempo. */
-function byTimeThenTitle(a: RoutineItem, b: RoutineItem): number {
-  if (a.timeOfDay && b.timeOfDay && a.timeOfDay !== b.timeOfDay) {
-    return a.timeOfDay.localeCompare(b.timeOfDay)
-  }
-  if (a.timeOfDay && !b.timeOfDay) return -1
-  if (!a.timeOfDay && b.timeOfDay) return 1
-  return a.title.localeCompare(b.title, 'pt-BR')
-}
-
-function nomeDoDia(day: DayKey): string {
-  const nome = dayKeyToDate(day).toLocaleDateString('pt-BR', { weekday: 'long' })
-  return nome.charAt(0).toUpperCase() + nome.slice(1)
-}
-
-function nomeCurto(day: DayKey): string {
-  return dayKeyToDate(day).toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')
 }
