@@ -41,8 +41,8 @@ export const NAV_GROUPS: readonly NavGroup[] = [
 ]
 
 export const NAV_DIRECT: readonly NavLink[] = [
-  { label: 'O app', description: 'O que muda no seu dia', href: '/#funcionalidades' },
-  { label: 'Como funciona', description: 'Da meta ao primeiro passo', href: '/#como-funciona' },
+  { label: 'O app', description: 'O que muda no seu dia', href: '/#plataforma' },
+  { label: 'Recursos do PRO', description: 'O que vem além do básico', href: '/#recursos' },
   { label: 'Planos', description: 'Grátis e PRO, o que muda', href: '/#planos' },
   { label: 'Dúvidas', description: 'O que perguntam antes de começar', href: '/#faq' },
 ]

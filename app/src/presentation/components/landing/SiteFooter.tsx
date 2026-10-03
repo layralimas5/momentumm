@@ -5,8 +5,8 @@ import { useSiteCta } from './use-site-cta'
 import { SITE } from './site'
 
 const PRODUCT = [
-  { label: 'O app', href: '/#funcionalidades' },
-  { label: 'Como funciona', href: '/#como-funciona' },
+  { label: 'O app', href: '/#plataforma' },
+  { label: 'Recursos do PRO', href: '/#recursos' },
   { label: 'Planos', href: '/#planos' },
   { label: 'Dúvidas', href: '/#faq' },
 ] as const
@@ -83,6 +83,7 @@ export function SiteFooter() {
           <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-5 text-center text-sm text-ink-faint sm:flex-row sm:px-6 sm:text-left">
             <p>
               © {new Date().getFullYear()} {SITE.name}. Todos os direitos reservados.
+              {SITE.cnpj ? ` CNPJ ${SITE.cnpj}.` : null}
             </p>
             <p>Roda no navegador do celular e do computador. Sem instalar nada.</p>
           </div>

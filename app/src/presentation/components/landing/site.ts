@@ -18,6 +18,12 @@ export const SITE = {
    * rodapé e as páginas legais passam a mostrar sozinhos.
    */
   contactEmail: null as string | null,
+  /**
+   * O CNPJ no rodapé é argumento de confiança em produto que guarda dado de
+   * alguém. Quando existir, preencher aqui ("00.000.000/0001-00") e ele
+   * aparece sozinho na linha de baixo do rodapé.
+   */
+  cnpj: null as string | null,
 } as const
 
 /**

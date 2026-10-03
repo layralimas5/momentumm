@@ -12,7 +12,8 @@ import { type DayPart, type HabitIcon } from './habit'
 import { MIN_OBJECTIVE_DAYS } from './objective'
 
 /**
- * O quiz de entrada: sete perguntas respondidas ANTES de existir conta.
+ * O quiz de entrada: oito perguntas e duas telas de apoio, respondidas
+ * ANTES de existir conta.
  *
  * Ele não tem gerador próprio. As respostas viram as mesmas
  * `ActivationAnswers` que o onboarding usa, e o plano sai do mesmo
@@ -125,16 +126,229 @@ export const QUIZ_STYLE_LABELS: Readonly<Record<QuizStyleKey, string>> = {
   momentumm_decide: 'Quero que o Momentumm decida por mim',
 }
 
-/** Exemplos que a primeira pergunta mostra. Tocar num deles preenche o campo. */
-export const QUIZ_GOAL_EXAMPLES: readonly string[] = [
-  'Criar uma rotina de exercícios',
-  'Lançar meu projeto',
-  'Estudar para uma prova',
-  'Organizar minha vida',
-  'Melhorar minha saúde',
-]
+/**
+ * Quantas vezes a pessoa já começou e parou. Não muda o plano: muda a
+ * conversa do diagnóstico, que tira a culpa da pessoa e põe no método antigo.
+ */
+export const QUIZ_HISTORIES = ['primeira', 'algumas', 'perdi_a_conta', 'mantive_e_parei'] as const
+export type QuizHistoryKey = (typeof QUIZ_HISTORIES)[number]
 
-export const QUIZ_QUESTION_COUNT = 7
+export const QUIZ_HISTORY_LABELS: Readonly<Record<QuizHistoryKey, string>> = {
+  primeira: 'É a primeira vez',
+  algumas: 'Duas ou três vezes',
+  perdi_a_conta: 'Já perdi a conta',
+  mantive_e_parei: 'Mantive por um tempo e parei',
+}
+
+// ---------------------------------------------------------------------------
+// a área guia o resto do quiz
+// ---------------------------------------------------------------------------
+
+/**
+ * Como o quiz fala de cada área. A primeira área marcada é a do plano, e a
+ * partir dela as perguntas seguintes deixam de ser genéricas: quem tocou em
+ * Estudos lê "quanto tempo por dia você consegue reservar pra estudar?", com
+ * exemplos de objetivo de estudo. As chaves das respostas não mudam; muda só
+ * a frase, então diagnóstico e plano continuam saindo do mesmo gerador.
+ */
+export interface QuizAreaContext {
+  /** O nome da área, como a pessoa marcou: "Estudos", ou o que escreveu em "Outra". */
+  readonly label: string
+  /** O verbo depois de "pra" e "consegue": "estudar", "cuidar da saúde". */
+  readonly practice: string
+  /** A área como assunto da frase: "seus estudos", "sua saúde". */
+  readonly subject: string
+  readonly goalQuestion: string
+  readonly goalPlaceholder: string
+  /** Tocar num exemplo preenche o campo do objetivo. */
+  readonly goalExamples: readonly string[]
+  /** Um passo mínimo típico da área, pra tela de confiança mostrar o que é "versão mínima". */
+  readonly minimalExample: string
+}
+
+type AreaCopy = Omit<QuizAreaContext, 'label'>
+
+const AREA_COPY: Readonly<Record<Exclude<QuizAreaKey, 'outra'>, AreaCopy>> = {
+  saude: {
+    practice: 'cuidar da saúde',
+    subject: 'sua saúde',
+    goalQuestion: 'O que você quer conquistar na sua saúde?',
+    goalPlaceholder: 'Ex.: voltar a treinar 3 vezes por semana',
+    goalExamples: [
+      'Criar uma rotina de exercícios',
+      'Voltar a correr',
+      'Dormir melhor',
+      'Melhorar minha alimentação',
+      'Perder peso com calma',
+    ],
+    minimalExample: 'uma caminhada de 10 minutos',
+  },
+  carreira: {
+    practice: 'avançar na carreira',
+    subject: 'sua carreira',
+    goalQuestion: 'O que você quer conquistar na sua carreira?',
+    goalPlaceholder: 'Ex.: conseguir uma promoção este ano',
+    goalExamples: [
+      'Conseguir uma promoção',
+      'Mudar de área',
+      'Aprender uma nova habilidade',
+      'Montar meu portfólio',
+      'Tirar uma certificação',
+    ],
+    minimalExample: '15 minutos de um curso',
+  },
+  estudos: {
+    practice: 'estudar',
+    subject: 'seus estudos',
+    goalQuestion: 'O que você quer conquistar nos estudos?',
+    goalPlaceholder: 'Ex.: passar na prova de março',
+    goalExamples: [
+      'Passar numa prova',
+      'Estudar para o ENEM',
+      'Aprender inglês',
+      'Terminar a faculdade',
+      'Ler 12 livros no ano',
+    ],
+    minimalExample: 'reler as anotações por 5 minutos',
+  },
+  financas: {
+    practice: 'organizar as finanças',
+    subject: 'suas finanças',
+    goalQuestion: 'O que você quer conquistar nas suas finanças?',
+    goalPlaceholder: 'Ex.: montar uma reserva de emergência',
+    goalExamples: [
+      'Montar uma reserva de emergência',
+      'Sair das dívidas',
+      'Organizar meus gastos',
+      'Começar a investir',
+      'Juntar para uma viagem',
+    ],
+    minimalExample: 'anotar os gastos do dia',
+  },
+  pessoal: {
+    practice: 'se desenvolver',
+    subject: 'seu desenvolvimento',
+    goalQuestion: 'O que você quer desenvolver em você?',
+    goalPlaceholder: 'Ex.: ler um livro por mês',
+    goalExamples: [
+      'Ler mais',
+      'Meditar todo dia',
+      'Criar o hábito de escrever',
+      'Acordar mais cedo',
+      'Organizar minha vida',
+    ],
+    minimalExample: 'ler 5 páginas',
+  },
+  relacionamentos: {
+    practice: 'cuidar dos seus relacionamentos',
+    subject: 'seus relacionamentos',
+    goalQuestion: 'O que você quer conquistar nos seus relacionamentos?',
+    goalPlaceholder: 'Ex.: jantar com a família toda semana',
+    goalExamples: [
+      'Passar mais tempo com a família',
+      'Ver mais os amigos',
+      'Ter mais tempo a dois',
+      'Conhecer gente nova',
+    ],
+    minimalExample: 'mandar uma mensagem pra quem importa',
+  },
+  projeto: {
+    practice: 'tocar seu projeto',
+    subject: 'seu projeto',
+    goalQuestion: 'O que você quer tirar do papel?',
+    goalPlaceholder: 'Ex.: lançar meu projeto até dezembro',
+    goalExamples: [
+      'Lançar meu projeto',
+      'Tirar uma ideia do papel',
+      'Publicar meu site',
+      'Escrever um livro',
+      'Gravar meu primeiro vídeo',
+    ],
+    minimalExample: '15 minutos no próximo pedaço do projeto',
+  },
+}
+
+/** "Outra" fala com o nome que a pessoa escreveu, ou com "sua meta" quando ela não escreveu nada. */
+function otherAreaCopy(customArea: string): AreaCopy {
+  const name = customArea.trim()
+  const lower = name.toLowerCase()
+  return {
+    practice: name ? `se dedicar a ${lower}` : 'se dedicar à sua meta',
+    subject: name ? `a sua rotina com ${lower}` : 'a sua meta',
+    goalQuestion: name ? `O que você quer conquistar com ${lower}?` : 'O que você mais quer conquistar agora?',
+    goalPlaceholder: 'Ex.: lançar meu projeto',
+    goalExamples: ['Criar uma rotina', 'Tirar uma ideia do papel', 'Aprender algo novo', 'Organizar minha vida'],
+    minimalExample: '5 minutos no que importa',
+  }
+}
+
+export function quizAreaContext(answers: QuizAnswers): QuizAreaContext {
+  const area = primaryArea(answers)
+  if (area === 'outra') {
+    return { label: answers.customArea.trim() || QUIZ_AREA_LABELS.outra, ...otherAreaCopy(answers.customArea) }
+  }
+  return { label: QUIZ_AREA_LABELS[area], ...AREA_COPY[area] }
+}
+
+/** As áreas na ordem do toque, em frase: "Estudos, depois Carreira e Saúde". */
+export function areasInOrder(answers: QuizAnswers): string {
+  const labels = answers.areas.map((key) =>
+    key === 'outra' ? answers.customArea.trim() || QUIZ_AREA_LABELS.outra : QUIZ_AREA_LABELS[key],
+  )
+  const [first, ...rest] = labels
+  if (!first) return ''
+  if (rest.length === 0) return first
+  const tail = rest.length === 1 ? rest[0] : `${rest.slice(0, -1).join(', ')} e ${rest[rest.length - 1]}`
+  return `${first}, depois ${tail}`
+}
+
+/**
+ * As telas do quiz, na ordem. Segue a estrutura de quiz de funil: abertura
+ * com um toque fácil (a área, sem digitar nada), identificação (o objetivo
+ * nas palavras da pessoa), dor, uma tela de confiança antes das perguntas
+ * mais pesadas, histórico, compromisso (tempo, prazo e dias), a devolutiva
+ * com o que ela já respondeu e a última pergunta. Depois vêm a análise, o
+ * contato e o resultado com a oferta (`use-quiz.ts`).
+ *
+ * `trust` e `recap` não são perguntas: não pedem resposta e não contam no
+ * total que a página promete ("responda 8 perguntas").
+ */
+export const QUIZ_SCREENS = [
+  'area',
+  'goal',
+  'obstacles',
+  'trust',
+  'history',
+  'time',
+  'horizon',
+  'weekdays',
+  'recap',
+  'style',
+] as const
+export type QuizScreen = (typeof QUIZ_SCREENS)[number]
+
+const INFO_SCREENS: readonly QuizScreen[] = ['trust', 'recap']
+
+export const QUIZ_SCREEN_COUNT = QUIZ_SCREENS.length
+export const QUIZ_QUESTION_COUNT = QUIZ_SCREENS.filter((screen) => !INFO_SCREENS.includes(screen)).length
+
+/** Rótulo curto de cada tela, pro painel do funil ler o abandono por etapa. */
+export const QUIZ_SCREEN_LABELS: Readonly<Record<QuizScreen, string>> = {
+  area: 'Área',
+  goal: 'Objetivo',
+  obstacles: 'O que trava',
+  trust: 'Tela de confiança',
+  history: 'Histórico',
+  time: 'Tempo por dia',
+  horizon: 'Prazo',
+  weekdays: 'Dias da semana',
+  recap: 'Devolutiva',
+  style: 'Como começar',
+}
+
+export function quizScreenAt(step: number): QuizScreen {
+  return QUIZ_SCREENS[Math.min(Math.max(step, 0), QUIZ_SCREEN_COUNT - 1)] ?? 'area'
+}
 export const MIN_GOAL_LENGTH = 3
 export const MAX_GOAL_LENGTH = 120
 
@@ -151,6 +365,8 @@ export interface QuizAnswers {
   /** Dias da semana (0 = domingo). */
   readonly weekdays: readonly number[]
   readonly style: QuizStyleKey | null
+  /** Null em respostas salvas antes da pergunta existir: o plano não depende dela. */
+  readonly history: QuizHistoryKey | null
 }
 
 export const EMPTY_QUIZ_ANSWERS: QuizAnswers = {
@@ -162,6 +378,7 @@ export const EMPTY_QUIZ_ANSWERS: QuizAnswers = {
   horizon: null,
   weekdays: [],
   style: null,
+  history: null,
 }
 
 /** As respostas com todas as perguntas fechadas: só assim existe diagnóstico. */
@@ -172,28 +389,31 @@ export interface CompleteQuizAnswers extends QuizAnswers {
 }
 
 /**
- * O que falta pra sair da pergunta `step` (base zero). Null quando dá pra
+ * O que falta pra sair da tela `step` (base zero). Null quando dá pra
  * avançar. É a única validação do quiz, e a tela só a repete.
  */
 export function quizBlocker(step: number, answers: QuizAnswers): string | null {
-  switch (step) {
-    case 0:
+  switch (quizScreenAt(step)) {
+    case 'area':
+      return answers.areas.length === 0 ? 'Escolhe pelo menos uma área.' : null
+    case 'goal':
       return answers.goal.trim().length < MIN_GOAL_LENGTH
         ? 'Escreve o que você quer conquistar.'
         : null
-    case 1:
-      return answers.areas.length === 0 ? 'Escolhe pelo menos uma área.' : null
-    case 2:
+    case 'obstacles':
       return answers.obstacles.length === 0 ? 'Escolhe pelo menos uma.' : null
-    case 3:
+    case 'history':
+      return answers.history === null ? 'Escolhe a que mais parece com você.' : null
+    case 'time':
       return answers.time === null ? 'Escolhe o tempo que cabe de verdade.' : null
-    case 4:
+    case 'horizon':
       return answers.horizon === null ? 'Escolhe um prazo, mesmo que aproximado.' : null
-    case 5:
+    case 'weekdays':
       return answers.weekdays.length === 0 ? 'Marca pelo menos um dia.' : null
-    case 6:
+    case 'style':
       return answers.style === null ? 'Escolhe como você prefere começar.' : null
-    default:
+    case 'trust':
+    case 'recap':
       return null
   }
 }
@@ -208,11 +428,15 @@ export function primaryObstacle(answers: QuizAnswers): QuizObstacleKey {
   return answers.obstacles[0] ?? 'procrastino'
 }
 
+/**
+ * Completo é ter o que o PLANO precisa. O histórico fica de fora de
+ * propósito: um plano pendente salvo antes dessa pergunta existir continua
+ * ativando depois do cadastro, em vez de sumir no meio do caminho.
+ */
 export function isQuizComplete(answers: QuizAnswers): answers is CompleteQuizAnswers {
-  for (let step = 0; step < QUIZ_QUESTION_COUNT; step += 1) {
-    if (quizBlocker(step, answers) !== null) return false
-  }
-  return true
+  return QUIZ_SCREENS.every(
+    (screen, step) => screen === 'history' || quizBlocker(step, answers) === null,
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -291,6 +515,8 @@ export interface QuizDiagnosis {
   readonly styleLabel: string
   /** A explicação curta, montada com as respostas. */
   readonly explanation: string
+  /** O que o histórico diz, sem culpa. Null quando a pergunta não foi respondida. */
+  readonly historyNote: string | null
 }
 
 interface ObstacleReading {
@@ -304,6 +530,43 @@ interface DiagnosisContext {
   readonly goal: string
   readonly minutes: string
   readonly days: number
+}
+
+/**
+ * A resposta do plano pra cada dificuldade, na tela de confiança: a pessoa
+ * acabou de dizer o que a trava, e a tela seguinte mostra o que muda pra
+ * aquilo. Cada frase é a mesma promessa que o diagnóstico faz depois
+ * (`READINGS`), em versão curta, e só fala do que o app faz de verdade.
+ */
+export interface ObstacleAnswer {
+  readonly key: QuizObstacleKey
+  readonly label: string
+  readonly answer: string
+}
+
+const OBSTACLE_ANSWERS: Readonly<Record<QuizObstacleKey, string>> = {
+  procrastino:
+    'O primeiro passo já vem escolhido e pequeno o bastante pra caber hoje. Não sobra decisão pra adiar.',
+  abandono:
+    'O progresso é medido por semana, com marcos curtos, e um dia perdido não apaga o que você já fez.',
+  pouco_tempo:
+    'Cada passo cabe nos minutos que você disser que tem. No dia apertado, vale a versão mínima.',
+  sem_comeco: 'A meta vira três marcos com prazo, e a primeira ação já sai escolhida.',
+  rotina_muda:
+    'Todo passo tem versão mínima, e dá pra trocar o dia sem quebrar o plano nem a sequência.',
+  tudo_ao_mesmo_tempo:
+    'Uma meta e uma prioridade por dia. O resto entra quando o primeiro marco fechar.',
+  motivacao:
+    'Vitórias pequenas desde o primeiro dia, pra você ver progresso antes de a empolgação acabar.',
+}
+
+/** As dificuldades marcadas, na ordem do toque, cada uma com a resposta do plano. Até três. */
+export function obstacleAnswers(answers: QuizAnswers): readonly ObstacleAnswer[] {
+  return answers.obstacles.slice(0, 3).map((key) => ({
+    key,
+    label: QUIZ_OBSTACLE_LABELS[key],
+    answer: OBSTACLE_ANSWERS[key],
+  }))
 }
 
 const READINGS: Readonly<Record<QuizObstacleKey, ObstacleReading>> = {
@@ -376,7 +639,24 @@ export function buildDiagnosis(answers: CompleteQuizAnswers): QuizDiagnosis {
       minutes: minutesLabel(answers.time),
       days: answers.weekdays.length,
     }),
+    historyNote: answers.history ? HISTORY_NOTES[answers.history] : null,
   }
+}
+
+/**
+ * O histórico prepara o mecanismo: quem já tentou e parou acha que o
+ * problema é ela. A frase registra sem julgar e aponta pro método antigo,
+ * e só promete o que o app faz (versão mínima, retomada, nada zera).
+ */
+const HISTORY_NOTES: Readonly<Record<QuizHistoryKey, string>> = {
+  primeira:
+    'Começar pela primeira vez com um plano do tamanho da sua rotina é o jeito mais simples de não entrar no ciclo de recomeçar.',
+  algumas:
+    'Ter começado outras vezes não diz nada sobre a sua capacidade. Diz que o plano antigo não cabia na sua semana real.',
+  perdi_a_conta:
+    'Perder a conta de recomeços é sinal de plano rígido, não de falta de força. Aqui um dia perdido não zera nada, e você volta de onde parou.',
+  mantive_e_parei:
+    'Você já provou que consegue manter. O que faltou foi um jeito de voltar quando a rotina saiu do eixo, e é isso que o Modo Retomada faz.',
 }
 
 /** "Lançar meu projeto" vira "lançar meu projeto" no meio de uma frase. */

@@ -158,6 +158,13 @@ export const QUIZ_LINK_CODES: Readonly<Record<string, QuizLinkCode>> = {
     theme: null,
     note: 'Botão da seção de dia adaptável e retomada',
   },
+  'lp-exclusivo': {
+    source: 'site',
+    medium: 'landing',
+    campaign: 'diferencial',
+    theme: null,
+    note: 'Botão da seção do diferencial do PRO (review semanal)',
+  },
   'lp-header': {
     source: 'site',
     medium: 'landing',

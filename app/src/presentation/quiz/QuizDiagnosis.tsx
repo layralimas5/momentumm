@@ -49,6 +49,11 @@ export function QuizDiagnosisView({ diagnosis }: QuizDiagnosisProps) {
       <motion.p {...enter(0.12)} className="mt-4 text-sm text-pretty text-ink-muted sm:text-base">
         {diagnosis.explanation}
       </motion.p>
+      {diagnosis.historyNote ? (
+        <motion.p {...enter(0.16)} className="mt-3 text-sm text-pretty text-ink-muted sm:text-base">
+          {diagnosis.historyNote}
+        </motion.p>
+      ) : null}
 
       <motion.dl {...enter(0.2)} className="mt-6 flex flex-col divide-y divide-line rounded-2xl border border-line bg-surface/60">
         {rows.map((row) => (
