@@ -16,6 +16,22 @@ const IN_PROFILE: readonly string[] = ['/app/configuracoes', '/app/assinatura', 
 
 const IN_SHELL: readonly string[] = [...SHELL_TABS.map((tab) => tab.to), PROFILE_PATH, ...IN_PROFILE]
 
+/** A cor leve de cada tela: só tokens que o app já usa, nada de paleta nova. */
+const SCREEN_COLORS: Readonly<Record<string, string>> = {
+  '/app/habitos': 'var(--color-positive)',
+  '/app/plano': 'var(--color-axis-estudo)',
+  '/app/review': 'var(--color-axis-custom-2)',
+  '/app/clubes': 'var(--color-axis-custom-3)',
+  '/app/desafios': 'var(--color-medal-hi)',
+  '/app/insights': 'var(--color-axis-leitura)',
+  '/app/ia': 'var(--color-brand-hi)',
+  '/app/foco': 'var(--color-axis-custom-1)',
+  '/app/jornada': 'var(--color-axis-treino)',
+  '/app/metas': 'var(--color-flame)',
+  '/app/evolucao': 'var(--color-axis-custom-4)',
+  '/app/juntos': 'var(--color-verified)',
+}
+
 /**
  * O botão flutuante das telas de execução: as outras telas do Momentumm
  * (hábitos, plano, foco, review, jornada, IA...) que não cabem na barra de
@@ -72,7 +88,13 @@ export function MoreFab() {
                 onClick={() => setOpen(false)}
                 className="card press flex min-h-24 flex-col items-center justify-center gap-2 rounded-2xl px-2 py-3 text-center"
               >
-                <span className="well grid size-10 place-items-center rounded-full text-brand-hi">
+                <span
+                  className="grid size-10 place-items-center rounded-full"
+                  style={{
+                    color: SCREEN_COLORS[item.to] ?? 'var(--color-brand-hi)',
+                    backgroundColor: `color-mix(in oklab, ${SCREEN_COLORS[item.to] ?? 'var(--color-brand-hi)'} 16%, transparent)`,
+                  }}
+                >
                   <Icon name={item.icon} className="size-5" />
                 </span>
                 <span className="text-xs leading-tight font-medium text-ink">{item.label}</span>
