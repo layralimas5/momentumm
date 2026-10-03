@@ -96,7 +96,7 @@ function FocusMeta({ item }: { readonly item: FocusItem }) {
   if (item.habitState && item.habitState.streak > 0) {
     return (
       <>
-        <Icon name="fogo" className="size-3.5 text-brand-hi" strokeWidth={2} />
+        <Icon name="fogo" className="size-3.5 text-flame" filled strokeWidth={2} />
         {item.habitState.streak} {item.habitState.streak === 1 ? 'dia' : 'dias'}
       </>
     )

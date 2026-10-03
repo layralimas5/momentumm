@@ -108,8 +108,8 @@ export function WeekCard({ week, streak }: { readonly week: CurrentWeek; readonl
           <Icon name="calendarioGrade" className="size-5 text-brand-hi" />
           Esta Semana
         </h2>
-        <span className="flex items-center gap-1 text-sm font-semibold text-brand-hi tabular">
-          <Icon name="fogo" className="size-4" strokeWidth={2} />
+        <span className="flex items-center gap-1 text-sm font-semibold text-ink tabular">
+          <Icon name="fogo" className="size-4 text-flame" filled strokeWidth={2} />
           Sequência: {streak.current} {streak.current === 1 ? 'dia' : 'dias'}
         </span>
       </div>

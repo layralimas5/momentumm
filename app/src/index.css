@@ -624,3 +624,27 @@
     display: none;
   }
 }
+
+/* O arco do anel de progresso acende de 10 em 10 segundos: brilha e volta. */
+@keyframes ring-glow {
+  0%,
+  86%,
+  100% {
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  92% {
+    filter: drop-shadow(0 0 6px var(--color-brand-hi)) drop-shadow(0 0 14px var(--color-brand));
+  }
+}
+
+@layer components {
+  .ring-glow {
+    animation: ring-glow 10s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ring-glow {
+      animation: none;
+    }
+  }
+}

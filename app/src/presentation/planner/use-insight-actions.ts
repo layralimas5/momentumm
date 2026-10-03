@@ -6,6 +6,7 @@ import type { Insight } from '@/domain/entities/insight'
 import { isPending, shrinkToMinimal, type Task } from '@/domain/entities/task'
 import { track } from '@/infrastructure/analytics/track'
 import { useFocus } from '@/presentation/focus/use-focus'
+import { focusAxisOf, plannedMinutesOf } from '@/presentation/focus/use-objective-focus'
 import { useComposer } from './ComposerProvider'
 import { usePlanner } from './use-planner'
 
@@ -69,15 +70,18 @@ export function useInsightActions(context: InsightContext): InsightActions {
         ...(task.objectiveId ? { objective_id: task.objectiveId } : {}),
       })
 
+      /* Ação de um objetivo grava no eixo dele: é assim que o foco soma no objetivo. */
+      const objectiveAxis = planner.objectives.find((item) => item.id === task.objectiveId)?.axis ?? null
+
       focus.start({
-        axis: task.axis ?? 'estudo',
+        axis: focusAxisOf(task, objectiveAxis),
         label: task.title,
-        plannedMin: plannedMin ?? Math.min(60, Math.max(15, task.estimatedMin)),
+        plannedMin: plannedMin ?? plannedMinutesOf(task),
         taskId: task.id,
       })
       focus.setImmersive(true)
     },
-    [focus],
+    [focus, planner.objectives],
   )
 
   const shrinkTask = useCallback(

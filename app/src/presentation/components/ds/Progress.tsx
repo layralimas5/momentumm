@@ -86,6 +86,7 @@ export function ProgressRing({
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}
+          className="ring-glow"
           initial={reduce ? false : { strokeDashoffset: circumference }}
           animate={{ strokeDashoffset: circumference * (1 - ratio) }}
           transition={{ duration: reduce ? 0 : 1.1, ease: [0.22, 1, 0.36, 1] }}

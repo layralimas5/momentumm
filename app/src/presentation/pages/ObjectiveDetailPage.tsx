@@ -21,6 +21,7 @@ import { useComposer } from '@/presentation/planner/ComposerProvider'
 import { useDashboard } from '@/presentation/planner/use-dashboard'
 import { useObjective } from '@/presentation/planner/use-objectives'
 import { usePlanner } from '@/presentation/planner/use-planner'
+import { useObjectiveFocus } from '@/presentation/focus/use-objective-focus'
 import { PageHeader } from './PageHeader'
 
 /**
@@ -33,6 +34,7 @@ import { PageHeader } from './PageHeader'
 export function ObjectiveDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { user } = useAuth()
+  const focusOn = useObjectiveFocus()
   const planner = usePlanner()
   // O momentum entra no card do objetivo. Ler o dashboard aqui é o caminho de
   // sempre: a conta é a mesma do `Hoje`, e refazê-la nesta tela criaria dois
@@ -124,14 +126,18 @@ export function ObjectiveDetailPage() {
               <Icon name="editar" className="size-4" />
               Editar
             </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => void planner.setObjectivePaused(objective.id, !paused)}
-            >
-              <Icon name={paused ? 'play' : 'pausa'} className="size-4" />
-              {paused ? 'Retomar' : 'Pausar'}
-            </Button>
+            {done ? null : (
+              <Button size="sm" onClick={() => void focusOn(view)}>
+                <Icon name="play" className="size-4" />
+                {paused ? 'Retomar' : 'Focar agora'}
+              </Button>
+            )}
+            {paused || done ? null : (
+              <Button variant="secondary" size="sm" onClick={() => void planner.setObjectivePaused(objective.id, true)}>
+                <Icon name="pausa" className="size-4" />
+                Pausar
+              </Button>
+            )}
           </div>
         }
       />

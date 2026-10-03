@@ -95,7 +95,8 @@ export function StreakBadge({
     >
       <Icon
         name="fogo"
-        className={cn(size === 'sm' ? 'size-3' : 'size-3.5', atRisk ? 'text-ink-faint' : 'text-brand-hi')}
+        className={cn(size === 'sm' ? 'size-3' : 'size-3.5', 'text-flame')}
+        filled={!atRisk}
         strokeWidth={2}
       />
       {days}D

@@ -182,10 +182,11 @@ export function PersonalProfilePage() {
         <SectionHeader id="share-studio" title="Share Studio · Stories" icon="ia" caps />
         <p className="-mt-1 px-1 text-xs text-ink-faint">Toque no card pra exportar em alta definição.</p>
         <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pt-1 pb-3 no-scrollbar sm:-mx-6 sm:px-6">
-          <ShareTemplateCard kicker="Foco" icon="fogo" value={`${streak.current}D`} caption="Sequência ativa" onClick={shareStreak} />
+          <ShareTemplateCard kicker="Foco" icon="fogo" iconTone="flame" value={`${streak.current}D`} caption="Sequência ativa" onClick={shareStreak} />
           <ShareTemplateCard
             kicker="Relíquia"
             icon="trofeu"
+            iconTone="medal"
             value={unlocked.length}
             caption={unlocked.length === 1 ? 'conquista' : 'conquistas'}
             onClick={shareAchievements}

@@ -127,7 +127,7 @@ export function MetricTile({
     <div className="card flex flex-col gap-2 p-4">
       <div className="flex items-center justify-between gap-2">
         <span className="eyebrow text-[0.66rem] text-ink-muted">{label}</span>
-        <Icon name={icon} className="size-4 text-brand-hi" />
+        <Icon name={icon} className={cn('size-4', icon === 'fogo' ? 'text-flame' : 'text-brand-hi')} filled={icon === 'fogo'} />
       </div>
       <p className="flex items-baseline gap-1 text-ink">
         {typeof value === 'number' ? (
@@ -215,6 +215,8 @@ export function RelicCard({
   )
 }
 
+const ICON_TONES = { flame: 'text-flame', medal: 'text-medal-hi', brand: 'text-brand-hi' } as const
+
 /** Um card 9:16 do Share Studio: a prévia do que vira imagem. */
 export function ShareTemplateCard({
   kicker,
@@ -223,9 +225,12 @@ export function ShareTemplateCard({
   caption,
   onClick,
   tone = 'light',
+  iconTone = 'brand',
 }: {
   readonly kicker: string
   readonly icon: IconName
+  /** A cor do ícone: fogo pra sequência, ouro pra conquista, marca pro resto. */
+  readonly iconTone?: 'flame' | 'medal' | 'brand'
   readonly value: ReactNode
   readonly caption: string
   readonly onClick: () => void
@@ -245,10 +250,11 @@ export function ShareTemplateCard({
         <span
           className={cn(
             'grid size-9 place-items-center rounded-full',
-            tone === 'dark' ? 'bg-white/10 text-white' : 'well text-brand-hi',
+            tone === 'dark' ? 'bg-white/10' : 'well',
+            ICON_TONES[iconTone],
           )}
         >
-          <Icon name={icon} className="size-5" />
+          <Icon name={icon} className="size-5" filled={iconTone === 'flame'} />
         </span>
         <span className="text-xl leading-none font-bold tabular">{value}</span>
         <span className={cn('text-[0.68rem]', tone === 'dark' ? 'text-white/70' : 'text-ink-faint')}>{caption}</span>
