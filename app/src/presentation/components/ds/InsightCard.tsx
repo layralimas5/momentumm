@@ -32,7 +32,7 @@ export function InsightCard({
   readonly className?: string
 }) {
   return (
-    <section className={cn('card relative p-5', className)}>
+    <section className={cn('card relative p-4', className)}>
       <div className="flex items-start gap-3">
         <span aria-hidden="true" className="mt-0.5 text-brand-hi">
           <Icon name={icon} className="size-5" />
@@ -42,7 +42,7 @@ export function InsightCard({
             <h3 className="eyebrow text-[0.75rem] text-ink">{label}</h3>
             {tag ? <StatusTag tone="brand">{tag}</StatusTag> : null}
           </div>
-          <p className="mt-2 text-[0.95rem] leading-relaxed text-pretty text-ink-muted">{message}</p>
+          <p className="mt-2 text-sm leading-relaxed text-pretty text-ink-muted">{message}</p>
           {detail ? <p className="mt-1.5 text-xs text-ink-faint">{detail}</p> : null}
         </div>
       </div>

@@ -23,7 +23,7 @@ export function TodayChecklist({
   return (
     <section aria-labelledby="hoje-lista" className="flex flex-col gap-3">
       <div className="flex items-center gap-3 px-1">
-        <h2 id="hoje-lista" className="text-xl font-semibold tracking-tight text-ink">
+        <h2 id="hoje-lista" className="text-lg font-semibold tracking-tight text-ink">
           Hoje
         </h2>
         {focus.total > 0 ? (
@@ -52,7 +52,7 @@ export function TodayChecklist({
         <button
           type="button"
           onClick={onAdd}
-          className="well press flex min-h-20 items-center justify-center gap-2 rounded-[1.4rem] text-sm font-medium text-ink-muted"
+          className="well press flex min-h-20 items-center justify-center gap-2 rounded-[1.15rem] text-sm font-medium text-ink-muted"
         >
           <Icon name="mais" className="size-4" />
           Nada planejado. Adicione a primeira ação do dia

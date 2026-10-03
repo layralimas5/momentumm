@@ -210,18 +210,18 @@ export function RecoveryRateCard({ recovery }: { readonly recovery: RecoveryRate
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <Eyebrow>Métrica de resiliência</Eyebrow>
-          <h2 id="recovery-rate" className="mt-1.5 text-lg font-semibold tracking-tight text-ink">
+          <h2 id="recovery-rate" className="mt-1.5 text-base font-semibold tracking-tight text-ink">
             {title}
           </h2>
         </div>
-        <span className="well shrink-0 rounded-2xl px-3.5 py-2 text-2xl font-bold text-brand-hi tabular">
+        <span className="well shrink-0 rounded-2xl px-3 py-1.5 text-xl font-bold text-brand-hi tabular">
           {pct === null ? '—' : `${pct}%`}
         </span>
       </div>
-      <p className="mt-3 text-[0.95rem] leading-relaxed text-pretty text-ink-muted">{message}</p>
-      <div className="card-float mt-4 flex items-center gap-3 rounded-2xl px-4 py-3.5">
+      <p className="mt-3 text-sm leading-relaxed text-pretty text-ink-muted">{message}</p>
+      <div className="card-float mt-4 flex items-center gap-3 rounded-2xl px-3.5 py-2.5">
         <Icon name="lotus" className="size-5 shrink-0 text-brand-hi" />
-        <p className="text-[0.95rem] text-ink italic">“Você não precisa de perfeição. Você sempre volta.”</p>
+        <p className="text-sm text-ink italic">“Você não precisa de perfeição. Você sempre volta.”</p>
       </div>
     </Card>
   )
@@ -255,14 +255,14 @@ export function NoticedSection({ insights, locked }: { readonly insights: readon
       {locked ? (
         <ProLock message="Os padrões do teu ritmo: horário de pico, melhor dia e o que mais puxa a tua execução." />
       ) : insights.length === 0 ? (
-        <p className="well rounded-[1.4rem] px-4 py-5 text-sm text-pretty text-ink-muted">
+        <p className="well rounded-[1.15rem] px-4 py-5 text-sm text-pretty text-ink-muted">
           Ainda sem padrão claro. Com mais duas semanas de registros o Momentumm começa a perceber o teu ritmo.
         </p>
       ) : (
         <ul className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 no-scrollbar sm:-mx-6 sm:px-6">
           {insights.map((insight) => (
-            <li key={insight.id} className="card w-[78%] max-w-xs shrink-0 snap-start p-5">
-              <h3 className="flex items-center gap-2 text-[0.95rem] font-semibold text-ink">
+            <li key={insight.id} className="card w-[74%] max-w-xs shrink-0 snap-start p-4">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-ink">
                 <Icon name={insight.icon} className="size-5 text-brand-hi" />
                 {insight.title}
               </h3>
@@ -291,7 +291,7 @@ export function RecordCard({ streak }: { readonly streak: Streak }) {
           <h2 id="proximo-nivel" className="eyebrow text-[0.75rem] text-ink">
             Próximo nível histórico
           </h2>
-          <p className="mt-1.5 text-[0.95rem] leading-relaxed text-pretty text-ink-muted">
+          <p className="mt-1.5 text-sm leading-relaxed text-pretty text-ink-muted">
             {record === 0 ? (
               'Comece hoje: o primeiro dia já é o seu recorde.'
             ) : atRecord ? (

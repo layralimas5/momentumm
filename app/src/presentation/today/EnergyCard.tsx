@@ -25,11 +25,11 @@ export function EnergyCard({
         type="button"
         onClick={active ? onUndo : onActivate}
         aria-pressed={active}
-        className="press flex min-h-16 min-w-0 flex-1 items-center gap-3.5 rounded-[1.4rem] px-3 text-left"
+        className="press flex min-h-14 min-w-0 flex-1 items-center gap-3.5 rounded-[1.15rem] px-3 text-left"
       >
         <IconWell name="bateria" />
         <span className="min-w-0">
-          <span className="block truncate text-[0.98rem] font-semibold text-ink">
+          <span className="block truncate text-[0.9rem] font-semibold text-ink">
             {active ? 'Modo sem energia ativo' : 'Hoje estou sem energia'}
           </span>
           <span className="block truncate text-[0.8rem] text-ink-faint">

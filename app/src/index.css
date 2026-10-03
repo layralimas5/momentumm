@@ -465,7 +465,7 @@
     radial-gradient(120% 120% at 100% 0%, rgb(91 76 245 / 0.1) 0%, transparent 55%),
     linear-gradient(180deg, var(--color-surface), var(--color-surface));
   border-color: transparent;
-  border-radius: 1.75rem;
+  border-radius: 1.35rem;
   box-shadow: var(--shadow-float);
 }
 
@@ -579,13 +579,13 @@
 
   .card {
     background-color: var(--color-surface);
-    border-radius: 1.75rem;
+    border-radius: 1.35rem;
     box-shadow: var(--shadow-card);
   }
 
   .card-float {
     background-color: var(--color-surface);
-    border-radius: 1.75rem;
+    border-radius: 1.35rem;
     box-shadow: var(--shadow-float);
   }
 

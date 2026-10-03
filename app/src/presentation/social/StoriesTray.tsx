@@ -43,7 +43,7 @@ export function StoriesTray() {
     return (
       <div aria-hidden="true" className="flex gap-4 overflow-hidden py-1">
         {[0, 1, 2, 3, 4].map((index) => (
-          <span key={index} className="size-[4.5rem] shrink-0 animate-pulse rounded-full bg-surface-hi" />
+          <span key={index} className="size-16 shrink-0 animate-pulse rounded-full bg-surface-hi" />
         ))}
       </div>
     )
@@ -53,11 +53,11 @@ export function StoriesTray() {
     <>
       <div className="-mx-4 flex snap-x gap-3.5 overflow-x-auto px-4 pt-1 pb-2 no-scrollbar sm:-mx-6 sm:px-6">
         {/* "+ Provar": publicar a prova do dia é a primeira bolinha, sempre. */}
-        <div className="flex w-[4.5rem] shrink-0 snap-start flex-col items-center gap-1.5">
+        <div className="flex w-16 shrink-0 snap-start flex-col items-center gap-1.5">
           <button
             type="button"
             onClick={() => composer.openStory()}
-            className="well press grid size-[4.5rem] place-items-center rounded-full text-brand-hi"
+            className="well press grid size-16 place-items-center rounded-full text-brand-hi"
           >
             <Icon name="camera" className="size-6" />
             <span className="sr-only">Provar: publicar um story do que você fez</span>
@@ -103,12 +103,12 @@ function Ring({
   const unseen = ring.unseen > 0
 
   return (
-    <div className="flex w-[4.5rem] shrink-0 snap-start flex-col items-center gap-1.5">
+    <div className="flex w-16 shrink-0 snap-start flex-col items-center gap-1.5">
       <button
         type="button"
         onClick={onOpen}
         className={cn(
-          'relative grid size-[4.5rem] place-items-center rounded-full p-[3px]',
+          'relative grid size-16 place-items-center rounded-full p-[3px]',
           unseen ? 'bg-gradient-to-br from-brand to-brand-deep' : 'bg-line-hi',
         )}
       >

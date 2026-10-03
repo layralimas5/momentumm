@@ -92,7 +92,7 @@ export function PeriodPlanCard({ view }: { readonly view: ObjectiveView }) {
                 type="button"
                 onClick={() => setOpen(expanded ? null : period.key)}
                 aria-expanded={expanded}
-                className="press flex min-h-16 w-full items-center gap-3 px-5 py-3 text-left"
+                className="press flex min-h-14 w-full items-center gap-3 px-5 py-3 text-left"
               >
                 <span
                   aria-hidden="true"
@@ -102,7 +102,7 @@ export function PeriodPlanCard({ view }: { readonly view: ObjectiveView }) {
                   )}
                 />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[0.95rem] font-semibold text-ink">{period.label}</span>
+                  <span className="block text-sm font-semibold text-ink">{period.label}</span>
                   <span className="block truncate text-xs text-ink-faint">
                     {rangeLabel(period)}
                     {period.focusStage ? ` · Foco: ${period.focusStage.title}` : ''}

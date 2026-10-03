@@ -69,12 +69,12 @@ export function ObjectivesPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 pb-2">
+    <div className="flex flex-col gap-4 pb-2">
       {planner.error ? <ErrorNote message={planner.error} onRetry={() => void planner.reload()} /> : null}
 
       <header className="flex items-end justify-between gap-3 px-1">
         <div>
-          <h2 className="text-[1.75rem] leading-tight font-bold tracking-tight text-ink">Objetivos</h2>
+          <h2 className="text-[1.4rem] leading-tight font-bold tracking-tight text-ink">Objetivos</h2>
           <p className="mt-0.5 text-sm text-ink-faint tabular">
             {running.length} {running.length === 1 ? 'ativo' : 'ativos'}
           </p>

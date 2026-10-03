@@ -87,13 +87,13 @@ export function ProgressPage() {
   const metrics = planner.limits.metrics
 
   return (
-    <div className="flex flex-col gap-6 pb-2">
+    <div className="flex flex-col gap-4 pb-2">
       {planner.error ? <ErrorNote message={planner.error} onRetry={() => void planner.reload()} /> : null}
 
       <header className="flex items-end justify-between gap-3 px-1">
         <div className="min-w-0">
           <Eyebrow dot>Cockpit telemetria</Eyebrow>
-          <h2 className="mt-1 text-[1.75rem] leading-tight font-bold tracking-tight text-ink">Evolução Pessoal</h2>
+          <h2 className="mt-1 text-[1.4rem] leading-tight font-bold tracking-tight text-ink">Evolução Pessoal</h2>
         </div>
         <StatusTag className="mb-1">{planner.online ? (planner.syncing ? 'Sincronizando' : 'Sincronizado') : 'Offline'}</StatusTag>
       </header>
@@ -127,7 +127,7 @@ export function ProgressPage() {
 
 function MoreLink({ to, icon, label }: { readonly to: string; readonly icon: 'calendarioGrade' | 'estrela'; readonly label: string }) {
   return (
-    <Link to={to} className="card press flex min-h-14 items-center gap-2.5 rounded-[1.4rem] px-4 text-sm font-medium text-ink">
+    <Link to={to} className="card press flex min-h-14 items-center gap-2.5 rounded-[1.15rem] px-4 text-sm font-medium text-ink">
       <Icon name={icon} className="size-5 text-brand-hi" />
       {label}
     </Link>

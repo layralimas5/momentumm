@@ -31,7 +31,7 @@ export function ActivityItem({
   const resolved = done || skipped
 
   return (
-    <li className="card flex items-center gap-3.5 rounded-[1.4rem] px-4 py-3.5">
+    <li className="card flex items-center gap-3.5 rounded-[1.15rem] px-3.5 py-2.5">
       <CheckButton
         done={done}
         onToggle={onToggle}
@@ -47,7 +47,7 @@ export function ActivityItem({
       >
         <span
           className={cn(
-            'block truncate text-[0.98rem] font-medium transition-colors',
+            'block truncate text-[0.9rem] font-medium transition-colors',
             resolved ? 'text-ink-faint line-through decoration-ink-faint/60' : 'text-ink',
           )}
         >
@@ -119,7 +119,7 @@ export function TimelineItem({
           <div className="flex min-w-0 items-start justify-between gap-2">
             <p
               className={cn(
-                'min-w-0 truncate text-[0.95rem] font-medium',
+                'min-w-0 truncate text-sm font-medium',
                 state === 'done' ? 'text-ink-faint line-through decoration-ink-faint/60' : 'text-ink',
               )}
             >

@@ -38,7 +38,7 @@ export function PriorityNowCard({
     return (
       <Card tone="float" aria-labelledby="prioridade-agora">
         <Eyebrow icon="raio">Sua prioridade agora</Eyebrow>
-        <h2 id="prioridade-agora" className="mt-3 text-xl font-semibold tracking-tight text-ink">
+        <h2 id="prioridade-agora" className="mt-3 text-lg font-semibold tracking-tight text-ink">
           Escolha a única coisa que faz o dia valer
         </h2>
         <SoftButton onClick={onChoose} className="mt-5">
@@ -68,7 +68,7 @@ export function PriorityNowCard({
         ) : null}
       </div>
 
-      <h2 id="prioridade-agora" className="mt-3 text-[1.45rem] leading-tight font-semibold tracking-tight text-ink">
+      <h2 id="prioridade-agora" className="mt-3 text-[1.15rem] leading-tight font-semibold tracking-tight text-ink">
         {task.title}
       </h2>
 
@@ -79,7 +79,7 @@ export function PriorityNowCard({
         </p>
       ) : null}
 
-      <div className="relative mt-4 h-28 overflow-hidden rounded-2xl" aria-hidden="true">
+      <div className="relative mt-3 h-20 overflow-hidden rounded-2xl" aria-hidden="true">
         <div className="absolute inset-0 bg-[radial-gradient(120%_120%_at_85%_10%,var(--color-brand)_0%,transparent_45%),radial-gradient(90%_120%_at_0%_100%,var(--color-brand-deep)_0%,transparent_55%),linear-gradient(135deg,var(--color-brand-dim),var(--color-surface-top))] opacity-90" />
         <div className="absolute inset-0 bg-[linear-gradient(transparent_23px,rgb(255_255_255/0.14)_24px),linear-gradient(90deg,transparent_23px,rgb(255_255_255/0.14)_24px)] bg-[size:24px_24px]" />
         <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-black/45 to-transparent px-3.5 pt-8 pb-3">

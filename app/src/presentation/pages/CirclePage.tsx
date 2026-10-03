@@ -34,7 +34,7 @@ export function CirclePage() {
   const tab: CircleTab = raw === 'clubes' || raw === 'pessoas' ? raw : 'feed'
 
   return (
-    <div className="flex flex-col gap-5 pb-2">
+    <div className="flex flex-col gap-4 pb-2">
       <div className="flex items-center gap-2">
         <FilterPills
           label="Seção do Círculo"
@@ -140,7 +140,7 @@ function CircleClubs() {
           </Link>
         </div>
         {clubs.mine.length === 0 ? (
-          <p className="well rounded-[1.4rem] px-4 py-5 text-sm text-pretty text-ink-muted">
+          <p className="well rounded-[1.15rem] px-4 py-5 text-sm text-pretty text-ink-muted">
             Clube é um grupo com ranking em volta de uma disciplina. Entre em um abaixo ou crie o seu.
           </p>
         ) : (

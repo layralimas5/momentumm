@@ -25,7 +25,7 @@ export function BottomNavigation() {
                 end={tab.end}
                 aria-current={isActive ? 'page' : undefined}
                 className={cn(
-                  'relative flex h-[3.6rem] w-full flex-col items-center justify-center gap-1 rounded-2xl transition-colors',
+                  'relative flex h-[3.2rem] w-full flex-col items-center justify-center gap-1 rounded-2xl transition-colors',
                   isActive ? 'text-brand-hi' : 'text-ink-faint hover:text-ink',
                 )}
               >
@@ -37,7 +37,7 @@ export function BottomNavigation() {
                     transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 34 }}
                   />
                 ) : null}
-                <Icon name={tab.icon} className="size-[1.4rem]" strokeWidth={isActive ? 2.1 : 1.7} />
+                <Icon name={tab.icon} className="size-[1.25rem]" strokeWidth={isActive ? 2.1 : 1.7} />
                 <span className="text-[0.68rem] leading-none font-medium">{tab.label}</span>
               </NavLink>
             </li>

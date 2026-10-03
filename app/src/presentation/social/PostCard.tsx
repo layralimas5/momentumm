@@ -47,7 +47,7 @@ export function PostCard({
             className="size-11 ring-2 ring-surface shadow-[var(--shadow-card)]"
           />
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[0.95rem] font-semibold text-ink">{post.author.name}</span>
+            <span className="block truncate text-sm font-semibold text-ink">{post.author.name}</span>
             <span className="block truncate text-xs text-ink-faint">
               {post.objectiveTitle ?? `@${post.author.handle}`}
             </span>
@@ -87,7 +87,7 @@ export function PostCard({
       ) : null}
 
       {post.caption ? (
-        <p className="text-[0.95rem] leading-relaxed whitespace-pre-wrap text-ink-muted">{post.caption}</p>
+        <p className="text-sm leading-relaxed whitespace-pre-wrap text-ink-muted">{post.caption}</p>
       ) : null}
 
       <Actions

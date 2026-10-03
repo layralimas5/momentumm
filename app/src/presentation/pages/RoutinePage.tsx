@@ -77,7 +77,7 @@ export function RoutinePage() {
   const dateLabel = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })
 
   return (
-    <div className="flex flex-col gap-6 pb-2">
+    <div className="flex flex-col gap-4 pb-2">
       {planner.error ? <ErrorNote message={planner.error} onRetry={() => void planner.reload()} /> : null}
 
       <RoutineHero agenda={view.agenda} />
@@ -120,7 +120,7 @@ export function RoutinePage() {
       <button
         type="button"
         onClick={() => setAdding(true)}
-        className="press flex min-h-14 items-center justify-center gap-2 rounded-[1.4rem] border-2 border-dashed border-brand/25 text-[0.95rem] font-semibold text-brand-hi"
+        className="press flex min-h-14 items-center justify-center gap-2 rounded-[1.15rem] border-2 border-dashed border-brand/25 text-sm font-semibold text-brand-hi"
       >
         <Icon name="mais" className="size-5" strokeWidth={2.25} />
         Adicionar Bloco ou Conectar a Objetivo

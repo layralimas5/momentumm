@@ -28,7 +28,7 @@ export function DeltaChip({ delta, className }: { readonly delta: number; readon
 export function ScoreNumber({ value, className }: { readonly value: number; readonly className?: string }) {
   return (
     <p className={cn('flex items-baseline gap-1.5', className)}>
-      <AnimatedNumber value={value} className="text-[3.4rem] leading-none font-bold tracking-tight text-ink" />
+      <AnimatedNumber value={value} className="text-[2.6rem] leading-none font-bold tracking-tight text-ink" />
       <span className="text-lg font-medium text-ink-faint">/100</span>
     </p>
   )

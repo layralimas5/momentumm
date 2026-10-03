@@ -58,7 +58,7 @@ export function FilterPills<T extends string>({
             aria-selected={active}
             onClick={() => onChange(option.value)}
             className={cn(
-              'press min-h-11 shrink-0 rounded-full px-4 text-sm font-medium whitespace-nowrap sm:px-5 sm:text-[0.95rem]',
+              'press min-h-11 shrink-0 rounded-full px-4 text-sm font-medium whitespace-nowrap sm:px-5 sm:text-sm',
               active ? 'bg-ink text-canvas shadow-[var(--shadow-float)]' : 'chip text-ink-muted',
             )}
           >
@@ -202,7 +202,7 @@ export function PrimaryButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'press flex min-h-14 w-full items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-b from-brand to-brand-hi px-5 text-base font-semibold text-white shadow-[var(--shadow-cta)] disabled:opacity-60',
+        'press flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-b from-brand to-brand-hi px-5 text-[0.95rem] font-semibold text-white shadow-[var(--shadow-cta)] disabled:opacity-60',
         className,
       )}
     >
@@ -229,7 +229,7 @@ export function SoftButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'press chip flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl px-4 text-sm font-semibold text-brand-hi disabled:opacity-60',
+        'press chip flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl px-4 text-sm font-semibold text-brand-hi disabled:opacity-60',
         className,
       )}
     >

@@ -71,12 +71,12 @@ export function DashboardPage() {
   const now = new Date()
 
   return (
-    <div className="flex flex-col gap-6 pb-2">
+    <div className="flex flex-col gap-4 pb-2">
       {planner.error ? <ErrorNote message={planner.error} onRetry={() => void planner.reload()} /> : null}
 
       <header className="flex items-start justify-between gap-3 px-1 pt-1">
         <div className="min-w-0">
-          <h2 className="truncate text-[1.65rem] leading-tight font-bold tracking-tight text-ink">
+          <h2 className="truncate text-[1.1rem] leading-tight font-bold tracking-tight text-ink">
             {greeting(now)}
             {firstName ? `, ${firstName}` : ''}
           </h2>

@@ -28,10 +28,10 @@ export function GoalCard({ goal, featured = false }: { readonly goal: GoalCardDa
       className={cn('card press block p-5', featured && 'card-float', goal.dimmed && 'opacity-80')}
     >
       <div className="flex items-start justify-between gap-3">
-        <h3 className={cn('min-w-0 font-semibold tracking-tight text-ink', featured ? 'text-xl' : 'text-base')}>
+        <h3 className={cn('min-w-0 font-semibold tracking-tight text-ink', featured ? 'text-lg' : 'text-[0.95rem]')}>
           {goal.title}
         </h3>
-        <span className={cn('shrink-0 font-bold text-brand-hi tabular', featured ? 'text-3xl' : 'text-xl')}>
+        <span className={cn('shrink-0 font-bold text-brand-hi tabular', featured ? 'text-2xl' : 'text-lg')}>
           {pct}%
         </span>
       </div>
@@ -96,7 +96,7 @@ export function MilestoneTimeline({ stages }: { readonly stages: readonly StageP
             </span>
             <p
               className={cn(
-                'pb-4 text-[0.95rem]',
+                'pb-4 text-sm',
                 done ? 'text-ink-muted' : current ? 'font-semibold text-ink' : 'text-ink-faint',
               )}
             >

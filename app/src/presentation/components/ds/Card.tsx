@@ -22,7 +22,7 @@ export function Card<T extends ElementType = 'section'>({
 }: CardProps<T>) {
   const Tag = as ?? 'section'
   return (
-    <Tag className={cn(tone === 'float' ? 'card-float' : 'card', padded && 'p-5 sm:p-6', className)} {...rest}>
+    <Tag className={cn(tone === 'float' ? 'card-float' : 'card', padded && 'p-4 sm:p-5', className)} {...rest}>
       {children}
     </Tag>
   )
@@ -77,7 +77,7 @@ export function SectionHeader({
         id={id}
         className={cn(
           'flex min-w-0 items-center gap-2 text-ink',
-          caps ? 'eyebrow text-[0.78rem] tracking-[0.12em]' : 'text-lg font-semibold tracking-tight sm:text-xl',
+          caps ? 'eyebrow text-[0.78rem] tracking-[0.12em]' : 'text-base font-semibold tracking-tight sm:text-lg',
         )}
       >
         {icon ? <Icon name={icon} className="size-5 text-brand-hi" /> : null}

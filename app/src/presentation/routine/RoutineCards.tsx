@@ -18,7 +18,7 @@ export function RoutineHero({ agenda }: { readonly agenda: DayAgenda }) {
     <Card aria-labelledby="rotina-hero" className="flex items-center gap-4">
       <div className="min-w-0 flex-1">
         <Eyebrow dot>Protocolo de execução</Eyebrow>
-        <h2 id="rotina-hero" className="mt-2 text-[1.35rem] leading-tight font-semibold tracking-tight text-ink">
+        <h2 id="rotina-hero" className="mt-2 text-[1.1rem] leading-tight font-semibold tracking-tight text-ink">
           Rotina &amp; Foco Adaptativo
         </h2>
         <p className="mt-1 text-sm text-ink-muted tabular">
@@ -33,8 +33,8 @@ export function RoutineHero({ agenda }: { readonly agenda: DayAgenda }) {
           </span>
         )}
       </div>
-      <ProgressRing value={agenda.ratio} label={`${pct}% da rotina de hoje`} size={104}>
-        <span className="block text-2xl font-bold text-ink tabular">{pct}%</span>
+      <ProgressRing value={agenda.ratio} label={`${pct}% da rotina de hoje`} size={84}>
+        <span className="block text-xl font-bold text-ink tabular">{pct}%</span>
         <span className="eyebrow block text-[0.6rem] text-ink-faint">Meta</span>
       </ProgressRing>
     </Card>
@@ -65,13 +65,13 @@ function AdjustOption({
       disabled={disabled}
       aria-pressed={active}
       className={cn(
-        'card-float press w-full rounded-[1.4rem] p-4 text-left disabled:opacity-55',
+        'card-float press w-full rounded-[1.15rem] p-4 text-left disabled:opacity-55',
         active && 'ring-2 ring-brand/40',
       )}
     >
       <span className="flex items-center gap-2.5">
         <Icon name={icon} className="size-5 text-brand-hi" />
-        <span className="min-w-0 flex-1 text-[0.98rem] leading-tight font-semibold text-ink">{title}</span>
+        <span className="min-w-0 flex-1 text-[0.9rem] leading-tight font-semibold text-ink">{title}</span>
         <StatusTag tone="brand">{tag}</StatusTag>
       </span>
       <span className="mt-1.5 block text-sm leading-relaxed text-pretty text-ink-faint">{description}</span>
@@ -110,7 +110,7 @@ export function EnergyAdjustCard({
         </h2>
         {aiEnabled ? <StatusTag tone="brand">AI Ativa</StatusTag> : null}
       </div>
-      <p className="mt-3 text-[0.95rem] leading-relaxed text-pretty text-ink-muted">
+      <p className="mt-3 text-sm leading-relaxed text-pretty text-ink-muted">
         O dia ficou pesado ou imprevistos aconteceram? Recalibre o ritmo sem culpa nem quebra de sequência.
       </p>
 
@@ -208,7 +208,7 @@ export function RoutineTimeline({
     <section aria-labelledby="linha-do-tempo" className="flex flex-col gap-3">
       <SectionHeader id="linha-do-tempo" title="Linha do tempo" icon="tendencia" caps aside={dateLabel} />
       {agenda.empty ? (
-        <p className="well rounded-[1.4rem] px-4 py-6 text-center text-sm text-ink-muted">
+        <p className="well rounded-[1.15rem] px-4 py-6 text-center text-sm text-ink-muted">
           Nada programado hoje. Descanso também é organização.
         </p>
       ) : (
@@ -216,7 +216,7 @@ export function RoutineTimeline({
           {agenda.items.map((item) => {
             const resolved = item.done || item.skipped
             return (
-              <li key={item.key} className="card flex items-center gap-3 rounded-[1.4rem] px-3 py-2.5">
+              <li key={item.key} className="card flex items-center gap-3 rounded-[1.15rem] px-3 py-2.5">
                 <button
                   type="button"
                   role="checkbox"
@@ -238,7 +238,7 @@ export function RoutineTimeline({
                 <button type="button" onClick={() => onOpen(item)} className="min-w-0 flex-1 py-1 text-left">
                   <span
                     className={cn(
-                      'block truncate text-[0.95rem] font-medium',
+                      'block truncate text-sm font-medium',
                       resolved ? 'text-ink-muted' : 'text-ink',
                     )}
                   >
@@ -277,11 +277,11 @@ export function WeeklyRoutineCard({
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
-        className="press flex min-h-14 w-full items-center gap-3 rounded-[1.4rem] px-3 text-left"
+        className="press flex min-h-14 w-full items-center gap-3 rounded-[1.15rem] px-3 text-left"
       >
         <IconWell name="calendarioGrade" tone="muted" />
         <span className="min-w-0 flex-1">
-          <span className="block text-[0.95rem] font-semibold text-ink">Rotina da semana</span>
+          <span className="block text-sm font-semibold text-ink">Rotina da semana</span>
           <span className="block text-xs text-ink-faint tabular">
             {items.length} {items.length === 1 ? 'bloco que se repete' : 'blocos que se repetem'}
           </span>

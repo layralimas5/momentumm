@@ -43,7 +43,7 @@ export function IdentityCard({
 
       <div className="relative mt-5">
         <span className="block rounded-full p-1 shadow-[var(--shadow-float)]">
-          <Avatar name={profile.name} src={profile.avatarUrl} className="size-28" textClassName="text-3xl" />
+          <Avatar name={profile.name} src={profile.avatarUrl} className="size-20" textClassName="text-3xl" />
         </span>
         <span
           aria-hidden="true"
@@ -53,7 +53,7 @@ export function IdentityCard({
         </span>
       </div>
 
-      <h2 className="mt-4 text-2xl font-bold tracking-tight text-ink">{profile.name.split(' ')[0]}</h2>
+      <h2 className="mt-3 text-xl font-bold tracking-tight text-ink">{profile.name.split(' ')[0]}</h2>
       {profile.bio ? <p className="mt-1 max-w-xs text-sm text-pretty text-ink-muted">{profile.bio}</p> : null}
 
       <button
@@ -121,9 +121,9 @@ export function MetricTile({
       </div>
       <p className="flex items-baseline gap-1 text-ink">
         {typeof value === 'number' ? (
-          <AnimatedNumber value={value} className="text-[1.6rem] leading-none font-semibold" />
+          <AnimatedNumber value={value} className="text-[1.3rem] leading-none font-semibold" />
         ) : (
-          <span className="text-[1.6rem] leading-none font-semibold tabular">{value}</span>
+          <span className="text-[1.3rem] leading-none font-semibold tabular">{value}</span>
         )}
         {suffix ? <span className="text-sm text-ink-faint">{suffix}</span> : null}
       </p>
@@ -173,7 +173,7 @@ export function RelicCard({
         <span className="eyebrow text-[0.68rem] text-brand-hi">{rare ? 'Grau raro' : 'Grau comum'}</span>
       </div>
 
-      <div className="relative mt-4 grid h-52 place-items-center overflow-hidden rounded-[1.4rem] bg-[radial-gradient(60%_60%_at_50%_45%,rgb(91_76_245/0.35),transparent_70%),linear-gradient(160deg,#1b1a2e,#0d0d16)]">
+      <div className="relative mt-3 grid h-40 place-items-center overflow-hidden rounded-[1.15rem] bg-[radial-gradient(60%_60%_at_50%_45%,rgb(91_76_245/0.35),transparent_70%),linear-gradient(160deg,#1b1a2e,#0d0d16)]">
         <div aria-hidden="true" className="absolute inset-x-10 bottom-8 h-6 rounded-[50%] bg-black/50 blur-md" />
         <AchievementMedal icon={icon} state={rare ? 'rara' : 'conquistada'} size="md" className="relative scale-150" />
         <span className="absolute right-3 bottom-3 flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[0.7rem] font-semibold text-ink">
@@ -216,7 +216,7 @@ export function ShareTemplateCard({
       type="button"
       onClick={onClick}
       className={cn(
-        'press flex aspect-[9/16] w-36 shrink-0 snap-start flex-col justify-between rounded-[1.4rem] p-3.5 text-left',
+        'press flex aspect-[9/16] w-28 shrink-0 snap-start flex-col justify-between rounded-[1.15rem] p-3 text-left',
         tone === 'dark' ? 'bg-[linear-gradient(160deg,#1b1a2e,#0d0d16)] text-white shadow-[var(--shadow-float)]' : 'card',
       )}
     >
@@ -224,13 +224,13 @@ export function ShareTemplateCard({
       <span className="flex flex-col items-center gap-2 text-center">
         <span
           className={cn(
-            'grid size-11 place-items-center rounded-full',
+            'grid size-9 place-items-center rounded-full',
             tone === 'dark' ? 'bg-white/10 text-white' : 'well text-brand-hi',
           )}
         >
           <Icon name={icon} className="size-5" />
         </span>
-        <span className="text-2xl leading-none font-bold tabular">{value}</span>
+        <span className="text-xl leading-none font-bold tabular">{value}</span>
         <span className={cn('text-[0.68rem]', tone === 'dark' ? 'text-white/70' : 'text-ink-faint')}>{caption}</span>
       </span>
       <span className={cn('flex justify-between text-[0.6rem]', tone === 'dark' ? 'text-white/60' : 'text-ink-faint')}>
@@ -265,13 +265,13 @@ export function PreferenceRow({
         <Icon name={icon} className="size-[1.1rem]" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className={cn('block text-[0.95rem] font-medium', danger ? 'text-danger' : 'text-ink')}>{title}</span>
+        <span className={cn('block text-sm font-medium', danger ? 'text-danger' : 'text-ink')}>{title}</span>
         {hint ? <span className="block truncate text-xs text-ink-faint">{hint}</span> : null}
       </span>
     </>
   )
 
-  const className = 'flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left'
+  const className = 'flex min-h-14 w-full items-center gap-3 px-4 py-3 text-left'
 
   if (control) {
     return (

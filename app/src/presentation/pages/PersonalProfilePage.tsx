@@ -120,7 +120,7 @@ export function PersonalProfilePage() {
     )
 
   return (
-    <div className="flex flex-col gap-6 pb-2">
+    <div className="flex flex-col gap-4 pb-2">
       <FollowRequestsCard />
 
       {editing ? (
