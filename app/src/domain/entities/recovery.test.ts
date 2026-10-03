@@ -10,6 +10,7 @@ import { createPlanStage, type PlanStage } from './plan-stage'
 import { createTask, type Task } from './task'
 import {
   detectRecovery,
+  manualRecovery,
   MAX_RECOVERY_STEPS,
   RECOVERY_MESSAGE,
   recoveryBudgetOf,
@@ -274,5 +275,25 @@ describe('recoveryBudgetOf', () => {
 
     expect(recoveryBudgetOf(step, CAPACITY_PROFILES.minima)).toBe(30)
     expect(recoveryBudgetOf(step, CAPACITY_PROFILES.plena)).toBe(60)
+  })
+})
+
+describe('manualRecovery: a retomada pedida pela pessoa', () => {
+  it('existe mesmo sem sinal nenhum, com a frase de quem escolheu voltar', () => {
+    const calm = input({ series: series([1, 1, 1, 1, 1, 1, 0]), momentum: FLAT, tasks: [task({}, 'leve')] })
+
+    expect(detectRecovery(calm)).toBeNull()
+    const state = manualRecovery(calm)
+    expect(state.signals).toHaveLength(0)
+    expect(state.headline).toBe('Você escolheu voltar. Começa pequeno.')
+    expect(state.steps.map((step) => step.id)).toContain('leve')
+  })
+
+  it('usa os mesmos passos e sinais do modo automático quando eles existem', () => {
+    const auto = detectRecovery(fullSlump())
+    const manual = manualRecovery(fullSlump())
+
+    expect(manual.steps).toEqual(auto?.steps)
+    expect(manual.signals).toEqual(auto?.signals)
   })
 })

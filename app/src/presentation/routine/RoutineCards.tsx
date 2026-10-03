@@ -5,7 +5,8 @@ import { routineRecurrenceLabel, type RoutineItem } from '@/domain/entities/rout
 import { StatusTag } from '@/presentation/components/ds/Badges'
 import { Card, Eyebrow, IconWell, SectionHeader } from '@/presentation/components/ds/Card'
 import { ProgressRing } from '@/presentation/components/ds/Progress'
-import { BottomSheet, SheetAction } from '@/presentation/components/ui/BottomSheet'
+import { BottomSheet } from '@/presentation/components/ui/BottomSheet'
+import { RecoverySteps } from '@/presentation/recovery/RecoveryCards'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
 import { formatMinutes, xpOf } from '@/presentation/today/day-items'
 import { currentKey, useClock } from '@/presentation/today/DayTimeline'
@@ -85,6 +86,8 @@ export function EnergyAdjustCard({
   lowEnergy,
   openBlocks,
   recovery,
+  manualRecovery,
+  onCreateAction,
   onLowEnergy,
   onUndoLowEnergy,
   onChooseRecovery,
@@ -93,7 +96,11 @@ export function EnergyAdjustCard({
   readonly aiEnabled: boolean
   readonly lowEnergy: boolean
   readonly openBlocks: number
+  /** A retomada detectada pelo app, quando existe. */
   readonly recovery: RecoveryState | null
+  /** A retomada pedida na mão: o botão funciona sempre. */
+  readonly manualRecovery: RecoveryState
+  readonly onCreateAction: () => void
   readonly onLowEnergy: () => void
   readonly onUndoLowEnergy: () => void
   readonly onChooseRecovery: (step: RecoveryStep) => void
@@ -130,49 +137,42 @@ export function EnergyAdjustCard({
         <AdjustOption
           icon="retomar"
           title="Modo Retomada"
-          tag="Zero Atrito"
+          tag={recovery ? 'Sugerido' : 'Zero Atrito'}
           description={
             recovery
-              ? 'Ficou uns dias fora? Reorganiza tudo em uma microação pra reativar o hábito.'
-              : 'Você está em dia. Quando ficar uns dias fora, ele reorganiza tudo em uma microação.'
+              ? 'O app percebeu a queda. Reorganiza tudo em uma microação pra reativar o ritmo.'
+              : 'Ficou uns dias fora ou o dia desandou? Escolha um passo pequeno e recomece por ele.'
           }
-          disabled={!recovery}
+          active={recovery !== null}
           onClick={() => setRecoveryOpen(true)}
         />
       </div>
 
       <BottomSheet
-        open={recoveryOpen && recovery !== null}
+        open={recoveryOpen}
         title="Modo Retomada"
-        description={recovery?.headline ?? ''}
+        description={(recovery ?? manualRecovery).headline}
         onClose={() => setRecoveryOpen(false)}
       >
-        <div className="flex flex-col gap-1">
-          {recovery?.steps.map((step) => (
-            <SheetAction
-              key={step.id}
-              icon={<Icon name={step.kind === 'habito' ? 'habitos' : 'raio'} className="size-5" />}
-              label={step.minimal && step.minimalTitle ? step.minimalTitle : step.title}
-              hint={`${formatMinutes(step.minutes)}${step.objectiveTitle ? ` · ${step.objectiveTitle}` : ''}`}
-              onClick={() => {
-                setRecoveryOpen(false)
-                onChooseRecovery(step)
-              }}
-            />
-          ))}
-          {aiEnabled ? (
-            <SheetAction
-              icon={<Icon name="ia" className="size-5" />}
-              label="Criar plano de retorno com a IA"
-              hint="Até três passos pequenos, lidos do teu plano"
-              tone="brand"
-              onClick={() => {
-                setRecoveryOpen(false)
-                onAiRecovery()
-              }}
-            />
-          ) : null}
-        </div>
+        <RecoverySteps
+          state={recovery ?? manualRecovery}
+          onChoose={(step) => {
+            setRecoveryOpen(false)
+            onChooseRecovery(step)
+          }}
+          onCreate={() => {
+            setRecoveryOpen(false)
+            onCreateAction()
+          }}
+          {...(aiEnabled
+            ? {
+                onAi: () => {
+                  setRecoveryOpen(false)
+                  onAiRecovery()
+                },
+              }
+            : {})}
+        />
       </BottomSheet>
     </Card>
   )

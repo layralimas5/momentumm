@@ -281,3 +281,31 @@ export function bestWeekday(input: MomentumInput, weeks = 8): BestWeekday | null
 
   return { weekday, name: WEEKDAY_NAMES[weekday] ?? '', average, lift }
 }
+
+export interface Comeback {
+  /** Dias seguidos sem movimento antes de hoje. */
+  readonly daysAway: number
+}
+
+/** Até onde olhar pra trás atrás do último dia com movimento. */
+const COMEBACK_LOOKBACK_DAYS = 60
+
+/**
+ * Hoje é dia de volta: há movimento hoje, os dois dias anteriores (ou mais)
+ * ficaram vazios e existia ritmo antes disso. É a mesma régua do XP de
+ * retomada, pra tela e recompensa contarem a mesma história.
+ */
+export function comebackToday(input: MomentumInput): Comeback | null {
+  if (creditOfDay(input, input.today) <= 0) return null
+
+  let daysAway = 0
+  for (let offset = 1; offset <= COMEBACK_LOOKBACK_DAYS; offset += 1) {
+    if (creditOfDay(input, addDays(input.today, -offset)) > 0) {
+      return daysAway >= INTERRUPTION_GAP_DAYS ? { daysAway } : null
+    }
+    daysAway += 1
+  }
+
+  /* Nunca houve movimento antes: é o primeiro dia, não uma volta. */
+  return null
+}
