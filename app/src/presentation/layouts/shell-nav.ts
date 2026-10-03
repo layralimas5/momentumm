@@ -57,7 +57,7 @@ export function sectionLabelFor(pathname: string): string {
 }
 
 /** Telas com título grande próprio igual ao nome da seção: o topo não repete. */
-const OWN_TITLE: readonly string[] = ['/app/objetivos']
+const OWN_TITLE: readonly string[] = ['/app/objetivos', '/app/juntos']
 
 export function ownsTitle(pathname: string): boolean {
   return OWN_TITLE.includes(pathname)
