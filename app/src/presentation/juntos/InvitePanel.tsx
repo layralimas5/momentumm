@@ -3,9 +3,9 @@ import type { PairInvite } from '@/domain/entities/pair'
 import { track } from '@/infrastructure/analytics/track'
 import { container } from '@/infrastructure/container'
 import { SITE } from '@/presentation/components/landing/site'
-import { Button } from '@/presentation/components/ui/Button'
+import { Card } from '@/presentation/components/ds/Card'
+import { PrimaryButton } from '@/presentation/components/ds/Controls'
 import { Icon } from '@/presentation/components/ui/Icon'
-import { Panel } from '@/presentation/components/ui/Surface'
 import { toUserMessage } from '@/shared/errors'
 
 /** O caminho do convite. Mora aqui porque a rota e o link precisam concordar. */
@@ -48,7 +48,14 @@ export function inviteUrl(token: string): string {
  * convite que já foi enviado. O que segura abuso é o teto de seis convites por
  * dia, e o teto de duplas do plano na hora do aceite.
  */
-export function InvitePanel({ onInvited }: { readonly onInvited?: () => void }) {
+export function InvitePanel({
+  onInvited,
+  compact = false,
+}: {
+  readonly onInvited?: () => void
+  /** Quem já tem dupla vê só o convite de mais uma, sem a explicação. */
+  readonly compact?: boolean
+}) {
   const [invite, setInvite] = useState<PairInvite | null>(null)
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -96,61 +103,72 @@ export function InvitePanel({ onInvited }: { readonly onInvited?: () => void }) 
   }, [invite])
 
   return (
-    <Panel tone="brand" className="p-5">
-      <p className="flex items-center gap-2 text-xs font-medium tracking-wide text-brand-ink uppercase">
-        <Icon name="mais" className="size-4" />
-        Convidar alguém
-      </p>
+    <Card tone={compact ? 'flat' : 'float'} aria-labelledby="convite-dupla">
+      <div className="flex items-center gap-3">
+        <span aria-hidden="true" className="flex shrink-0 -space-x-3">
+          <span className="grid size-11 place-items-center rounded-full bg-brand-dim text-brand-hi ring-2 ring-surface">
+            <Icon name="pessoa" className="size-5" />
+          </span>
+          <span className="grid size-11 place-items-center rounded-full bg-gradient-to-b from-brand to-brand-hi text-white ring-2 ring-surface">
+            <Icon name="mais" className="size-5" strokeWidth={2.5} />
+          </span>
+        </span>
+        <div className="min-w-0">
+          <h2 id="convite-dupla" className="text-base font-semibold tracking-tight text-ink">
+            {compact ? 'Convidar mais alguém' : 'Uma pessoa, um compromisso'}
+          </h2>
+          <p className="text-sm text-ink-faint">
+            {compact ? 'Cada dupla é separada das outras.' : 'Continuar avançando, cada um no seu objetivo.'}
+          </p>
+        </div>
+      </div>
 
-      <h2 className="mt-3 text-lg font-semibold tracking-tight text-balance text-ink">
-        Uma pessoa, um compromisso: continuar avançando.
-      </h2>
-
-      <p className="mt-2 text-sm text-pretty text-ink-muted">
-        Vocês não precisam ter o mesmo objetivo. A outra pessoa vê apenas se você avançou no dia:
-        nunca o que você está fazendo, nem os seus objetivos, notas ou registros. Cada dupla é
-        separada: quem está numa não vê a outra.
-      </p>
+      {compact ? null : (
+        <p className="mt-3 text-sm text-pretty text-ink-muted">
+          Vocês não precisam ter o mesmo objetivo. A outra pessoa vê só se você avançou no dia, nunca o que
+          você está fazendo.
+        </p>
+      )}
 
       {invite ? (
         <div className="mt-4">
-          <label className="text-xs font-medium tracking-wide text-ink-faint uppercase" htmlFor="link-convite">
+          <label className="eyebrow text-[0.62rem] text-ink-faint" htmlFor="link-convite">
             Seu link
           </label>
-          <div className="mt-1.5 flex flex-col gap-2 sm:flex-row">
+          <div className="mt-1.5 flex gap-2">
             <input
               id="link-convite"
               readOnly
               value={inviteUrl(invite.token)}
               onFocus={(event) => event.currentTarget.select()}
-              className="h-11 min-w-0 flex-1 rounded-xl border border-line bg-canvas px-3 text-sm text-ink-muted"
+              className="well h-11 min-w-0 flex-1 rounded-xl px-3 text-sm text-ink-muted"
             />
-            <Button onClick={() => void share()} className="shrink-0">
-              <Icon name="mais" className="size-4" />
-              {copied ? 'Link copiado' : 'Compartilhar'}
-            </Button>
+            <button
+              type="button"
+              onClick={() => void share()}
+              className="press flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-brand px-4 text-sm font-semibold text-white"
+            >
+              <Icon name={copied ? 'check' : 'compartilhar'} className="size-4" />
+              {copied ? 'Copiado' : 'Enviar'}
+            </button>
           </div>
-          <p className="mt-2 text-xs text-ink-faint">
-            Vale por 7 dias e só pode ser usado uma vez. Os links que você já enviou continuam
-            valendo.
-          </p>
+          <p className="mt-2 text-xs text-ink-faint">Vale por 7 dias e só pode ser usado uma vez.</p>
           <button
             type="button"
             onClick={() => void create()}
-            className="mt-2 text-sm font-medium text-brand-hi underline-offset-2 hover:underline"
+            className="mt-1 min-h-10 text-sm font-medium text-brand-hi underline-offset-2 hover:underline"
           >
             Gerar outro link
           </button>
         </div>
       ) : (
-        <Button size="lg" className="mt-5" loading={busy} onClick={() => void create()}>
-          Criar link de convite
-        </Button>
+        <PrimaryButton className="mt-4" disabled={busy} onClick={() => void create()}>
+          <Icon name="convidar" className="size-5" />
+          {busy ? 'Criando o link…' : 'Criar link de convite'}
+        </PrimaryButton>
       )}
 
-      <div aria-live="polite" className="min-h-6">
-        {error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
-      </div>
-    </Panel>
+      <div aria-live="polite">{error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}</div>
+    </Card>
   )
 }

@@ -113,6 +113,31 @@ export const ICON_PATHS = {
     'M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM2.5 19.5a6.5 6.5 0 0 1 13 0M16 11.2A3.5 3.5 0 0 0 16 4.3M18 19.5a6.5 6.5 0 0 0-2.2-4.9',
   // A grade de publicações do perfil.
   grade: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
+  // 3S: navegação e telas novas.
+  abaixo: 'm6 9 6 6 6-6',
+  acima: 'm6 15 6-6 6 6',
+  bussola: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM15.5 8.5l-2 5-5 2 2-5 5-2Z',
+  tendencia: 'M3 17l6-6 4 4 8-8M15 7h6v6',
+  calendarioGrade:
+    'M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1ZM4 10h16M8 3v4M16 3v4',
+  bateria: 'M9 4h6M8 6h8a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1ZM10 16h4',
+  escudo: 'M12 3 5 6v5c0 4.5 3 8.4 7 10 4-1.6 7-5.5 7-10V6l-7-3ZM9 12l2 2 4-4',
+  filtros: 'M4 7h10M18 7h2M4 17h4M12 17h8M16 5v4M10 15v4',
+  camera:
+    'M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1ZM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z',
+  estrela: 'm12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9L12 3Z',
+  lampada:
+    'M9 21h6M10 18h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.8V16h5v-.3c0-.7.4-1.4 1-1.8A6 6 0 0 0 12 3Z',
+  retomar: 'M20 11a8 8 0 0 0-14.6-4.5M4 4v4h4M4 13a8 8 0 0 0 14.6 4.5M20 20v-4h-4',
+  local: 'M12 21s7-6.1 7-11.5A7 7 0 0 0 5 9.5C5 14.9 12 21 12 21ZM12 12a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z',
+  pulso: 'M3 12h4l2-5 4 10 2-5h6',
+  medidor: 'M4 16a8 8 0 1 1 16 0M12 16l4-5',
+  cubo: 'm12 3 8 4.5v9L12 21l-8-4.5v-9L12 3ZM12 12l8-4.5M12 12v9M12 12 4 7.5',
+  convidar:
+    'M15 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM19 8v6M16 11h6',
+  cronometro: 'M12 21a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM12 9v4l2 2M10 2h4',
+  verificado:
+    'm12 3 2.2 1.6 2.7-.1.8 2.6 2.2 1.6-.9 2.6.9 2.6-2.2 1.6-.8 2.6-2.7-.1L12 21l-2.2-1.6-2.7.1-.8-2.6-2.2-1.6.9-2.6-.9-2.6 2.2-1.6.8-2.6 2.7.1L12 3ZM9 12l2 2 4-4',
 } as const
 
 export type IconName = keyof typeof ICON_PATHS
@@ -175,4 +200,9 @@ export function HabitGlyph({ icon, className }: { icon: HabitIcon; className?: s
       <path d={HABIT_ICON_PATHS[icon]} />
     </svg>
   )
+}
+
+/** O domínio guarda ícone como texto; isto diz se ele existe aqui. */
+export function isIconName(name: string): name is IconName {
+  return Object.prototype.hasOwnProperty.call(ICON_PATHS, name)
 }

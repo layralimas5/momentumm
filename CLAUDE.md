@@ -68,6 +68,35 @@ Supabase, auth com rota protegida, registro rápido, cronômetro de sessão, str
 dos últimos 7 dias, histórico com filtro por eixo, metas com progresso e perfil
 editável. Landing nova e rota `/ferramentas` (calculadoras abertas, sem login).
 
+### Interface 3S (03/10/2026, branch `feat/redesign-3s`)
+
+A interface inteira foi trocada pela "nova geração 3S" (Simples, Sexy,
+Surpreendente). Escuro com brilho roxo como padrão, igual à landing (o claro
+continua como escolha no Perfil),
+fonte Plus Jakarta Sans hospedada no próprio app (a CSP não deixa Google
+Fonts), cards flutuantes com sombra suave e roxo só onde há ação.
+
+- **Casca única:** `AppTopBar` (marca + seção, sequência, avatar) e
+  `BottomNavigation` com cinco paradas: Hoje, Rotina, Objetivos, Progresso,
+  Círculo. Perfil mora no avatar. Sem sidebar; no desktop, coluna central.
+- **Design system** em `presentation/components/ds/` (Card, Badges, Progress,
+  Charts, Controls, Rows, GoalCard, InsightCard, ProLock).
+- **Hoje** abre no score, depois a prioridade e o dia. O check-in de energia
+  virou o botão "Hoje estou sem energia" (grava `sem-energia` e propõe o dia
+  na versão mínima). Os verbos do dia ficam em `use-day-controls`, usado por
+  Hoje e Rotina.
+- **Leituras novas** em `domain/entities/rhythm.ts`: mapa de constância de 90
+  dias, semana corrente, Recovery Rate, horário de pico e melhor dia. Tudo
+  sobre o mesmo `creditOfDay` do Momentum.
+- **Círculo** junta feed, clubes e pessoas em pílulas (`/app/feed` redireciona).
+- **Plano por período** (`domain/entities/period-plan.ts`): em Objetivos, cada
+  objetivo destrinchado em esta semana, resto do mês, meses seguintes e o que
+  sobra até o prazo. Cada período mostra etapa em foco, marcos que vencem, ações
+  marcadas e, se o objetivo é por volume, quanto somar. Período sem ação vira
+  "Sem ações" (laranja só quando uma etapa vence nele).
+- Nada de dado inventado na tela: relíquia é conquista real do motor de
+  evolução, sem "edição numerada" nem "chave criptográfica".
+
 ### Dashboard (camada de planejamento)
 
 A tela `Hoje` responde quatro perguntas, nessa ordem: como estou hoje, o que

@@ -1,15 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Navigate, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { featureForRoute } from '@/domain/analytics/product-events'
 import { track, trackFeatureView } from '@/infrastructure/analytics/track'
-import { Avatar } from '@/presentation/components/ui/Avatar'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
-import { LogoMark, Wordmark } from '@/presentation/components/brand/Logo'
-import { MobileTabBar } from '@/presentation/components/mobile/MobileTabBar'
+import { Wordmark } from '@/presentation/components/brand/Logo'
 import { TrialBanner } from '@/presentation/plan/TrialBanner'
 import { SUBSCRIPTION_PATH } from '@/presentation/plan/subscription-path'
-import { MobileTopBar } from '@/presentation/components/mobile/MobileTopBar'
 import { useInviteCapture } from '@/presentation/circle/use-invite-capture'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { EvolutionNotice } from '@/presentation/evolution/EvolutionNotice'
@@ -22,19 +19,16 @@ import { PlannerProvider } from '@/presentation/planner/PlannerProvider'
 import { ShareStudioProvider } from '@/presentation/share/ShareStudioProvider'
 import { PostComposerProvider } from '@/presentation/social/PostComposerProvider'
 import { useDocumentTitle } from '@/presentation/hooks/use-document-title'
-import { useIsDesktop } from '@/presentation/hooks/use-media-query'
 import { offerSource, storedOffer } from '@/presentation/components/landing/offers'
 import { ACTIVATION_PATH, isActivationSkipped } from '@/presentation/planner/use-activation'
 import { hasPendingQuizPlan, QUIZ_ACTIVATION_PATH } from '@/presentation/quiz/quiz-activation'
 import { usePlanner } from '@/presentation/planner/use-planner'
-import { cn } from '@/shared/lib/cn'
-import { AppHeader } from './AppHeader'
 import { useNotificationOpen } from '@/presentation/notifications/use-notification-open'
-import { useFeature } from '@/presentation/plan/use-feature'
-import { PRIMARY_NAV, visibleNav, type AppNavItem } from './nav-items'
 import { SystemNotice } from './SystemNotice'
-
-const COLLAPSED_KEY = 'momentumm.sidebar.collapsed'
+import { AppTopBar } from './AppTopBar'
+import { BottomNavigation } from './BottomNavigation'
+import { MoreFab } from './MoreFab'
+import '@fontsource-variable/plus-jakarta-sans/wght.css'
 
 /**
  * Casca do app: sidebar fixa à esquerda, header em cima e conteúdo em grade
@@ -82,44 +76,30 @@ export function AppLayout() {
 }
 
 function LayoutShell() {
-  const [collapsed, setCollapsed] = useState(readCollapsed)
-  const isDesktop = useIsDesktop()
   const { pathname } = useLocation()
-  /*
-    Duas telas trazem a PRÓPRIA barra de cima no celular, e por isso a padrão
-    não entra nelas: o Perfil (marca, as três seções e a engrenagem) e o Feed
-    (marca, pedidos e avisos). Empilhar a barra padrão em cima de uma delas
-    daria duas logos e duas linhas de controle antes do conteúdo.
-  */
-  const ownsTopBar = pathname === '/app/perfil' || pathname === '/app/feed'
 
-  // O convite que trouxe a pessoa até aqui, gasto uma vez e esquecido.
   useInviteCapture()
   useUsageEvents()
-  /* Abriu por um aviso? Carimba a abertura e limpa o `?n=` da URL. */
   useNotificationOpen()
   useDocumentTitle()
   usePresence()
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(COLLAPSED_KEY, String(collapsed))
-    } catch {
-      // Preferência de layout não vale quebrar a tela por causa de storage.
-    }
-  }, [collapsed])
 
   const gate = useActivationGate(pathname)
   if (gate) return gate
 
   /*
-    O primeiro acesso não tem casca: sem sidebar, sem barra de abas, sem
-    atalho pra outra tela. Quatro perguntas e um plano, e só depois o app.
+    O primeiro acesso não tem casca: sem barra de abas, sem atalho pra outra
+    tela. Quatro perguntas e um plano, e só depois o app.
   */
   if (pathname === ACTIVATION_PATH || pathname === QUIZ_ACTIVATION_PATH) return <ActivationShell />
 
+  /*
+    3S: uma casca só pra celular, tablet e monitor. No monitor o conteúdo não
+    estica: fica numa coluna central com a largura de leitura do celular, e a
+    barra de baixo vira uma pílula flutuante.
+  */
   return (
-    <div className="min-h-dvh bg-canvas lg:flex">
+    <div className="app-3s min-h-dvh bg-canvas">
       <a
         href="#conteudo"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-brand focus:px-4 focus:py-2 focus:text-white"
@@ -127,55 +107,38 @@ function LayoutShell() {
         Pular para o conteúdo
       </a>
 
-      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} />
+      <AppTopBar />
+      <SystemNotice />
+      <OfflineBanner />
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        {isDesktop ? <AppHeader /> : ownsTopBar ? null : <MobileTopBar />}
-        <SystemNotice />
-        <OfflineBanner />
+      <main id="conteudo" className="mx-auto w-full max-w-2xl px-4 pt-2 pb-tabbar sm:px-6 sm:pb-32">
+        <TrialBanner />
+        <Outlet />
+      </main>
 
-        {/*
-          O conteúdo ocupa a largura inteira do monitor. Quem cuida da leitura é
-          a grade de colunas e o teto de largura de cada bloco de texto, faixa
-          central estreita em tela grande só produz margem morta dos dois lados.
-        */}
-        {/* pb-tabbar reserva a altura exata da barra inferior mais a área segura. */}
-        <main
-          id="conteudo"
-          className="w-full flex-1 px-4 pt-4 pb-tabbar sm:px-6 lg:px-8 lg:pt-7 lg:pb-10 2xl:px-10"
-        >
-          {/*
-            Abaixo de `lg` a tela é a árvore do celular ou a página em coluna
-            única, e num tablet de 820px as duas esticavam até a borda: card de
-            uma coluna com 800px de largura tem linha de texto longa demais pra
-            ler. O teto centraliza o conteúdo até virar dashboard de verdade.
-          */}
-          <div className="mx-auto w-full max-w-2xl lg:max-w-none">
-            <TrialBanner />
-            <Outlet />
-          </div>
-        </main>
-      </div>
-
-      {/*
-        A barra inferior traz o "+" no meio, e é ela que abre a folha de criar.
-        Antes existia um "+" flutuante e contextual por cima do conteúdo
-        (`AddFab`): ele cobria o canto da tela em toda rolagem e oferecia listas
-        diferentes conforme a rota, então "criar" não tinha um lugar só.
-      */}
-      {isDesktop ? null : <MobileTabBar />}
+      <AdminEntry />
+      <MoreFab />
+      <BottomNavigation />
     </div>
   )
 }
 
-/**
- * Conta vazia abre no onboarding, e só nele.
- *
- * Enquanto a pessoa não criou nada e não pediu pra deixar pra depois, toda
- * rota de `/app/*` vira o primeiro acesso: o quiz é o começo do produto, não
- * um card que a barra de abas deixa ignorar. "Deixar pra depois" libera o
- * app e o Hoje passa a mostrar a porta de volta.
- */
+/** A entrada do painel só existe pra quem tem papel; o 2º fator é cobrado na porta do /admin. */
+function AdminEntry() {
+  const { session } = useAuth()
+  if (!session?.adminRole) return null
+
+  return (
+    <NavLink
+      to="/admin"
+      className="chip fixed top-20 right-4 z-30 hidden items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold text-brand-ink lg:flex"
+    >
+      <Icon name="cadeado" className="size-4" />
+      Painel admin
+    </NavLink>
+  )
+}
+
 function useActivationGate(pathname: string) {
   const { user } = useAuth()
   const planner = usePlanner()
@@ -231,168 +194,6 @@ function ActivationShell() {
   )
 }
 
-function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
-  return (
-    <aside
-      className={cn(
-        'sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-line bg-surface/40 lg:flex',
-        'transition-[width] duration-200 ease-out',
-        collapsed ? 'w-[4.75rem]' : 'w-64 2xl:w-[17rem]',
-      )}
-    >
-      <SidebarContent collapsed={collapsed} onToggle={onToggle} />
-    </aside>
-  )
-}
-
-function SidebarContent({
-  collapsed,
-  onToggle,
-}: {
-  collapsed: boolean
-  onToggle?: () => void
-}) {
-  const { profile, user, session, signOut } = useAuth()
-  /* O Juntos entra na barra só pra quem já tem o recurso ligado. */
-  const juntos = useFeature('juntos')
-  const nav = visibleNav(PRIMARY_NAV, { juntos: juntos.enabled })
-
-  return (
-    <div className="flex h-full flex-col px-3 py-5">
-      <div className={cn('flex items-center px-1', collapsed ? 'justify-center' : 'justify-between')}>
-        {collapsed ? <LogoMark className="size-7" /> : <Wordmark className="w-32" />}
-        {onToggle ? (
-          <button
-            type="button"
-            onClick={onToggle}
-            aria-label={collapsed ? 'Expandir navegação' : 'Recolher navegação'}
-            className={cn(
-              'grid size-8 place-items-center rounded-lg text-ink-faint transition-colors hover:bg-surface-hi hover:text-ink',
-              collapsed && 'absolute left-1/2 top-16 -translate-x-1/2',
-            )}
-          >
-            <Icon name={collapsed ? 'expandir' : 'recolher'} className="size-4" />
-          </button>
-        ) : null}
-      </div>
-
-      <nav aria-label="Navegação principal" className={cn('flex-1', collapsed ? 'mt-14' : 'mt-8')}>
-        <ul className="flex flex-col gap-1">
-          {nav.map((item) => (
-            <li key={item.to}>
-              <SidebarLink item={item} collapsed={collapsed} />
-            </li>
-          ))}
-        </ul>
-      </nav>
-
-      {/*
-        A entrada do painel só existe pra quem tem papel. O segundo fator não
-        é cobrado aqui: é a porta do /admin que verifica, e o banco atrás dela.
-      */}
-      {session?.adminRole ? (
-        <NavLink
-          to="/admin"
-          title={collapsed ? 'Painel admin' : undefined}
-          className={cn(
-            'mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-brand-ink transition-colors hover:bg-brand-dim/40',
-            collapsed && 'justify-center px-0',
-          )}
-        >
-          <Icon name="cadeado" />
-          {collapsed ? null : <span className="truncate">Painel admin</span>}
-        </NavLink>
-      ) : null}
-
-      {profile ? (
-        <div className={cn('mt-4 border-t border-line pt-4', collapsed && 'flex justify-center')}>
-          <div className={cn('flex items-center gap-3', collapsed && 'flex-col gap-2')}>
-            {/*
-              O bloco do perfil é a porta pro painel de evolução no desktop.
-              "Perfil" não entra na navegação principal, ela é o ciclo do
-              produto, mas a foto e o nome no rodapé são o lugar onde qualquer
-              pessoa procura pelo próprio perfil.
-            */}
-            <NavLink
-              to="/app/perfil"
-              className={cn(
-                'flex min-w-0 items-center gap-3 rounded-lg transition-colors hover:text-brand-ink',
-                collapsed ? 'flex-col gap-2' : 'flex-1',
-              )}
-            >
-              <Avatar
-                name={profile.name}
-                src={profile.avatarUrl}
-                className="size-9"
-                textClassName="text-sm"
-              />
-              {collapsed ? null : (
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium text-ink">
-                    {profile.name}
-                  </span>
-                  <span className="block truncate text-xs text-ink-faint">
-                    {user?.email ?? `@${profile.handle}`}
-                  </span>
-                </span>
-              )}
-              <span className="sr-only">Abrir teu perfil</span>
-            </NavLink>
-            <button
-              type="button"
-              onClick={() => void signOut()}
-              className="grid size-8 shrink-0 place-items-center rounded-lg text-ink-faint transition-colors hover:bg-surface-hi hover:text-ink"
-            >
-              <Icon name="saida" className="size-4" />
-              <span className="sr-only">Sair da conta</span>
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      {container.demo && !collapsed ? (
-        <span className="mt-3 self-start rounded-full border border-line px-2.5 py-1 text-xs text-ink-faint">
-          modo demo
-        </span>
-      ) : null}
-    </div>
-  )
-}
-
-function SidebarLink({ item, collapsed }: { item: AppNavItem; collapsed: boolean }) {
-  return (
-    <NavLink
-      to={item.to}
-      end={item.end}
-      title={collapsed ? item.label : undefined}
-      className={({ isActive }) =>
-        cn(
-          'relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-          collapsed && 'justify-center px-0',
-          isActive
-            ? 'nav-active-bar bg-surface-hi text-ink'
-            : 'text-ink-muted hover:bg-surface hover:text-ink',
-        )
-      }
-    >
-      <Icon name={item.icon} />
-      {collapsed ? <span className="sr-only">{item.label}</span> : item.label}
-    </NavLink>
-  )
-}
-
-/**
- * Sem rede o app continua legível: o aviso explica por que nada salva. E
- * quando a rede volta (ou a aba volta), o provider relê o servidor por baixo
- * dos dados atuais; a linha fina no topo é o único sinal disso, porque trocar
- * a tela por um esqueleto a cada retorno de aba seria pior que não avisar.
- */
-/**
- * Os eventos de uso que a casca registra: a sessão começou, e qual recurso
- * a pessoa abriu. Só o nome do recurso sai, a rota com id de objetivo vira
- * "objetivos", nunca o id. É a matéria-prima de "usuários ativos" e de
- * "recursos mais usados" no painel.
- */
 function useUsageEvents() {
   const { pathname } = useLocation()
 
@@ -460,10 +261,3 @@ function OfflineBanner() {
   )
 }
 
-function readCollapsed(): boolean {
-  try {
-    return window.localStorage.getItem(COLLAPSED_KEY) === 'true'
-  } catch {
-    return false
-  }
-}

@@ -3,7 +3,7 @@ import { useAuth } from '@/presentation/auth/use-auth'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { APP_NAV, visibleNav } from '@/presentation/layouts/nav-items'
 import { useFeature } from '@/presentation/plan/use-feature'
-import { TAB_ROUTES } from './MobileTabBar'
+import { PROFILE_PATH, SHELL_TABS } from '@/presentation/layouts/shell-nav'
 
 /**
  * As telas que não cabem na barra inferior.
@@ -18,7 +18,8 @@ import { TAB_ROUTES } from './MobileTabBar'
  * fechava num círculo, dava pra sair, mas não pra voltar.
  */
 
-const SHORTCUTS = APP_NAV.filter((item) => !TAB_ROUTES.includes(item.to))
+const IN_SHELL = [...SHELL_TABS.map((tab) => tab.to), PROFILE_PATH]
+const SHORTCUTS = APP_NAV.filter((item) => !IN_SHELL.includes(item.to))
 
 export function MobileShortcuts() {
   const { session } = useAuth()

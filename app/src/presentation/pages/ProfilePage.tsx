@@ -18,6 +18,7 @@ import { Button } from '@/presentation/components/ui/Button'
 import { Field, Select, TextInput } from '@/presentation/components/ui/Field'
 import { ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
+import { useHashScroll } from '@/presentation/hooks/use-hash-scroll'
 import { MobileShortcuts } from '@/presentation/components/mobile/MobileShortcuts'
 import { SecurityPanel } from '@/presentation/profile/SecurityPanel'
 import { BlockedPanel } from '@/presentation/social/BlockedPanel'
@@ -29,6 +30,7 @@ import { usePlanner } from '@/presentation/planner/use-planner'
 import { cn } from '@/shared/lib/cn'
 
 export function ProfilePage() {
+  useHashScroll()
   const { user, profile, trial, loading, signOut, refreshProfile } = useAuth()
   const planner = usePlanner()
   const navigate = useNavigate()
@@ -251,7 +253,9 @@ export function ProfilePage() {
 
           <InstallSettings />
 
-          <ReminderSettings />
+          <div id="lembretes" className="scroll-mt-24">
+            <ReminderSettings />
+          </div>
 
           <div className="border-t border-line pt-4">
             <div className="flex items-center justify-between gap-3">

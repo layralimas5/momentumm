@@ -102,9 +102,6 @@ const CircleLockedPage = lazy(() =>
 const CirclePage = lazy(() =>
   import('@/presentation/pages/CirclePage').then((m) => ({ default: m.CirclePage })),
 )
-const FeedPage = lazy(() =>
-  import('@/presentation/pages/FeedPage').then((m) => ({ default: m.FeedPage })),
-)
 const ChallengesPage = lazy(() =>
   import('@/presentation/pages/ChallengesPage').then((m) => ({ default: m.ChallengesPage })),
 )
@@ -347,7 +344,7 @@ export function App() {
               <Route path="juntos" element={<JuntosPage />} />
               {circleOpen ? (
                 <>
-                  <Route path="feed" element={<FeedPage />} />
+                  <Route path="feed" element={<Navigate to="/app/circulo" replace />} />
                   <Route path="circulo" element={<CirclePage />} />
                   <Route path="desafios" element={<ChallengesPage />} />
                   <Route path="desafios/:id" element={<ChallengeDetailPage />} />

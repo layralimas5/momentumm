@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { activityType } from '@/domain/entities/activity-type'
+import { XP_RULES } from '@/domain/entities/evolution'
 import { formatElapsed } from '@/domain/entities/timer'
 import { Button } from '@/presentation/components/ui/Button'
 import { Dialog } from '@/presentation/components/ui/Dialog'
@@ -96,10 +97,19 @@ export function FocusSession() {
             {focus.running ? 'Sessão em andamento' : 'Sessão pausada'}
           </p>
 
-          {session.plannedMin ? (
-            <p className="tabular mt-8 text-sm text-ink-faint">
-              Meta da sessão: {session.plannedMin} minutos
-            </p>
+          {session.plannedMin || task ? (
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-2 text-sm">
+              {session.plannedMin ? (
+                <span className="well rounded-full px-3 py-1.5 text-ink-muted tabular">
+                  {remainingLabel(session.plannedMin, focus.elapsed)}
+                </span>
+              ) : null}
+              {task ? (
+                <span className="rounded-full bg-brand-dim px-3 py-1.5 font-semibold text-brand-ink tabular">
+                  +{task.isMainPriority ? XP_RULES.priority_done.points : XP_RULES.task_done.points} XP ao concluir
+                </span>
+              ) : null}
+            </div>
           ) : null}
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
@@ -250,4 +260,10 @@ function Ring({ ratio }: { ratio: number }) {
       />
     </svg>
   )
+}
+
+/** "Faltam 32 min" enquanto há meta; passou dela, a sessão segue sem cobrança. */
+function remainingLabel(plannedMin: number, elapsedMs: number): string {
+  const left = Math.ceil(plannedMin - elapsedMs / 60000)
+  return left > 0 ? `Faltam ${left} min de ${plannedMin}` : `Meta de ${plannedMin} min cumprida`
 }

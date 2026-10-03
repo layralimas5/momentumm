@@ -1,105 +1,60 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import {
-  alreadySent,
-  ENCOURAGEMENTS,
-  encouragementSpec,
-  PAIR_DAYS,
-  sentTodayCount,
-} from '@/domain/entities/pair'
+import type { DayKey } from '@/domain/entities/day'
+import { alreadySent, ENCOURAGEMENTS, encouragementSpec, PAIR_DAYS, sentTodayCount } from '@/domain/entities/pair'
 import { isPro, type PlanLimits } from '@/domain/entities/plan'
 import { track } from '@/infrastructure/analytics/track'
 import { useAuth } from '@/presentation/auth/use-auth'
-import { Button } from '@/presentation/components/ui/Button'
+import { Card, Eyebrow, IconWell } from '@/presentation/components/ds/Card'
+import { PrimaryButton } from '@/presentation/components/ds/Controls'
+import { ProLock } from '@/presentation/components/ds/ProLock'
+import { UpgradeHint } from '@/presentation/components/dashboard/UpgradeHint'
 import { ConfirmDialog } from '@/presentation/components/ui/ConfirmDialog'
 import { Icon } from '@/presentation/components/ui/Icon'
-import { Panel } from '@/presentation/components/ui/Surface'
 import { ErrorNote, LoadingBlock } from '@/presentation/components/ui/States'
-import { UpgradeHint } from '@/presentation/components/dashboard/UpgradeHint'
 import { InvitePanel } from '@/presentation/juntos/InvitePanel'
-import { PairStrip } from '@/presentation/juntos/PairStrip'
-import { usePairs, type PairView, type PairsController } from '@/presentation/juntos/use-pairs'
+import { EncouragementTile, PairHero, PairWeek } from '@/presentation/juntos/PairCards'
+import { usePairs, type PairsController, type PairView } from '@/presentation/juntos/use-pairs'
 import { useFeature } from '@/presentation/plan/use-feature'
 import { usePlanner } from '@/presentation/planner/use-planner'
-import type { DayKey } from '@/domain/entities/day'
-import { PageHeader } from './PageHeader'
+import { cn } from '@/shared/lib/cn'
 
 /**
- * Juntos, as duplas.
+ * Juntos: uma pessoa acompanhando o teu ritmo, e você o dela. A dupla vê só se
+ * o outro avançou no dia; o resto do app continua só seu.
  *
- * Cada dupla responde três perguntas, nessa ordem: como estamos hoje, o que
- * aconteceu nos últimos dias e o que eu posso mandar. Não existe quarta
- * pergunta, nem feed, nem histórico longo, nem perfil da outra pessoa.
- *
- * O que a tela mostra sobre a outra pessoa é exatamente o que o servidor
- * devolve: nome curto, avatar e sete booleanos. Não há aqui nenhuma chamada
- * capaz de trazer mais do que isso.
- *
- * ## Uma tela, dois planos
- *
- * O gratuito tem UMA dupla e o PRO tem quantas quiser, e isso não são duas
- * telas: é a mesma lista, com um item ou com vários. O que muda é o convite
- * (oferecido enquanto `room` for verdadeiro) e a profundidade do que cada card
- * mostra. Duplicar a tela por plano é como as duas versões começam a divergir.
+ * A flag é lida aqui, e não no roteador: a resposta vem do servidor, e uma
+ * rota que aparece depois faria a tela piscar a cada carga.
  */
 export function JuntosPage() {
-  /*
-    A flag decide se a rota existe pra esta conta.
-
-    Ela é lida aqui, e não no roteador: a resposta vem do servidor e demora
-    um instante, e uma rota que aparece depois faria a tela piscar entre "não
-    existe" e "existe" a cada carga.
-  */
   const juntos = useFeature('juntos')
   const pairs = usePairs()
   const planner = usePlanner()
-
   const limits = planner.limits
-  const pro = isPro(limits.tier)
 
-  if (juntos.loading || pairs.loading) {
-    return <LoadingBlock label="Carregando suas duplas" />
-  }
+  if (juntos.loading || pairs.loading) return <LoadingBlock label="Carregando suas duplas" />
   if (!juntos.enabled) return <Navigate to="/app" replace />
 
-  const vazio = pairs.views.length === 0
+  const empty = pairs.views.length === 0
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-      <PageHeader
-        title="Juntos"
-        description={
-          vazio
-            ? 'Uma pessoa acompanhando o seu ritmo, e você o dela.'
-            : descricaoDe(pairs.views)
-        }
-      />
+    <div className="flex flex-col gap-4 pb-6">
+      <header className="px-1">
+        <Eyebrow dot>Accountability em dupla</Eyebrow>
+        <h2 className="mt-1 text-[1.4rem] leading-tight font-bold tracking-tight text-ink">Juntos</h2>
+        <p className="mt-0.5 text-sm text-ink-faint">{subtitleOf(pairs.views)}</p>
+      </header>
 
       {pairs.error ? <ErrorNote message={pairs.error} /> : null}
 
-      {/*
-        O convite vem antes das duplas quando não existe nenhuma, e depois
-        quando já existe: quem ainda não tem dupla está ali pra criar uma, e
-        quem já tem está ali pra ver a dela.
-      */}
-      {vazio && pairs.room ? <InvitePanel /> : null}
+      {empty && pairs.room ? <InvitePanel /> : null}
 
       {pairs.views.map((view) => (
-        <PairCard
-          key={view.pair.id}
-          view={view}
-          limits={limits}
-          today={planner.today}
-          controller={pairs}
-        />
+        <PairSection key={view.pair.id} view={view} limits={limits} today={planner.today} controller={pairs} />
       ))}
 
-      {!vazio && pairs.room ? <InvitePanel /> : null}
+      {!empty && pairs.room ? <InvitePanel compact /> : null}
 
-      {/*
-        Sem vaga, a tela diz por quê em vez de simplesmente não ter botão.
-        Recurso que desaparece sem explicação parece defeito.
-      */}
       {!pairs.room ? (
         <UpgradeHint
           message={
@@ -110,35 +65,21 @@ export function JuntosPage() {
         />
       ) : null}
 
-      {vazio ? <PrivacyPanel /> : null}
-
-      {vazio && !pro ? (
-        <UpgradeHint
-          message={`No gratuito a dupla mostra hoje e os últimos ${limits.pairDays} dias, com ${limits.pairEncouragementsPerDay} incentivo por dia. O PRO abre a semana inteira e os três gestos.`}
-        />
-      ) : null}
+      {empty ? <PrivacyCard /> : null}
     </div>
   )
 }
 
-/** "Você e a Carol" com uma dupla; a contagem quando são várias. */
-function descricaoDe(views: readonly PairView[]): string {
+function subtitleOf(views: readonly PairView[]): string {
+  if (views.length === 0) return 'Uma pessoa acompanhando o teu ritmo, e você o dela.'
   if (views.length === 1) {
     const partner = views[0]?.pair.members.find((member) => !member.isMe)
-    return partner ? `Você e ${partner.name}, em movimento.` : 'Sua dupla de accountability.'
+    return partner ? `Você e ${partner.name.split(' ')[0]}, em movimento.` : 'Sua dupla de accountability.'
   }
   return `${views.length} duplas acompanhando o teu ritmo.`
 }
 
-/**
- * Uma dupla.
- *
- * Era o corpo da página quando só existia uma. Virar componente é o que faz a
- * segunda dupla não precisar de nenhuma linha nova: o estado de "confirmar a
- * saída" passou a ser de cada card, e não da tela, senão desfazer uma dupla
- * abriria o diálogo de todas.
- */
-function PairCard({
+function PairSection({
   view,
   limits,
   today,
@@ -158,98 +99,78 @@ function PairCard({
   const me = pair.members.find((member) => member.isMe)
   const pro = isPro(limits.tier)
 
-  /*
-    O teto de incentivos do dia, por dupla.
-
-    O servidor aplica o mesmo número (migration 0053): aqui ele existe pra o
-    botão dizer a verdade antes do clique, não pra ser a única barreira.
-  */
+  /* O teto do dia é aplicado também no servidor; aqui ele faz o botão dizer a verdade antes do clique. */
   const usedToday = user ? sentTodayCount(pair, user.id, today) : 0
   const quotaReached = usedToday >= limits.pairEncouragementsPerDay
+  const received = pair.encouragementsToday.filter((item) => item.recipientId === user?.id)
 
   return (
-    <section className="flex flex-col gap-4">
-      {/* Como estamos hoje. É a primeira dobra porque é a única coisa que muda. */}
-      <Panel tone="brand" className="p-5">
-        <p className="text-xs font-medium tracking-wide text-brand-ink uppercase">
-          {partner ? partner.name : 'Hoje'}
-        </p>
-        <h2 className="mt-2 text-xl font-semibold tracking-tight text-balance text-ink">
-          {reading.headline}
-        </h2>
-        <p className="mt-1.5 text-sm text-pretty text-ink-muted">{reading.note}</p>
+    <section className="flex flex-col gap-4" aria-label={partner ? `Dupla com ${partner.name}` : 'Dupla'}>
+      <PairHero me={me} partner={partner} reading={reading} daysTogether={pair.daysTogether} />
 
-        <div className="mt-4 flex flex-col gap-2">
-          {me ? (
-            <PairStrip member={me} today={today} maxDays={limits.pairDays} highlight />
-          ) : null}
-          {partner ? (
-            <PairStrip member={partner} today={today} maxDays={limits.pairDays} />
-          ) : null}
+      {received.length > 0 ? (
+        <Card padded={false} className="flex flex-wrap items-center gap-2 p-3">
+          <span className="eyebrow px-1 text-[0.62rem] text-ink-faint">Chegou pra você</span>
+          {received.map((item) => {
+            const spec = encouragementSpec(item.kind)
+            return (
+              <span key={item.id} className="flex items-center gap-1.5 rounded-full bg-brand-dim px-3 py-1.5 text-sm text-brand-ink">
+                <span aria-hidden="true">{spec.emoji}</span>
+                <span>
+                  <strong className="font-semibold">{spec.label}</strong>
+                  <span className="sr-only"> de {partner?.name}</span>
+                </span>
+              </span>
+            )
+          })}
+        </Card>
+      ) : null}
+
+      {me && partner ? (
+        <PairWeek
+          me={me}
+          partner={partner}
+          today={today}
+          maxDays={limits.pairDays}
+          {...(limits.pairDays < PAIR_DAYS
+            ? {
+                lockedNote: (
+                  <ProLock
+                    className="mt-3 min-h-0 py-3"
+                    message={`Você vê os últimos ${limits.pairDays} dias. A semana inteira faz parte do PRO.`}
+                  />
+                ),
+              }
+            : {})}
+        />
+      ) : null}
+
+      <Card aria-labelledby={`incentivo-${pair.id}`}>
+        <div className="flex items-center justify-between gap-3">
+          <h2 id={`incentivo-${pair.id}`} className="eyebrow text-[0.72rem] text-ink-muted">
+            Mandar um incentivo
+          </h2>
+          <span className="text-xs text-ink-faint tabular">
+            {usedToday}/{limits.pairEncouragementsPerDay} hoje
+          </span>
         </div>
-
-        {pair.daysTogether > 0 ? (
-          <p className="mt-3 flex items-center gap-2 text-sm text-ink-faint">
-            <Icon name="fogo" className="size-4 text-brand-hi" />
-            {pair.daysTogether}{' '}
-            {pair.daysTogether === 1 ? 'dia em movimento juntas' : 'dias em movimento juntas'}
-          </p>
-        ) : null}
-
-        {/*
-          A faixa cortada não finge estar inteira.
-
-          Sem essa linha o gratuito veria três pontos e concluiria que a dupla
-          só guarda três dias, o limite viraria defeito do produto.
-        */}
-        {limits.pairDays < PAIR_DAYS ? (
-          <UpgradeHint
-            className="mt-3"
-            message={`Você está vendo os últimos ${limits.pairDays} dias. A semana inteira faz parte do PRO.`}
-          />
-        ) : null}
-      </Panel>
-
-      {/* O que eu mando. Três botões, um deles sugerido pelo estado do dia. */}
-      <Panel className="p-5">
-        <h2 className="text-sm font-semibold tracking-wide text-ink-muted uppercase">
-          Mandar um incentivo
-        </h2>
-        <p className="mt-1.5 text-sm text-ink-faint">
-          {reading.partnerReturning
-            ? 'Hoje, apoio funciona melhor que cobrança.'
-            : pro
-              ? 'Um por dia de cada tipo. Sem texto: só o gesto.'
-              : 'Um incentivo por dia no gratuito. Sem texto: só o gesto.'}
+        <p className="mt-1 text-sm text-ink-faint">
+          {reading.partnerReturning ? 'Hoje, apoio funciona melhor que cobrança.' : 'Sem texto: só o gesto.'}
         </p>
 
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-4 grid grid-cols-3 gap-2.5">
           {ENCOURAGEMENTS.map((spec) => {
             const sent = user ? alreadySent(pair, user.id, spec.kind, today) : false
-            const suggested = spec.kind === reading.suggested
-            /*
-              A vaga do dia já foi gasta em outro gesto.
-
-              Quem já mandou continua vendo "enviado" no botão dele, o que
-              fecha é o resto. O gratuito escolhe QUAL dos três manda, e essa
-              escolha é o que sobra de agência dentro do limite.
-            */
-            const outOfQuota = !sent && quotaReached
-            const busy =
-              controller.sending?.pairId === pair.id && controller.sending.kind === spec.kind
-
             return (
-              <Button
+              <EncouragementTile
                 key={spec.kind}
-                variant={suggested && !sent && !outOfQuota ? 'primary' : 'secondary'}
-                loading={busy}
-                disabled={sent || outOfQuota}
-                onClick={() => void controller.send(pair.id, spec.kind)}
-                title={outOfQuota ? 'O incentivo de hoje já foi enviado.' : spec.hint}
-              >
-                <span aria-hidden="true">{spec.emoji}</span>
-                {sent ? `${spec.label} · enviado` : spec.label}
-              </Button>
+                spec={spec}
+                suggested={spec.kind === reading.suggested}
+                sent={sent}
+                disabled={!sent && quotaReached}
+                busy={controller.sending?.pairId === pair.id && controller.sending.kind === spec.kind}
+                onSend={() => void controller.send(pair.id, spec.kind)}
+              />
             )
           })}
         </div>
@@ -260,66 +181,40 @@ function PairCard({
             message={`Hoje você já mandou o teu incentivo nessa dupla. Os ${ENCOURAGEMENTS.length} gestos, todo dia, fazem parte do PRO.`}
           />
         ) : null}
-      </Panel>
+      </Card>
 
-      {/* O que chegou hoje. Some quando não há nada: caixa vazia não é conteúdo. */}
-      {pair.encouragementsToday.some((item) => item.recipientId === user?.id) ? (
-        <Panel className="p-5">
-          <h2 className="text-sm font-semibold tracking-wide text-ink-muted uppercase">
-            Chegou pra você
-          </h2>
-          <ul className="mt-3 flex flex-col gap-2">
-            {pair.encouragementsToday
-              .filter((item) => item.recipientId === user?.id)
-              .map((item) => {
-                const spec = encouragementSpec(item.kind)
-                return (
-                  <li key={item.id} className="flex items-center gap-2.5 text-sm text-ink">
-                    <span aria-hidden="true" className="text-lg">
-                      {spec.emoji}
-                    </span>
-                    <span>
-                      {partner?.name} mandou <strong className="font-medium">{spec.label}</strong>
-                    </span>
-                  </li>
-                )
-              })}
-          </ul>
-        </Panel>
-      ) : null}
-
-      {/* A retomada em dupla tem caminho próprio: volta com uma ação pequena. */}
       {reading.bothAway ? (
-        <Panel className="p-5">
-          <h2 className="text-base font-semibold text-ink">Retomar juntas</h2>
-          <p className="mt-1.5 text-sm text-ink-muted">
-            Uma ação pequena de cada lado hoje já recomeça a contagem. Ninguém precisa recuperar o
-            que passou.
-          </p>
-          <Button
-            className="mt-4"
+        <Card className="flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <IconWell name="retomar" />
+            <div className="min-w-0">
+              <h2 className="text-base font-semibold text-ink">Retomar em dupla</h2>
+              <p className="text-sm text-ink-muted">Uma ação pequena de cada lado hoje já recomeça a contagem.</p>
+            </div>
+          </div>
+          <PrimaryButton
             onClick={() => {
               track('pair_return_started', 'juntos')
               navigate('/app')
             }}
           >
             Escolher minha ação de hoje
-          </Button>
-        </Panel>
+          </PrimaryButton>
+        </Card>
       ) : null}
 
       <button
         type="button"
         onClick={() => setConfirmLeave(true)}
-        className="self-start text-sm text-ink-faint underline-offset-2 hover:text-ink hover:underline"
+        className="self-center px-2 py-2 text-xs text-ink-faint underline-offset-2 hover:text-ink hover:underline"
       >
-        {partner ? `Desfazer a dupla com ${partner.name}` : 'Desfazer a dupla'}
+        {partner ? `Desfazer a dupla com ${partner.name.split(' ')[0]}` : 'Desfazer a dupla'}
       </button>
 
       <ConfirmDialog
         open={confirmLeave}
         title="Desfazer a dupla?"
-        description={`A dupla acaba para as duas. ${partner?.name ?? 'A outra pessoa'} deixa de ver se você avançou, e você deixa de ver o dia dela. Seu progresso continua igual.`}
+        description={`A dupla acaba para os dois lados. ${partner?.name ?? 'A outra pessoa'} deixa de ver se você avançou, e você deixa de ver o dia dela. Seu progresso continua igual.`}
         confirmLabel="Desfazer"
         destructive
         onConfirm={() => void controller.leave(pair.id)}
@@ -329,35 +224,43 @@ function PairCard({
   )
 }
 
-/** O contrato de privacidade, em voz alta, antes de existir dupla. */
-function PrivacyPanel() {
+const VISIBLE = ['Se você avançou hoje', 'Em quais dos últimos sete dias você avançou'] as const
+const HIDDEN = ['Objetivos, ações e hábitos', 'Notas, check-ins e registros', 'XP, nível, score e conquistas'] as const
+
+function PrivacyCard() {
   return (
-    <Panel className="p-5">
-      <h2 className="text-sm font-semibold tracking-wide text-ink-muted uppercase">
+    <Card aria-labelledby="privacidade-dupla">
+      <h2 id="privacidade-dupla" className="eyebrow text-[0.72rem] text-ink-muted">
         O que a outra pessoa vê
       </h2>
-      <ul className="mt-3 flex flex-col gap-2 text-sm text-ink-muted">
-        <Item ok>Se você avançou hoje</Item>
-        <Item ok>Em quais dos últimos sete dias você avançou</Item>
-        <Item>Seus objetivos, ações e hábitos</Item>
-        <Item>Suas notas, check-ins e registros</Item>
-        <Item>Seu XP, nível, score e conquistas</Item>
+      <ul className="mt-3 grid gap-2 text-sm">
+        {VISIBLE.map((item) => (
+          <PrivacyItem key={item} ok>
+            {item}
+          </PrivacyItem>
+        ))}
+        {HIDDEN.map((item) => (
+          <PrivacyItem key={item}>{item}</PrivacyItem>
+        ))}
       </ul>
-    </Panel>
+    </Card>
   )
 }
 
-/** Uma linha da lista de privacidade: o que atravessa e o que não atravessa. */
-function Item({ children, ok = false }: { readonly children: string; readonly ok?: boolean }) {
+function PrivacyItem({ children, ok = false }: { readonly children: string; readonly ok?: boolean }) {
   return (
-    <li className="flex items-start gap-2.5">
-      <Icon
-        name={ok ? 'check' : 'fechar'}
-        className={ok ? 'mt-0.5 size-4 shrink-0 text-positive' : 'mt-0.5 size-4 shrink-0 text-ink-faint'}
-        strokeWidth={2}
-      />
-      <span className={ok ? 'text-ink' : 'text-ink-faint line-through decoration-line-hi'}>
+    <li className="flex items-center gap-2.5">
+      <span
+        className={cn(
+          'grid size-6 shrink-0 place-items-center rounded-full',
+          ok ? 'bg-positive/15 text-positive-ink' : 'well text-ink-faint',
+        )}
+      >
+        <Icon name={ok ? 'check' : 'oculto'} className="size-3.5" strokeWidth={2.25} />
+      </span>
+      <span className={ok ? 'text-ink' : 'text-ink-faint'}>
         {children}
+        <span className="sr-only">{ok ? ': visível' : ': nunca aparece'}</span>
       </span>
     </li>
   )
