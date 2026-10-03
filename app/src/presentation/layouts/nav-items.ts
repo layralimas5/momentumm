@@ -96,20 +96,13 @@ const ALL_NAV: readonly AppNavItem[] = [
     essas pessoas". Juntar as duas fazia a lista de amigos e os pedidos
     dividirem a rolagem com o conteúdo, e nenhum dos dois ficava em casa.
   */
-  {
-    to: '/app/feed',
-    label: 'Feed',
-    end: false,
-    icon: 'globo',
-    description: 'O que as pessoas do teu círculo estão vivendo e construindo',
-    requiresCircle: true,
-  },
+
   {
     to: '/app/circulo',
     label: 'Círculo',
     end: false,
     icon: 'jornada',
-    description: 'Os amigos que você acompanha e o que eles compartilharam',
+    description: 'O que o teu círculo provou, os clubes e as pessoas que você acompanha',
     requiresCircle: true,
   },
 
@@ -263,9 +256,6 @@ export const APP_NAV: readonly AppNavItem[] = ALL_NAV.filter(
   (item) => circleOpen || !item.requiresCircle,
 )
 
-/** A navegação principal: só o ciclo do produto. */
-export const PRIMARY_NAV = APP_NAV.filter((item) => !item.secondary)
-
 /**
  * Itens que dependem de uma flag do servidor.
  *
@@ -279,8 +269,6 @@ export function visibleNav(
 ): readonly AppNavItem[] {
   return items.filter((item) => !item.requiresFeature || features[item.requiresFeature] === true)
 }
-
-export const SECONDARY_NAV = APP_NAV.filter((item) => item.secondary)
 
 /**
  * O item de navegação que responde por uma rota. A mais específica ganha:

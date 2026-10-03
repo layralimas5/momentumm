@@ -65,7 +65,15 @@
     ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
     sans-serif;
 
-  --radius-card: 1rem;
+  --radius-card: 1.5rem;
+
+  /* Elevação do 3S. No escuro a sombra some e a borda de luz faz o trabalho. */
+  --shadow-card: 0 0 0 1px rgb(255 255 255 / 0.05), 0 1px 0 0 rgb(255 255 255 / 0.04) inset;
+  --shadow-float: 0 0 0 1px rgb(255 255 255 / 0.07), 0 20px 40px -20px rgb(0 0 0 / 0.8);
+  --shadow-inset: inset 0 1px 2px 0 rgb(0 0 0 / 0.5), 0 0 0 1px rgb(255 255 255 / 0.04);
+  --shadow-cta: 0 10px 28px -12px rgb(109 92 255 / 0.8);
+
+  --font-app: 'Plus Jakarta Sans Variable', var(--font-sans);
 
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 
@@ -396,22 +404,25 @@
 :root[data-theme='light'] {
   color-scheme: light;
 
-  --color-canvas: #f6f5fb;
-  --color-surface: #ffffff;
-  --color-surface-hi: #f1f0f8;
-  --color-surface-top: #e6e4f2;
-  --color-line: #e3e1ee;
-  --color-line-hi: #cfcbe3;
+  /* 3S: branco frio sobre cinza azulado. Nada de branco chapado no fundo: o
+     card só flutua se o fundo for um degrau mais escuro que ele. */
+  --color-canvas: #eceef4;
+  --color-surface: #f8f9fc;
+  --color-surface-hi: #f0f2f7;
+  --color-surface-top: #e4e7ef;
+  --color-line: #e1e4ec;
+  --color-line-hi: #cfd4e0;
 
-  --color-ink: #16151f;
-  --color-ink-muted: #4f4d63;
-  --color-ink-faint: #6f6d85;
+  --color-ink: #12131c;
+  --color-ink-muted: #474b5e;
+  /* 4.8:1 sobre --color-surface. */
+  --color-ink-faint: #656a80;
 
-  --color-brand: #5b48f0;
-  --color-brand-hi: #4a38dc;
-  --color-brand-dim: #e8e4ff;
-  --color-brand-deep: #3b2cc4;
-  --color-brand-ink: #4a38dc;
+  --color-brand: #5b4cf5;
+  --color-brand-hi: #4c3ce6;
+  --color-brand-dim: #e8e5ff;
+  --color-brand-deep: #3d2fd0;
+  --color-brand-ink: #4536d9;
 
   --color-flame: #e0561f;
   --color-flame-dim: #fde8dd;
@@ -428,31 +439,38 @@
   --color-medal-hi: #d9a94e;
   --color-medal-deep: #8a6220;
 
-  --shadow-raised: 0 1px 2px 0 rgb(22 21 31 / 0.04), 0 1px 0 0 rgb(255 255 255 / 0.6) inset;
-  --shadow-glow: 0 0 0 1px rgb(91 72 240 / 0.2), 0 18px 50px -24px rgb(91 72 240 / 0.55);
+  --shadow-raised: 0 1px 2px 0 rgb(17 20 38 / 0.04), 0 1px 0 0 rgb(255 255 255 / 0.7) inset;
+  --shadow-glow: 0 0 0 1px rgb(91 76 245 / 0.18), 0 18px 50px -24px rgb(91 76 245 / 0.5);
+  --shadow-card:
+    0 1px 1px 0 rgb(17 20 38 / 0.03), 0 10px 28px -12px rgb(17 20 38 / 0.14),
+    0 1px 0 0 rgb(255 255 255 / 0.9) inset;
+  --shadow-float:
+    0 2px 4px 0 rgb(17 20 38 / 0.04), 0 18px 40px -16px rgb(17 20 38 / 0.2),
+    0 1px 0 0 rgb(255 255 255 / 0.9) inset;
+  --shadow-inset: inset 0 1px 3px 0 rgb(17 20 38 / 0.07), 0 1px 0 0 rgb(255 255 255 / 0.8);
+  --shadow-cta: 0 10px 24px -10px rgb(91 76 245 / 0.65), 0 1px 0 0 rgb(255 255 255 / 0.25) inset;
+}
+
+/* No claro o card legado ganha a mesma flutuação do 3S: sem borda, com sombra. */
+:root[data-theme='light'] .surface-card,
+:root[data-theme='light'] .surface-card-hi {
+  border-color: transparent;
+  box-shadow: var(--shadow-card);
 }
 
 :root[data-theme='light'] .surface-brand {
-  /* Card roxo de verdade: o destaque no claro é cor cheia, nao gradiente sutil. */
-  --color-ink: #ffffff;
-  --color-ink-muted: rgb(255 255 255 / 0.82);
-  --color-ink-faint: rgb(255 255 255 / 0.66);
-  --color-brand-ink: #ffffff;
-  --color-brand-hi: #ffffff;
-  --color-brand-dim: rgb(255 255 255 / 0.16);
-  --color-surface: rgb(255 255 255 / 0.12);
-  --color-surface-hi: rgb(255 255 255 / 0.16);
-  --color-surface-top: rgb(255 255 255 / 0.3);
-  --color-line: rgb(255 255 255 / 0.22);
-  --color-line-hi: rgb(255 255 255 / 0.4);
-  --color-canvas: rgb(0 0 0 / 0.12);
-  background-image: linear-gradient(150deg, #6a57ff 0%, #4b3ad9 100%);
-  border-color: rgb(75 58 217 / 0.6);
-  color: var(--color-ink);
+  /* 3S: o destaque é um card que flutua mais, com um véu violeta no canto.
+     Nada de card roxo inteiro: o roxo cheio fica só no botão principal. */
+  background-image:
+    radial-gradient(120% 120% at 100% 0%, rgb(91 76 245 / 0.1) 0%, transparent 55%),
+    linear-gradient(180deg, var(--color-surface), var(--color-surface));
+  border-color: transparent;
+  border-radius: 1.75rem;
+  box-shadow: var(--shadow-float);
 }
 
 :root[data-theme='light'] .surface-brand .text-gradient-brand {
-  background-image: linear-gradient(120deg, #ffffff 0%, #ffffff 100%);
+  background-image: linear-gradient(120deg, var(--color-ink) 0%, var(--color-brand-hi) 100%);
 }
 
 :root[data-theme='light'] .edge-light::before {
@@ -534,5 +552,66 @@
   }
   100% {
     box-shadow: 0 0 0 0 rgb(109 92 255 / 0);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   3S: as superfícies da nova geração do app.
+
+   Três degraus e só: o card que flutua, o miolo afundado (pílula, trilho de
+   barra, área de gráfico) e o card que flutua mais (prioridade, sheet).
+--------------------------------------------------------------------------- */
+
+@layer components {
+  .app-3s {
+    font-family: var(--font-app);
+    letter-spacing: -0.005em;
+  }
+
+  .card {
+    background-color: var(--color-surface);
+    border-radius: 1.75rem;
+    box-shadow: var(--shadow-card);
+  }
+
+  .card-float {
+    background-color: var(--color-surface);
+    border-radius: 1.75rem;
+    box-shadow: var(--shadow-float);
+  }
+
+  .well {
+    background-color: var(--color-surface-hi);
+    box-shadow: var(--shadow-inset);
+  }
+
+  .chip {
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-card);
+  }
+
+  .eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .press {
+    transition:
+      transform 0.18s var(--ease-out-soft),
+      box-shadow 0.18s var(--ease-out-soft);
+  }
+
+  .press:active {
+    transform: scale(0.98);
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 }
