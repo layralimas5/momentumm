@@ -3,6 +3,8 @@ import type { AdaptiveObjective } from '@/domain/entities/adaptive-day'
 import type { DayKey } from '@/domain/entities/day'
 import {
   detectRecovery,
+  manualRecovery,
+  type RecoveryInput,
   recoveryBudgetOf,
   type RecoveryState,
   type RecoveryStep,
@@ -25,7 +27,10 @@ const DISMISSED_KEY = 'momentumm.recovery.dismissed.v1'
  */
 
 export interface RecoveryController {
+  /** A retomada detectada pelo app. Null quando os sinais não fecham ou foi dispensada hoje. */
   readonly state: RecoveryState | null
+  /** A retomada pedida na mão: sempre existe, com os passos que o plano tiver. */
+  readonly manual: RecoveryState
   /** O tamanho do dia depois de escolher esse passo, em minutos. */
   budgetFor(step: RecoveryStep): number
   /** Encerra o recado por hoje. */
@@ -41,10 +46,8 @@ export function useRecovery(view: DashboardView): RecoveryController {
     [view.objectives],
   )
 
-  const state = useMemo<RecoveryState | null>(() => {
-    if (dismissedDay === planner.today) return null
-
-    return detectRecovery({
+  const input = useMemo<RecoveryInput>(
+    () => ({
       today: planner.today,
       series: view.week.series,
       tasks: planner.tasks,
@@ -53,18 +56,25 @@ export function useRecovery(view: DashboardView): RecoveryController {
       momentum: view.momentum,
       objectives,
       capacity: view.capacity,
-    })
-  }, [
-    dismissedDay,
-    planner.today,
-    planner.tasks,
-    planner.habits,
-    planner.habitLogs,
-    view.week.series,
-    view.momentum,
-    view.capacity,
-    objectives,
-  ])
+    }),
+    [
+      planner.today,
+      planner.tasks,
+      planner.habits,
+      planner.habitLogs,
+      view.week.series,
+      view.momentum,
+      view.capacity,
+      objectives,
+    ],
+  )
+
+  const state = useMemo<RecoveryState | null>(
+    () => (dismissedDay === planner.today ? null : detectRecovery(input)),
+    [dismissedDay, planner.today, input],
+  )
+
+  const manual = useMemo(() => manualRecovery(input), [input])
 
   const budgetFor = useCallback(
     (step: RecoveryStep) => recoveryBudgetOf(step, view.capacity),
@@ -76,7 +86,7 @@ export function useRecovery(view: DashboardView): RecoveryController {
     persistDismissed(planner.today)
   }, [planner.today])
 
-  return { state, budgetFor, dismiss }
+  return { state, manual, budgetFor, dismiss }
 }
 
 function loadDismissed(): string | null {

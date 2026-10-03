@@ -87,6 +87,8 @@ export function RoutinePage() {
         lowEnergy={day.lowEnergy}
         openBlocks={openBlocks}
         recovery={day.recovery.state}
+        manualRecovery={day.recovery.manual}
+        onCreateAction={() => composer.open('acao')}
         onLowEnergy={() => void day.startLowEnergy()}
         onUndoLowEnergy={() => void day.endLowEnergy()}
         onChooseRecovery={day.chooseRecoveryStep}

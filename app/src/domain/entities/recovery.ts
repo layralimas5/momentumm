@@ -154,6 +154,25 @@ export function detectRecovery(input: RecoveryInput): RecoveryState | null {
   }
 }
 
+/**
+ * A retomada pedida pela própria pessoa.
+ *
+ * O modo automático espera dois sinais pra não virar sermão; quem SABE que
+ * ficou fora não precisa provar isso pra ninguém. Os passos são os mesmos,
+ * tirados do plano, e os sinais aparecem só se existirem: é contexto, não
+ * condição.
+ */
+export function manualRecovery(input: RecoveryInput): RecoveryState {
+  const signals = detectSignals(input)
+  return {
+    today: input.today,
+    message: RECOVERY_MESSAGE,
+    headline: signals.length > 0 ? headlineOf(signals) : 'Você escolheu voltar. Começa pequeno.',
+    signals,
+    steps: buildSteps(input),
+  }
+}
+
 function movedToday(input: RecoveryInput): boolean {
   const today = input.series.find((dot) => dot.day === input.today)
   if (today && today.intensity > 0) return true

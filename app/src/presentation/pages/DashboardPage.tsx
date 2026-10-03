@@ -4,10 +4,10 @@ import { useAuth } from '@/presentation/auth/use-auth'
 import { XPBadge } from '@/presentation/components/ds/Badges'
 import { DashboardSkeleton } from '@/presentation/components/dashboard/DashboardSkeleton'
 import { DayCompleteBanner } from '@/presentation/components/dashboard/DayCompleteBanner'
-import { RecoveryCard } from '@/presentation/components/dashboard/RecoveryCard'
+import { ComebackCard, RecoveryNowCard } from '@/presentation/recovery/RecoveryCards'
+import { useComeback } from '@/presentation/recovery/use-comeback'
 import { ResumeActivationCard } from '@/presentation/components/dashboard/ResumeActivationCard'
 import { ErrorNote } from '@/presentation/components/ui/States'
-import { AiEntry } from '@/presentation/ai/AiBits'
 import { useEvolution } from '@/presentation/evolution/use-evolution'
 import { AddSheet } from '@/presentation/layouts/AddSheet'
 import { ReminderCard } from '@/presentation/notifications/ReminderCard'
@@ -47,6 +47,7 @@ export function DashboardPage() {
   const { view } = day
   const activation = useActivation()
   const firstWin = useFirstWin()
+  const comeback = useComeback()
   const [adding, setAdding] = useState(false)
 
   useJourneyRecorder(view)
@@ -107,20 +108,21 @@ export function DashboardPage() {
         />
       ) : null}
 
-      <RecoveryCard
-        state={day.recovery.state}
-        budgetFor={day.recovery.budgetFor}
-        onChoose={day.chooseRecoveryStep}
-        onDismiss={day.recovery.dismiss}
-        aiEntry={
-          <AiEntry
-            enabled={day.aiEnabled}
-            label="Criar plano de retorno"
-            hint="a IA monta até três passos pequenos pra hoje, lidos do que já estava no teu plano."
-            onClick={day.openAiRecovery}
-          />
-        }
-      />
+      {comeback.comeback ? <ComebackCard
+          comeback={comeback.comeback}
+          xpEarned={evolution.summary.recent.some((item) => item.kind === 'comeback' && item.day === planner.today)}
+          onDismiss={comeback.dismiss}
+        /> : null}
+
+      {day.recovery.state ? (
+        <RecoveryNowCard
+          state={day.recovery.state}
+          onChoose={day.chooseRecoveryStep}
+          onDismiss={day.recovery.dismiss}
+          onCreate={() => composer.open('acao')}
+          {...(day.aiEnabled ? { onAi: day.openAiRecovery } : {})}
+        />
+      ) : null}
 
       {view.dayComplete ? <DayCompleteBanner win={view.todayWin} /> : null}
 

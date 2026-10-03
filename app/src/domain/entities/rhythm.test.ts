@@ -4,6 +4,7 @@ import { createHabit, type Habit, type HabitLog } from './habit'
 import type { MomentumInput } from './momentum'
 import {
   bestWeekday,
+  comebackToday,
   consistencyMap,
   currentWeek,
   levelOf,
@@ -137,5 +138,23 @@ describe('bestWeekday', () => {
 
     expect(best?.name).toBe('Quinta-feira')
     expect(best?.lift).toBeGreaterThan(0)
+  })
+})
+
+describe('comebackToday', () => {
+  it('recognizes a return after two or more empty days', () => {
+    expect(comebackToday(inputWith(daysAgo(0, 3, 4).map((day) => logOn(day))))).toEqual({ daysAway: 2 })
+  })
+
+  it('stays quiet after a single day off', () => {
+    expect(comebackToday(inputWith(daysAgo(0, 2).map((day) => logOn(day))))).toBeNull()
+  })
+
+  it('stays quiet when there is no movement today', () => {
+    expect(comebackToday(inputWith(daysAgo(3).map((day) => logOn(day))))).toBeNull()
+  })
+
+  it('does not call the very first day a comeback', () => {
+    expect(comebackToday(inputWith([logOn(TODAY)]))).toBeNull()
   })
 })
