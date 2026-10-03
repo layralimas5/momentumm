@@ -8,7 +8,7 @@ import { Icon } from '@/presentation/components/ui/Icon'
 import { useDayAlerts } from '@/presentation/planner/use-day-alerts'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { markShareNudgeSeen } from '@/presentation/share/share-nudge'
-import { isShellRoot, PROFILE_PATH, sectionLabelFor, tabFor } from './shell-nav'
+import { isShellRoot, ownsTitle, PROFILE_PATH, sectionLabelFor, tabFor } from './shell-nav'
 
 /**
  * O topo de todas as telas: marca e seção à esquerda, sequência e avatar à
@@ -50,7 +50,7 @@ export function AppTopBar() {
           )}
 
           <p className="eyebrow min-w-0 flex-1 truncate text-[0.8rem] tracking-[0.16em] text-ink-muted" aria-hidden="true">
-            {label}
+            {ownsTitle(pathname) ? null : label}
           </p>
           <h1 className="sr-only">{label}</h1>
 

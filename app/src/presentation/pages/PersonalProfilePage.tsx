@@ -138,7 +138,6 @@ export function PersonalProfilePage() {
         <IdentityCard
           profile={profile}
           plan={planner.limits.tier}
-          levelLabel={`Nível ${level.level} ${level.name}`}
           counts={counts}
           social={circleOpen}
           onEdit={() => setEditing(true)}

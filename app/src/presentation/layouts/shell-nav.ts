@@ -55,3 +55,10 @@ export function sectionLabelFor(pathname: string): string {
   if (exact) return exact.label
   return navItemFor(pathname)?.label ?? tabFor(pathname)?.label ?? 'Momentumm'
 }
+
+/** Telas com título grande próprio igual ao nome da seção: o topo não repete. */
+const OWN_TITLE: readonly string[] = ['/app/objetivos']
+
+export function ownsTitle(pathname: string): boolean {
+  return OWN_TITLE.includes(pathname)
+}

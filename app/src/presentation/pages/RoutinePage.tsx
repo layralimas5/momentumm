@@ -77,7 +77,7 @@ export function RoutinePage() {
   const dateLabel = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })
 
   return (
-    <div className="flex flex-col gap-4 pb-2">
+    <div className="flex flex-col gap-4 pb-20">
       {planner.error ? <ErrorNote message={planner.error} onRetry={() => void planner.reload()} /> : null}
 
       <RoutineHero agenda={view.agenda} />

@@ -27,6 +27,7 @@ import { useNotificationOpen } from '@/presentation/notifications/use-notificati
 import { SystemNotice } from './SystemNotice'
 import { AppTopBar } from './AppTopBar'
 import { BottomNavigation } from './BottomNavigation'
+import { MoreFab } from './MoreFab'
 import '@fontsource-variable/plus-jakarta-sans/wght.css'
 
 /**
@@ -116,6 +117,7 @@ function LayoutShell() {
       </main>
 
       <AdminEntry />
+      <MoreFab />
       <BottomNavigation />
     </div>
   )

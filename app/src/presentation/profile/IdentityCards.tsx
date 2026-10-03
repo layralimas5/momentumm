@@ -8,16 +8,16 @@ import { StatusTag } from '@/presentation/components/ds/Badges'
 import { Card, Eyebrow } from '@/presentation/components/ds/Card'
 import { SoftButton } from '@/presentation/components/ds/Controls'
 import { AnimatedNumber } from '@/presentation/components/ds/Progress'
+import { VerifiedBadge } from '@/presentation/components/brand/VerifiedBadge'
 import { Avatar } from '@/presentation/components/ui/Avatar'
 import { Icon, isIconName, type IconName } from '@/presentation/components/ui/Icon'
-import { AchievementMedal } from '@/presentation/evolution/AchievementMedal'
+import { Medal3D } from '@/presentation/evolution/Medal3D'
 import { cn } from '@/shared/lib/cn'
 
 /** O cartão de membro: quem é, em que nível está e o que está vivendo agora. */
 export function IdentityCard({
   profile,
   plan,
-  levelLabel,
   counts,
   onEdit,
   onStatus,
@@ -27,7 +27,6 @@ export function IdentityCard({
 }: {
   readonly profile: Profile
   readonly plan: PlanTier
-  readonly levelLabel: string
   readonly counts: SocialCounts
   readonly onEdit: () => void
   readonly onStatus: () => void
@@ -35,25 +34,36 @@ export function IdentityCard({
   readonly onFollowing: () => void
   readonly social: boolean
 }) {
+  const pro = isPro(plan)
+
   return (
     <Card className="flex flex-col items-center text-center">
-      <StatusTag tone="brand" icon="verificado" className="tracking-[0.12em] uppercase">
-        Membro {isPro(plan) ? 'PRO' : 'Momentumm'} · {levelLabel}
-      </StatusTag>
-
-      <div className="relative mt-5">
+      <div className="relative">
         <span className="block rounded-full p-1 shadow-[var(--shadow-float)]">
           <Avatar name={profile.name} src={profile.avatarUrl} className="size-20" textClassName="text-3xl" />
         </span>
-        <span
-          aria-hidden="true"
-          className="chip absolute right-0 bottom-1 grid size-9 place-items-center rounded-full text-brand-hi"
-        >
-          <Icon name="raio" className="size-4" strokeWidth={2} />
-        </span>
+        {/*
+          O selo PRO duas vezes, como no perfil de sempre: na foto, que é o que
+          sobra quando o card aparece pequeno; ao lado do nome, lido junto com
+          quem a pessoa é. Conta grátis não tem selo nenhum.
+        */}
+        {pro ? (
+          <span aria-hidden="true" className="absolute right-0.5 bottom-1 grid size-7 place-items-center rounded-full bg-surface">
+            <VerifiedBadge className="size-6" />
+          </span>
+        ) : null}
       </div>
 
-      <h2 className="mt-3 text-xl font-bold tracking-tight text-ink">{profile.name.split(' ')[0]}</h2>
+      <h2 className="mt-3 flex items-center gap-1.5 text-xl font-bold tracking-tight text-ink">
+        <span className="truncate">{profile.name}</span>
+        {pro ? (
+          <>
+            <VerifiedBadge className="size-5" />
+            <span className="sr-only">Conta PRO</span>
+          </>
+        ) : null}
+      </h2>
+      <p className="text-sm text-ink-faint">@{profile.handle}</p>
       {profile.bio ? <p className="mt-1 max-w-xs text-sm text-pretty text-ink-muted">{profile.bio}</p> : null}
 
       <button
@@ -150,7 +160,7 @@ export function RelicCard({
   if (!achievement) {
     return (
       <Card className="flex items-center gap-4">
-        <AchievementMedal icon="trofeu" state="bloqueada" />
+        <Medal3D icon="trofeu" metal="prata" title="Relíquia bloqueada" caption="A primeira conquista libera" locked size={72} />
         <div className="min-w-0">
           <Eyebrow>Relíquias</Eyebrow>
           <p className="mt-1 text-sm text-pretty text-ink-muted">
@@ -173,13 +183,23 @@ export function RelicCard({
         <span className="eyebrow text-[0.68rem] text-brand-hi">{rare ? 'Grau raro' : 'Grau comum'}</span>
       </div>
 
-      <div className="relative mt-3 grid h-40 place-items-center overflow-hidden rounded-[1.15rem] bg-[radial-gradient(60%_60%_at_50%_45%,rgb(91_76_245/0.35),transparent_70%),linear-gradient(160deg,#1b1a2e,#0d0d16)]">
-        <div aria-hidden="true" className="absolute inset-x-10 bottom-8 h-6 rounded-[50%] bg-black/50 blur-md" />
-        <AchievementMedal icon={icon} state={rare ? 'rara' : 'conquistada'} size="md" className="relative scale-150" />
-        <span className="absolute right-3 bottom-3 flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[0.7rem] font-semibold text-ink">
-          <Icon name="trofeu" className="size-3.5 text-brand-hi" />
+      <div className="relative mt-3 grid place-items-center overflow-hidden rounded-[1.15rem] bg-[radial-gradient(60%_60%_at_50%_45%,rgb(91_76_245/0.35),transparent_70%),linear-gradient(160deg,#1b1a2e,#0d0d16)] pt-6 pb-9">
+        <Medal3D
+          icon={icon}
+          metal={rare ? 'ouro' : 'prata'}
+          title={achievement.name}
+          caption={
+            achievement.unlockedAt
+              ? `Conquistada em ${achievement.unlockedAt.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short', year: 'numeric' }).replace('.', '')}`
+              : 'Conquista'
+          }
+          size={150}
+        />
+        <span className="absolute right-3 bottom-3 flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-[0.7rem] font-semibold text-white backdrop-blur-md">
+          <Icon name="trofeu" className="size-3.5 text-medal-hi" />
           {unlocked} de {total} conquistas
         </span>
+        <span className="absolute bottom-3 left-3 text-[0.65rem] text-white/60">Arraste pra girar</span>
       </div>
 
       <h2 id="reliquia" className="mt-4 text-lg font-semibold tracking-tight text-ink">

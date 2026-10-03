@@ -71,7 +71,7 @@ export function DashboardPage() {
   const now = new Date()
 
   return (
-    <div className="flex flex-col gap-4 pb-2">
+    <div className="flex flex-col gap-4 pb-20">
       {planner.error ? <ErrorNote message={planner.error} onRetry={() => void planner.reload()} /> : null}
 
       <header className="flex items-start justify-between gap-3 px-1 pt-1">
