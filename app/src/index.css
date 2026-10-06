@@ -87,6 +87,18 @@
      a segunda copia cair onde a primeira comecou, sem emenda. */
   --animate-marquee: marquee 60s linear infinite;
 
+  /* A barra que enche na aba ativa do mockup da hero, no tempo da troca. */
+  --animate-tab-fill: tab-fill var(--tab-fill-duration, 4s) linear 1 both;
+
+  @keyframes tab-fill {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+
   /* Um pulso só, curto: o nó "responde" ao mouse e para. */
   --animate-pulse-once: pulse-once 0.55s cubic-bezier(0.22, 1, 0.36, 1) 1 both;
 
