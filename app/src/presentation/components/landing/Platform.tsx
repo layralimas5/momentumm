@@ -28,7 +28,7 @@ const BLOCKS: readonly Block[] = [
   {
     title: `Responda ${QUIZ_QUESTION_COUNT} perguntas, receba o plano`,
     description: 'Objetivo, prazo e quanto tempo você tem de verdade. Em menos de 2 minutos a meta vira etapas com prazo e uma rotina que cabe na sua semana, antes de você criar conta.',
-    media: <Screen src="/telas/passo-1-quiz.webp" alt="Pergunta do quiz do Momentumm: em qual área da sua vida esse objetivo se encaixa." />,
+    media: <Screen src="/telas/quiz-3s.webp" alt="Primeira pergunta do quiz do Momentumm: em qual área você quer avançar primeiro." />,
   },
   {
     title: 'Abra e saiba o que fazer hoje',
@@ -36,8 +36,8 @@ const BLOCKS: readonly Block[] = [
       'O passo do dia já está na tela Hoje. Sobraram 20 minutos? Ele encolhe pra versão mínima e o dia ainda conta. Sumiu uns dias? Você volta de onde parou, sem compensar nada.',
     media: (
       <Screen
-        src="/telas/hoje.webp"
-        alt="Tela Hoje do Momentumm: o primeiro passo do plano com a versão para dia cheio e um aviso de retomada sem culpa."
+        src="/telas/hoje-3s.webp"
+        alt="Tela Hoje do Momentumm: o Momentum Score da semana, a prioridade de agora com o botão Iniciar Foco e a lista do dia."
       />
     ),
   },

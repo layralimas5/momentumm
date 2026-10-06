@@ -25,7 +25,7 @@ import { useSiteCta } from './use-site-cta'
  * ilustração: quem chega precisa ver em cinco segundos o que vai receber.
  */
 const HERO_SCREEN = {
-  src: '/telas/passo-2-plano.webp',
+  src: '/telas/plano-3s.webp',
   alt: 'Plano gerado pelo Momentumm: a meta "ler 12 livros até dezembro" dividida em três marcos com prazo e uma rotina de 3 dias por semana, 20 minutos por vez.',
 } as const
 

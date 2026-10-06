@@ -3,9 +3,9 @@ import { useReducedMotion } from 'framer-motion'
 
 /**
  * O passeio pelo app, gravado do produto de verdade (modo demo, sem dado de
- * ninguém): quiz, diagnóstico, plano, o passo do dia, o Feed, um clube, um
- * desafio e o Progresso. Uns 15 segundos, com a etapa escrita no
- * topo de cada trecho: rápido, mas dá pra saber o que cada tela faz.
+ * ninguém): quiz, plano, Hoje, Objetivos, Progresso e Juntos. Uns 19
+ * segundos, com a etapa escrita no topo de cada trecho: rápido, mas dá pra
+ * saber o que cada tela faz. Pra regravar: `pessoais/scripts/momentumm-landing-tour.mjs`.
  *
  * O vídeo pesa perto de 700 KB, então nada dele baixa com a página:
  * `preload="none"` e o download começa quando o celular chega perto da tela.
@@ -15,7 +15,7 @@ import { useReducedMotion } from 'framer-motion'
  * dentro da moldura do celular, que é decorativa (`aria-hidden`): o que ele
  * mostra está dito em texto nos recursos em volta.
  */
-const POSTER = '/telas/tour-poster.webp'
+const POSTER = '/telas/tour-3s-poster.webp'
 
 export function AppTourVideo() {
   const ref = useRef<HTMLVideoElement>(null)
@@ -57,8 +57,8 @@ export function AppTourVideo() {
       height={1170}
       className="block h-full w-full object-cover object-top"
     >
-      <source src="/telas/tour.webm" type="video/webm" />
-      <source src="/telas/tour.mp4" type="video/mp4" />
+      <source src="/telas/tour-3s.webm" type="video/webm" />
+      <source src="/telas/tour-3s.mp4" type="video/mp4" />
     </video>
   )
 }
