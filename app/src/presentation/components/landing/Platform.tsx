@@ -54,7 +54,7 @@ const BLOCKS: readonly Block[] = [
 
 export function Platform() {
   return (
-    <Section id="plataforma" className="border-t border-line bg-surface/30">
+    <Section id="plataforma" className="border-t border-line">
       <SectionHeading
         eyebrow="O app por dentro"
         title="Conheça o Momentumm por dentro."

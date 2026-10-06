@@ -1,6 +1,8 @@
 import { AdvancedFeatures } from '@/presentation/components/landing/AdvancedFeatures'
 import { Faq } from '@/presentation/components/landing/Faq'
+import { Features } from '@/presentation/components/landing/Features'
 import { FinalCta } from '@/presentation/components/landing/FinalCta'
+import { ForWhom } from '@/presentation/components/landing/ForWhom'
 import { Hero } from '@/presentation/components/landing/Hero'
 import { Platform } from '@/presentation/components/landing/Platform'
 import { Pricing } from '@/presentation/components/landing/Pricing'
@@ -16,6 +18,10 @@ import { useLandingView } from '@/presentation/components/landing/landing-analyt
  * A landing segue a estrutura de dez seções de página de SaaS, nesta ordem:
  * topo, primeira dobra, problema, o app por dentro, recursos avançados,
  * prova social, diferencial, planos, objeções e chamada final com rodapé.
+ * Dois acréscimos dentro dela: "pra quem é" fecha o problema (quem se
+ * reconhece já se qualificou) e os cards do gratuito fecham o app por dentro,
+ * antes do que é do PRO. O topo tem o menu completo, com âncoras pra cada
+ * seção.
  *
  * Quem chega aqui vem de um anúncio ou de um carrossel e já sabe a dor. A
  * página mostra a tela real, diz o que muda no dia, mostra o preço e tira o
@@ -38,12 +44,14 @@ export function LandingPage() {
         Pular para o conteúdo
       </a>
 
-      <SiteHeader minimal />
+      <SiteHeader />
 
       <main id="conteudo">
         <Hero />
         <Problem />
+        <ForWhom />
         <Platform />
+        <Features />
         <AdvancedFeatures />
         <SocialProof />
         <WeeklyReview />
