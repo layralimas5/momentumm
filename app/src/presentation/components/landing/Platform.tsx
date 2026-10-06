@@ -1,8 +1,6 @@
 import type { ReactNode } from 'react'
 import { QUIZ_QUESTION_COUNT } from '@/domain/entities/quiz'
 import { cn } from '@/shared/lib/cn'
-import { AppTourVideo } from './AppTourVideo'
-import { PhoneMockup } from './PhoneMockup'
 import { Reveal } from './Reveal'
 import { Section, SectionHeading } from './Section'
 
@@ -46,9 +44,10 @@ const BLOCKS: readonly Block[] = [
     description:
       'O Momentumm Score mostra a sua constância dos últimos 28 dias: um dia ruim faz ele cair devagar, nunca zerar. E se quiser companhia, chame alguém pro Juntos e acompanhem o dia um do outro.',
     media: (
-      <PhoneMockup tall flush>
-        <AppTourVideo />
-      </PhoneMockup>
+      <Screen
+        src="/telas/progresso-3s.webp"
+        alt="Tela Progresso do Momentumm: o Momentum Score com a curva dos últimos 30 dias e a semana com os dias consistentes."
+      />
     ),
   },
 ]
