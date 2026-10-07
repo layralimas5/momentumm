@@ -103,16 +103,33 @@ describe('quiz-strategy: motor de intervenções', () => {
     expect(keys).toContain('daily_priority')
   })
 
-  it('quem não sabe por onde começar recebe a meta em degraus, com os marcos do plano', () => {
+  it('quem não sabe por onde começar recebe a meta em pedaços, com os marcos do plano', () => {
     const strategy = strategyOf({ ...base, obstacles: ['sem_comeco'], history: 'primeira' })
     const graded = strategy.interventions.find((item) => item.key === 'graded_task')
-    expect(graded?.detail.kind).toBe('steps')
-    if (graded?.detail.kind === 'steps') expect(graded.detail.steps).toHaveLength(3)
+    expect(graded?.detail.kind).toBe('split')
+    if (graded?.detail.kind === 'split') expect(graded.detail.pieces).toHaveLength(3)
   })
 
   it('o porquê cita a resposta que puxou a intervenção', () => {
     const recovery = strategyOf(base).interventions.find((item) => item.key === 'recovery_plan')
     expect(recovery?.reason).toContain('“Minha rotina muda muito”')
+  })
+
+  it('a semana da retomada marca o dia perdido e o dia em que o plano volta', () => {
+    const recovery = strategyOf(base).interventions.find((item) => item.key === 'recovery_plan')
+    expect(recovery?.detail.kind).toBe('week')
+    if (recovery?.detail.kind !== 'week') return
+    expect(recovery.detail.days).toHaveLength(7)
+    expect(recovery.detail.days[0]).toEqual({ label: 'Hoje', state: 'perdido' })
+    expect(recovery.detail.days[2]).toEqual({ label: 'Qua', state: 'retomada' })
+  })
+
+  it('o passo mínimo lê os minutos da versão mínima pra desenhar a barra', () => {
+    const minimum = strategyOf(base).interventions.find((item) => item.key === 'minimum_action')
+    expect(minimum?.detail.kind).toBe('shrink')
+    if (minimum?.detail.kind !== 'shrink') return
+    expect(minimum.detail.toMinutes).toBe(5)
+    expect(minimum.detail.fromMinutes).toBeGreaterThan(5)
   })
 
   it('a retomada usa os dias reais do plano, sem inventar horário', () => {

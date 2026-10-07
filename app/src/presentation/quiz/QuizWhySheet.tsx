@@ -22,6 +22,12 @@ export function QuizWhySheet({
       description="Cada parte do plano saiu de uma resposta sua."
       onClose={onClose}
     >
+      <div className="mb-5 border-b border-line pb-4">
+        <p className="eyebrow text-[0.7rem] text-ink-faint">Seu padrão</p>
+        <p className="mt-1.5 text-sm font-semibold text-ink">{strategy.pattern.headline}</p>
+        <p className="mt-1 text-sm text-pretty text-ink-muted">{strategy.pattern.body}</p>
+      </div>
+
       <dl className="flex flex-col gap-4">
         {strategy.interventions.map((item) => (
           <div key={item.key}>

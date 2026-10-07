@@ -8,11 +8,11 @@ import { Card, Eyebrow } from '@/presentation/components/ds/Card'
 
 const STEPS = ['Planejar', 'Executar', 'Registrar', 'Ajustar', 'Retomar'] as const
 
-const SIZE = 240
+const SIZE = 220
 /** Folga lateral pros rótulos de fora do círculo não serem cortados. */
 const GUTTER = 56
 const CENTER = SIZE / 2
-const RADIUS = 78
+const RADIUS = 70
 
 function pointAt(index: number) {
   const angle = (-90 + (360 / STEPS.length) * index) * (Math.PI / 180)
@@ -27,7 +27,7 @@ export function SystemCycle() {
         O plano muda conforme você executa.
       </h2>
 
-      <figure className="mt-2">
+      <figure className="-mb-2">
         <svg
           viewBox={`${-GUTTER} 0 ${SIZE + GUTTER * 2} ${SIZE}`}
           role="img"
@@ -65,9 +65,6 @@ export function SystemCycle() {
             )
           })}
         </svg>
-        <figcaption className="text-center text-xs text-pretty text-ink-faint">
-          Retomar faz parte do ciclo. Um dia fora do plano não zera o que você construiu.
-        </figcaption>
       </figure>
     </Card>
   )

@@ -334,19 +334,42 @@ export function ifThenSentence(rule: IfThenRule): string {
   return `Se ${rule.when}, então ${rule.then}`
 }
 
+/** Um dia da semana no gráfico da retomada, a partir de hoje. */
+export interface RecoveryDay {
+  /** "Hoje", "Qui"... */
+  readonly label: string
+  /** `perdido` e `retomada` são o exemplo da regra; `plano` são os outros dias marcados. */
+  readonly state: 'perdido' | 'retomada' | 'plano' | 'livre'
+}
+
+/**
+ * O que a tela desenha pra cada intervenção. São dados de gráfico, não
+ * frases: a explicação longa mora no porquê, a tela mostra o mecanismo.
+ */
 export type InterventionDetail =
-  | { readonly kind: 'shrink'; readonly from: string; readonly fromMinutes: number | null; readonly to: string }
-  | { readonly kind: 'if_then'; readonly rule: IfThenRule }
-  | { readonly kind: 'streak'; readonly days: readonly ('feito' | 'perdido')[]; readonly caption: string }
-  | { readonly kind: 'steps'; readonly steps: readonly string[] }
-  | { readonly kind: 'note'; readonly text: string }
+  | {
+      readonly kind: 'shrink'
+      readonly from: string
+      readonly fromMinutes: number
+      readonly to: string
+      /** Null quando a versão mínima não é medida em minutos ("escrever uma linha"). */
+      readonly toMinutes: number | null
+    }
+  | { readonly kind: 'week'; readonly days: readonly RecoveryDay[]; readonly minimal: string }
+  | { readonly kind: 'flow'; readonly from: string; readonly to: string; readonly icon: 'pausa' | 'anchor' }
+  | { readonly kind: 'streak'; readonly days: readonly ('feito' | 'perdido')[] }
+  | { readonly kind: 'split'; readonly pieces: readonly string[] }
+  | { readonly kind: 'focus'; readonly highlight: string; readonly others: number }
+  | { readonly kind: 'review'; readonly days: number }
 
 export interface Intervention {
   readonly key: InterventionKey
   readonly title: string
-  /** A promessa em uma frase. Só o que o app faz de verdade. */
+  /** A promessa em uma frase curta. Só o que o app faz de verdade. */
   readonly promise: string
   readonly detail: InterventionDetail
+  /** O "se → então" por trás da intervenção, quando ela tem um. */
+  readonly rule: IfThenRule | null
   /** "Por que o Momentumm escolheu isso", citando a resposta. */
   readonly reason: string
 }
@@ -359,12 +382,14 @@ interface StrategyContext {
   readonly today: DayKey
 }
 
+type BuiltIntervention = Omit<Intervention, 'key' | 'reason' | 'rule'> & { readonly rule?: IfThenRule }
+
 interface InterventionRule {
   /** O quanto a regra se aplica. A partir de `HIGH` ela entra sozinha. */
   readonly relevance: (profile: BehaviorProfile, answers: CompleteQuizAnswers) => number
   /** As dimensões que a justificam, pra citar as respostas certas. */
   readonly basis: readonly BehaviorDimension[]
-  readonly build: (ctx: StrategyContext) => Omit<Intervention, 'key' | 'reason'>
+  readonly build: (ctx: StrategyContext) => BuiltIntervention
   /** O fim da frase do porquê, depois de citar as respostas. */
   readonly rationale: string
   /** O porquê quando ela entrou por ser a base de todo plano, não por um sinal. */
@@ -377,11 +402,15 @@ const RULES: Readonly<Record<InterventionKey, InterventionRule>> = {
     basis: ['recoveryDifficulty'],
     rationale: 'Por isso seu plano prioriza um jeito de voltar depois de um dia perdido, em vez de simplesmente aumentar suas metas.',
     baseReason: 'Todo plano tem dias que não saem. Ter o próximo passo combinado antes evita que um dia perdido vire recomeço.',
-    build: (ctx) => ({
-      title: 'Plano de retomada',
-      promise: 'Se você perder um dia, não recomeça do zero. O Momentumm reorganiza o próximo passo.',
-      detail: { kind: 'if_then', rule: recoveryRule(ctx) },
-    }),
+    build: (ctx) => {
+      const recovery = recoveryPlan(ctx)
+      return {
+        title: 'Plano de retomada',
+        promise: 'Perdeu um dia? O próximo passo já está combinado.',
+        detail: { kind: 'week', days: recovery.days, minimal: minimalOf(ctx) },
+        rule: recovery.rule,
+      }
+    },
   },
   minimum_action: {
     relevance: (p) => Math.max(p.overloadRisk, p.recoveryDifficulty - 1),
@@ -390,14 +419,16 @@ const RULES: Readonly<Record<InterventionKey, InterventionRule>> = {
     baseReason: 'Todo passo do seu plano já nasce com uma versão menor, pra um dia cheio não virar dia zerado.',
     build: (ctx) => {
       const step = ctx.preview.plan.firstStep
+      const to = step?.minimalVersion ?? capitalize(ctx.area.minimalExample)
       return {
         title: 'Passo mínimo',
-        promise: 'Nos dias ruins, sua meta não desaparece. Ela diminui.',
+        promise: 'No dia ruim, a meta diminui. Não some.',
         detail: {
           kind: 'shrink',
           from: step?.title ?? `${ctx.profile.availableMinutes} min pra ${ctx.area.practice}`,
           fromMinutes: step?.estimatedMin ?? ctx.profile.availableMinutes,
-          to: step?.minimalVersion ?? capitalize(ctx.area.minimalExample),
+          to,
+          toMinutes: minutesIn(to),
         },
       }
     },
@@ -409,12 +440,8 @@ const RULES: Readonly<Record<InterventionKey, InterventionRule>> = {
     baseReason: 'Ver o que já foi feito é uma das formas mais consistentes de continuar. Por isso todo plano registra a evolução, não só a lista.',
     build: () => ({
       title: 'Progresso visível',
-      promise: 'Você vê evolução, não só tarefas concluídas. Retomar também conta.',
-      detail: {
-        kind: 'streak',
-        days: ['feito', 'feito', 'feito', 'perdido', 'feito'],
-        caption: 'Você perdeu 1 dia e retomou no seguinte. Isso também é progresso.',
-      },
+      promise: 'Você vê a evolução. Retomar também conta.',
+      detail: { kind: 'streak', days: ['feito', 'feito', 'feito', 'perdido', 'feito', 'feito', 'feito'] },
     }),
   },
   implementation_intention: {
@@ -424,13 +451,11 @@ const RULES: Readonly<Record<InterventionKey, InterventionRule>> = {
     baseReason: 'Decidir antes o que fazer quando a vontade de adiar aparecer tira essa decisão do momento mais difícil.',
     build: (ctx) => ({
       title: 'Começo decidido',
-      promise: 'Quando a vontade de adiar aparecer, a resposta já está combinada.',
-      detail: {
-        kind: 'if_then',
-        rule: {
-          when: 'chegar a hora e der vontade de deixar pra depois',
-          then: `faço só os primeiros 2 minutos: ${lowerFirst(ctx.preview.plan.firstStep?.minimalVersion ?? ctx.area.minimalExample)}.`,
-        },
+      promise: 'A vontade de adiar já tem resposta pronta.',
+      detail: { kind: 'flow', from: 'Bateu a vontade de adiar', to: 'Só os primeiros 2 minutos', icon: 'pausa' },
+      rule: {
+        when: 'chegar a hora e der vontade de deixar pra depois',
+        then: `faço só os primeiros 2 minutos: ${minimalOf(ctx)}.`,
       },
     }),
   },
@@ -441,22 +466,23 @@ const RULES: Readonly<Record<InterventionKey, InterventionRule>> = {
     baseReason: 'Uma prioridade por dia é o que impede o plano de virar uma lista que não termina.',
     build: (ctx) => ({
       title: 'Uma prioridade por dia',
-      promise: 'O dia tem uma coisa que faz ele valer. O resto entra quando o primeiro marco fechar.',
+      promise: 'Uma coisa por dia. O resto espera.',
       detail: {
-        kind: 'note',
-        text: `Hoje: ${ctx.preview.plan.firstStep?.title ?? ctx.preview.plan.objectiveTitle}. Só isso já conta.`,
+        kind: 'focus',
+        highlight: ctx.preview.plan.firstStep?.title ?? ctx.preview.plan.objectiveTitle,
+        others: 3,
       },
     }),
   },
   graded_task: {
     relevance: (p, answers) => (answers.obstacles.includes('sem_comeco') ? p.planningDifficulty + 1 : 0),
     basis: ['planningDifficulty', 'startingDifficulty'],
-    rationale: 'Por isso sua meta já vem dividida em degraus, e você só precisa enxergar o próximo.',
-    baseReason: 'Meta grande sem degraus trava. Por isso todo plano vem dividido em marcos.',
+    rationale: 'Por isso sua meta já vem dividida em pedaços, e você só precisa enxergar o próximo.',
+    baseReason: 'Meta grande sem pedaços trava. Por isso todo plano vem dividido em marcos.',
     build: (ctx) => ({
-      title: 'Meta em degraus',
-      promise: 'Você não precisa saber o caminho inteiro. Só o próximo degrau.',
-      detail: { kind: 'steps', steps: ctx.preview.plan.milestones.map((stage) => stage.title) },
+      title: 'Meta em pedaços',
+      promise: 'Você só precisa enxergar o próximo pedaço.',
+      detail: { kind: 'split', pieces: ctx.preview.plan.milestones.map((stage) => stage.title) },
     }),
   },
   habit_anchor: {
@@ -466,13 +492,16 @@ const RULES: Readonly<Record<InterventionKey, InterventionRule>> = {
     baseReason: 'Repetir no mesmo contexto é o que transforma esforço em hábito.',
     build: (ctx) => ({
       title: 'Âncora na rotina',
-      promise: 'O passo ganha um lugar fixo no seu dia, logo depois de algo que você já faz.',
+      promise: 'O passo cola em algo que você já faz.',
       detail: {
-        kind: 'if_then',
-        rule: {
-          when: 'terminar algo que já faço todo dia (o café, chegar em casa)',
-          then: `emendo ${ctx.preview.habit.target} min pra ${ctx.area.practice}.`,
-        },
+        kind: 'flow',
+        from: 'Algo que você já faz (o café)',
+        to: `${ctx.preview.habit.target} min pra ${ctx.area.practice}`,
+        icon: 'anchor',
+      },
+      rule: {
+        when: 'terminar algo que já faço todo dia (o café, chegar em casa)',
+        then: `emendo ${ctx.preview.habit.target} min pra ${ctx.area.practice}.`,
       },
     }),
   },
@@ -482,13 +511,10 @@ const RULES: Readonly<Record<InterventionKey, InterventionRule>> = {
     basis: ['consistencyDifficulty', 'progressVisibilityNeed'],
     rationale: 'Por isso a semana seguinte nasce do que aconteceu nesta, e não de um plano fixo.',
     baseReason: 'Olhar a semana que passou é o que deixa o plano do tamanho certo pra próxima.',
-    build: () => ({
+    build: (ctx) => ({
       title: 'Ajuste semanal',
-      promise: 'No fim da semana, você vê o que funcionou e o plano se ajusta.',
-      detail: {
-        kind: 'note',
-        text: 'O que saiu, o que travou e o tamanho certo da próxima semana. Quatro perguntas, dois minutos.',
-      },
+      promise: 'Toda semana o plano se ajusta ao que aconteceu.',
+      detail: { kind: 'review', days: ctx.preview.plan.budget.weekdays.length },
     }),
   },
 }
@@ -520,7 +546,8 @@ function buildIntervention(key: InterventionKey, ctx: StrategyContext): Interven
     triggered && evidence.length > 0
       ? `No quiz, você respondeu ${quoted(evidence)}. ${rule.rationale}`
       : rule.baseReason
-  return { key, ...rule.build(ctx), reason }
+  const built = rule.build(ctx)
+  return { key, ...built, rule: built.rule ?? null, reason }
 }
 
 // ---------------------------------------------------------------------------
@@ -552,7 +579,7 @@ export function buildQuizStrategy(input: {
     pattern,
     indicators: buildIndicators(profile, pattern),
     interventions,
-    ifThenRules: interventions.flatMap((item) => (item.detail.kind === 'if_then' ? [item.detail.rule] : [])),
+    ifThenRules: interventions.flatMap((item) => (item.rule ? [item.rule] : [])),
   }
 }
 
@@ -562,25 +589,47 @@ export function buildQuizStrategy(input: {
 
 const WEEKDAY_NAMES = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'] as const
 
+const WEEKDAY_SHORT_NAMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'] as const
+
 /**
  * "Se eu perder o passo de hoje, na quarta faço pelo menos X." Os dias são
  * os que a pessoa marcou, a ação é a versão mínima do plano. Nada de
  * horário: o quiz não pergunta, e inventar um seria prometer o que ela
- * não disse.
+ * não disse. A semana desenhada é a mesma regra, em sete dias a partir de hoje.
  */
-function recoveryRule(ctx: StrategyContext): IfThenRule {
+function recoveryPlan(ctx: StrategyContext): { readonly rule: IfThenRule; readonly days: readonly RecoveryDay[] } {
   const weekdays = ctx.preview.plan.budget.weekdays
-  const minimal = lowerFirst(ctx.preview.plan.firstStep?.minimalVersion ?? ctx.area.minimalExample)
+  const minimal = minimalOf(ctx)
   const first = nextPlannedOffset(ctx.today, weekdays, 0)
   const second = first === null ? null : nextPlannedOffset(ctx.today, weekdays, first + 1)
 
+  const days: RecoveryDay[] = Array.from({ length: 7 }, (_, offset) => {
+    const weekday = dayKeyToDate(addDays(ctx.today, offset)).getDay()
+    const state: RecoveryDay['state'] =
+      offset === first ? 'perdido' : offset === second ? 'retomada' : weekdays.includes(weekday) ? 'plano' : 'livre'
+    return { label: offset === 0 ? 'Hoje' : (WEEKDAY_SHORT_NAMES[weekday] ?? ''), state }
+  })
+
   if (first === null || second === null) {
-    return { when: 'eu perder um dia do plano', then: `no dia seguinte faço pelo menos isto: ${minimal}.` }
+    return { rule: { when: 'eu perder um dia do plano', then: `no dia seguinte faço pelo menos isto: ${minimal}.` }, days }
   }
   return {
-    when: `eu perder o passo ${dayPhrase(ctx.today, first, 'de')}`,
-    then: `${dayPhrase(ctx.today, second, 'em')} faço pelo menos isto: ${minimal}.`,
+    rule: {
+      when: `eu perder o passo ${dayPhrase(ctx.today, first, 'de')}`,
+      then: `${dayPhrase(ctx.today, second, 'em')} faço pelo menos isto: ${minimal}.`,
+    },
+    days,
   }
+}
+
+function minimalOf(ctx: StrategyContext): string {
+  return lowerFirst(ctx.preview.plan.firstStep?.minimalVersion ?? ctx.area.minimalExample)
+}
+
+/** "Caminhar 5 minutos" vira 5. Sem número de minutos, null. */
+function minutesIn(text: string): number | null {
+  const match = /(\d+)\s*min/i.exec(text)
+  return match ? Number(match[1]) : null
 }
 
 function nextPlannedOffset(today: DayKey, weekdays: readonly number[], from: number): number | null {

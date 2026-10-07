@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { dayKeyOf } from '@/domain/entities/day'
 import { QUIZ_SCREEN_COUNT } from '@/domain/entities/quiz'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { Button } from '@/presentation/components/ui/Button'
@@ -25,7 +24,6 @@ export function QuizPage() {
   const quiz = useQuiz()
   const navigate = useNavigate()
   const { user, loading } = useAuth()
-  const today = useMemo(() => dayKeyOf(new Date()), [])
 
   // Pra qual lado a pergunta desliza: guarda o passo anterior.
   const previousStep = useRef(quiz.step)
@@ -160,7 +158,6 @@ export function QuizPage() {
         firstName={firstNameOf(quiz.lead.name)}
         strategy={quiz.strategy}
         preview={quiz.preview}
-        today={today}
       />
     </QuizShell>
   )
