@@ -660,3 +660,125 @@
     }
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Landing: o acabamento.
+
+   Três efeitos, todos em CSS e todos desligados com movimento reduzido:
+   a luz que segue o mouse dentro do card (`spotlight`, posição escrita por
+   `useSpotlight`), a borda com um feixe de luz girando no que é destaque
+   (`beam-border`) e a flutuação lenta dos chips do hero (`float-slow`).
+--------------------------------------------------------------------------- */
+
+@property --beam-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes beam-spin {
+  to {
+    --beam-angle: 360deg;
+  }
+}
+
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@layer components {
+  .spotlight {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .spotlight::before,
+  .spotlight::after {
+    content: '';
+    position: absolute;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s var(--ease-out-soft);
+  }
+
+  /* O brilho por dentro, atrás do texto. */
+  .spotlight::before {
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(
+      380px circle at var(--spot-x, 50%) var(--spot-y, 50%),
+      rgb(109 92 255 / 0.13),
+      transparent 50%
+    );
+  }
+
+  /* A borda acendendo onde o mouse está: um anel de 1px recortado por máscara. */
+  .spotlight::after {
+    inset: -1px;
+    padding: 1px;
+    background: radial-gradient(
+      240px circle at var(--spot-x, 50%) var(--spot-y, 50%),
+      rgb(136 120 255 / 0.8),
+      transparent 60%
+    );
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+  }
+
+  .spotlight:hover::before,
+  .spotlight:hover::after {
+    opacity: 1;
+  }
+
+  .beam-border {
+    position: relative;
+  }
+
+  .beam-border::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    padding: 1px;
+    border-radius: inherit;
+    pointer-events: none;
+    background: conic-gradient(
+      from var(--beam-angle),
+      transparent 0%,
+      transparent 68%,
+      rgb(136 120 255 / 0.9) 82%,
+      rgb(255 255 255 / 0.95) 88%,
+      transparent 96%
+    );
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    animation: beam-spin 6s linear infinite;
+  }
+
+  .float-slow {
+    animation: float-slow 6s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .beam-border::after,
+    .float-slow {
+      animation: none;
+    }
+  }
+}

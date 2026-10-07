@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { servedPrerendered } from '@/presentation/seo/prerender-snapshot'
 import { cn } from '@/shared/lib/cn'
 import { HeroBackdrop } from './HeroBackdrop'
+import { HeroChips } from './HeroChips'
 import { HeroScreens } from './HeroScreens'
 import { trackLanding } from './landing-analytics'
 import { CTA } from './site'
@@ -59,6 +60,29 @@ export function Hero() {
 
       <div className="relative mx-auto max-w-6xl px-4 pb-12 pt-28 sm:px-8 sm:pt-36 lg:pb-20 xl:pt-40">
         <div className="mx-auto max-w-3xl text-center">
+          <motion.a
+            {...intro(0, 8)}
+            href="#funcionalidades"
+            className="group mb-7 inline-flex items-center gap-2 rounded-full border border-line-hi bg-surface/70 py-1 pl-1 pr-3 text-xs text-ink-muted backdrop-blur transition-colors hover:border-brand/50 hover:text-ink sm:text-sm"
+          >
+            <span className="rounded-full bg-brand px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
+              Novo
+            </span>
+            Modo Retomada: volte sem recomeçar
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              className="size-3.5 transition-transform group-hover:translate-x-0.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m9 6 6 6-6 6" />
+            </svg>
+          </motion.a>
+
           <h1 className="text-balance text-4xl font-semibold tracking-tight text-ink sm:text-5xl xl:text-6xl">
             {lines.map((line, index) => (
               <motion.span
@@ -106,6 +130,7 @@ export function Hero() {
         </div>
 
         <motion.div {...intro(0.5, 24)} className="relative mt-12 sm:mt-16">
+          <HeroChips />
           <HeroScreens />
         </motion.div>
       </div>

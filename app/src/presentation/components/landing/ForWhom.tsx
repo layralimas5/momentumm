@@ -57,7 +57,7 @@ function Column({ title, items, tone }: ColumnProps) {
     <div
       className={cn(
         'h-full rounded-card border p-6 sm:p-7',
-        isFor ? 'surface-brand edge-light border-brand/50' : 'border-line bg-surface',
+        isFor ? 'surface-brand edge-light border-brand/50' : 'spotlight border-line bg-surface',
       )}
     >
       <h3 className={cn('font-semibold', isFor ? 'text-ink' : 'text-ink-muted')}>{title}</h3>

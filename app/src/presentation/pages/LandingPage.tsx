@@ -3,6 +3,7 @@ import { Faq } from '@/presentation/components/landing/Faq'
 import { Features } from '@/presentation/components/landing/Features'
 import { FinalCta } from '@/presentation/components/landing/FinalCta'
 import { ForWhom } from '@/presentation/components/landing/ForWhom'
+import { GoalsMarquee } from '@/presentation/components/landing/GoalsMarquee'
 import { Hero } from '@/presentation/components/landing/Hero'
 import { Platform } from '@/presentation/components/landing/Platform'
 import { Pricing } from '@/presentation/components/landing/Pricing'
@@ -13,6 +14,7 @@ import { SocialProof } from '@/presentation/components/landing/SocialProof'
 import { StickyCta } from '@/presentation/components/landing/StickyCta'
 import { WeeklyReview } from '@/presentation/components/landing/WeeklyReview'
 import { useLandingView } from '@/presentation/components/landing/landing-analytics'
+import { useSpotlight } from '@/presentation/components/landing/use-spotlight'
 
 /**
  * A landing segue a estrutura de dez seções de página de SaaS, nesta ordem:
@@ -34,6 +36,7 @@ import { useLandingView } from '@/presentation/components/landing/landing-analyt
  */
 export function LandingPage() {
   useLandingView()
+  useSpotlight()
 
   return (
     <div className="relative isolate min-h-dvh overflow-x-clip bg-canvas">
@@ -48,6 +51,7 @@ export function LandingPage() {
 
       <main id="conteudo">
         <Hero />
+        <GoalsMarquee />
         <Problem />
         <ForWhom />
         <Platform />

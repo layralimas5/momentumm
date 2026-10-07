@@ -21,11 +21,20 @@ export function FinalCta() {
     <section id="comecar" className="scroll-mt-28 border-t border-line bg-surface">
       <div className="mx-auto max-w-5xl px-4 py-20 sm:py-28">
         <Reveal>
-          <div className="surface-brand edge-light relative overflow-hidden rounded-card px-6 py-14 text-center sm:px-12 sm:py-20">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -top-32 left-1/2 size-96 -translate-x-1/2 rounded-full bg-brand/15 blur-[100px]"
-            />
+          <div className="beam-border surface-brand edge-light relative rounded-card px-6 py-14 text-center sm:px-12 sm:py-20">
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]">
+              <div
+                className="absolute inset-0 opacity-50"
+                style={{
+                  backgroundImage:
+                    'linear-gradient(var(--color-line) 1px, transparent 1px), linear-gradient(90deg, var(--color-line) 1px, transparent 1px)',
+                  backgroundSize: '40px 40px',
+                  maskImage: 'radial-gradient(ellipse 60% 70% at 50% 0%, black, transparent 75%)',
+                  WebkitMaskImage: 'radial-gradient(ellipse 60% 70% at 50% 0%, black, transparent 75%)',
+                }}
+              />
+              <div className="absolute -top-40 left-1/2 size-[32rem] -translate-x-1/2 rounded-full bg-brand/25 blur-[110px]" />
+            </div>
             <div className="relative">
               <h2 className="text-balance text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
                 {offer?.closing ?? (

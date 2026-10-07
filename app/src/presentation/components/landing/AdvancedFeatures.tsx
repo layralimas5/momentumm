@@ -65,7 +65,7 @@ export function AdvancedFeatures() {
         {FEATURES.map((feature, index) => (
           <li key={feature.title}>
             <Reveal delay={index * 0.06} className="h-full">
-              <div className="pulse-on-hover h-full rounded-card border border-line bg-surface p-5">
+              <div className="spotlight pulse-on-hover h-full rounded-card border border-line bg-surface p-5">
                 <span
                   aria-hidden="true"
                   className="grid size-10 place-items-center rounded-xl border border-brand/30 bg-brand-dim/40 text-brand-hi"

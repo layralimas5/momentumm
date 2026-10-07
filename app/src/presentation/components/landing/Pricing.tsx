@@ -111,7 +111,7 @@ function PlanCard({ plan }: PlanCardProps) {
         'pulse-on-hover relative flex h-full flex-col rounded-card border p-6 sm:p-7',
         isFeatured && 'lg:pt-10',
         isFeatured
-          ? 'surface-brand edge-light border-brand shadow-2xl shadow-brand/20 ring-1 ring-brand/40'
+          ? 'beam-border surface-brand edge-light border-brand shadow-2xl shadow-brand/20 ring-1 ring-brand/40'
           : 'border-line bg-surface',
       )}
     >
