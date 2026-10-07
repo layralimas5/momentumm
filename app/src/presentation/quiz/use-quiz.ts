@@ -14,14 +14,15 @@ import {
   isQuizComplete,
   QUIZ_SCREEN_COUNT,
   quizBlocker,
+  quizAreaContext,
   quizIntro,
   type QuizAnswers,
   type QuizAreaKey,
-  type QuizDiagnosis,
   type QuizObstacleKey,
   type QuizIntro,
   type QuizPlanPreview,
 } from '@/domain/entities/quiz'
+import { buildQuizStrategy, type QuizStrategy } from '@/domain/entities/quiz-strategy'
 import {
   EMPTY_QUIZ_LEAD,
   isLeadReady,
@@ -83,8 +84,9 @@ export interface QuizController {
    */
   readonly warning: string | null
   readonly canAdvance: boolean
-  readonly diagnosis: QuizDiagnosis | null
   readonly preview: QuizPlanPreview | null
+  /** O que entendemos sobre a pessoa e como o app vai agir, tirado das respostas. */
+  readonly strategy: QuizStrategy | null
   readonly lead: QuizLead
   /** Os erros do contato, só depois que a pessoa tentou enviar. */
   readonly leadWarnings: LeadErrors
@@ -134,14 +136,17 @@ export function useQuiz(): QuizController {
 
   const today = useMemo(() => dayKeyOf(new Date()), [])
 
-  const diagnosis = useMemo(
-    () => (isQuizComplete(answers) ? buildDiagnosis(answers) : null),
-    [answers],
-  )
-
   const preview = useMemo(
     () => (isQuizComplete(answers) ? buildQuizPlan({ answers, today, existingAxes: [] }) : null),
     [answers, today],
+  )
+
+  const strategy = useMemo(
+    () =>
+      preview && isQuizComplete(answers)
+        ? buildQuizStrategy({ answers, preview, area: quizAreaContext(answers), today })
+        : null,
+    [answers, preview, today],
   )
 
   // Uma visualização por montagem. Reabrir a aba conta de novo, e é isso mesmo.
@@ -286,8 +291,8 @@ export function useQuiz(): QuizController {
     blocker,
     warning: attempted ? blocker : null,
     canAdvance: blocker === null,
-    diagnosis,
     preview,
+    strategy,
     lead,
     leadWarnings: leadAttempted ? leadErrors(lead) : {},
     savingLead,

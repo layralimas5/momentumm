@@ -6,11 +6,9 @@ import { useAuth } from '@/presentation/auth/use-auth'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { QuizContact } from '@/presentation/quiz/QuizContact'
-import { QuizDiagnosisView } from '@/presentation/quiz/QuizDiagnosis'
-import { QuizOffer } from '@/presentation/quiz/QuizOffer'
-import { QuizPlanPreviewView } from '@/presentation/quiz/QuizPlanPreview'
 import { QuizProcessing } from '@/presentation/quiz/QuizProcessing'
 import { QuizQuestion } from '@/presentation/quiz/QuizQuestion'
+import { QuizResult } from '@/presentation/quiz/QuizResult'
 import { QuizShell } from '@/presentation/quiz/QuizShell'
 import { useQuiz } from '@/presentation/quiz/use-quiz'
 import { QUIZ_ACTIVATION_PATH } from '@/presentation/quiz/quiz-activation'
@@ -19,7 +17,7 @@ import { QUIZ_ACTIVATION_PATH } from '@/presentation/quiz/quiz-activation'
  * `/criar-meu-plano`: a entrada do funil, pública.
  *
  * Perguntas, análise, contato e resultado, nessa ordem (`use-quiz.ts`). A
- * pessoa responde tudo sem conta. Só "Ativar meu plano no Momentumm" leva
+ * pessoa responde tudo sem conta. Só "Fazer meu primeiro passo" leva
  * pro cadastro, e o plano vai junto (`quiz-storage`): depois do login,
  * `/app/ativar` grava exatamente o que a prévia mostrou.
  */
@@ -130,7 +128,7 @@ export function QuizPage() {
     )
   }
 
-  if (!quiz.diagnosis || !quiz.preview) {
+  if (!quiz.strategy || !quiz.preview) {
     return (
       <QuizShell>
         <QuizProcessing />
@@ -139,9 +137,9 @@ export function QuizPage() {
   }
 
   /*
-    O resultado e a oferta são a mesma tela: o diagnóstico diz o que trava,
-    o plano responde ponto a ponto, e o botão de ativar fica embaixo dos
-    dois, com o que acontece depois do teste escrito antes do clique.
+    O resultado e a oferta são a mesma tela: o padrão diz onde a pessoa
+    costuma falhar, a estratégia responde ponto a ponto, e o botão leva
+    direto pro primeiro passo, não pra um painel vazio.
   */
   return (
     <QuizShell
@@ -149,7 +147,7 @@ export function QuizPage() {
       footer={
         <div className="flex w-full flex-col gap-2">
           <Button className="w-full" onClick={activate}>
-            Ativar meu plano no Momentumm
+            Fazer meu primeiro passo
             <Icon name="seta" className="size-4" />
           </Button>
           <Button variant="ghost" size="sm" className="w-full" onClick={quiz.review}>
@@ -158,11 +156,17 @@ export function QuizPage() {
         </div>
       }
     >
-      <QuizDiagnosisView diagnosis={quiz.diagnosis} />
-      <div className="mt-6 border-t border-line pt-6">
-        <QuizPlanPreviewView preview={quiz.preview} today={today} />
-      </div>
-      <QuizOffer />
+      <QuizResult
+        firstName={firstNameOf(quiz.lead.name)}
+        strategy={quiz.strategy}
+        preview={quiz.preview}
+        today={today}
+      />
     </QuizShell>
   )
+}
+
+function firstNameOf(name: string): string | null {
+  const first = name.trim().split(/\s+/)[0]
+  return first ? first.charAt(0).toUpperCase() + first.slice(1) : null
 }

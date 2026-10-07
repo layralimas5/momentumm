@@ -1424,6 +1424,33 @@ primeira vitória. Links dos carrosséis levam pra lá com `utm_*` e `tema=`
   O gate deixa `SUBSCRIPTION_PATH` passar com plano pendente, sem isso o
   botão de assinar voltava pra `/app/ativar` em loop.
 
+### Resultado do quiz sem número inventado (07/10/2026)
+
+A tela final do quiz é a primeira demonstração de inteligência do produto, e
+ela vem da relevância da recomendação, não de números decorativos. Proibido
+ali: porcentagem de sucesso, "confiança", arquétipo, estudo citado na tela,
+curva projetada sem histórico e prêmio antes da primeira ação.
+
+- `domain/entities/quiz-strategy.ts` é o motor, determinístico e auditável:
+  respostas → tabelas de sinal (`OBSTACLE_SIGNALS`, `HISTORY_SIGNALS`...) →
+  `BehaviorProfile` com a evidência de cada ponto → padrão + indicadores
+  Começar/Manter/Retomar (Fácil/Moderado/Difícil, nunca número) → regras que
+  escolhem 3 de 8 intervenções (`recovery_plan`, `minimum_action`,
+  `progress_tracking`, `implementation_intention`, `daily_priority`,
+  `graded_task`, `habit_anchor`, `weekly_review`). Sem sinal forte, completa
+  com a base (passo mínimo, progresso, retomada). A IA pode reescrever copy
+  depois; quem escolhe continua sendo a regra.
+- Toda intervenção carrega o porquê citando a resposta, e o link "Por que o
+  Momentumm escolheu isso?" abre o sheet. Os "se → então" (`ifThenRules`)
+  usam os dias reais do plano e nunca inventam horário.
+- A base científica (Harkin 2016, Gollwitzer & Sheeran 2006, Lally 2010,
+  Epton 2017) está documentada no topo do arquivo, não na interface.
+- O gráfico de trajetória virou o ciclo Planejar → Executar → Registrar →
+  Ajustar → Retomar; o "marco" é o primeiro marco real do plano.
+- O CTA é "Fazer meu primeiro passo". Depois da ativação, o Hoje mostra só o
+  `FirstWinCard` (Começar / Já fiz) enquanto a ação está aberta, com "Ver o
+  resto do dia" como saída.
+
 ### Hoje como central de execução, e a Rotina (27/09/2026)
 
 O app sabia planejar (objetivo → etapa → ação) e sabia repetir (hábito). O que
