@@ -57,16 +57,22 @@ export function SectionHeading({
         <motion.p
           {...fade(0)}
           className={cn(
-            'text-sm font-medium tracking-wide uppercase',
-            onBrand ? 'text-white/80' : 'text-brand-hi',
+            'inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium tracking-wide uppercase',
+            onBrand
+              ? 'border-white/25 text-white/85'
+              : 'border-brand/30 bg-brand-dim/30 text-brand-ink',
           )}
         >
+          <span
+            aria-hidden="true"
+            className="size-1.5 rounded-full bg-brand-hi shadow-[0_0_8px_var(--color-brand-hi)]"
+          />
           {eyebrow}
         </motion.p>
       ) : null}
       <h2
         className={cn(
-          'mt-3 text-balance text-3xl font-semibold tracking-tight sm:text-4xl',
+          'mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-4xl',
           onBrand ? 'text-white' : 'text-ink',
         )}
       >

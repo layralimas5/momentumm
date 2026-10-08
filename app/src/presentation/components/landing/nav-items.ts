@@ -19,6 +19,15 @@ export interface NavGroup {
 
 export const NAV_GROUPS: readonly NavGroup[] = [
   {
+    label: 'O app',
+    links: [
+      { label: 'Por dentro', description: 'As três telas, da meta ao passo de hoje', href: '/#plataforma' },
+      { label: 'Funcionalidades', description: 'O que já vem no gratuito', href: '/#funcionalidades' },
+      { label: 'Recursos do PRO', description: 'O que vem além do básico', href: '/#recursos' },
+      { label: 'Review semanal', description: 'A sua semana lida pra você', href: '/#diferencial' },
+    ],
+  },
+  {
     label: 'Ferramentas',
     links: [
       {
@@ -41,8 +50,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
 ]
 
 export const NAV_DIRECT: readonly NavLink[] = [
-  { label: 'O app', description: 'O que muda no seu dia', href: '/#plataforma' },
-  { label: 'Recursos do PRO', description: 'O que vem além do básico', href: '/#recursos' },
+  { label: 'Pra quem é', description: 'Se o Momentumm serve pra você', href: '/#pra-quem' },
   { label: 'Planos', description: 'Grátis e PRO, o que muda', href: '/#planos' },
   { label: 'Dúvidas', description: 'O que perguntam antes de começar', href: '/#faq' },
 ]

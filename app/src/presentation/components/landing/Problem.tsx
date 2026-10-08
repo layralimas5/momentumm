@@ -51,7 +51,7 @@ export function Problem() {
         {SCENES.map((scene, index) => (
           <li key={scene.title}>
             <Reveal delay={index * 0.08} className="h-full">
-              <article className="flex h-full flex-col rounded-card border border-line bg-surface p-6">
+              <article className="spotlight flex h-full flex-col rounded-card border border-line bg-surface p-6">
                 <h3 className="font-semibold text-ink">{scene.title}</h3>
                 <p className="mt-2 flex-1 text-pretty text-sm text-ink-muted">{scene.description}</p>
                 <p className="mt-5 border-t border-line pt-4 text-sm text-ink">

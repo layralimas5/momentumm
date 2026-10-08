@@ -3,6 +3,8 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { servedPrerendered } from '@/presentation/seo/prerender-snapshot'
 import { cn } from '@/shared/lib/cn'
 import { HeroBackdrop } from './HeroBackdrop'
+import { HeroChips } from './HeroChips'
+import { HeroScreens } from './HeroScreens'
 import { trackLanding } from './landing-analytics'
 import { CTA } from './site'
 import { useOffer } from './use-offer'
@@ -20,15 +22,11 @@ import { useSiteCta } from './use-site-cta'
  * ## A tela do produto vem embaixo, não ao lado
  *
  * O hero é dor, solução, botão e o produto, nessa ordem, em qualquer tela.
- * Um card ao lado do título disputava o olhar com ele; embaixo, a tela real
- * do plano confirma a promessa sem competir. É uma captura do app, nunca
- * ilustração: quem chega precisa ver em cinco segundos o que vai receber.
+ * Um card ao lado do título disputava o olhar com ele; embaixo, as telas reais
+ * confirmam a promessa sem competir. São capturas do app em abas que trocam
+ * sozinhas (`HeroScreens`), nunca ilustração: quem chega precisa ver em cinco
+ * segundos o que vai receber.
  */
-const HERO_SCREEN = {
-  src: '/telas/passo-2-plano.webp',
-  alt: 'Plano gerado pelo Momentumm: a meta "ler 12 livros até dezembro" dividida em três marcos com prazo e uma rotina de 3 dias por semana, 20 minutos por vez.',
-} as const
-
 /** A copy padrão. Com `?oferta=` no link, a oferta em teste assume (ver `offers.ts`). */
 const DEFAULT_LINES = ['Pare de recomeçar', 'toda segunda-feira.'] as const
 const DEFAULT_SUBTITLE =
@@ -62,6 +60,29 @@ export function Hero() {
 
       <div className="relative mx-auto max-w-6xl px-4 pb-12 pt-28 sm:px-8 sm:pt-36 lg:pb-20 xl:pt-40">
         <div className="mx-auto max-w-3xl text-center">
+          <motion.a
+            {...intro(0, 8)}
+            href="#funcionalidades"
+            className="group mb-7 inline-flex items-center gap-2 rounded-full border border-line-hi bg-surface/70 py-1 pl-1 pr-3 text-xs text-ink-muted backdrop-blur transition-colors hover:border-brand/50 hover:text-ink sm:text-sm"
+          >
+            <span className="rounded-full bg-brand px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
+              Novo
+            </span>
+            Modo Retomada: volte sem recomeçar
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              className="size-3.5 transition-transform group-hover:translate-x-0.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m9 6 6 6-6 6" />
+            </svg>
+          </motion.a>
+
           <h1 className="text-balance text-4xl font-semibold tracking-tight text-ink sm:text-5xl xl:text-6xl">
             {lines.map((line, index) => (
               <motion.span
@@ -108,26 +129,10 @@ export function Hero() {
           </motion.p>
         </div>
 
-        <motion.figure {...intro(0.5, 24)} className="relative mx-auto mt-12 max-w-[340px] sm:mt-16">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 top-10 h-72 rounded-full bg-brand/25 blur-3xl"
-          />
-          <div className="relative h-[420px] overflow-hidden rounded-t-[2.5rem] border border-b-0 border-line-hi bg-surface p-2.5 pb-0 shadow-2xl shadow-black/40 sm:h-[480px]">
-            <img
-              src={HERO_SCREEN.src}
-              alt={HERO_SCREEN.alt}
-              width={780}
-              height={1688}
-              decoding="async"
-              className="block w-full rounded-t-[2rem]"
-            />
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-canvas to-transparent"
-            />
-          </div>
-        </motion.figure>
+        <motion.div {...intro(0.5, 24)} className="relative mt-12 sm:mt-16">
+          <HeroChips />
+          <HeroScreens />
+        </motion.div>
       </div>
     </section>
   )
