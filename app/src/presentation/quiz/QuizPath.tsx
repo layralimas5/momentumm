@@ -1,3 +1,4 @@
+import { motion, useReducedMotion } from 'framer-motion'
 import { dayKeyToDate, type DayKey } from '@/domain/entities/day'
 import type { PlannedStage, PlannedTask } from '@/domain/entities/plan-builder'
 import { Card, Eyebrow } from '@/presentation/components/ds/Card'
@@ -35,15 +36,16 @@ export function QuizPath({
         <span aria-hidden="true" className="absolute top-3.5 left-[12%] h-0.5 w-[14%] bg-gradient-to-r from-brand-hi to-brand/0" />
         {nodes.map((node, index) => (
           <li key={node.key} className="relative flex flex-col items-center px-0.5 text-center">
-            <span
-              aria-hidden="true"
-              className={cn(
-                'grid size-7 place-items-center rounded-full text-[0.7rem] font-semibold',
-                node.current ? 'bg-brand text-white shadow-[0_0_18px_-2px_var(--color-brand)]' : 'well text-ink-faint',
-              )}
-            >
-              {node.current ? <Icon name="raio" className="size-3.5" /> : index}
-            </span>
+            {node.current ? (
+              <TodayBeacon />
+            ) : (
+              <span
+                aria-hidden="true"
+                className="well grid size-7 place-items-center rounded-full text-[0.7rem] font-semibold text-ink-faint"
+              >
+                {index}
+              </span>
+            )}
             <span className={cn('mt-2 line-clamp-2 text-[0.72rem] leading-tight', node.current ? 'font-semibold text-ink' : 'text-ink-muted')}>
               {node.title}
             </span>
@@ -69,6 +71,32 @@ export function QuizPath({
 
       {note ? <p className="mt-3 text-xs text-pretty text-ink-faint">{note}</p> : null}
     </Card>
+  )
+}
+
+/** O "Hoje" pulsando: é o único ponto do caminho que pede ação agora. */
+function TodayBeacon() {
+  const reduced = useReducedMotion()
+  return (
+    <span aria-hidden="true" className="relative grid size-7 place-items-center">
+      {reduced ? null : (
+        <>
+          <motion.span
+            className="absolute inset-0 rounded-full bg-brand-hi blur-md"
+            animate={{ opacity: [0.45, 0.95, 0.45], scale: [1, 1.45, 1] }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <motion.span
+            className="absolute inset-0 rounded-full border border-brand-hi"
+            animate={{ opacity: [0.7, 0], scale: [1, 2.1] }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeOut' }}
+          />
+        </>
+      )}
+      <span className="relative grid size-7 place-items-center rounded-full bg-gradient-to-br from-brand-hi to-brand text-white shadow-[0_0_22px_-2px_var(--color-brand-hi)]">
+        <Icon name="raio" className="size-3.5" filled />
+      </span>
+    </span>
   )
 }
 
