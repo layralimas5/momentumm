@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { useId } from 'react'
+import { useId, type ReactNode } from 'react'
 import {
   MAX_GOAL_LENGTH,
   QUIZ_AREA_LABELS,
@@ -32,6 +32,8 @@ import { TextInput } from '@/presentation/components/ui/Field'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { cn } from '@/shared/lib/cn'
 import { QuizTrust } from './QuizTrust'
+import { RevealWords } from './RevealWords'
+import { cascade, EASE_ENTER, EASE_SPRING } from './quiz-motion'
 
 /**
  * Uma tela por vez. Opção é botão grande de tocar com o polegar, e o grupo
@@ -77,10 +79,10 @@ export function QuizQuestion({
       <motion.div
         key={step}
         custom={direction}
-        initial={reduced ? false : { opacity: 0, x: direction * 24 }}
+        initial={reduced ? false : { opacity: 0, x: direction * 18 }}
         animate={{ opacity: 1, x: 0 }}
-        exit={reduced ? { opacity: 0 } : { opacity: 0, x: direction * -24 }}
-        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+        exit={reduced ? { opacity: 0 } : { opacity: 0, x: direction * -18 }}
+        transition={{ duration: 0.34, ease: EASE_ENTER }}
         className="flex flex-col"
       >
         {screen === 'area' ? (
@@ -163,15 +165,77 @@ export function QuizQuestion({
 }
 
 function Title({ children, hint }: { readonly children: string; readonly hint: string }) {
+  const reduced = useReducedMotion()
   return (
     <header className="mb-5">
-      <h1 className="text-xl font-semibold tracking-tight text-balance text-ink sm:text-2xl">
+      <motion.h1 {...cascade(0, reduced)} className="text-xl font-semibold tracking-tight text-balance text-ink sm:text-2xl">
         {children}
-      </h1>
-      <p className="mt-2 text-sm text-pretty text-ink-muted">{hint}</p>
+      </motion.h1>
+      <motion.p {...cascade(1, reduced)} className="mt-2 text-sm text-pretty text-ink-muted">
+        {hint}
+      </motion.p>
     </header>
   )
 }
+
+/** Um bloco que entra na cascata, depois do título e da dica. */
+function Rise({
+  order,
+  className,
+  children,
+}: {
+  readonly order: number
+  readonly className?: string
+  readonly children: ReactNode
+}) {
+  const reduced = useReducedMotion()
+  return (
+    <motion.div {...cascade(order + 2, reduced)} className={className}>
+      {children}
+    </motion.div>
+  )
+}
+
+/**
+ * O marcador da opção. Ao marcar, o conteúdo chega com mola e um anel sai
+ * do contorno e some: o toque tem resposta mesmo com o dedo em cima da tela.
+ */
+function Mark({
+  selected,
+  round = true,
+  children,
+}: {
+  readonly selected: boolean
+  readonly round?: boolean
+  readonly children: ReactNode
+}) {
+  const reduced = useReducedMotion()
+  if (!selected) return null
+  return (
+    <>
+      {reduced ? null : (
+        <motion.span
+          aria-hidden="true"
+          className={cn('pointer-events-none absolute inset-0 border-2 border-brand', round ? 'rounded-full' : 'rounded-xl')}
+          initial={{ opacity: 0.7, scale: 1 }}
+          animate={{ opacity: 0, scale: round ? 2.4 : 1.12 }}
+          transition={{ duration: 0.6, ease: [0.2, 0.6, 0.4, 1] }}
+        />
+      )}
+      <motion.span
+        className="grid place-items-center"
+        initial={reduced ? false : { opacity: 0, scale: 0.58 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.34, ease: EASE_SPRING }}
+      >
+        {children}
+      </motion.span>
+    </>
+  )
+}
+
+/** O aperto do dedo: a opção afunda um pouco e volta. */
+const TAP = { scale: 0.97 } as const
 
 // ---------------------------------------------------------------------------
 // a abertura: a frase da campanha em cima da primeira pergunta
@@ -338,33 +402,35 @@ function MultiQuestion<T extends string>({
       <Title hint={hint}>{title}</Title>
 
       <div role="group" aria-label={title} className="flex flex-wrap gap-2">
-        {options.map((option) => {
+        {options.map((option, index) => {
           const position = values.indexOf(option.value)
           const selected = position >= 0
           return (
-            <button
-              key={option.value}
-              type="button"
-              aria-pressed={selected}
-              onClick={() => onToggle(option.value)}
-              className={cn(
-                'inline-flex min-h-11 max-w-full items-center gap-2 rounded-full border px-3.5 text-left text-sm font-medium transition-colors',
-                selected
-                  ? 'border-brand bg-brand-dim/60 text-ink shadow-[0_0_0_1px_var(--color-brand)]'
-                  : 'border-line bg-surface-hi/60 text-ink-muted hover:border-line-hi hover:text-ink active:bg-surface-top',
-              )}
-            >
-              <span
-                aria-hidden="true"
+            <Rise key={option.value} order={index} className="max-w-full">
+              <motion.button
+                type="button"
+                aria-pressed={selected}
+                onClick={() => onToggle(option.value)}
+                whileTap={TAP}
                 className={cn(
-                  'grid size-5 shrink-0 place-items-center rounded-full border text-[11px] font-semibold transition-colors',
-                  selected ? 'border-brand bg-brand text-white' : 'border-line-hi',
+                  'inline-flex min-h-11 max-w-full items-center gap-2 rounded-full border px-3.5 text-left text-sm font-medium transition-colors',
+                  selected
+                    ? 'border-brand bg-brand-dim/60 text-ink shadow-[0_0_0_1px_var(--color-brand)]'
+                    : 'border-line bg-surface-hi/60 text-ink-muted hover:border-line-hi hover:text-ink active:bg-surface-top',
                 )}
               >
-                {selected ? position + 1 : null}
-              </span>
-              <span className="min-w-0 text-pretty">{option.label}</span>
-            </button>
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'relative grid size-5 shrink-0 place-items-center rounded-full border text-[11px] font-semibold transition-colors',
+                    selected ? 'border-brand bg-brand text-white' : 'border-line-hi',
+                  )}
+                >
+                  <Mark selected={selected}>{position + 1}</Mark>
+                </span>
+                <span className="min-w-0 text-pretty">{option.label}</span>
+              </motion.button>
+            </Rise>
           )
         })}
       </div>
@@ -419,46 +485,50 @@ function OptionQuestion<T extends string>({
           const selected = option.value === value
           const focusable = selected || (value === null && index === 0)
           return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              tabIndex={focusable ? 0 : -1}
-              onClick={() => onChange(option.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
-                  event.preventDefault()
-                  move(value, 1)
-                } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
-                  event.preventDefault()
-                  move(value, -1)
-                }
-              }}
-              className={cn(
-                'flex min-h-12 items-center justify-between gap-3 rounded-xl border px-3.5 text-left text-sm font-medium transition-colors',
-                option.description && 'py-3',
-                selected
-                  ? 'border-brand bg-brand-dim/60 text-ink shadow-[0_0_0_1px_var(--color-brand)]'
-                  : 'border-line bg-surface-hi/60 text-ink-muted hover:border-line-hi hover:text-ink active:bg-surface-top',
-              )}
-            >
-              <span className="flex flex-col gap-0.5 text-pretty">
-                <span className={cn(option.description && 'text-ink')}>{option.label}</span>
-                {option.description ? (
-                  <span className="text-xs font-normal text-ink-muted">{option.description}</span>
-                ) : null}
-              </span>
-              <span
-                aria-hidden="true"
+            <Rise key={option.value} order={index}>
+              <motion.button
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                tabIndex={focusable ? 0 : -1}
+                onClick={() => onChange(option.value)}
+                whileTap={TAP}
+                onKeyDown={(event) => {
+                  if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+                    event.preventDefault()
+                    move(value, 1)
+                  } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+                    event.preventDefault()
+                    move(value, -1)
+                  }
+                }}
                 className={cn(
-                  'grid size-5 shrink-0 place-items-center rounded-full border transition-colors',
-                  selected ? 'border-brand bg-brand text-white' : 'border-line-hi',
+                  'flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border px-3.5 text-left text-sm font-medium transition-colors',
+                  option.description && 'py-3',
+                  selected
+                    ? 'border-brand bg-brand-dim/60 text-ink shadow-[0_0_0_1px_var(--color-brand)]'
+                    : 'border-line bg-surface-hi/60 text-ink-muted hover:border-line-hi hover:text-ink active:bg-surface-top',
                 )}
               >
-                {selected ? <Icon name="check" className="size-3" /> : null}
-              </span>
-            </button>
+                <span className="flex flex-col gap-0.5 text-pretty">
+                  <span className={cn(option.description && 'text-ink')}>{option.label}</span>
+                  {option.description ? (
+                    <span className="text-xs font-normal text-ink-muted">{option.description}</span>
+                  ) : null}
+                </span>
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'relative grid size-5 shrink-0 place-items-center rounded-full border transition-colors',
+                    selected ? 'border-brand bg-brand text-white' : 'border-line-hi',
+                  )}
+                >
+                  <Mark selected={selected}>
+                    <Icon name="check" className="size-3" />
+                  </Mark>
+                </span>
+              </motion.button>
+            </Rise>
           )
         })}
       </div>
@@ -490,15 +560,22 @@ function RecapScreen({ answers }: { readonly answers: QuizAnswers }) {
   return (
     <div>
       <p className="text-xs font-medium tracking-wide text-brand-ink uppercase">O que já sabemos</p>
-      <Title hint="Com o que você respondeu até aqui, o seu plano já tem forma.">
-        Dá pra montar algo que cabe no seu dia
-      </Title>
+      <header className="mb-5">
+        <RevealWords
+          text="Dá pra montar algo que cabe no seu dia"
+          delay={0.1}
+          className="text-xl font-semibold tracking-tight text-balance text-ink sm:text-2xl"
+        />
+        <p className="mt-2 text-sm text-pretty text-ink-muted">
+          Com o que você respondeu até aqui, o seu plano já tem forma.
+        </p>
+      </header>
       <dl className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-surface/60">
-        {rows.map((row) => (
-          <div key={row.label} className="px-3.5 py-3">
-            <dt className="text-xs text-ink-faint">{row.label}</dt>
-            <dd className="mt-0.5 text-sm font-medium text-pretty text-ink">{row.value}</dd>
-          </div>
+        {rows.map((row, index) => (
+          <Rise key={row.label} order={index + 4} className="px-3.5 py-3">
+              <dt className="text-xs text-ink-faint">{row.label}</dt>
+              <dd className="mt-0.5 text-sm font-medium text-pretty text-ink">{row.value}</dd>
+          </Rise>
         ))}
       </dl>
       <p className="mt-4 text-sm text-ink-muted">Falta uma pergunta pra montar o seu plano.</p>
@@ -526,23 +603,25 @@ function WeekdaysQuestion({
       </Title>
 
       <div role="group" aria-label="Dias da semana" className="grid grid-cols-4 gap-2 sm:grid-cols-7">
-        {WEEKDAY_SHORT.map((day) => {
+        {WEEKDAY_SHORT.map((day, index) => {
           const selected = answers.weekdays.includes(day.value)
           return (
-            <button
-              key={day.value}
-              type="button"
-              aria-pressed={selected}
-              onClick={() => onToggle(day.value)}
-              className={cn(
-                'min-h-12 rounded-xl border text-sm font-medium transition-colors',
-                selected
-                  ? 'border-brand bg-brand-dim/60 text-ink shadow-[0_0_0_1px_var(--color-brand)]'
-                  : 'border-line bg-surface-hi/60 text-ink-muted hover:border-line-hi hover:text-ink active:bg-surface-top',
-              )}
-            >
-              {day.label}
-            </button>
+            <Rise key={day.value} order={index}>
+              <motion.button
+                type="button"
+                aria-pressed={selected}
+                onClick={() => onToggle(day.value)}
+                whileTap={TAP}
+                className={cn(
+                  'relative grid min-h-12 w-full place-items-center rounded-xl border text-sm font-medium transition-colors',
+                  selected
+                    ? 'border-brand bg-brand-dim/60 text-ink shadow-[0_0_0_1px_var(--color-brand)]'
+                    : 'border-line bg-surface-hi/60 text-ink-muted hover:border-line-hi hover:text-ink active:bg-surface-top',
+                )}
+              >
+                {selected ? <Mark selected round={false}>{day.label}</Mark> : day.label}
+              </motion.button>
+            </Rise>
           )
         })}
       </div>

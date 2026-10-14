@@ -1477,6 +1477,16 @@ guardar o que a pessoa já fez.
   ativando. O app ainda não usa o tom: falta coluna no perfil.
 - **Sem migration.** Tom e `firstStepDoneOn` vão no jsonb `answers` que o
   `quiz_save` já aceita, e aparecem no detalhe do lead no painel.
+- **O movimento do quiz** segue o da Cláudia, com curvas e tempos tirados do
+  CSS dela e guardados em `presentation/quiz/quiz-motion.ts` (nenhuma tela
+  escreve `cubic-bezier` solto). Cascata de entrada nas perguntas, toque com
+  mola e anel no marcador, tremida quando falta resposta, brilho na ponta da
+  barra de progresso, título que acende palavra por palavra (`RevealWords`),
+  a linha do "Seu caminho" se desenhando com os marcos acendendo quando a
+  ponta passa (`timeAtProgress`), troféu com confete no passo feito, e botão
+  que espera a animação nas telas de leitura. A nuvem mascote e a curva de
+  "anteciparam sua data" ficaram de fora: a primeira é a marca deles, a
+  segunda é número inventado. Tudo some com `prefers-reduced-motion`.
 
 ### Hoje como central de execução, e a Rotina (27/09/2026)
 

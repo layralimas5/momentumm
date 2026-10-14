@@ -356,6 +356,11 @@ const INFO_SCREENS: readonly QuizScreen[] = ['trust', 'recap']
 export const QUIZ_SCREEN_COUNT = QUIZ_SCREENS.length
 export const QUIZ_QUESTION_COUNT = QUIZ_SCREENS.filter((screen) => !INFO_SCREENS.includes(screen)).length
 
+/** Tela sem pergunta: só leitura, nada a responder. */
+export function isInfoScreen(screen: QuizScreen): boolean {
+  return INFO_SCREENS.includes(screen)
+}
+
 /** Rótulo curto de cada tela, pro painel do funil ler o abandono por etapa. */
 export const QUIZ_SCREEN_LABELS: Readonly<Record<QuizScreen, string>> = {
   area: 'Área',

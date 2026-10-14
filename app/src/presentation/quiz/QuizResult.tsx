@@ -1,12 +1,14 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { useState } from 'react'
 import type { QuizPlanPreview } from '@/domain/entities/quiz'
+import type { FirstStepNow } from '@/domain/entities/quiz-first-step'
 import type { QuizStrategy } from '@/domain/entities/quiz-strategy'
 import { QuizOffer } from './QuizOffer'
 import { QuizPath } from './QuizPath'
 import { QuizPatternCard } from './QuizPatternCard'
 import { QuizStrategyList } from './QuizStrategyList'
 import { QuizWhySheet } from './QuizWhySheet'
+import { RevealWords } from './RevealWords'
 import { SystemCycle } from './SystemCycle'
 
 /**
@@ -21,10 +23,12 @@ export function QuizResult({
   firstName,
   strategy,
   preview,
+  stepNow,
 }: {
   readonly firstName: string | null
   readonly strategy: QuizStrategy
   readonly preview: QuizPlanPreview
+  readonly stepNow: FirstStepNow | null
 }) {
   const reduced = useReducedMotion()
   const [explaining, setExplaining] = useState(false)
@@ -41,9 +45,10 @@ export function QuizResult({
   return (
     <div className="flex flex-col gap-4 py-1">
       <motion.header {...enter(0)} className="px-1">
-        <h1 className="text-2xl leading-tight font-semibold tracking-tight text-balance text-ink sm:text-3xl">
-          {firstName ? `${firstName}, seu` : 'Seu'} Plano de Constância está pronto.
-        </h1>
+        <RevealWords
+          text={`${firstName ? `${firstName}, seu` : 'Seu'} Plano de Constância está pronto.`}
+          className="text-2xl leading-tight font-semibold tracking-tight text-balance text-ink sm:text-3xl"
+        />
         <p className="mt-1.5 text-sm text-ink-muted">Montado a partir das suas respostas.</p>
       </motion.header>
 
@@ -60,7 +65,7 @@ export function QuizResult({
       </motion.div>
 
       <motion.div {...enter(4)}>
-        <QuizPath milestones={preview.plan.milestones} step={preview.plan.firstStep} note={preview.adjustmentNote} />
+        <QuizPath milestones={preview.plan.milestones} step={stepNow} note={preview.adjustmentNote} />
       </motion.div>
 
       <QuizOffer />

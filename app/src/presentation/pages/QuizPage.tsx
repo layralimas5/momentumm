@@ -1,6 +1,7 @@
+import { motion, useAnimationControls, useReducedMotion } from 'framer-motion'
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { minutesOf, QUIZ_SCREEN_COUNT } from '@/domain/entities/quiz'
+import { isInfoScreen, minutesOf, QUIZ_SCREEN_COUNT, quizScreenAt } from '@/domain/entities/quiz'
 import { firstStepNow, firstStepVoice } from '@/domain/entities/quiz-first-step'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { Button } from '@/presentation/components/ui/Button'
@@ -13,6 +14,7 @@ import { QuizResult } from '@/presentation/quiz/QuizResult'
 import { QuizShell } from '@/presentation/quiz/QuizShell'
 import { useQuiz } from '@/presentation/quiz/use-quiz'
 import { QUIZ_ACTIVATION_PATH } from '@/presentation/quiz/quiz-activation'
+import { SHAKE } from '@/presentation/quiz/quiz-motion'
 import { useStepTimer } from '@/presentation/quiz/use-step-timer'
 
 /**
@@ -29,6 +31,15 @@ export function QuizPage() {
   const navigate = useNavigate()
   const { user, loading } = useAuth()
   const timer = useStepTimer()
+  const reduced = useReducedMotion()
+  const shake = useAnimationControls()
+
+  // Tentar avançar sem resposta treme a pergunta: o aviso embaixo diz o que
+  // falta, a tremida diz ONDE. Toda tentativa treme de novo.
+  const next = () => {
+    if (quiz.blocker && !reduced) void shake.start(SHAKE)
+    quiz.next()
+  }
 
   // Pra qual lado a pergunta desliza: guarda o passo anterior.
   const previousStep = useRef(quiz.step)
@@ -53,6 +64,8 @@ export function QuizPage() {
       <QuizShell
         progress={(quiz.step + 1) / QUIZ_SCREEN_COUNT}
         progressLabel={`${quiz.step + 1} de ${QUIZ_SCREEN_COUNT}`}
+        footerKey={quiz.step}
+        footerDelay={isInfoScreen(quizScreenAt(quiz.step)) ? 0.9 : 0}
         footer={
           <>
             {/* Na abertura não há pra onde voltar: ela é a primeira tela. */}
@@ -67,7 +80,7 @@ export function QuizPage() {
                 O botão fica clicável mesmo faltando resposta: botão apagado
                 não explica nada, e quem toca e lê o aviso entende o que falta.
               */}
-              <Button className="w-full" onClick={quiz.next}>
+              <Button className="w-full" onClick={next}>
                 {last ? 'Montar meu plano' : 'Continuar'}
                 <Icon name="seta" className="size-4" />
               </Button>
@@ -75,17 +88,19 @@ export function QuizPage() {
           </>
         }
       >
-        <QuizQuestion
-          step={quiz.step}
-          answers={quiz.answers}
-          intro={quiz.intro}
-          direction={direction}
-          onChange={quiz.set}
-          onToggleArea={quiz.toggleArea}
-          onToggleObstacle={quiz.toggleObstacle}
-          onToggleWeekday={quiz.toggleWeekday}
-          onSubmit={quiz.next}
-        />
+        <motion.div animate={shake}>
+          <QuizQuestion
+            step={quiz.step}
+            answers={quiz.answers}
+            intro={quiz.intro}
+            direction={direction}
+            onChange={quiz.set}
+            onToggleArea={quiz.toggleArea}
+            onToggleObstacle={quiz.toggleObstacle}
+            onToggleWeekday={quiz.toggleWeekday}
+            onSubmit={next}
+          />
+        </motion.div>
         <p aria-live="polite" className="mt-4 min-h-5 text-sm text-ink-faint">
           {quiz.warning ?? ''}
         </p>
@@ -140,13 +155,18 @@ export function QuizPage() {
   }
 
   const firstStep = quiz.preview.plan.firstStep
-  if (quiz.phase === 'primeiro-passo' && firstStep) {
+  // O passo de agora é um só, no resultado e na tela do passo: os dois
+  // mostrando tamanhos diferentes é o app discordando de si mesmo.
+  const stepNow = firstStep && quiz.answers.time ? firstStepNow(firstStep, minutesOf(quiz.answers.time)) : null
+  if (quiz.phase === 'primeiro-passo' && firstStep && stepNow) {
     const finish = () => {
       timer.stop()
       quiz.completeFirstStep()
     }
     return (
       <QuizShell
+        footerKey={quiz.firstStepDone ? 'feito' : 'passo'}
+        footerDelay={quiz.firstStepDone ? 1.1 : 0}
         footer={
           quiz.firstStepDone ? (
             <Button className="w-full" onClick={activate}>
@@ -183,7 +203,7 @@ export function QuizPage() {
       >
         <QuizFirstStep
           step={firstStep}
-          now={firstStepNow(firstStep, quiz.answers.time ? minutesOf(quiz.answers.time) : firstStep.estimatedMin ?? 0)}
+          now={stepNow}
           habit={quiz.preview.habit}
           milestoneCount={quiz.preview.plan.milestones.length}
           voice={firstStepVoice(quiz.answers.tone)}
@@ -206,7 +226,7 @@ export function QuizPage() {
       tallFooter
       footer={
         <div className="flex w-full flex-col gap-2">
-          <Button className="w-full" onClick={firstStep ? quiz.startFirstStep : activate}>
+          <Button className="w-full" onClick={stepNow ? quiz.startFirstStep : activate}>
             Fazer meu primeiro passo
             <Icon name="seta" className="size-4" />
           </Button>
@@ -220,6 +240,7 @@ export function QuizPage() {
         firstName={firstNameOf(quiz.lead.name)}
         strategy={quiz.strategy}
         preview={quiz.preview}
+        stepNow={stepNow}
       />
     </QuizShell>
   )
