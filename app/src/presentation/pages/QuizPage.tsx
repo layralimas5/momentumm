@@ -1,29 +1,34 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { QUIZ_SCREEN_COUNT } from '@/domain/entities/quiz'
+import { minutesOf, QUIZ_SCREEN_COUNT } from '@/domain/entities/quiz'
+import { firstStepNow, firstStepVoice } from '@/domain/entities/quiz-first-step'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { QuizContact } from '@/presentation/quiz/QuizContact'
+import { QuizFirstStep } from '@/presentation/quiz/QuizFirstStep'
 import { QuizProcessing } from '@/presentation/quiz/QuizProcessing'
 import { QuizQuestion } from '@/presentation/quiz/QuizQuestion'
 import { QuizResult } from '@/presentation/quiz/QuizResult'
 import { QuizShell } from '@/presentation/quiz/QuizShell'
 import { useQuiz } from '@/presentation/quiz/use-quiz'
 import { QUIZ_ACTIVATION_PATH } from '@/presentation/quiz/quiz-activation'
+import { useStepTimer } from '@/presentation/quiz/use-step-timer'
 
 /**
  * `/criar-meu-plano`: a entrada do funil, pública.
  *
- * Perguntas, análise, contato e resultado, nessa ordem (`use-quiz.ts`). A
- * pessoa responde tudo sem conta. Só "Fazer meu primeiro passo" leva
- * pro cadastro, e o plano vai junto (`quiz-storage`): depois do login,
- * `/app/ativar` grava exatamente o que a prévia mostrou.
+ * Perguntas, análise, contato, resultado e primeiro passo, nessa ordem
+ * (`use-quiz.ts`). A pessoa responde tudo e faz o primeiro passo sem conta.
+ * Só depois disso vem o cadastro, e o plano vai junto (`quiz-storage`):
+ * depois do login, `/app/ativar` grava exatamente o que a prévia mostrou,
+ * com o passo de hoje já concluído.
  */
 export function QuizPage() {
   const quiz = useQuiz()
   const navigate = useNavigate()
   const { user, loading } = useAuth()
+  const timer = useStepTimer()
 
   // Pra qual lado a pergunta desliza: guarda o passo anterior.
   const previousStep = useRef(quiz.step)
@@ -134,6 +139,63 @@ export function QuizPage() {
     )
   }
 
+  const firstStep = quiz.preview.plan.firstStep
+  if (quiz.phase === 'primeiro-passo' && firstStep) {
+    const finish = () => {
+      timer.stop()
+      quiz.completeFirstStep()
+    }
+    return (
+      <QuizShell
+        footer={
+          quiz.firstStepDone ? (
+            <Button className="w-full" onClick={activate}>
+              Salvar meu progresso
+              <Icon name="seta" className="size-4" />
+            </Button>
+          ) : timer.running ? (
+            <>
+              <Button variant="ghost" className="shrink-0" onClick={timer.stop}>
+                Parar
+              </Button>
+              <div className="min-w-0 flex-1">
+                <Button className="w-full" onClick={finish}>
+                  <Icon name="check" className="size-4" />
+                  Terminei
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" className="shrink-0" onClick={finish}>
+                <Icon name="check" className="size-4" />
+                Já fiz
+              </Button>
+              <div className="min-w-0 flex-1">
+                <Button className="w-full" onClick={timer.start}>
+                  <Icon name="play" className="size-4" />
+                  Começar agora
+                </Button>
+              </div>
+            </>
+          )
+        }
+      >
+        <QuizFirstStep
+          step={firstStep}
+          now={firstStepNow(firstStep, quiz.answers.time ? minutesOf(quiz.answers.time) : firstStep.estimatedMin ?? 0)}
+          habit={quiz.preview.habit}
+          milestoneCount={quiz.preview.plan.milestones.length}
+          voice={firstStepVoice(quiz.answers.tone)}
+          done={quiz.firstStepDone}
+          running={timer.running}
+          elapsedSeconds={timer.elapsedSeconds}
+          onSkip={activate}
+        />
+      </QuizShell>
+    )
+  }
+
   /*
     O resultado e a oferta são a mesma tela: o padrão diz onde a pessoa
     costuma falhar, a estratégia responde ponto a ponto, e o botão leva
@@ -144,7 +206,7 @@ export function QuizPage() {
       tallFooter
       footer={
         <div className="flex w-full flex-col gap-2">
-          <Button className="w-full" onClick={activate}>
+          <Button className="w-full" onClick={firstStep ? quiz.startFirstStep : activate}>
             Fazer meu primeiro passo
             <Icon name="seta" className="size-4" />
           </Button>

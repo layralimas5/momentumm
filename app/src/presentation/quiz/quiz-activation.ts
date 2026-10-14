@@ -9,6 +9,7 @@ import { linkQuizSessionToMe, markQuizActivated, trackFunnel } from '@/infrastru
 import { track } from '@/infrastructure/analytics/track'
 import { toUserMessage } from '@/shared/errors'
 import { useAuth } from '@/presentation/auth/use-auth'
+import type { PlannerState } from '@/presentation/planner/planner-context'
 import { usePlanner } from '@/presentation/planner/use-planner'
 import { clearPendingQuizPlan, loadPendingQuizPlan, saveFirstWin } from './quiz-storage'
 
@@ -141,6 +142,10 @@ export function useQuizActivation(): QuizActivation {
       }
       await markQuizActivated()
 
+      if (plan.firstStep && pending.firstStepDoneOn === planner.today) {
+        await completeFirstStepDoneInQuiz(plannerRef, plan.firstStep.title, planner.today)
+      }
+
       if (plan.firstStep) {
         saveFirstWin(user.id, {
           taskTitle: plan.firstStep.title,
@@ -209,6 +214,28 @@ function withAxis(plan: PlanDraft, axis: ActivityTypeSlug): PlanDraft {
     objective: { ...plan.objective, axis },
     goal: { ...plan.goal, type: axis },
     tasks: plan.tasks.map((task) => ({ ...task, axis })),
+  }
+}
+
+/**
+ * O passo feito no quiz entra como ação concluída pelo caminho normal
+ * (`setTaskDone`): XP, "Primeiro Passo" e Momentum vêm de lá, nada é
+ * carimbado à parte. O Hoje vê a ação já fechada e mostra a comemoração, e é
+ * ele que dispara `first_action_completed`. Se falhar, o plano já está
+ * gravado e a ação continua aberta pra ser marcada no Hoje com um toque.
+ */
+async function completeFirstStepDoneInQuiz(
+  plannerRef: { readonly current: PlannerState },
+  title: string,
+  day: string,
+): Promise<void> {
+  await nextTick()
+  const task = plannerRef.current.tasks.find((item) => item.day === day && item.title === title)
+  if (!task) return
+  try {
+    await plannerRef.current.setTaskDone(task.id, true)
+  } catch {
+    // A ação fica aberta no Hoje.
   }
 }
 

@@ -23,6 +23,7 @@ const base: CompleteQuizAnswers = {
   weekdays: [1, 3, 5],
   style: 'passos_pequenos',
   history: 'mantive_e_parei',
+  tone: 'direto',
 }
 
 function strategyOf(answers: CompleteQuizAnswers): QuizStrategy {

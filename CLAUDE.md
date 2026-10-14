@@ -1451,6 +1451,33 @@ curva projetada sem histórico e prêmio antes da primeira ação.
   `FirstWinCard` (Começar / Já fiz) enquanto a ação está aberta, com "Ver o
   resto do dia" como saída.
 
+### O primeiro passo antes da conta, e o tom (13/10/2026)
+
+Referência: o quiz da Cláudia (webclaudia.com.br), que dá a primeira lição
+antes de pedir cadastro. O cadastro deixa de ser a porta e vira o jeito de
+guardar o que a pessoa já fez.
+
+- **Fase nova `primeiro-passo`** em `use-quiz`, depois do resultado.
+  "Fazer meu primeiro passo" abre o passo ainda sem conta (`QuizFirstStep`),
+  com "Começar agora" (cronômetro por timestamp, `use-step-timer`) ou "Já
+  fiz". Feito, a tela diz o que a conta vai guardar e o CTA é "Salvar meu
+  progresso". "Criar a conta e fazer depois" mantém o caminho antigo.
+- **O passo de agora cabe no tempo declarado** (`firstStepNow`). A estimativa
+  do roteiro não encolhe (decisão do `blueprintTasks`), então quando ela passa
+  do tempo que a pessoa disse ter, a versão mínima vira o passo e a completa
+  fica dita como o que continua no plano. Finanças pedia 60 min pra quem tinha
+  20.
+- **A ação de hoje nasce concluída.** O plano pendente leva
+  `firstStepDoneOn`; `/app/ativar` conclui a ação pelo `setTaskDone` só se o
+  dia for o mesmo, e o Hoje mostra a comemoração e dispara
+  `first_action_completed` como antes. Nada é carimbado à parte.
+- **Tom é a última pergunta** (`tone`: gentil, direto, sem filtro). Muda só
+  a voz da tela do primeiro passo (`firstStepVoice`), nunca o plano. Fica de
+  fora de `isQuizComplete`, igual ao histórico, pra plano antigo continuar
+  ativando. O app ainda não usa o tom: falta coluna no perfil.
+- **Sem migration.** Tom e `firstStepDoneOn` vão no jsonb `answers` que o
+  `quiz_save` já aceita, e aparecem no detalhe do lead no painel.
+
 ### Hoje como central de execução, e a Rotina (27/09/2026)
 
 O app sabia planejar (objetivo → etapa → ação) e sabia repetir (hábito). O que

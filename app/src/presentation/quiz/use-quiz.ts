@@ -44,7 +44,8 @@ import { clearQuizDraft, loadQuizDraft, savePendingQuizPlan, saveQuizDraft } fro
 /**
  * O quiz como estado, separado do desenho.
  *
- * Quatro fases numa linha: perguntas → processando → contato → resultado.
+ * Cinco fases numa linha: perguntas → processando → contato → resultado →
+ * primeiro passo.
  *
  * Não há tela de intro: a primeira pergunta É a abertura, com o título da
  * campanha em cima, porque o primeiro clique barato é responder, não apertar
@@ -53,6 +54,11 @@ import { clearQuizDraft, loadQuizDraft, savePendingQuizPlan, saveQuizDraft } fro
  * o resultado, e é o único ponto do funil onde dá pra alcançar quem não vai
  * criar conta hoje. O resultado junta diagnóstico, plano e oferta numa tela
  * só: resultado e oferta separados viram duas conversas.
+ *
+ * O primeiro passo acontece AQUI, antes da conta. Quem já fez a coisa não
+ * está mais decidindo se vale começar: o cadastro deixa de ser a porta e
+ * vira o jeito de guardar o que já foi feito. Pular continua possível, e
+ * leva pro cadastro como antes.
  *
  * As respostas ficam no `localStorage` a cada mudança (a página atualizada
  * volta na mesma tela) e vão pro servidor a cada avanço, junto do evento do
@@ -63,7 +69,7 @@ import { clearQuizDraft, loadQuizDraft, savePendingQuizPlan, saveQuizDraft } fro
 
 export const QUIZ_PATH = '/criar-meu-plano'
 
-export const QUIZ_PHASES = ['perguntas', 'processando', 'contato', 'resultado'] as const
+export const QUIZ_PHASES = ['perguntas', 'processando', 'contato', 'resultado', 'primeiro-passo'] as const
 export type QuizPhase = (typeof QUIZ_PHASES)[number]
 
 /** O tempo da animação de processamento. Curto de propósito: o plano já está pronto. */
@@ -91,6 +97,8 @@ export interface QuizController {
   /** Os erros do contato, só depois que a pessoa tentou enviar. */
   readonly leadWarnings: LeadErrors
   readonly savingLead: boolean
+  /** A pessoa fechou o primeiro passo dentro do quiz. */
+  readonly firstStepDone: boolean
   set(changes: Partial<QuizAnswers>): void
   /** Marca ou desmarca. A ordem do toque é a ordem de importância. */
   toggleArea(area: QuizAreaKey): void
@@ -103,6 +111,10 @@ export interface QuizController {
   submitLead(): void
   /** Ajustar as respostas: volta pra primeira pergunta com tudo preenchido. */
   review(): void
+  /** Do resultado pro primeiro passo, ainda sem conta. */
+  startFirstStep(): void
+  /** "Já fiz" ou "Terminei": marca o passo como feito hoje. */
+  completeFirstStep(): void
   /** Ativar o plano: guarda o plano pendente; a tela navega pro cadastro. */
   activate(): void
 }
@@ -122,6 +134,7 @@ export function useQuiz(): QuizController {
   const [lead, setLeadState] = useState<QuizLead>(EMPTY_QUIZ_LEAD)
   const [leadAttempted, setLeadAttempted] = useState(false)
   const [savingLead, setSavingLead] = useState(false)
+  const [firstStepDone, setFirstStepDone] = useState(false)
   const [step, setStep] = useState(stored?.step ?? 0)
   const [answers, setAnswers] = useState<QuizAnswers>(stored?.answers ?? EMPTY_QUIZ_ANSWERS)
 
@@ -236,6 +249,10 @@ export function useQuiz(): QuizController {
       setPhase('perguntas')
       return
     }
+    if (phase === 'primeiro-passo') {
+      setPhase('resultado')
+      return
+    }
     if (step > 0) setStep(step - 1)
   }, [phase, step])
 
@@ -275,12 +292,22 @@ export function useQuiz(): QuizController {
     setPhase('perguntas')
   }, [])
 
+  const startFirstStep = useCallback(() => {
+    setPhase('primeiro-passo')
+    window.scrollTo({ top: 0 })
+  }, [])
+
+  const completeFirstStep = useCallback(() => {
+    setFirstStepDone(true)
+    saveQuizAnswers({ ...answers, firstStepDoneOn: today }, null, null)
+  }, [answers, today])
+
   const activate = useCallback(() => {
     if (!isQuizComplete(answers)) return
-    savePendingQuizPlan({ answers, attribution })
+    savePendingQuizPlan({ answers, attribution, firstStepDoneOn: firstStepDone ? today : null })
     clearQuizDraft()
     trackFunnel('signup_started', null)
-  }, [answers, attribution])
+  }, [answers, attribution, firstStepDone, today])
 
   return {
     phase,
@@ -296,6 +323,7 @@ export function useQuiz(): QuizController {
     lead,
     leadWarnings: leadAttempted ? leadErrors(lead) : {},
     savingLead,
+    firstStepDone,
     set,
     toggleArea,
     toggleObstacle,
@@ -305,6 +333,8 @@ export function useQuiz(): QuizController {
     setLead,
     submitLead,
     review,
+    startFirstStep,
+    completeFirstStep,
     activate,
   }
 }

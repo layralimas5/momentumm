@@ -14,6 +14,9 @@ import {
   QUIZ_STYLES,
   QUIZ_TIME_LABELS,
   QUIZ_TIMES,
+  QUIZ_TONE_DESCRIPTIONS,
+  QUIZ_TONE_LABELS,
+  QUIZ_TONES,
   areasInOrder,
   primaryObstacle,
   quizAreaContext,
@@ -139,6 +142,19 @@ export function QuizQuestion({
             options={QUIZ_STYLES.map((key) => ({ value: key, label: QUIZ_STYLE_LABELS[key] }))}
             value={answers.style}
             onChange={(style) => onChange({ style })}
+          />
+        ) : null}
+        {screen === 'tone' ? (
+          <OptionQuestion
+            title="Quando você travar, como eu falo com você?"
+            hint="O plano é o mesmo nos três. Muda só o jeito de cobrar."
+            options={QUIZ_TONES.map((key) => ({
+              value: key,
+              label: QUIZ_TONE_LABELS[key],
+              description: QUIZ_TONE_DESCRIPTIONS[key],
+            }))}
+            value={answers.tone}
+            onChange={(tone) => onChange({ tone })}
           />
         ) : null}
       </motion.div>
@@ -295,6 +311,8 @@ function AreaQuestion({
 interface Option<T extends string> {
   readonly value: T
   readonly label: string
+  /** Uma linha embaixo do rótulo, quando o rótulo sozinho não explica a escolha. */
+  readonly description?: string
 }
 
 /**
@@ -419,12 +437,18 @@ function OptionQuestion<T extends string>({
               }}
               className={cn(
                 'flex min-h-12 items-center justify-between gap-3 rounded-xl border px-3.5 text-left text-sm font-medium transition-colors',
+                option.description && 'py-3',
                 selected
                   ? 'border-brand bg-brand-dim/60 text-ink shadow-[0_0_0_1px_var(--color-brand)]'
                   : 'border-line bg-surface-hi/60 text-ink-muted hover:border-line-hi hover:text-ink active:bg-surface-top',
               )}
             >
-              <span className="text-pretty">{option.label}</span>
+              <span className="flex flex-col gap-0.5 text-pretty">
+                <span className={cn(option.description && 'text-ink')}>{option.label}</span>
+                {option.description ? (
+                  <span className="text-xs font-normal text-ink-muted">{option.description}</span>
+                ) : null}
+              </span>
               <span
                 aria-hidden="true"
                 className={cn(
