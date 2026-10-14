@@ -1,10 +1,12 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import type { PlannedTask } from '@/domain/entities/plan-builder'
-import type { QuizHabit } from '@/domain/entities/quiz'
+import type { QuizHabit, QuizToneKey } from '@/domain/entities/quiz'
 import type { FirstStepNow, FirstStepVoice } from '@/domain/entities/quiz-first-step'
 import { Card, Eyebrow } from '@/presentation/components/ds/Card'
 import { Icon } from '@/presentation/components/ui/Icon'
+import { Mascot } from '@/presentation/mascot/Mascot'
 import { cn } from '@/shared/lib/cn'
+import { MascotAside, moodForTone } from './QuizMascot'
 import { RevealWords } from './RevealWords'
 import { cascade, EASE_SCATTER, EASE_SPRING_STRONG } from './quiz-motion'
 
@@ -23,6 +25,8 @@ interface QuizFirstStepProps {
   readonly habit: QuizHabit
   readonly milestoneCount: number
   readonly voice: FirstStepVoice
+  /** O Momo faz a cara do tom que a pessoa escolheu. */
+  readonly tone: QuizToneKey | null
   readonly done: boolean
   readonly running: boolean
   readonly elapsedSeconds: number
@@ -47,12 +51,12 @@ export function QuizFirstStep(props: QuizFirstStepProps) {
   )
 }
 
-function StepToDo({ step, now, voice, running, elapsedSeconds, onSkip }: QuizFirstStepProps) {
+function StepToDo({ step, now, voice, tone, running, elapsedSeconds, onSkip }: QuizFirstStepProps) {
   return (
     <>
       <Card tone="float" className="surface-brand-glow flex flex-col gap-4" aria-labelledby="quiz-primeiro-passo">
         <Eyebrow icon="raio">Seu primeiro passo</Eyebrow>
-        <div>
+        <MascotAside mood={running ? 'happy' : (moodForTone(tone) ?? 'happy')} gesture="pop" at={0.25}>
           <p className="text-sm text-ink-muted">{voice.lead}</p>
           <h1
             id="quiz-primeiro-passo"
@@ -60,13 +64,13 @@ function StepToDo({ step, now, voice, running, elapsedSeconds, onSkip }: QuizFir
           >
             {now.title}
           </h1>
-          {now.minutes ? (
-            <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-ink-muted tabular">
-              <Icon name="cronometro" className="size-4" />
-              {now.minutes} min
-            </p>
-          ) : null}
-        </div>
+        </MascotAside>
+        {now.minutes ? (
+          <p className="inline-flex items-center gap-1.5 text-sm text-ink-muted tabular">
+            <Icon name="cronometro" className="size-4" />
+            {now.minutes} min
+          </p>
+        ) : null}
 
         {running ? <Stopwatch seconds={elapsedSeconds} targetMin={now.minutes} /> : null}
 
@@ -149,8 +153,8 @@ function StepDone({ now, habit, milestoneCount, voice }: QuizFirstStepProps) {
 }
 
 /**
- * O troféu chega girando com mola, a luz estoura atrás dele e o confete
- * espalha. O confete é só roxo e claro: laranja é da sequência e de mais
+ * O Momo chega girando com mola e pula, a luz estoura atrás dele e o
+ * confete espalha. O confete é só roxo e claro: laranja é da sequência e de mais
  * nada no produto. Posições fixas, nada sorteado: o mesmo passo feito
  * comemora sempre do mesmo jeito.
  */
@@ -171,11 +175,7 @@ const CONFETTI = [
 
 function Trophy() {
   const reduced = useReducedMotion()
-  const medal = (
-    <span className="relative grid size-16 place-items-center rounded-full bg-gradient-to-br from-brand-hi to-brand text-white shadow-[0_0_32px_-4px_var(--color-brand-hi)]">
-      <Icon name="trofeu" className="size-7" />
-    </span>
-  )
+  const medal = <Mascot size={96} mood="celebrate" gesture={reduced ? null : { kind: 'jump', key: 'feito' }} />
   if (reduced) {
     return (
       <div aria-hidden="true" className="flex justify-center pt-1">

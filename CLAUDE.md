@@ -1498,6 +1498,27 @@ guardar o que a pessoa já fez.
   confiança. A ordem mudou, então o rascunho foi pra versão 3 e o abandono
   por etapa no `/admin/funil` de sessões antigas aponta pra tela errada.
 
+### O Momo, o mascote (14/10/2026)
+
+Personagem próprio no papel da nuvem da Cláudia (`presentation/mascot/Mascot`):
+um seixo roxo com uma faísca na antena. Sem laranja (é da sequência) e sem
+nuvem (é da marca deles). "Momo" é nome provisório.
+
+- **Movimento em camadas**, com os tempos da referência: flutua (8,4s),
+  respira (4,1s), pisca (5,2s), halo (6,2s) e sombra no chão rodando sempre;
+  gestos curtos e únicos por cima (`pop`, `yes`, `no`, `jump`, `tilt`), que a
+  tela dispara trocando a `key`. Oito caras (`mood`). Decorativo
+  (`aria-hidden`), e parado com `prefers-reduced-motion`.
+- **No quiz** (`QuizMascot`): fala cada pergunta num balão, com a boca
+  mexendo enquanto as palavras acendem (`MascotSays`, via `Title`); acena
+  quando a resposta muda e nega quando tentam avançar sem resposta (o
+  `nudge` do `QuizPage`); na pergunta do tom faz a cara de cada opção
+  (`moodForTone`). Nas telas de recompensa comenta com um gesto no instante
+  certo (`MascotAside`: o pulo da conta sai quando a última barra sobe).
+  Pensa na análise, vai de bolso na ponta da barra de progresso, faz a cara
+  do tom no primeiro passo e pula no lugar do troféu na comemoração.
+- Ainda não está no app (Hoje, lembretes, IA): só no quiz.
+
 ### Hoje como central de execução, e a Rotina (27/09/2026)
 
 O app sabia planejar (objetivo → etapa → ação) e sabia repetir (hábito). O que

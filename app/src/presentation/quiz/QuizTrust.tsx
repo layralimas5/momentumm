@@ -2,6 +2,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { obstacleAnswers, type QuizAnswers, type QuizAreaContext } from '@/domain/entities/quiz'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
 import { CountUp } from './CountUp'
+import { MascotAside } from './QuizMascot'
 import { EASE_DRAW, EASE_SPRING_STRONG, timeAtProgress } from './quiz-motion'
 
 /**
@@ -51,10 +52,12 @@ export function QuizTrust({ answers, area }: QuizTrustProps) {
   return (
     <div className="flex flex-col">
       <motion.header {...enter(0)}>
-        <p className="text-xs font-medium tracking-wide text-brand-ink uppercase">Antes de continuar</p>
-        <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-balance text-ink">
-          Um dia perdido não desfaz o seu progresso.
-        </h1>
+        <MascotAside mood="gentle" gesture="tilt" at={0.4}>
+          <p className="text-xs font-medium tracking-wide text-brand-ink uppercase">Antes de continuar</p>
+          <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-balance text-ink">
+            Um dia perdido não desfaz o seu progresso.
+          </h1>
+        </MascotAside>
       </motion.header>
 
       {QUIZ_PROOF.length > 0 ? (

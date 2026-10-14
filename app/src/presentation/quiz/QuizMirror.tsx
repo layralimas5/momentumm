@@ -2,6 +2,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import type { QuizAreaContext } from '@/domain/entities/quiz'
 import { Icon } from '@/presentation/components/ui/Icon'
+import { MascotAside } from './QuizMascot'
 import { RevealWords } from './RevealWords'
 import { cascade, EASE_DRAW, EASE_SPRING } from './quiz-motion'
 
@@ -25,14 +26,16 @@ export function QuizMirror({ goal, area }: { readonly goal: string; readonly are
 
   return (
     <div className="flex flex-col">
-      <motion.p {...cascade(0, reduced)} className="text-xs font-medium tracking-wide text-brand-ink uppercase">
-        Anotado
-      </motion.p>
-      <RevealWords
-        text="Esse é o seu objetivo. Agora ele vira plano."
-        delay={0.1}
-        className="mt-1.5 text-2xl font-semibold tracking-tight text-balance text-ink"
-      />
+      <MascotAside mood="happy" gesture="pop" at={0.3}>
+        <motion.p {...cascade(0, reduced)} className="text-xs font-medium tracking-wide text-brand-ink uppercase">
+          Anotado
+        </motion.p>
+        <RevealWords
+          text="Esse é o seu objetivo. Agora ele vira plano."
+          delay={0.1}
+          className="mt-1.5 text-2xl font-semibold tracking-tight text-balance text-ink"
+        />
+      </MascotAside>
 
       <motion.figure
         {...cascade(2, reduced)}

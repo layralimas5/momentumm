@@ -1,5 +1,5 @@
 import { motion, useAnimationControls, useReducedMotion } from 'framer-motion'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { minutesOf, QUIZ_SCREEN_COUNT, quizScreenAt, type QuizScreen } from '@/domain/entities/quiz'
 import { firstStepNow, firstStepVoice } from '@/domain/entities/quiz-first-step'
@@ -33,11 +33,15 @@ export function QuizPage() {
   const timer = useStepTimer()
   const reduced = useReducedMotion()
   const shake = useAnimationControls()
+  const [nudge, setNudge] = useState(0)
 
   // Tentar avançar sem resposta treme a pergunta: o aviso embaixo diz o que
   // falta, a tremida diz ONDE. Toda tentativa treme de novo.
   const next = () => {
-    if (quiz.blocker && !reduced) void shake.start(SHAKE)
+    if (quiz.blocker) {
+      if (!reduced) void shake.start(SHAKE)
+      setNudge((count) => count + 1)
+    }
     quiz.next()
   }
 
@@ -99,6 +103,7 @@ export function QuizPage() {
             onToggleObstacle={quiz.toggleObstacle}
             onToggleWeekday={quiz.toggleWeekday}
             onSubmit={next}
+            nudge={nudge}
           />
         </motion.div>
         <p aria-live="polite" className="mt-4 min-h-5 text-sm text-ink-faint">
@@ -207,6 +212,7 @@ export function QuizPage() {
           habit={quiz.preview.habit}
           milestoneCount={quiz.preview.plan.milestones.length}
           voice={firstStepVoice(quiz.answers.tone)}
+          tone={quiz.answers.tone}
           done={quiz.firstStepDone}
           running={timer.running}
           elapsedSeconds={timer.elapsedSeconds}

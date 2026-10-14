@@ -3,7 +3,8 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { Wordmark } from '@/presentation/components/brand/Logo'
 import { cn } from '@/shared/lib/cn'
-import { EASE_ENTER, EASE_SPRING } from './quiz-motion'
+import { Mascot } from '@/presentation/mascot/Mascot'
+import { EASE_ENTER } from './quiz-motion'
 
 /**
  * A casca do quiz: logo em cima, conteúdo no meio, e os botões numa barra
@@ -112,36 +113,31 @@ export function QuizShell({
 }
 
 /**
- * O brilho na ponta da barra. Anda junto com o preenchimento e, a cada
- * avanço, dá um pulso: é a resposta visual de "isso contou", no lugar da
- * nuvem que a Cláudia põe na mesma posição.
+ * O Momo de bolso na ponta da barra, no lugar da nuvem que a Cláudia põe
+ * ali. Anda junto com o preenchimento e, a cada avanço, dá um estalo e solta
+ * um anel: é a resposta visual de "isso contou".
  */
 function ProgressHead({ progress }: { readonly progress: number }) {
   const reduced = useReducedMotion()
-  if (reduced) return null
-  const left = `calc(${Math.max(4, progress * 100)}% - 0.3125rem)`
+  const left = `calc(${Math.max(4, progress * 100)}% - 0.75rem)`
   return (
     <motion.span
       aria-hidden="true"
-      className="pointer-events-none absolute top-1/2 z-10 -mt-[0.3125rem] grid size-2.5 place-items-center"
+      className="pointer-events-none absolute top-1/2 z-10 -mt-3.5 grid size-6 place-items-center"
       initial={false}
       animate={{ left }}
-      transition={{ duration: 0.5, ease: EASE_ENTER }}
+      transition={{ duration: reduced ? 0 : 0.5, ease: EASE_ENTER }}
     >
-      <motion.span
-        key={progress}
-        className="absolute inset-0 rounded-full bg-brand-hi"
-        initial={{ opacity: 0.8, scale: 1 }}
-        animate={{ opacity: 0, scale: 3 }}
-        transition={{ duration: 0.7, delay: 0.35, ease: [0.2, 0.6, 0.4, 1] }}
-      />
-      <motion.span
-        key={`dot-${progress}`}
-        className="size-2.5 rounded-full bg-brand-hi shadow-[0_0_12px_2px_var(--color-brand-hi)]"
-        initial={{ scale: 0.7 }}
-        animate={{ scale: 1 }}
-        transition={{ duration: 0.4, delay: 0.3, ease: EASE_SPRING }}
-      />
+      {reduced ? null : (
+        <motion.span
+          key={progress}
+          className="absolute inset-1 rounded-full border-2 border-brand-hi"
+          initial={{ opacity: 0.8, scale: 1 }}
+          animate={{ opacity: 0, scale: 2.4 }}
+          transition={{ duration: 0.7, delay: 0.35, ease: [0.2, 0.6, 0.4, 1] }}
+        />
+      )}
+      <Mascot size={24} mini gesture={{ kind: 'pop', key: progress }} />
     </motion.span>
   )
 }

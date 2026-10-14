@@ -5,6 +5,7 @@ import type { QuizAnswers, QuizAreaContext } from '@/domain/entities/quiz'
 import { formatCompactTime, formatTotalTime, quizTimeBank } from '@/domain/entities/quiz-time-bank'
 import { cn } from '@/shared/lib/cn'
 import { CountUp } from './CountUp'
+import { MascotAside } from './QuizMascot'
 import { RevealWords } from './RevealWords'
 import { cascade } from './quiz-motion'
 
@@ -35,14 +36,17 @@ export function QuizTimeBank({ answers, area }: { readonly answers: QuizAnswers;
 
   return (
     <div className="flex flex-col">
-      <motion.p {...cascade(0, reduced)} className="text-xs font-medium tracking-wide text-brand-ink uppercase">
-        A conta do seu tempo
-      </motion.p>
-      <RevealWords
-        text={`Isso soma ${formatTotalTime(bank.totalMinutes)} de ${subject} até ${deadline}.`}
-        delay={0.1}
-        className="mt-1.5 text-2xl font-semibold tracking-tight text-balance text-ink"
-      />
+      {/* O Momo pula quando a última barra termina de subir. */}
+      <MascotAside mood="happy" gesture="jump" at={barsEnd}>
+        <motion.p {...cascade(0, reduced)} className="text-xs font-medium tracking-wide text-brand-ink uppercase">
+          A conta do seu tempo
+        </motion.p>
+        <RevealWords
+          text={`Isso soma ${formatTotalTime(bank.totalMinutes)} de ${subject} até ${deadline}.`}
+          delay={0.1}
+          className="mt-1.5 text-2xl font-semibold tracking-tight text-balance text-ink"
+        />
+      </MascotAside>
 
       <motion.figure
         {...cascade(2, reduced)}

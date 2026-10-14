@@ -8,6 +8,7 @@ import { QuizPath } from './QuizPath'
 import { QuizPatternCard } from './QuizPatternCard'
 import { QuizStrategyList } from './QuizStrategyList'
 import { QuizWhySheet } from './QuizWhySheet'
+import { MascotAside } from './QuizMascot'
 import { RevealWords } from './RevealWords'
 import { SystemCycle } from './SystemCycle'
 
@@ -45,11 +46,13 @@ export function QuizResult({
   return (
     <div className="flex flex-col gap-4 py-1">
       <motion.header {...enter(0)} className="px-1">
-        <RevealWords
-          text={`${firstName ? `${firstName}, seu` : 'Seu'} Plano de Constância está pronto.`}
-          className="text-2xl leading-tight font-semibold tracking-tight text-balance text-ink sm:text-3xl"
-        />
-        <p className="mt-1.5 text-sm text-ink-muted">Montado a partir das suas respostas.</p>
+        <MascotAside mood="happy" gesture="jump" at={0.5}>
+          <RevealWords
+            text={`${firstName ? `${firstName}, seu` : 'Seu'} Plano de Constância está pronto.`}
+            className="text-2xl leading-tight font-semibold tracking-tight text-balance text-ink sm:text-3xl"
+          />
+          <p className="mt-1.5 text-sm text-ink-muted">Montado a partir das suas respostas.</p>
+        </MascotAside>
       </motion.header>
 
       <motion.div {...enter(1)}>

@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { useId, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import {
   MAX_GOAL_LENGTH,
   QUIZ_AREA_LABELS,
@@ -31,6 +31,7 @@ import {
 import { TextInput } from '@/presentation/components/ui/Field'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { cn } from '@/shared/lib/cn'
+import { MascotAside, MascotSays, moodForTone, QuizMascotProvider, type QuizMascotCue } from './QuizMascot'
 import { QuizMirror } from './QuizMirror'
 import { QuizTimeBank } from './QuizTimeBank'
 import { QuizTrust } from './QuizTrust'
@@ -57,6 +58,8 @@ interface QuizQuestionProps {
   readonly onToggleObstacle: (obstacle: QuizObstacleKey) => void
   readonly onToggleWeekday: (day: number) => void
   readonly onSubmit: () => void
+  /** Sobe a cada tentativa de avançar sem resposta: o Momo nega com a cabeça. */
+  readonly nudge: number
 }
 
 export function QuizQuestion({
@@ -69,117 +72,137 @@ export function QuizQuestion({
   onToggleObstacle,
   onToggleWeekday,
   onSubmit,
+  nudge,
 }: QuizQuestionProps) {
   const reduced = useReducedMotion()
   const screen = quizScreenAt(step)
   // A primeira área marcada guia a frase de todas as perguntas seguintes.
   const area = quizAreaContext(answers)
   const goal = answers.goal.trim()
+  const cue = useMascotCue(step, answers, nudge)
 
   return (
-    <AnimatePresence mode="wait" initial={false} custom={direction}>
-      <motion.div
-        key={step}
-        custom={direction}
-        initial={reduced ? false : { opacity: 0, x: direction * 18 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={reduced ? { opacity: 0 } : { opacity: 0, x: direction * -18 }}
-        transition={{ duration: 0.34, ease: EASE_ENTER }}
-        className="flex flex-col"
-      >
-        {screen === 'area' ? (
-          <>
-            <Opening intro={intro} />
-            <AreaQuestion answers={answers} onChange={onChange} onToggle={onToggleArea} />
-          </>
-        ) : null}
-        {screen === 'goal' ? (
-          <GoalQuestion answers={answers} area={area} onChange={onChange} onSubmit={onSubmit} />
-        ) : null}
-        {screen === 'mirror' ? <QuizMirror goal={goal} area={area} /> : null}
-        {screen === 'trust' ? <QuizTrust area={area} answers={answers} /> : null}
-        {screen === 'math' ? <QuizTimeBank answers={answers} area={area} /> : null}
-        {screen === 'history' ? (
-          <OptionQuestion
-            title={`Quantas vezes você já começou a ${area.practice} e parou?`}
-            hint="Não existe resposta errada. É só pra entender de onde você está partindo."
-            options={QUIZ_HISTORIES.map((key) => ({ value: key, label: QUIZ_HISTORY_LABELS[key] }))}
-            value={answers.history}
-            onChange={(history) => onChange({ history })}
-          />
-        ) : null}
-        {screen === 'recap' ? <RecapScreen answers={answers} /> : null}
-        {screen === 'obstacles' ? (
-          <MultiQuestion
-            title={`O que mais atrapalha ${area.subject} hoje?`}
-            hint="Marca todas que acontecem. A primeira que você tocar é a principal."
-            options={QUIZ_OBSTACLES.map((key) => ({ value: key, label: QUIZ_OBSTACLE_LABELS[key] }))}
-            values={answers.obstacles}
-            onToggle={onToggleObstacle}
-          />
-        ) : null}
-        {screen === 'time' ? (
-          <OptionQuestion
-            title={`Quanto tempo por dia você consegue reservar pra ${area.practice}?`}
-            hint="O plano nunca vai pedir mais que isso."
-            options={QUIZ_TIMES.map((key) => ({ value: key, label: QUIZ_TIME_LABELS[key] }))}
-            value={answers.time}
-            onChange={(time) => onChange({ time })}
-            columns
-          />
-        ) : null}
-        {screen === 'horizon' ? (
-          <OptionQuestion
-            title={goal ? `Em quanto tempo você quer chegar em “${goal}”?` : 'Em quanto tempo você gostaria de alcançar esse objetivo?'}
-            hint="Pode ser aproximado. Dá pra mudar depois."
-            options={QUIZ_HORIZONS.map((key) => ({ value: key, label: QUIZ_HORIZON_LABELS[key] }))}
-            value={answers.horizon}
-            onChange={(horizon) => onChange({ horizon })}
-            columns
-          />
-        ) : null}
-        {screen === 'weekdays' ? (
-          <WeekdaysQuestion answers={answers} area={area} onToggle={onToggleWeekday} />
-        ) : null}
-        {screen === 'style' ? (
-          <OptionQuestion
-            title="Como você prefere começar?"
-            hint={`Isso muda o formato do seu plano de ${area.label.toLowerCase()}, não o objetivo.`}
-            options={QUIZ_STYLES.map((key) => ({ value: key, label: QUIZ_STYLE_LABELS[key] }))}
-            value={answers.style}
-            onChange={(style) => onChange({ style })}
-          />
-        ) : null}
-        {screen === 'tone' ? (
-          <OptionQuestion
-            title="Quando você travar, como eu falo com você?"
-            hint="O plano é o mesmo nos três. Muda só o jeito de cobrar."
-            options={QUIZ_TONES.map((key) => ({
-              value: key,
-              label: QUIZ_TONE_LABELS[key],
-              description: QUIZ_TONE_DESCRIPTIONS[key],
-            }))}
-            value={answers.tone}
-            onChange={(tone) => onChange({ tone })}
-          />
-        ) : null}
-      </motion.div>
-    </AnimatePresence>
+    <QuizMascotProvider value={{ ...cue, mood: screen === 'tone' ? moodForTone(answers.tone) : null }}>
+      <AnimatePresence mode="wait" initial={false} custom={direction}>
+        <motion.div
+          key={step}
+          custom={direction}
+          initial={reduced ? false : { opacity: 0, x: direction * 18 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={reduced ? { opacity: 0 } : { opacity: 0, x: direction * -18 }}
+          transition={{ duration: 0.34, ease: EASE_ENTER }}
+          className="flex flex-col"
+        >
+          {screen === 'area' ? (
+            <>
+              <Opening intro={intro} />
+              <AreaQuestion answers={answers} onChange={onChange} onToggle={onToggleArea} />
+            </>
+          ) : null}
+          {screen === 'goal' ? (
+            <GoalQuestion answers={answers} area={area} onChange={onChange} onSubmit={onSubmit} />
+          ) : null}
+          {screen === 'mirror' ? <QuizMirror goal={goal} area={area} /> : null}
+          {screen === 'trust' ? <QuizTrust area={area} answers={answers} /> : null}
+          {screen === 'math' ? <QuizTimeBank answers={answers} area={area} /> : null}
+          {screen === 'history' ? (
+            <OptionQuestion
+              title={`Quantas vezes você já começou a ${area.practice} e parou?`}
+              hint="Não existe resposta errada. É só pra entender de onde você está partindo."
+              options={QUIZ_HISTORIES.map((key) => ({ value: key, label: QUIZ_HISTORY_LABELS[key] }))}
+              value={answers.history}
+              onChange={(history) => onChange({ history })}
+            />
+          ) : null}
+          {screen === 'recap' ? <RecapScreen answers={answers} /> : null}
+          {screen === 'obstacles' ? (
+            <MultiQuestion
+              title={`O que mais atrapalha ${area.subject} hoje?`}
+              hint="Marca todas que acontecem. A primeira que você tocar é a principal."
+              options={QUIZ_OBSTACLES.map((key) => ({ value: key, label: QUIZ_OBSTACLE_LABELS[key] }))}
+              values={answers.obstacles}
+              onToggle={onToggleObstacle}
+            />
+          ) : null}
+          {screen === 'time' ? (
+            <OptionQuestion
+              title={`Quanto tempo por dia você consegue reservar pra ${area.practice}?`}
+              hint="O plano nunca vai pedir mais que isso."
+              options={QUIZ_TIMES.map((key) => ({ value: key, label: QUIZ_TIME_LABELS[key] }))}
+              value={answers.time}
+              onChange={(time) => onChange({ time })}
+              columns
+            />
+          ) : null}
+          {screen === 'horizon' ? (
+            <OptionQuestion
+              title={goal ? `Em quanto tempo você quer chegar em “${goal}”?` : 'Em quanto tempo você gostaria de alcançar esse objetivo?'}
+              hint="Pode ser aproximado. Dá pra mudar depois."
+              options={QUIZ_HORIZONS.map((key) => ({ value: key, label: QUIZ_HORIZON_LABELS[key] }))}
+              value={answers.horizon}
+              onChange={(horizon) => onChange({ horizon })}
+              columns
+            />
+          ) : null}
+          {screen === 'weekdays' ? (
+            <WeekdaysQuestion answers={answers} area={area} onToggle={onToggleWeekday} />
+          ) : null}
+          {screen === 'style' ? (
+            <OptionQuestion
+              title="Como você prefere começar?"
+              hint={`Isso muda o formato do seu plano de ${area.label.toLowerCase()}, não o objetivo.`}
+              options={QUIZ_STYLES.map((key) => ({ value: key, label: QUIZ_STYLE_LABELS[key] }))}
+              value={answers.style}
+              onChange={(style) => onChange({ style })}
+            />
+          ) : null}
+          {screen === 'tone' ? (
+            <OptionQuestion
+              title="Quando você travar, como eu falo com você?"
+              hint="O plano é o mesmo nos três. Muda só o jeito de cobrar."
+              options={QUIZ_TONES.map((key) => ({
+                value: key,
+                label: QUIZ_TONE_LABELS[key],
+                description: QUIZ_TONE_DESCRIPTIONS[key],
+              }))}
+              value={answers.tone}
+              onChange={(tone) => onChange({ tone })}
+            />
+          ) : null}
+        </motion.div>
+      </AnimatePresence>
+    </QuizMascotProvider>
   )
 }
 
+/**
+ * O que o Momo faz em resposta à pessoa: acena quando ela responde, nega
+ * quando ela tenta avançar sem responder. Trocar de pergunta não é resposta:
+ * a primeira mudança de cada tela só registra o ponto de partida.
+ */
+function useMascotCue(step: number, answers: QuizAnswers, nudge: number): Pick<QuizMascotCue, 'gesture'> {
+  const [gesture, setGesture] = useState<QuizMascotCue['gesture']>(null)
+  const seen = useRef({ step, answers, nudge })
+  const count = useRef(0)
+
+  useEffect(() => {
+    const before = seen.current
+    seen.current = { step, answers, nudge }
+    if (before.step !== step) {
+      setGesture(null)
+      return
+    }
+    count.current += 1
+    if (before.nudge !== nudge) setGesture({ kind: 'no', key: count.current })
+    else if (before.answers !== answers) setGesture({ kind: 'yes', key: count.current })
+  }, [step, answers, nudge])
+
+  return { gesture }
+}
+
+/** A pergunta, dita pelo Momo. */
 function Title({ children, hint }: { readonly children: string; readonly hint: string }) {
-  const reduced = useReducedMotion()
-  return (
-    <header className="mb-5">
-      <motion.h1 {...cascade(0, reduced)} className="text-xl font-semibold tracking-tight text-balance text-ink sm:text-2xl">
-        {children}
-      </motion.h1>
-      <motion.p {...cascade(1, reduced)} className="mt-2 text-sm text-pretty text-ink-muted">
-        {hint}
-      </motion.p>
-    </header>
-  )
+  return <MascotSays text={children} hint={hint} />
 }
 
 /** Um bloco que entra na cascata, depois do título e da dica. */
@@ -565,14 +588,16 @@ function RecapScreen({ answers }: { readonly answers: QuizAnswers }) {
     <div>
       <p className="text-xs font-medium tracking-wide text-brand-ink uppercase">O que já sabemos</p>
       <header className="mb-5">
-        <RevealWords
-          text="Dá pra montar algo que cabe no seu dia"
-          delay={0.1}
-          className="text-xl font-semibold tracking-tight text-balance text-ink sm:text-2xl"
-        />
-        <p className="mt-2 text-sm text-pretty text-ink-muted">
-          Com o que você respondeu até aqui, o seu plano já tem forma.
-        </p>
+        <MascotAside mood="happy" gesture="yes" at={0.6}>
+          <RevealWords
+            text="Dá pra montar algo que cabe no seu dia"
+            delay={0.1}
+            className="text-xl font-semibold tracking-tight text-balance text-ink sm:text-2xl"
+          />
+          <p className="mt-2 text-sm text-pretty text-ink-muted">
+            Com o que você respondeu até aqui, o seu plano já tem forma.
+          </p>
+        </MascotAside>
       </header>
       <dl className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-surface/60">
         {rows.map((row, index) => (
