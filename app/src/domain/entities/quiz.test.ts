@@ -5,17 +5,22 @@ import {
   buildQuizPlan,
   EMPTY_QUIZ_ANSWERS,
   horizonOf,
+  isInfoScreen,
   isQuizComplete,
   areasInOrder,
   QUIZ_QUESTION_COUNT,
   quizAreaContext,
   QUIZ_SCREENS,
+  QUIZ_TONE_DESCRIPTIONS,
+  QUIZ_TONES,
   quizBlocker,
   quizIntro,
   suggestHabit,
   toActivationAnswers,
   type CompleteQuizAnswers,
 } from './quiz'
+import { firstStepNow, firstStepVoice } from './quiz-first-step'
+import type { PlannedTask } from './plan-builder'
 
 const today = parseDayKey('2026-09-21')
 
@@ -29,6 +34,7 @@ const answers: CompleteQuizAnswers = {
   weekdays: [1, 3, 5],
   style: 'momentumm_decide',
   history: 'algumas',
+  tone: 'gentil',
 }
 
 const stepOf = (screen: (typeof QUIZ_SCREENS)[number]) => QUIZ_SCREENS.indexOf(screen)
@@ -47,10 +53,19 @@ describe('quiz: validação', () => {
     expect(QUIZ_SCREENS[0]).toBe('area')
   })
 
-  it('as telas de confiança e devolutiva não pedem resposta nem contam como pergunta', () => {
-    expect(quizBlocker(stepOf('trust'), EMPTY_QUIZ_ANSWERS)).toBeNull()
-    expect(quizBlocker(stepOf('recap'), EMPTY_QUIZ_ANSWERS)).toBeNull()
-    expect(QUIZ_QUESTION_COUNT).toBe(QUIZ_SCREENS.length - 2)
+  it('as telas de recompensa não pedem resposta nem contam como pergunta', () => {
+    for (const screen of ['mirror', 'trust', 'math', 'recap'] as const) {
+      expect(quizBlocker(stepOf(screen), EMPTY_QUIZ_ANSWERS)).toBeNull()
+    }
+    expect(QUIZ_QUESTION_COUNT).toBe(QUIZ_SCREENS.length - 4)
+  })
+
+  it('nunca mais de três perguntas seguidas sem uma tela de recompensa', () => {
+    let run = 0
+    for (const screen of QUIZ_SCREENS) {
+      run = isInfoScreen(screen) ? 0 : run + 1
+      expect(run).toBeLessThanOrEqual(3)
+    }
   })
 
   it('completo com tudo que o plano precisa', () => {
@@ -61,6 +76,50 @@ describe('quiz: validação', () => {
 
   it('plano salvo antes da pergunta de histórico continua ativando', () => {
     expect(isQuizComplete({ ...answers, history: null })).toBe(true)
+  })
+
+  it('o tom é a última pergunta e cobra resposta, mas não trava plano antigo', () => {
+    expect(QUIZ_SCREENS[QUIZ_SCREENS.length - 1]).toBe('tone')
+    expect(quizBlocker(stepOf('tone'), EMPTY_QUIZ_ANSWERS)).not.toBeNull()
+    expect(quizBlocker(stepOf('tone'), { ...EMPTY_QUIZ_ANSWERS, tone: 'sem_filtro' })).toBeNull()
+    expect(isQuizComplete({ ...answers, tone: null })).toBe(true)
+  })
+})
+
+describe('quiz: o primeiro passo de agora', () => {
+  const step = (estimatedMin: number, minimalVersion: string | null): PlannedTask =>
+    ({ ...buildQuizPlan({ answers, today, existingAxes: [] }).plan.firstStep!, estimatedMin, minimalVersion }) as PlannedTask
+
+  it('cabe no tempo declarado: o passo é ele mesmo', () => {
+    expect(firstStepNow(step(15, 'Abrir o arquivo'), 20)).toMatchObject({ minutes: 15, fullTitle: null })
+  })
+
+  it('não cabe: a versão mínima vira o passo, com o tempo declarado como alvo', () => {
+    const now = firstStepNow(step(60, 'Listar só as contas fixas'), 20)
+    expect(now.title).toBe('Listar só as contas fixas')
+    expect(now.minutes).toBe(20)
+    expect(now.fullTitle).not.toBeNull()
+  })
+
+  it('não cabe e não tem versão mínima: o passo aparece com o tamanho real', () => {
+    expect(firstStepNow(step(60, null), 20)).toMatchObject({ minutes: 60, fullTitle: null })
+  })
+})
+
+describe('quiz: voz do primeiro passo', () => {
+  it('cada tom tem a própria voz', () => {
+    const voices = QUIZ_TONES.map((tone) => firstStepVoice(tone).lead)
+    expect(new Set(voices).size).toBe(QUIZ_TONES.length)
+  })
+
+  it('sem tom, fala direto', () => {
+    expect(firstStepVoice(null)).toEqual(firstStepVoice('direto'))
+  })
+
+  it('nenhuma frase usa travessão', () => {
+    const lines = QUIZ_TONES.flatMap((tone) => Object.values(firstStepVoice(tone)))
+    lines.push(...Object.values(QUIZ_TONE_DESCRIPTIONS))
+    for (const line of lines) expect(line).not.toMatch(/[—–]/)
   })
 })
 

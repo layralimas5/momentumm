@@ -1,6 +1,6 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useState } from 'react'
-import { Icon } from '@/presentation/components/ui/Icon'
+import { Mascot } from '@/presentation/mascot/Mascot'
 import { PROCESSING_MS } from './use-quiz'
 
 /**
@@ -34,17 +34,7 @@ export function QuizProcessing() {
       aria-live="polite"
       className="flex flex-1 flex-col items-center justify-center py-10 text-center"
     >
-      <span className="relative grid size-16 place-items-center">
-        <span
-          aria-hidden="true"
-          className={
-            reduced
-              ? 'absolute inset-0 rounded-full border-2 border-brand/40'
-              : 'absolute inset-0 animate-spin rounded-full border-2 border-line-hi border-t-brand'
-          }
-        />
-        <Icon name="ia" className="size-6 text-brand-ink" />
-      </span>
+      <Mascot size={104} mood="thinking" />
 
       <div className="mt-6 h-7">
         <AnimatePresence mode="wait" initial={false}>

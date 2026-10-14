@@ -160,8 +160,18 @@ export function trackFunnel(
     .then(() => undefined, () => undefined)
 }
 
+/**
+ * O que vai junto das respostas sem ser resposta. Mora no mesmo `answers`
+ * (jsonb aberto) pra não pedir coluna nova: o painel do lead já mostra o
+ * objeto inteiro.
+ */
+export interface QuizSessionExtras {
+  /** O dia em que a pessoa fez o primeiro passo ainda dentro do quiz. */
+  readonly firstStepDoneOn?: string
+}
+
 export function saveQuizAnswers(
-  answers: QuizAnswers,
+  answers: QuizAnswers & QuizSessionExtras,
   diagnosis: QuizDiagnosis | null,
   step: number | null,
 ): void {

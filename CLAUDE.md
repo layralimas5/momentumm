@@ -1424,6 +1424,101 @@ primeira vitória. Links dos carrosséis levam pra lá com `utm_*` e `tema=`
   O gate deixa `SUBSCRIPTION_PATH` passar com plano pendente, sem isso o
   botão de assinar voltava pra `/app/ativar` em loop.
 
+### Resultado do quiz sem número inventado (07/10/2026)
+
+A tela final do quiz é a primeira demonstração de inteligência do produto, e
+ela vem da relevância da recomendação, não de números decorativos. Proibido
+ali: porcentagem de sucesso, "confiança", arquétipo, estudo citado na tela,
+curva projetada sem histórico e prêmio antes da primeira ação.
+
+- `domain/entities/quiz-strategy.ts` é o motor, determinístico e auditável:
+  respostas → tabelas de sinal (`OBSTACLE_SIGNALS`, `HISTORY_SIGNALS`...) →
+  `BehaviorProfile` com a evidência de cada ponto → padrão + indicadores
+  Começar/Manter/Retomar (Fácil/Moderado/Difícil, nunca número) → regras que
+  escolhem 3 de 8 intervenções (`recovery_plan`, `minimum_action`,
+  `progress_tracking`, `implementation_intention`, `daily_priority`,
+  `graded_task`, `habit_anchor`, `weekly_review`). Sem sinal forte, completa
+  com a base (passo mínimo, progresso, retomada). A IA pode reescrever copy
+  depois; quem escolhe continua sendo a regra.
+- Toda intervenção carrega o porquê citando a resposta, e o link "Por que o
+  Momentumm escolheu isso?" abre o sheet. Os "se → então" (`ifThenRules`)
+  usam os dias reais do plano e nunca inventam horário.
+- A base científica (Harkin 2016, Gollwitzer & Sheeran 2006, Lally 2010,
+  Epton 2017) está documentada no topo do arquivo, não na interface.
+- O gráfico de trajetória virou o ciclo Planejar → Executar → Registrar →
+  Ajustar → Retomar; o "marco" é o primeiro marco real do plano.
+- O CTA é "Fazer meu primeiro passo". Depois da ativação, o Hoje mostra só o
+  `FirstWinCard` (Começar / Já fiz) enquanto a ação está aberta, com "Ver o
+  resto do dia" como saída.
+
+### O primeiro passo antes da conta, e o tom (13/10/2026)
+
+Referência: o quiz da Cláudia (webclaudia.com.br), que dá a primeira lição
+antes de pedir cadastro. O cadastro deixa de ser a porta e vira o jeito de
+guardar o que a pessoa já fez.
+
+- **Fase nova `primeiro-passo`** em `use-quiz`, depois do resultado.
+  "Fazer meu primeiro passo" abre o passo ainda sem conta (`QuizFirstStep`),
+  com "Começar agora" (cronômetro por timestamp, `use-step-timer`) ou "Já
+  fiz". Feito, a tela diz o que a conta vai guardar e o CTA é "Salvar meu
+  progresso". "Criar a conta e fazer depois" mantém o caminho antigo.
+- **O passo de agora cabe no tempo declarado** (`firstStepNow`). A estimativa
+  do roteiro não encolhe (decisão do `blueprintTasks`), então quando ela passa
+  do tempo que a pessoa disse ter, a versão mínima vira o passo e a completa
+  fica dita como o que continua no plano. Finanças pedia 60 min pra quem tinha
+  20.
+- **A ação de hoje nasce concluída.** O plano pendente leva
+  `firstStepDoneOn`; `/app/ativar` conclui a ação pelo `setTaskDone` só se o
+  dia for o mesmo, e o Hoje mostra a comemoração e dispara
+  `first_action_completed` como antes. Nada é carimbado à parte.
+- **Tom é a última pergunta** (`tone`: gentil, direto, sem filtro). Muda só
+  a voz da tela do primeiro passo (`firstStepVoice`), nunca o plano. Fica de
+  fora de `isQuizComplete`, igual ao histórico, pra plano antigo continuar
+  ativando. O app ainda não usa o tom: falta coluna no perfil.
+- **Sem migration.** Tom e `firstStepDoneOn` vão no jsonb `answers` que o
+  `quiz_save` já aceita, e aparecem no detalhe do lead no painel.
+- **O movimento do quiz** segue o da Cláudia, com curvas e tempos tirados do
+  CSS dela e guardados em `presentation/quiz/quiz-motion.ts` (nenhuma tela
+  escreve `cubic-bezier` solto). Cascata de entrada nas perguntas, toque com
+  mola e anel no marcador, tremida quando falta resposta, brilho na ponta da
+  barra de progresso, título que acende palavra por palavra (`RevealWords`),
+  a linha do "Seu caminho" se desenhando com os marcos acendendo quando a
+  ponta passa (`timeAtProgress`), troféu com confete no passo feito, e botão
+  que espera a animação nas telas de leitura. A nuvem mascote e a curva de
+  "anteciparam sua data" ficaram de fora: a primeira é a marca deles, a
+  segunda é número inventado. Tudo some com `prefers-reduced-motion`.
+- **Telas de recompensa entre as perguntas**, no ritmo da Cláudia: nunca
+  mais de três perguntas seguidas sem uma (teste em `quiz.test.ts`). São
+  quatro, todas com informação verdadeira: o **espelho** (`QuizMirror`, o
+  objetivo digitado e os três degraus vazios), a **confiança** (agora com a
+  curva do modelo de Lally e o dia perdido que não derruba a linha), a
+  **conta** (`QuizTimeBank` sobre `quiz-time-bank`, o tempo reservado somado
+  no calendário até o prazo, uma barra por semana) e a **devolutiva**, que
+  passou pra depois de "como começar". Histórico veio pra antes da
+  confiança. A ordem mudou, então o rascunho foi pra versão 3 e o abandono
+  por etapa no `/admin/funil` de sessões antigas aponta pra tela errada.
+
+### O Momo, o mascote (14/10/2026)
+
+Personagem próprio no papel da nuvem da Cláudia (`presentation/mascot/Mascot`):
+um seixo roxo com uma faísca na antena. Sem laranja (é da sequência) e sem
+nuvem (é da marca deles). "Momo" é nome provisório.
+
+- **Movimento em camadas**, com os tempos da referência: flutua (8,4s),
+  respira (4,1s), pisca (5,2s), halo (6,2s) e sombra no chão rodando sempre;
+  gestos curtos e únicos por cima (`pop`, `yes`, `no`, `jump`, `tilt`), que a
+  tela dispara trocando a `key`. Oito caras (`mood`). Decorativo
+  (`aria-hidden`), e parado com `prefers-reduced-motion`.
+- **No quiz** (`QuizMascot`): fala cada pergunta num balão, com a boca
+  mexendo enquanto as palavras acendem (`MascotSays`, via `Title`); acena
+  quando a resposta muda e nega quando tentam avançar sem resposta (o
+  `nudge` do `QuizPage`); na pergunta do tom faz a cara de cada opção
+  (`moodForTone`). Nas telas de recompensa comenta com um gesto no instante
+  certo (`MascotAside`: o pulo da conta sai quando a última barra sobe).
+  Pensa na análise, vai de bolso na ponta da barra de progresso, faz a cara
+  do tom no primeiro passo e pula no lugar do troféu na comemoração.
+- Ainda não está no app (Hoje, lembretes, IA): só no quiz.
+
 ### Hoje como central de execução, e a Rotina (27/09/2026)
 
 O app sabia planejar (objetivo → etapa → ação) e sabia repetir (hábito). O que

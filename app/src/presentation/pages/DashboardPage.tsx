@@ -49,6 +49,7 @@ export function DashboardPage() {
   const firstWin = useFirstWin()
   const comeback = useComeback()
   const [adding, setAdding] = useState(false)
+  const [showFullDay, setShowFullDay] = useState(false)
 
   useJourneyRecorder(view)
 
@@ -71,20 +72,52 @@ export function DashboardPage() {
   const firstName = profile?.name.split(' ')[0] ?? null
   const now = new Date()
 
+  const header = (
+    <header className="flex items-start justify-between gap-3 px-1 pt-1">
+      <div className="min-w-0">
+        <h2 className="truncate text-[1.1rem] leading-tight font-bold tracking-tight text-ink">
+          {greeting(now)}
+          {firstName ? `, ${firstName}` : ''}
+        </h2>
+        <p className="mt-0.5 text-sm text-ink-faint">{formatToday(now)}</p>
+      </div>
+      <XPBadge amount={evolution.summary.progress.xpTotal} total className="mt-1" />
+    </header>
+  )
+
+  /*
+    Quem chega do quiz vê só o primeiro passo: a primeira experiência é
+    agir, não explorar. O resto do dia fica a um toque, nunca preso.
+  */
+  if (firstWin.task && !showFullDay) {
+    return (
+      <div className="flex flex-col gap-4 pb-20">
+        {header}
+        <FirstWinCard
+          task={firstWin.task}
+          justCompleted={false}
+          nextUp={view.nextUp}
+          onComplete={day.completeTask}
+          onStartFocus={day.startFocus}
+          onDismiss={firstWin.dismiss}
+        />
+        <button
+          type="button"
+          onClick={() => setShowFullDay(true)}
+          className="min-h-11 self-center rounded-full px-3 text-sm text-ink-faint transition-colors hover:text-ink"
+        >
+          Ver o resto do dia
+        </button>
+        {day.layer}
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-4 pb-20">
       {planner.error ? <ErrorNote message={planner.error} onRetry={() => void planner.reload()} /> : null}
 
-      <header className="flex items-start justify-between gap-3 px-1 pt-1">
-        <div className="min-w-0">
-          <h2 className="truncate text-[1.1rem] leading-tight font-bold tracking-tight text-ink">
-            {greeting(now)}
-            {firstName ? `, ${firstName}` : ''}
-          </h2>
-          <p className="mt-0.5 text-sm text-ink-faint">{formatToday(now)}</p>
-        </div>
-        <XPBadge amount={evolution.summary.progress.xpTotal} total className="mt-1" />
-      </header>
+      {header}
 
       {planner.isNewUser && activation.skipped ? (
         <ResumeActivationCard

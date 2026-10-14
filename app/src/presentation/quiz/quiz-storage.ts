@@ -14,7 +14,8 @@ import { EMPTY_QUIZ_ANSWERS, isQuizComplete, type CompleteQuizAnswers, type Quiz
  *   depois que a pessoa tocou em "Ativar meu plano". É o que `/app/ativar`
  *   lê depois do cadastro, inclusive quando o login com Google volta sem
  *   estado nenhum. Ele carrega a origem (UTMs) pra ir junto no
- *   `plan_activated`
+ *   `plan_activated`, e o dia em que o primeiro passo foi feito dentro do
+ *   quiz, pra a ação de hoje já nascer concluída
  *
  * Nenhuma das duas chaves tem id de conta: o quiz acontece antes de existir
  * conta, e a chave da sessão do quiz vive em `infrastructure/analytics/funnel`.
@@ -35,7 +36,7 @@ export interface QuizDraft {
  * rascunho antigo aponta pra outra tela: as respostas continuam valendo, o
  * passo volta pro começo.
  */
-const DRAFT_SCREENS_VERSION = 2
+const DRAFT_SCREENS_VERSION = 3
 
 interface StoredDraft extends QuizDraft {
   readonly version?: number
@@ -64,6 +65,12 @@ export function clearQuizDraft(): void {
 export interface PendingQuizPlan {
   readonly answers: CompleteQuizAnswers
   readonly attribution: QuizAttribution
+  /**
+   * O dia (`YYYY-MM-DD`) em que a pessoa fez o primeiro passo ainda no quiz.
+   * Null quando ela foi direto pro cadastro. Só vale se a conta for criada
+   * no mesmo dia: a ação de hoje é a que fica concluída, não a de outro dia.
+   */
+  readonly firstStepDoneOn: string | null
   readonly savedAt: string
 }
 
@@ -75,6 +82,7 @@ export function loadPendingQuizPlan(): PendingQuizPlan | null {
   return {
     answers,
     attribution: { ...EMPTY_ATTRIBUTION, ...(value.attribution ?? {}) },
+    firstStepDoneOn: typeof value.firstStepDoneOn === 'string' ? value.firstStepDoneOn : null,
     savedAt: typeof value.savedAt === 'string' ? value.savedAt : new Date().toISOString(),
   }
 }

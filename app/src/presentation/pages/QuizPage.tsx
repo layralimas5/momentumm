@@ -1,33 +1,49 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { motion, useAnimationControls, useReducedMotion } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { dayKeyOf } from '@/domain/entities/day'
-import { QUIZ_SCREEN_COUNT } from '@/domain/entities/quiz'
+import { minutesOf, QUIZ_SCREEN_COUNT, quizScreenAt, type QuizScreen } from '@/domain/entities/quiz'
+import { firstStepNow, firstStepVoice } from '@/domain/entities/quiz-first-step'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { Button } from '@/presentation/components/ui/Button'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { QuizContact } from '@/presentation/quiz/QuizContact'
-import { QuizDiagnosisView } from '@/presentation/quiz/QuizDiagnosis'
-import { QuizOffer } from '@/presentation/quiz/QuizOffer'
-import { QuizPlanPreviewView } from '@/presentation/quiz/QuizPlanPreview'
+import { QuizFirstStep } from '@/presentation/quiz/QuizFirstStep'
 import { QuizProcessing } from '@/presentation/quiz/QuizProcessing'
 import { QuizQuestion } from '@/presentation/quiz/QuizQuestion'
+import { QuizResult } from '@/presentation/quiz/QuizResult'
 import { QuizShell } from '@/presentation/quiz/QuizShell'
 import { useQuiz } from '@/presentation/quiz/use-quiz'
 import { QUIZ_ACTIVATION_PATH } from '@/presentation/quiz/quiz-activation'
+import { SHAKE } from '@/presentation/quiz/quiz-motion'
+import { useStepTimer } from '@/presentation/quiz/use-step-timer'
 
 /**
  * `/criar-meu-plano`: a entrada do funil, pública.
  *
- * Perguntas, análise, contato e resultado, nessa ordem (`use-quiz.ts`). A
- * pessoa responde tudo sem conta. Só "Ativar meu plano no Momentumm" leva
- * pro cadastro, e o plano vai junto (`quiz-storage`): depois do login,
- * `/app/ativar` grava exatamente o que a prévia mostrou.
+ * Perguntas, análise, contato, resultado e primeiro passo, nessa ordem
+ * (`use-quiz.ts`). A pessoa responde tudo e faz o primeiro passo sem conta.
+ * Só depois disso vem o cadastro, e o plano vai junto (`quiz-storage`):
+ * depois do login, `/app/ativar` grava exatamente o que a prévia mostrou,
+ * com o passo de hoje já concluído.
  */
 export function QuizPage() {
   const quiz = useQuiz()
   const navigate = useNavigate()
   const { user, loading } = useAuth()
-  const today = useMemo(() => dayKeyOf(new Date()), [])
+  const timer = useStepTimer()
+  const reduced = useReducedMotion()
+  const shake = useAnimationControls()
+  const [nudge, setNudge] = useState(0)
+
+  // Tentar avançar sem resposta treme a pergunta: o aviso embaixo diz o que
+  // falta, a tremida diz ONDE. Toda tentativa treme de novo.
+  const next = () => {
+    if (quiz.blocker) {
+      if (!reduced) void shake.start(SHAKE)
+      setNudge((count) => count + 1)
+    }
+    quiz.next()
+  }
 
   // Pra qual lado a pergunta desliza: guarda o passo anterior.
   const previousStep = useRef(quiz.step)
@@ -52,6 +68,8 @@ export function QuizPage() {
       <QuizShell
         progress={(quiz.step + 1) / QUIZ_SCREEN_COUNT}
         progressLabel={`${quiz.step + 1} de ${QUIZ_SCREEN_COUNT}`}
+        footerKey={quiz.step}
+        footerDelay={FOOTER_DELAY[quizScreenAt(quiz.step)] ?? 0}
         footer={
           <>
             {/* Na abertura não há pra onde voltar: ela é a primeira tela. */}
@@ -66,7 +84,7 @@ export function QuizPage() {
                 O botão fica clicável mesmo faltando resposta: botão apagado
                 não explica nada, e quem toca e lê o aviso entende o que falta.
               */}
-              <Button className="w-full" onClick={quiz.next}>
+              <Button className="w-full" onClick={next}>
                 {last ? 'Montar meu plano' : 'Continuar'}
                 <Icon name="seta" className="size-4" />
               </Button>
@@ -74,17 +92,20 @@ export function QuizPage() {
           </>
         }
       >
-        <QuizQuestion
-          step={quiz.step}
-          answers={quiz.answers}
-          intro={quiz.intro}
-          direction={direction}
-          onChange={quiz.set}
-          onToggleArea={quiz.toggleArea}
-          onToggleObstacle={quiz.toggleObstacle}
-          onToggleWeekday={quiz.toggleWeekday}
-          onSubmit={quiz.next}
-        />
+        <motion.div animate={shake}>
+          <QuizQuestion
+            step={quiz.step}
+            answers={quiz.answers}
+            intro={quiz.intro}
+            direction={direction}
+            onChange={quiz.set}
+            onToggleArea={quiz.toggleArea}
+            onToggleObstacle={quiz.toggleObstacle}
+            onToggleWeekday={quiz.toggleWeekday}
+            onSubmit={next}
+            nudge={nudge}
+          />
+        </motion.div>
         <p aria-live="polite" className="mt-4 min-h-5 text-sm text-ink-faint">
           {quiz.warning ?? ''}
         </p>
@@ -130,7 +151,7 @@ export function QuizPage() {
     )
   }
 
-  if (!quiz.diagnosis || !quiz.preview) {
+  if (!quiz.strategy || !quiz.preview) {
     return (
       <QuizShell>
         <QuizProcessing />
@@ -138,18 +159,81 @@ export function QuizPage() {
     )
   }
 
+  const firstStep = quiz.preview.plan.firstStep
+  // O passo de agora é um só, no resultado e na tela do passo: os dois
+  // mostrando tamanhos diferentes é o app discordando de si mesmo.
+  const stepNow = firstStep && quiz.answers.time ? firstStepNow(firstStep, minutesOf(quiz.answers.time)) : null
+  if (quiz.phase === 'primeiro-passo' && firstStep && stepNow) {
+    const finish = () => {
+      timer.stop()
+      quiz.completeFirstStep()
+    }
+    return (
+      <QuizShell
+        footerKey={quiz.firstStepDone ? 'feito' : 'passo'}
+        footerDelay={quiz.firstStepDone ? 1.1 : 0}
+        footer={
+          quiz.firstStepDone ? (
+            <Button className="w-full" onClick={activate}>
+              Salvar meu progresso
+              <Icon name="seta" className="size-4" />
+            </Button>
+          ) : timer.running ? (
+            <>
+              <Button variant="ghost" className="shrink-0" onClick={timer.stop}>
+                Parar
+              </Button>
+              <div className="min-w-0 flex-1">
+                <Button className="w-full" onClick={finish}>
+                  <Icon name="check" className="size-4" />
+                  Terminei
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" className="shrink-0" onClick={finish}>
+                <Icon name="check" className="size-4" />
+                Já fiz
+              </Button>
+              <div className="min-w-0 flex-1">
+                <Button className="w-full" onClick={timer.start}>
+                  <Icon name="play" className="size-4" />
+                  Começar agora
+                </Button>
+              </div>
+            </>
+          )
+        }
+      >
+        <QuizFirstStep
+          step={firstStep}
+          now={stepNow}
+          habit={quiz.preview.habit}
+          milestoneCount={quiz.preview.plan.milestones.length}
+          voice={firstStepVoice(quiz.answers.tone)}
+          tone={quiz.answers.tone}
+          done={quiz.firstStepDone}
+          running={timer.running}
+          elapsedSeconds={timer.elapsedSeconds}
+          onSkip={activate}
+        />
+      </QuizShell>
+    )
+  }
+
   /*
-    O resultado e a oferta são a mesma tela: o diagnóstico diz o que trava,
-    o plano responde ponto a ponto, e o botão de ativar fica embaixo dos
-    dois, com o que acontece depois do teste escrito antes do clique.
+    O resultado e a oferta são a mesma tela: o padrão diz onde a pessoa
+    costuma falhar, a estratégia responde ponto a ponto, e o botão leva
+    direto pro primeiro passo, não pra um painel vazio.
   */
   return (
     <QuizShell
       tallFooter
       footer={
         <div className="flex w-full flex-col gap-2">
-          <Button className="w-full" onClick={activate}>
-            Ativar meu plano no Momentumm
+          <Button className="w-full" onClick={stepNow ? quiz.startFirstStep : activate}>
+            Fazer meu primeiro passo
             <Icon name="seta" className="size-4" />
           </Button>
           <Button variant="ghost" size="sm" className="w-full" onClick={quiz.review}>
@@ -158,11 +242,28 @@ export function QuizPage() {
         </div>
       }
     >
-      <QuizDiagnosisView diagnosis={quiz.diagnosis} />
-      <div className="mt-6 border-t border-line pt-6">
-        <QuizPlanPreviewView preview={quiz.preview} today={today} />
-      </div>
-      <QuizOffer />
+      <QuizResult
+        firstName={firstNameOf(quiz.lead.name)}
+        strategy={quiz.strategy}
+        preview={quiz.preview}
+        stepNow={stepNow}
+      />
     </QuizShell>
   )
+}
+
+/**
+ * Quanto o botão espera em cada tela de recompensa: o tempo da animação
+ * dela. Tela de pergunta não espera nada.
+ */
+const FOOTER_DELAY: Partial<Record<QuizScreen, number>> = {
+  mirror: 1.6,
+  trust: 1.2,
+  math: 1.6,
+  recap: 0.9,
+}
+
+function firstNameOf(name: string): string | null {
+  const first = name.trim().split(/\s+/)[0]
+  return first ? first.charAt(0).toUpperCase() + first.slice(1) : null
 }

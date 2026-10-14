@@ -1,16 +1,16 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import type { Task } from '@/domain/entities/task'
-import { Button } from '@/presentation/components/ui/Button'
+import { Card, Eyebrow } from '@/presentation/components/ds/Card'
+import { PrimaryButton, SoftButton } from '@/presentation/components/ds/Controls'
 import { Icon } from '@/presentation/components/ui/Icon'
-import { Panel } from '@/presentation/components/ui/Surface'
 import { useAsyncAction } from '@/presentation/hooks/use-async-action'
 import type { NextUp } from '@/presentation/planner/use-dashboard'
 
 /**
- * A primeira tela depois do quiz: o plano está pronto e a ação de hoje é
- * uma só. Dois estados no mesmo lugar: a ação aberta (com concluir e
- * começar) e, logo depois de fechar, a comemoração com a próxima ação
- * recomendada. Discreto de propósito: é um card, não um confete.
+ * A primeira tela depois do quiz: "Fazer meu primeiro passo" cai aqui, e o
+ * Hoje mostra só isto enquanto a ação está aberta. A primeira experiência
+ * com o app é agir, não explorar menu. Depois de concluir, o card vira a
+ * comemoração discreta com a próxima ação, e o dia completo aparece.
  */
 
 interface FirstWinCardProps {
@@ -42,31 +42,20 @@ export function FirstWinCard({
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       >
-        <Panel tone="brand" glow className="flex flex-col gap-3">
-          <p className="flex items-center gap-2 text-xs font-medium tracking-wide text-brand-ink uppercase">
-            <Icon name="trofeu" className="size-4" />
-            Primeira vitória
-          </p>
-          <p className="text-lg font-semibold text-balance text-ink">
-            Você começou de verdade. O plano já está andando.
-          </p>
+        <Card tone="float" className="surface-brand-glow flex flex-col gap-3">
+          <Eyebrow icon="trofeu">Primeiro passo feito</Eyebrow>
+          <p className="text-lg font-semibold text-balance text-ink">Você começou de verdade. O plano já está andando.</p>
           {nextUp ? (
-            <div className="rounded-xl border border-line bg-surface/60 px-3.5 py-3">
-              <p className="text-xs text-ink-faint">Próxima ação recomendada</p>
+            <div className="well rounded-2xl px-3.5 py-3">
+              <p className="text-xs text-ink-faint">Próximo passo</p>
               <p className="mt-0.5 text-sm font-medium text-ink">{nextUp.task.title}</p>
               <p className="mt-0.5 text-xs text-ink-muted">{nextUp.reason}</p>
             </div>
           ) : (
-            <p className="text-sm text-ink-muted">
-              Por hoje é isso. Amanhã o Hoje mostra o próximo passo.
-            </p>
+            <p className="text-sm text-ink-muted">Por hoje é isso. Amanhã o Hoje mostra o próximo passo.</p>
           )}
-          <div>
-            <Button variant="ghost" className="min-h-10" onClick={onDismiss}>
-              Fechar
-            </Button>
-          </div>
-        </Panel>
+          <SoftButton onClick={onDismiss}>Ver meu dia</SoftButton>
+        </Card>
       </motion.div>
     )
   }
@@ -74,44 +63,46 @@ export function FirstWinCard({
   if (!task) return null
 
   return (
-    <Panel tone="brand" glow className="flex flex-col gap-3">
-      <p className="flex items-center gap-2 text-xs font-medium tracking-wide text-brand-ink uppercase">
-        <Icon name="raio" className="size-4" />
-        Seu plano está pronto
-      </p>
-      <p className="text-lg font-semibold text-balance text-ink">
-        Agora vamos conquistar sua primeira vitória.
-      </p>
-
-      <div className="rounded-xl border border-line bg-surface/60 px-3.5 py-3">
-        <p className="text-base font-medium text-pretty text-ink">{task.title}</p>
-        <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-faint">
-          {task.estimatedMin ? (
-            <span className="inline-flex items-center gap-1">
-              <Icon name="relogio" className="size-3.5" />
-              cerca de {task.estimatedMin} min
-            </span>
+    <motion.div
+      initial={reduced ? false : { opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <Card tone="float" className="surface-brand-glow flex flex-col gap-4" aria-labelledby="primeiro-passo">
+        <Eyebrow icon="raio">Seu primeiro passo</Eyebrow>
+        <div>
+          <h2 id="primeiro-passo" className="text-xl leading-snug font-semibold tracking-tight text-balance text-ink">
+            {task.title}
+          </h2>
+          <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-muted">
+            {task.estimatedMin ? (
+              <span className="inline-flex items-center gap-1.5 tabular">
+                <Icon name="cronometro" className="size-4" />
+                {task.estimatedMin} min
+              </span>
+            ) : null}
+            <span>Pequeno de propósito: dá pra fazer agora.</span>
+          </p>
+          {task.minimalVersion ? (
+            <p className="well mt-3 rounded-2xl px-3.5 py-2.5 text-sm text-ink-muted">
+              Dia corrido? Vale a versão mínima: {task.minimalVersion.toLowerCase()}
+            </p>
           ) : null}
-          {task.minimalVersion ? <span>Dia cheio? {task.minimalVersion}</span> : null}
-        </p>
-      </div>
+        </div>
 
-      {complete.error ? <p className="text-sm text-danger">{complete.error}</p> : null}
+        {complete.error ? <p className="text-sm text-danger">{complete.error}</p> : null}
 
-      <div className="flex flex-wrap gap-2">
-        <Button
-          className="min-h-12 flex-1"
-          loading={complete.running}
-          onClick={() => void complete.run(task)}
-        >
-          <Icon name="check" className="size-4" />
-          Concluí
-        </Button>
-        <Button variant="secondary" className="min-h-12" onClick={() => onStartFocus(task)}>
-          <Icon name="play" className="size-4" />
-          Começar agora
-        </Button>
-      </div>
-    </Panel>
+        <div className="flex flex-col gap-2">
+          <PrimaryButton onClick={() => onStartFocus(task)}>
+            <Icon name="play" className="size-4" />
+            Começar
+          </PrimaryButton>
+          <SoftButton disabled={complete.running} onClick={() => void complete.run(task)}>
+            <Icon name="check" className="size-4" />
+            Já fiz
+          </SoftButton>
+        </div>
+      </Card>
+    </motion.div>
   )
 }
