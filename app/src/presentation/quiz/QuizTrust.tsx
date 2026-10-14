@@ -1,7 +1,8 @@
-import { animate, motion, useReducedMotion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { obstacleAnswers, type QuizAnswers, type QuizAreaContext } from '@/domain/entities/quiz'
 import { Icon, type IconName } from '@/presentation/components/ui/Icon'
+import { CountUp } from './CountUp'
+import { EASE_DRAW, EASE_SPRING_STRONG, timeAtProgress } from './quiz-motion'
 
 /**
  * A tela de confiança, no meio das perguntas e antes das mais pesadas.
@@ -88,6 +89,8 @@ export function QuizTrust({ answers, area }: QuizTrustProps) {
           </span>
         </div>
 
+        <HabitCurve reduced={reduced} />
+
         <blockquote className="relative mt-4 border-l-2 border-positive pl-3 text-sm text-pretty text-ink">
           E falhar um dia no meio do caminho <strong className="font-semibold text-positive">não atrapalhou</strong>{' '}
           a formação do hábito.
@@ -133,23 +136,89 @@ export function QuizTrust({ answers, area }: QuizTrustProps) {
   )
 }
 
-/** O número sobe de zero até o valor uma vez; com menos movimento, já nasce pronto. */
-function CountUp({ to, reduced }: { readonly to: number; readonly reduced: boolean }) {
-  const [value, setValue] = useState(reduced ? to : 0)
+/**
+ * A curva do modelo da pesquisa: o hábito fica mais automático rápido no
+ * começo e estabiliza perto do dia 66. O ponto marca um dia perdido, e a
+ * linha segue sem queda, que é o achado do estudo. É o gráfico de
+ * comparação da Cláudia, com a diferença de que a forma vem da pesquisa
+ * citada embaixo, não de uma promessa do app.
+ *
+ * Modelo assintótico do artigo: automaticidade = 1 - e^(-k·dia), com k
+ * escolhido pra chegar a 95% no dia 66.
+ */
+const CURVE_DAYS = 90
+const K = Math.log(20) / HABIT_DAYS
+const MISSED_DAY = 24
+const W = 300
+const H = 92
+const PAD = 6
+const DRAW = { delay: 0.5, duration: 1.4 }
 
-  useEffect(() => {
-    if (reduced) {
-      setValue(to)
-      return
-    }
-    const controls = animate(0, to, {
-      duration: 1.2,
-      delay: 0.3,
-      ease: EASE,
-      onUpdate: (latest) => setValue(Math.round(latest)),
-    })
-    return () => controls.stop()
-  }, [to, reduced])
-
-  return <>{value}</>
+function curvePoint(day: number): readonly [number, number] {
+  const x = PAD + (day / CURVE_DAYS) * (W - PAD * 2)
+  const y = H - PAD - (1 - Math.exp(-K * day)) * (H - PAD * 2 - 10)
+  return [x, y]
 }
+
+const CURVE_PATH = Array.from({ length: CURVE_DAYS + 1 }, (_, day) => {
+  const [x, y] = curvePoint(day)
+  return `${day === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`
+}).join(' ')
+
+function HabitCurve({ reduced }: { readonly reduced: boolean }) {
+  const [missedX, missedY] = curvePoint(MISSED_DAY)
+  const [plateauX] = curvePoint(HABIT_DAYS)
+  // O ponto acende quando a ponta da linha chega nele. O desenho segue
+  // `EASE_DRAW`, então o instante sai de `timeAtProgress`, pela posição
+  // horizontal (a curva é quase reta onde o ponto está, a diferença some).
+  const reach = (day: number) => DRAW.delay + DRAW.duration * timeAtProgress(EASE_DRAW, day / CURVE_DAYS)
+
+  return (
+    <figure className="relative mt-4">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full overflow-visible" role="img" aria-label="Curva da pesquisa: o hábito fica automático perto do dia 66, e um dia perdido no meio não derruba a curva.">
+        <line x1={plateauX} x2={plateauX} y1={PAD} y2={H - PAD} className="stroke-line" strokeDasharray="3 3" />
+        <motion.path
+          d={CURVE_PATH}
+          fill="none"
+          strokeWidth={2.5}
+          strokeLinecap="round"
+          className="stroke-brand-hi"
+          initial={reduced ? false : { pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ ...DRAW, ease: EASE_DRAW }}
+          style={{ filter: 'drop-shadow(0 0 6px var(--color-brand-hi))' }}
+        />
+        <motion.circle
+          cx={missedX}
+          cy={missedY}
+          r={4.5}
+          strokeWidth={2}
+          className="fill-surface stroke-ink-muted"
+          initial={reduced ? false : { opacity: 0, scale: 0.3 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: reach(MISSED_DAY), ease: EASE_SPRING_STRONG }}
+          style={{ transformOrigin: `${missedX}px ${missedY}px` }}
+        />
+      </svg>
+      <motion.span
+        className="absolute text-[10px] text-ink-muted"
+        style={{ left: `${(missedX / W) * 100}%`, top: `${((missedY + 9) / H) * 100}%`, transform: 'translateX(-50%)' }}
+        initial={reduced ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, delay: reach(MISSED_DAY) + 0.15 }}
+      >
+        1 dia perdido
+      </motion.span>
+      <motion.span
+        className="absolute top-0 text-[10px] text-ink-faint"
+        style={{ left: `${(plateauX / W) * 100}%`, transform: 'translateX(-50%) translateY(-100%)' }}
+        initial={reduced ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, delay: reach(HABIT_DAYS) }}
+      >
+        dia 66
+      </motion.span>
+    </figure>
+  )
+}
+

@@ -31,6 +31,8 @@ import {
 import { TextInput } from '@/presentation/components/ui/Field'
 import { Icon } from '@/presentation/components/ui/Icon'
 import { cn } from '@/shared/lib/cn'
+import { QuizMirror } from './QuizMirror'
+import { QuizTimeBank } from './QuizTimeBank'
 import { QuizTrust } from './QuizTrust'
 import { RevealWords } from './RevealWords'
 import { cascade, EASE_ENTER, EASE_SPRING } from './quiz-motion'
@@ -94,7 +96,9 @@ export function QuizQuestion({
         {screen === 'goal' ? (
           <GoalQuestion answers={answers} area={area} onChange={onChange} onSubmit={onSubmit} />
         ) : null}
+        {screen === 'mirror' ? <QuizMirror goal={goal} area={area} /> : null}
         {screen === 'trust' ? <QuizTrust area={area} answers={answers} /> : null}
+        {screen === 'math' ? <QuizTimeBank answers={answers} area={area} /> : null}
         {screen === 'history' ? (
           <OptionQuestion
             title={`Quantas vezes você já começou a ${area.practice} e parou?`}

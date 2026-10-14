@@ -1487,6 +1487,16 @@ guardar o que a pessoa já fez.
   que espera a animação nas telas de leitura. A nuvem mascote e a curva de
   "anteciparam sua data" ficaram de fora: a primeira é a marca deles, a
   segunda é número inventado. Tudo some com `prefers-reduced-motion`.
+- **Telas de recompensa entre as perguntas**, no ritmo da Cláudia: nunca
+  mais de três perguntas seguidas sem uma (teste em `quiz.test.ts`). São
+  quatro, todas com informação verdadeira: o **espelho** (`QuizMirror`, o
+  objetivo digitado e os três degraus vazios), a **confiança** (agora com a
+  curva do modelo de Lally e o dia perdido que não derruba a linha), a
+  **conta** (`QuizTimeBank` sobre `quiz-time-bank`, o tempo reservado somado
+  no calendário até o prazo, uma barra por semana) e a **devolutiva**, que
+  passou pra depois de "como começar". Histórico veio pra antes da
+  confiança. A ordem mudou, então o rascunho foi pra versão 3 e o abandono
+  por etapa no `/admin/funil` de sessões antigas aponta pra tela errada.
 
 ### Hoje como central de execução, e a Rotina (27/09/2026)
 

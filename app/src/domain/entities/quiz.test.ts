@@ -5,6 +5,7 @@ import {
   buildQuizPlan,
   EMPTY_QUIZ_ANSWERS,
   horizonOf,
+  isInfoScreen,
   isQuizComplete,
   areasInOrder,
   QUIZ_QUESTION_COUNT,
@@ -52,10 +53,19 @@ describe('quiz: validação', () => {
     expect(QUIZ_SCREENS[0]).toBe('area')
   })
 
-  it('as telas de confiança e devolutiva não pedem resposta nem contam como pergunta', () => {
-    expect(quizBlocker(stepOf('trust'), EMPTY_QUIZ_ANSWERS)).toBeNull()
-    expect(quizBlocker(stepOf('recap'), EMPTY_QUIZ_ANSWERS)).toBeNull()
-    expect(QUIZ_QUESTION_COUNT).toBe(QUIZ_SCREENS.length - 2)
+  it('as telas de recompensa não pedem resposta nem contam como pergunta', () => {
+    for (const screen of ['mirror', 'trust', 'math', 'recap'] as const) {
+      expect(quizBlocker(stepOf(screen), EMPTY_QUIZ_ANSWERS)).toBeNull()
+    }
+    expect(QUIZ_QUESTION_COUNT).toBe(QUIZ_SCREENS.length - 4)
+  })
+
+  it('nunca mais de três perguntas seguidas sem uma tela de recompensa', () => {
+    let run = 0
+    for (const screen of QUIZ_SCREENS) {
+      run = isInfoScreen(screen) ? 0 : run + 1
+      expect(run).toBeLessThanOrEqual(3)
+    }
   })
 
   it('completo com tudo que o plano precisa', () => {

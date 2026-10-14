@@ -325,13 +325,19 @@ export function areasInOrder(answers: QuizAnswers): string {
 /**
  * As telas do quiz, na ordem. Segue a estrutura de quiz de funil: abertura
  * com um toque fácil (a área, sem digitar nada), identificação (o objetivo
- * nas palavras da pessoa), dor, uma tela de confiança antes das perguntas
- * mais pesadas, histórico, compromisso (tempo, prazo e dias), a devolutiva
- * com o que ela já respondeu e a última pergunta. Depois vêm a análise, o
- * contato e o resultado com a oferta (`use-quiz.ts`).
+ * nas palavras da pessoa) e o espelho dele, dor e histórico, a tela de
+ * confiança logo depois de ela contar quantas vezes parou, compromisso
+ * (tempo, prazo e dias) e a conta do que isso soma, como começar, a
+ * devolutiva e o tom. Depois vêm a análise, o contato e o resultado com a
+ * oferta (`use-quiz.ts`).
  *
- * `trust` e `recap` não são perguntas: não pedem resposta e não contam no
- * total que a página promete ("responda 9 perguntas").
+ * `mirror`, `trust`, `math` e `recap` não são perguntas: não pedem resposta
+ * e não contam no total que a página promete ("responda 9 perguntas"). São
+ * as telas de recompensa, no ritmo do quiz da Cláudia: nunca mais de três
+ * perguntas seguidas sem uma tela que devolve alguma coisa calculada com o
+ * que a pessoa acabou de responder. Nenhuma delas inventa número: o espelho
+ * mostra o objetivo dela, a confiança cita a pesquisa, a conta soma o tempo
+ * que ela reservou e a devolutiva repete as respostas.
  *
  * O tom vem por último porque é a ponte pro primeiro passo: a próxima voz
  * que a pessoa ouve depois do resultado já é a que ela escolheu.
@@ -339,19 +345,21 @@ export function areasInOrder(answers: QuizAnswers): string {
 export const QUIZ_SCREENS = [
   'area',
   'goal',
+  'mirror',
   'obstacles',
-  'trust',
   'history',
+  'trust',
   'time',
   'horizon',
   'weekdays',
-  'recap',
+  'math',
   'style',
+  'recap',
   'tone',
 ] as const
 export type QuizScreen = (typeof QUIZ_SCREENS)[number]
 
-const INFO_SCREENS: readonly QuizScreen[] = ['trust', 'recap']
+const INFO_SCREENS: readonly QuizScreen[] = ['mirror', 'trust', 'math', 'recap']
 
 export const QUIZ_SCREEN_COUNT = QUIZ_SCREENS.length
 export const QUIZ_QUESTION_COUNT = QUIZ_SCREENS.filter((screen) => !INFO_SCREENS.includes(screen)).length
@@ -365,12 +373,14 @@ export function isInfoScreen(screen: QuizScreen): boolean {
 export const QUIZ_SCREEN_LABELS: Readonly<Record<QuizScreen, string>> = {
   area: 'Área',
   goal: 'Objetivo',
+  mirror: 'Espelho do objetivo',
   obstacles: 'O que trava',
   trust: 'Tela de confiança',
   history: 'Histórico',
   time: 'Tempo por dia',
   horizon: 'Prazo',
   weekdays: 'Dias da semana',
+  math: 'A conta do tempo',
   recap: 'Devolutiva',
   style: 'Como começar',
   tone: 'Tom',
@@ -447,7 +457,9 @@ export function quizBlocker(step: number, answers: QuizAnswers): string | null {
       return answers.style === null ? 'Escolhe como você prefere começar.' : null
     case 'tone':
       return answers.tone === null ? 'Escolhe como eu falo com você.' : null
+    case 'mirror':
     case 'trust':
+    case 'math':
     case 'recap':
       return null
   }

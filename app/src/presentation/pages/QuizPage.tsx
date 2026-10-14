@@ -1,7 +1,7 @@
 import { motion, useAnimationControls, useReducedMotion } from 'framer-motion'
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { isInfoScreen, minutesOf, QUIZ_SCREEN_COUNT, quizScreenAt } from '@/domain/entities/quiz'
+import { minutesOf, QUIZ_SCREEN_COUNT, quizScreenAt, type QuizScreen } from '@/domain/entities/quiz'
 import { firstStepNow, firstStepVoice } from '@/domain/entities/quiz-first-step'
 import { useAuth } from '@/presentation/auth/use-auth'
 import { Button } from '@/presentation/components/ui/Button'
@@ -65,7 +65,7 @@ export function QuizPage() {
         progress={(quiz.step + 1) / QUIZ_SCREEN_COUNT}
         progressLabel={`${quiz.step + 1} de ${QUIZ_SCREEN_COUNT}`}
         footerKey={quiz.step}
-        footerDelay={isInfoScreen(quizScreenAt(quiz.step)) ? 0.9 : 0}
+        footerDelay={FOOTER_DELAY[quizScreenAt(quiz.step)] ?? 0}
         footer={
           <>
             {/* Na abertura não há pra onde voltar: ela é a primeira tela. */}
@@ -244,6 +244,17 @@ export function QuizPage() {
       />
     </QuizShell>
   )
+}
+
+/**
+ * Quanto o botão espera em cada tela de recompensa: o tempo da animação
+ * dela. Tela de pergunta não espera nada.
+ */
+const FOOTER_DELAY: Partial<Record<QuizScreen, number>> = {
+  mirror: 1.6,
+  trust: 1.2,
+  math: 1.6,
+  recap: 0.9,
 }
 
 function firstNameOf(name: string): string | null {

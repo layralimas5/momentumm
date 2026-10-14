@@ -36,7 +36,7 @@ export interface QuizDraft {
  * rascunho antigo aponta pra outra tela: as respostas continuam valendo, o
  * passo volta pro começo.
  */
-const DRAFT_SCREENS_VERSION = 2
+const DRAFT_SCREENS_VERSION = 3
 
 interface StoredDraft extends QuizDraft {
   readonly version?: number
