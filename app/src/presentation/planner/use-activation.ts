@@ -329,6 +329,14 @@ export function isActivationSkipped(userId: string | null): boolean {
   }
 }
 
+/**
+ * Deixa o primeiro acesso pra depois, de fora do hook: é o "pular" do quiz,
+ * que agora é o onboarding de quem cria conta sem ter passado por ele.
+ */
+export function skipActivation(userId: string | null): void {
+  persistSkipped(userId, true)
+}
+
 /** Esquece rascunho e "pulado" da conta. Recomeçar do zero passa por aqui. */
 export function forgetActivation(userId: string | null): void {
   clearDraft(userId)

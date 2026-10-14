@@ -28,6 +28,11 @@ interface QuizShellProps {
   readonly footerDelay?: number
   /** Troca a cada tela, pra o atraso valer de novo na tela seguinte. */
   readonly footerKey?: string | number
+  /**
+   * Deixar o quiz pra depois. Só pra quem já tem conta: pra essa pessoa o
+   * quiz é o onboarding, e onboarding sem saída prende a pessoa fora do app.
+   */
+  readonly onSkip?: (() => void) | undefined
 }
 
 export function QuizShell({
@@ -38,6 +43,7 @@ export function QuizShell({
   tallFooter = false,
   footerDelay = 0,
   footerKey,
+  onSkip,
 }: QuizShellProps) {
   const reduced = useReducedMotion()
   const waits = footerDelay > 0 && !reduced
@@ -55,7 +61,17 @@ export function QuizShell({
         segura é zero.
       */}
       <header className="relative mx-auto mt-4 grid w-full max-w-lg grid-cols-[1fr_auto_1fr] items-center px-4 pt-safe sm:mt-8 sm:px-6">
-        <span aria-hidden="true" />
+        {onSkip ? (
+          <button
+            type="button"
+            onClick={onSkip}
+            className="justify-self-start rounded-lg px-1 py-2 text-xs text-ink-faint transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-brand-hi"
+          >
+            Pular
+          </button>
+        ) : (
+          <span aria-hidden="true" />
+        )}
         <Link to="/" aria-label="Momentumm" className="rounded-lg py-2">
           <Wordmark className="w-36" />
         </Link>
