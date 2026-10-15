@@ -205,6 +205,13 @@ export const QUIZ_LINK_CODES: Readonly<Record<string, QuizLinkCode>> = {
     theme: null,
     note: 'Botão "Quero começar" da tela de entrada',
   },
+  'conta-nova': {
+    source: 'app',
+    medium: 'cadastro',
+    campaign: 'conta-nova',
+    theme: null,
+    note: 'Conta criada sem passar pelo quiz (login direto, Google ou app instalado)',
+  },
 }
 
 export type QuizLinkCodeKey = keyof typeof QUIZ_LINK_CODES

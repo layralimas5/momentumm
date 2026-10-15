@@ -39,6 +39,8 @@ import {
   trackFunnel,
   trackFunnelOnLeave,
 } from '@/infrastructure/analytics/funnel'
+import { useAuth } from '@/presentation/auth/use-auth'
+import { skipActivation } from '@/presentation/planner/use-activation'
 import { clearQuizDraft, loadQuizDraft, savePendingQuizPlan, saveQuizDraft } from './quiz-storage'
 
 /**
@@ -59,6 +61,11 @@ import { clearQuizDraft, loadQuizDraft, savePendingQuizPlan, saveQuizDraft } fro
  * está mais decidindo se vale começar: o cadastro deixa de ser a porta e
  * vira o jeito de guardar o que já foi feito. Pular continua possível, e
  * leva pro cadastro como antes.
+ *
+ * Com conta aberta (quem se cadastrou direto, ou abriu o app instalado e
+ * entrou antes de responder), o quiz é o onboarding: a tela de contato some,
+ * porque o e-mail já existe, e "pular" leva pro app em vez de ir pro
+ * cadastro.
  *
  * As respostas ficam no `localStorage` a cada mudança (a página atualizada
  * volta na mesma tela) e vão pro servidor a cada avanço, junto do evento do
@@ -99,6 +106,8 @@ export interface QuizController {
   readonly savingLead: boolean
   /** A pessoa fechou o primeiro passo dentro do quiz. */
   readonly firstStepDone: boolean
+  /** Conta aberta: o quiz é o onboarding dela, sem contato nem cadastro. */
+  readonly signedIn: boolean
   set(changes: Partial<QuizAnswers>): void
   /** Marca ou desmarca. A ordem do toque é a ordem de importância. */
   toggleArea(area: QuizAreaKey): void
@@ -117,9 +126,16 @@ export interface QuizController {
   completeFirstStep(): void
   /** Ativar o plano: guarda o plano pendente; a tela navega pro cadastro. */
   activate(): void
+  /** Conta aberta deixando o onboarding pra depois: a tela navega pro app. */
+  skip(): void
 }
 
 export function useQuiz(): QuizController {
+  const { user, loading: authLoading } = useAuth()
+  const signedIn = !authLoading && user !== null
+  // O timer da análise lê a sessão de quando termina, não de quando começou.
+  const signedInRef = useRef(signedIn)
+  signedInRef.current = signedIn
   const [params] = useSearchParams()
   // `/plano/ig-proc` traz a origem inteira num código; `utm_*` continua
   // valendo pro que já foi enviado e pro que vier de anúncio.
@@ -219,11 +235,22 @@ export function useQuiz(): QuizController {
     }))
   }, [])
 
+  const showResult = useCallback(() => {
+    flushPendingLead()
+    setPhase('resultado')
+    // Diagnóstico e prévia agora são a mesma tela: os dois eventos saem juntos.
+    trackFunnel('diagnosis_viewed', null)
+    trackFunnel('plan_preview_viewed', null)
+  }, [])
+
   /** A análise: o plano já está pronto, a espera é só pra ler as etapas. */
   const analyze = useCallback(() => {
     setPhase('processando')
-    window.setTimeout(() => setPhase('contato'), PROCESSING_MS)
-  }, [])
+    window.setTimeout(() => {
+      if (signedInRef.current) showResult()
+      else setPhase('contato')
+    }, PROCESSING_MS)
+  }, [showResult])
 
   const next = useCallback(() => {
     if (blocker) {
@@ -256,13 +283,6 @@ export function useQuiz(): QuizController {
     if (step > 0) setStep(step - 1)
   }, [phase, step])
 
-  const showResult = useCallback(() => {
-    flushPendingLead()
-    setPhase('resultado')
-    // Diagnóstico e prévia agora são a mesma tela: os dois eventos saem juntos.
-    trackFunnel('diagnosis_viewed', null)
-    trackFunnel('plan_preview_viewed', null)
-  }, [])
 
   const setLead = useCallback((changes: Partial<QuizLead>) => {
     setLeadState((current) => ({ ...current, ...changes }))
@@ -302,6 +322,11 @@ export function useQuiz(): QuizController {
     saveQuizAnswers({ ...answers, firstStepDoneOn: today }, null, null)
   }, [answers, today])
 
+  const skip = useCallback(() => {
+    skipActivation(user?.id ?? null)
+    clearQuizDraft()
+  }, [user])
+
   const activate = useCallback(() => {
     if (!isQuizComplete(answers)) return
     savePendingQuizPlan({ answers, attribution, firstStepDoneOn: firstStepDone ? today : null })
@@ -324,6 +349,7 @@ export function useQuiz(): QuizController {
     leadWarnings: leadAttempted ? leadErrors(lead) : {},
     savingLead,
     firstStepDone,
+    signedIn,
     set,
     toggleArea,
     toggleObstacle,
@@ -336,6 +362,7 @@ export function useQuiz(): QuizController {
     startFirstStep,
     completeFirstStep,
     activate,
+    skip,
   }
 }
 

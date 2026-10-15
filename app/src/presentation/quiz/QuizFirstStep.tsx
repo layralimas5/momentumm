@@ -27,6 +27,8 @@ interface QuizFirstStepProps {
   readonly voice: FirstStepVoice
   /** O Momo faz a cara do tom que a pessoa escolheu. */
   readonly tone: QuizToneKey | null
+  /** Conta já aberta: nada de "criar conta", o passo vai direto pro app. */
+  readonly signedIn: boolean
   readonly done: boolean
   readonly running: boolean
   readonly elapsedSeconds: number
@@ -51,7 +53,7 @@ export function QuizFirstStep(props: QuizFirstStepProps) {
   )
 }
 
-function StepToDo({ step, now, voice, tone, running, elapsedSeconds, onSkip }: QuizFirstStepProps) {
+function StepToDo({ step, now, voice, tone, signedIn, running, elapsedSeconds, onSkip }: QuizFirstStepProps) {
   return (
     <>
       <Card tone="float" className="surface-brand-glow flex flex-col gap-4" aria-labelledby="quiz-primeiro-passo">
@@ -92,7 +94,7 @@ function StepToDo({ step, now, voice, tone, running, elapsedSeconds, onSkip }: Q
           onClick={onSkip}
           className="rounded font-medium text-ink-muted underline underline-offset-4 hover:text-ink"
         >
-          Criar a conta e fazer depois
+          {signedIn ? 'Guardar o plano e fazer depois' : 'Criar a conta e fazer depois'}
         </button>
       </p>
     </>
@@ -113,7 +115,7 @@ function Stopwatch({ seconds, targetMin }: { readonly seconds: number; readonly 
   )
 }
 
-function StepDone({ now, habit, milestoneCount, voice }: QuizFirstStepProps) {
+function StepDone({ now, habit, milestoneCount, voice, signedIn }: QuizFirstStepProps) {
   const saved = [
     `${now.title}, feito hoje`,
     `O plano com ${milestoneCount} ${milestoneCount === 1 ? 'marco' : 'marcos'} até o objetivo`,
@@ -133,7 +135,7 @@ function StepDone({ now, habit, milestoneCount, voice }: QuizFirstStepProps) {
           className="text-2xl leading-snug font-semibold tracking-tight text-balance text-ink"
         />
         <motion.p {...cascade(0, reduced, 0.75)} className="mt-2 text-sm text-pretty text-ink-muted">
-          {voice.save}
+          {signedIn ? 'Vai tudo pro seu app agora, junto com o plano.' : voice.save}
         </motion.p>
       </div>
       <ul className="flex flex-col gap-2">

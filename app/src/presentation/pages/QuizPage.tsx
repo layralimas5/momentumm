@@ -52,6 +52,15 @@ export function QuizPage() {
     previousStep.current = quiz.step
   }, [quiz.step])
 
+  // Pra quem já tem conta, o quiz é o onboarding: pular volta pro app, e a
+  // casca não manda de novo pra cá (`skipActivation`).
+  const skipToApp = quiz.signedIn
+    ? () => {
+        quiz.skip()
+        navigate('/app', { replace: true })
+      }
+    : undefined
+
   const activate = () => {
     quiz.activate()
     // Quem já tem conta aberta não passa pelo cadastro: o plano ativa direto.
@@ -69,6 +78,7 @@ export function QuizPage() {
         progress={(quiz.step + 1) / QUIZ_SCREEN_COUNT}
         progressLabel={`${quiz.step + 1} de ${QUIZ_SCREEN_COUNT}`}
         footerKey={quiz.step}
+        onSkip={skipToApp}
         footerDelay={FOOTER_DELAY[quizScreenAt(quiz.step)] ?? 0}
         footer={
           <>
@@ -213,6 +223,7 @@ export function QuizPage() {
           milestoneCount={quiz.preview.plan.milestones.length}
           voice={firstStepVoice(quiz.answers.tone)}
           tone={quiz.answers.tone}
+          signedIn={quiz.signedIn}
           done={quiz.firstStepDone}
           running={timer.running}
           elapsedSeconds={timer.elapsedSeconds}

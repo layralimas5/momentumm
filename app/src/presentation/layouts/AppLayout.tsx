@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Navigate, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { featureForRoute } from '@/domain/analytics/product-events'
+import { quizPathFor } from '@/domain/analytics/quiz-links'
 import { track, trackFeatureView } from '@/infrastructure/analytics/track'
 import { container } from '@/infrastructure/container'
 import { useAuth } from '@/presentation/auth/use-auth'
@@ -165,7 +166,15 @@ function useActivationGate(pathname: string) {
   if (!planner.isNewUser) return null
   if (isActivationSkipped(user?.id ?? null)) return null
 
-  return <Navigate to={ACTIVATION_PATH} replace />
+  /*
+    Conta vazia faz o quiz, não as quatro perguntas antigas. É o caso de
+    quem cria conta direto (login, Google, o app instalado aberto pela
+    primeira vez): o onboarding passa a ser um só, com estratégia, primeiro
+    passo e o Momo, em qualquer porta. O quiz sabe que a conta já existe:
+    pula o contato e ativa o plano direto. `/app/comecar` continua de pé
+    pra quem chega nele pelo endereço.
+  */
+  return <Navigate to={quizPathFor('conta-nova')} replace />
 }
 
 function ActivationShell() {

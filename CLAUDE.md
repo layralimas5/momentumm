@@ -1518,6 +1518,24 @@ nuvem (é da marca deles). "Momo" é nome provisório.
   Pensa na análise, vai de bolso na ponta da barra de progresso, faz a cara
   do tom no primeiro passo e pula no lugar do troféu na comemoração.
 - Ainda não está no app (Hoje, lembretes, IA): só no quiz.
+- A faísca não usa transformação: só o brilho atrás dela anima o raio
+  (`r`). Escala e giro em filho de SVG dependem da origem calculada pelo
+  navegador, e no pulo da comemoração ela saía voando da antena.
+
+### O quiz é o onboarding de toda conta nova (14/10/2026)
+
+Conta vazia, sem plano do quiz esperando e sem "pular" marcado, não vai mais
+pras quatro perguntas de `/app/comecar`: a casca (`useActivationGate`) manda
+pro quiz pelo código `conta-nova` (`utm_source=app`). É o caso de quem cria
+conta direto (login, Google) e de quem abre o app instalado e entra antes de
+responder. Quem abre o app instalado sem conta já caía no quiz pelo "Quero
+começar" da `/inicio`.
+
+Com conta aberta o quiz se adapta (`useQuiz().signedIn`): a tela de contato
+some (o e-mail já existe), o primeiro passo fala em guardar o plano em vez de
+criar conta, e o topo ganha "Pular", que marca `skipActivation` e leva pro
+app sem voltar pro quiz. `/app/comecar` continua de pé pra quem chega pelo
+endereço.
 
 ### Hoje como central de execução, e a Rotina (27/09/2026)
 

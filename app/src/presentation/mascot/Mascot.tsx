@@ -104,15 +104,21 @@ const BREATHE: TargetAndTransition = {
   scaleY: [1, 0.978, 1],
   transition: { duration: 4.1, repeat: Infinity, ease: 'easeInOut' },
 }
+/**
+ * A faísca não se transforma: só o brilho atrás dela muda de raio e
+ * opacidade. Escala e giro em elemento de SVG dependem da origem que o
+ * navegador calcula, e no meio do pulo a faísca saía da antena. Animar `r`
+ * é um atributo, não tem origem nenhuma pra errar.
+ */
 const TWINKLE: TargetAndTransition = {
-  scale: [1, 0.78, 1],
-  opacity: [1, 0.7, 1],
+  r: [6, 9, 6],
+  opacity: [0.55, 0.9, 0.55],
   transition: { duration: 3.6, repeat: Infinity, ease: 'easeInOut' },
 }
-const SPIN: TargetAndTransition = {
-  rotate: [0, 180, 360],
-  scale: [1, 1.35, 1],
-  transition: { duration: 0.9, repeat: Infinity, ease: 'easeInOut' },
+const CHEER: TargetAndTransition = {
+  r: [7, 15, 7],
+  opacity: [0.7, 1, 0.7],
+  transition: { duration: 0.7, repeat: Infinity, ease: 'easeInOut' },
 }
 const TALK: TargetAndTransition = {
   scaleX: [1, 0.92, 1.02, 0.96, 1, 0.9, 1.04, 0.95, 1],
@@ -199,17 +205,13 @@ export function Mascot({ size = 56, mood = 'idle', gesture = null, mini = false,
   )
 }
 
-/** A faísca na antena. Cintila sempre; na comemoração, gira e cresce. */
+/** A faísca na antena. O brilho cintila sempre; na comemoração, pulsa forte. */
 function Spark({ reduced, celebrate }: { readonly reduced: boolean; readonly celebrate: boolean }) {
   return (
     <g>
       <path d="M60 25 Q58 18 61 12" fill="none" stroke="#8878ff" strokeWidth="2.4" strokeLinecap="round" />
-      <motion.path
-        d="M61 1 L63.4 7.6 L70 10 L63.4 12.4 L61 19 L58.6 12.4 L52 10 L58.6 7.6 Z"
-        fill="#e6e1ff"
-        style={{ ...ORIGIN_CENTER, filter: 'drop-shadow(0 0 4px #b3a8ff)' }}
-        {...play(reduced, celebrate ? SPIN : TWINKLE)}
-      />
+      <motion.circle cx="61" cy="10" r={6} fill="#b3a8ff" opacity={0.6} style={{ filter: 'blur(3px)' }} {...play(reduced, celebrate ? CHEER : TWINKLE)} />
+      <path d="M61 1 L63.4 7.6 L70 10 L63.4 12.4 L61 19 L58.6 12.4 L52 10 L58.6 7.6 Z" fill="#f1eeff" />
     </g>
   )
 }
